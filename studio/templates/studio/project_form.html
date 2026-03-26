@@ -1,0 +1,31 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h3>{{ form_title }}</h3>
+            <p>Cadastre ou ajuste valores, status e datas reais do projeto.</p>
+        </div>
+    </div>
+
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-field{% if field.name == 'note' %} form-field--full{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="field-help">{{ field.help_text }}</small>
+                {% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions form-field--full">
+            <button type="submit" class="primary-button">Salvar projeto</button>
+            <a class="ghost-button" href="{% url cancel_url %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

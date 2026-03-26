@@ -1,0 +1,133 @@
+{% extends "studio/base.html" %}
+{% load studio_extras %}
+
+{% block content %}
+<section class="stats-grid">
+    {% for item in stats %}
+        <article class="stat-card">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="dashboard-grid">
+    <div class="dashboard-main">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Faturamento Mensal</h3>
+                </div>
+                <form method="get">
+                    <select name="range" onchange="this.form.submit()">
+                        {% for key, label in revenue.choices %}
+                            <option value="{{ key }}"{% if revenue.current_range == key %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            <div class="chart-grid">
+                <div class="chart-axis">
+                    {% for step in revenue.steps %}
+                        <span>{{ step.label }}</span>
+                    {% endfor %}
+                </div>
+                <div class="chart-bars">
+                    {% for point in revenue.points %}
+                        <div class="chart-column">
+                            <div class="chart-bar-wrap">
+                                <div class="chart-bar{% if point.highlighted %} is-highlighted{% endif %}" style="height: {{ point.height }}%;"></div>
+                            </div>
+                            <strong>{{ point.amount|money }}</strong>
+                            <span>{{ point.label }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Atividades Recentes</h3>
+                </div>
+            </div>
+            {% if activities %}
+                <div class="stack-list">
+                    {% for item in activities %}
+                        <article class="soft-card activity-row">
+                            <div class="visual-block" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
+                                <span>{{ item.company|slice:":1" }}</span>
+                            </div>
+                            <div class="activity-copy">
+                                <strong>{{ item.project }}</strong>
+                                <p>{{ item.content_type }}</p>
+                                <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
+                            </div>
+                            <div class="activity-meta">
+                                <span class="chip">{{ item.date }}</span>
+                                <small>{{ item.company }}</small>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted">Nenhuma atividade recente ainda.</p>
+            {% endif %}
+        </article>
+    </div>
+
+    <div class="dashboard-side">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Pipeline de Trabalhos</h3>
+                </div>
+                <a class="link-inline" href="{% url 'jobs' %}">Ver trabalhos</a>
+            </div>
+            <div class="stack-list">
+                {% for item in pipeline %}
+                    <article class="pipeline-card{% if item.stage == 'Fechado' %} pipeline-card--highlight{% endif %}">
+                        <div class="pipeline-row">
+                            <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.icon_label }}</span>
+                            <div>
+                                <strong>{{ item.stage }}</strong>
+                                <p>{{ item.count }} itens</p>
+                            </div>
+                            <strong>{{ item.amount|money }}</strong>
+                        </div>
+                        <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
+                    </article>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Projeto em destaque</h3>
+                </div>
+            </div>
+            {% if featured %}
+                <div class="feature-hero" style="--color-a: {{ featured.colors.0 }}; --color-b: {{ featured.colors.1 }};">
+                    <span>{{ featured.company }}</span>
+                </div>
+                <div class="feature-copy">
+                    <strong>{{ featured.project_name }}</strong>
+                    <p>{{ featured.content_type }}</p>
+                    <div class="progress-track"><span style="width: {{ featured.progress }}%; background: {{ featured.accent }};"></span></div>
+                    <div class="meta-line">
+                        <span class="chip">{{ featured.due_text }}</span>
+                        <small>{{ featured.progress }}%</small>
+                    </div>
+                </div>
+            {% else %}
+                <p class="muted">Quando voce cadastrar um projeto fechado, ele aparece aqui.</p>
+            {% endif %}
+        </article>
+    </div>
+</section>
+{% endblock %}

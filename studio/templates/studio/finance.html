@@ -1,0 +1,55 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stats-grid">
+    {% for item in stats %}
+        <article class="stat-card">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="split-grid">
+    <article class="card">
+        <div class="card-header"><div><h3>Agenda de recebimentos</h3></div></div>
+        {% if schedule %}
+            <div class="stack-list">
+                {% for item in schedule %}
+                    <article class="soft-card schedule-row">
+                        <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">$</span>
+                        <div class="activity-copy">
+                            <strong>{{ item.company }}</strong>
+                            <p>{{ item.kind }} | vence {{ item.due }}</p>
+                        </div>
+                        <div class="activity-meta">
+                            <strong>{{ item.amount }}</strong>
+                            <small>{{ item.status }}</small>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">Nenhum recebimento pendente no momento.</p>
+        {% endif %}
+    </article>
+
+    <article class="card">
+        <div class="card-header"><div><h3>Distribuicao do caixa</h3></div></div>
+        <div class="stack-list">
+            {% for row in breakdown %}
+                <div class="metric-row">
+                    <div class="meta-line">
+                        <strong>{{ row.label }}</strong>
+                        <strong>{{ row.amount_text }}</strong>
+                    </div>
+                    <div class="progress-track"><span style="width: {{ row.progress }}%; background: {{ row.accent }};"></span></div>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

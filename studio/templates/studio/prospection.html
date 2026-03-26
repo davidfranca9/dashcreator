@@ -1,0 +1,52 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stats-grid">
+    {% for item in stats %}
+        <article class="stat-card">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="board-grid">
+    {% for column in columns %}
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>{{ column.title }}</h3>
+                </div>
+            </div>
+            {% if column.items %}
+                <div class="stack-list">
+                    {% for item in column.items %}
+                        <article class="soft-card prospect-card">
+                            <div class="prospect-top">
+                                <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
+                                <strong>{{ item.company }}</strong>
+                                <span>{{ item.proposal_value }}</span>
+                            </div>
+                            <p class="muted strong">{{ item.contact }}</p>
+                            <p class="muted">{{ item.note|default:"Sem observacoes ainda." }}</p>
+                            <div class="card-actions">
+                                <a class="ghost-button small" href="{% url 'prospect_convert' item.id %}">Converter</a>
+                                <a class="ghost-button small" href="{% url 'prospect_edit' item.id %}">Editar</a>
+                                <form method="post" action="{% url 'prospect_delete' item.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="danger-button small">Excluir</button>
+                                </form>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted">Nenhum lead nesta etapa.</p>
+            {% endif %}
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,344 @@
+from __future__ import annotations
+
+from datetime import date, timedelta
+from decimal import Decimal
+
+from django.contrib.auth.models import User
+from django.db.models import QuerySet
+from django.urls import reverse
+
+from .constants import COMPANY_COLORS, NAV_ITEMS, REVENUE_RANGE_CHOICES, SETTINGS_GROUPS
+from .models import Membership, Project, Prospect, Workspace, WorkspaceSetting
+
+
+ZERO = Decimal("0")
+
+
+def currency(value: Decimal | int | float | None) -> str:
+    amount = Decimal(value or 0)
+    integer_value = int(amount.quantize(Decimal("1")))
+    formatted = f"{integer_value:,.0f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    return f"R${formatted}"
+
+
+def sum_money(values) -> Decimal:
+    total = ZERO
+    for value in values:
+        total += Decimal(value or 0)
+    return total
+
+
+def company_palette(company: str) -> tuple[str, str, str]:
+    if company in COMPANY_COLORS:
+        return COMPANY_COLORS[company]
+
+    palette_values = list(COMPANY_COLORS.values())
+    return palette_values[sum(ord(char) for char in company) % len(palette_values)]
+
+
+def short_date(raw_date: date) -> str:
+    months = {
+        1: "Jan",
+        2: "Fev",
+        3: "Mar",
+        4: "Abr",
+        5: "Mai",
+        6: "Jun",
+        7: "Jul",
+        8: "Ago",
+        9: "Set",
+        10: "Out",
+        11: "Nov",
+        12: "Dez",
+    }
+    return f"{raw_date.day:02d} {months[raw_date.month]}"
+
+
+def month_label(raw_date: date) -> str:
+    months = {
+        1: "Jan",
+        2: "Fev",
+        3: "Mar",
+        4: "Abr",
+        5: "Mai",
+        6: "Jun",
+        7: "Jul",
+        8: "Ago",
+        9: "Set",
+        10: "Out",
+        11: "Nov",
+        12: "Dez",
+    }
+    return f"{months[raw_date.month]}/{raw_date.year % 100:02d}"
+
+
+def get_or_create_workspace_for_user(user: User) -> Workspace:
+    membership = user.memberships.select_related("workspace").first()
+    if membership:
+        return membership.workspace
+
+    workspace = Workspace.objects.create(name=f"{user.username or user.email or 'Studio'} Studio")
+    Membership.objects.create(user=user, workspace=workspace, role=Membership.ROLE_OWNER)
+    ensure_default_settings(workspace)
+    return workspace
+
+
+def ensure_default_settings(workspace: Workspace) -> None:
+    for group in SETTINGS_GROUPS:
+        for row in group["rows"]:
+            default_value = row["value"]
+            if isinstance(default_value, bool):
+                default_value = "1" if default_value else "0"
+            WorkspaceSetting.objects.get_or_create(
+                workspace=workspace,
+                key=row["id"],
+                defaults={"value": str(default_value)},
+            )
+
+
+def settings_map(workspace: Workspace) -> dict[str, str]:
+    ensure_default_settings(workspace)
+    return {item.key: item.value for item in workspace.settings.all()}
+
+
+def save_settings(workspace: Workspace, cleaned_data: dict) -> None:
+    for key, value in cleaned_data.items():
+        stored_value = "1" if value is True else "0" if value is False else str(value)
+        WorkspaceSetting.objects.update_or_create(
+            workspace=workspace,
+            key=key,
+            defaults={"value": stored_value},
+        )
+
+
+def navigation(page_key: str) -> list[dict]:
+    items = []
+    for item in NAV_ITEMS:
+        items.append({**item, "url": reverse(item["url_name"]), "active": item["key"] == page_key})
+    return items
+
+
+def shell_context(page_key: str, workspace: Workspace, title: str, subtitle: str, action_label: str | None = None, action_url: str | None = None) -> dict:
+    return {
+        "nav_items": navigation(page_key),
+        "page_key": page_key,
+        "page_title": title,
+        "page_subtitle": subtitle,
+        "header_action_label": action_label,
+        "header_action_url": reverse(action_url) if action_url else None,
+        "workspace": workspace,
+    }
+
+
+def _shift_month(base_date: date, months: int) -> date:
+    absolute_month = (base_date.year * 12) + (base_date.month - 1) + months
+    year = absolute_month // 12
+    month = (absolute_month % 12) + 1
+    return date(year, month, 1)
+
+
+def _month_window(month_count: int) -> list[date]:
+    current_month = date.today().replace(day=1)
+    return [_shift_month(current_month, -offset) for offset in range(month_count - 1, -1, -1)]
+
+
+def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_months") -> dict:
+    month_count = {"current_month": 1, "last_quarter": 3, "last_6_months": 6}.get(revenue_range, 6)
+    month_starts = _month_window(month_count)
+    totals = {item: ZERO for item in month_starts}
+
+    for project in projects:
+        month_start = project.close_date.replace(day=1)
+        if month_start in totals:
+            totals[month_start] += Decimal(project.total_value or 0)
+
+    max_value = max([int(totals[item]) for item in month_starts] + [30000])
+    points = []
+    for index, month_start in enumerate(month_starts):
+        amount = int(totals[month_start])
+        points.append(
+            {
+                "label": month_label(month_start),
+                "amount": amount,
+                "height": max(6 if amount else 2, int((amount / max_value) * 100)) if max_value else 0,
+                "highlighted": index == len(month_starts) - 1,
+            }
+        )
+
+    steps = []
+    for step in range(3, -1, -1):
+        value = int(max_value * step / 3)
+        steps.append({"label": currency(value)})
+
+    return {"points": points, "steps": steps, "choices": REVENUE_RANGE_CHOICES, "current_range": revenue_range}
+
+
+def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
+    projects = Project.objects.filter(workspace=workspace)
+    active_projects = list(projects.filter(stage="Fechado").order_by("due_date"))
+    delivered_projects = list(projects.filter(stage="Entregue").order_by("-due_date"))
+    prospects = list(Prospect.objects.filter(workspace=workspace))
+
+    active_jobs = sum(item.deliverables_count for item in active_projects)
+    companies = len({item.company for item in projects})
+    total_closed = sum_money(item.total_value for item in active_projects)
+    entry_value = sum_money(item.entry_value for item in active_projects)
+
+    pipeline = [
+        {"stage": "Prospeccao", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount": int(sum_money(item.proposal_value for item in prospects if item.stage == "Prospeccao")), "icon_label": "P", "accent": "#4d8cff", "progress": 54},
+        {"stage": "Negociacao", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount": int(sum_money(item.proposal_value for item in prospects if item.stage == "Negociacao")), "icon_label": "N", "accent": "#4d8cff", "progress": 33},
+        {"stage": "Fechado", "count": len(active_projects), "amount": int(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
+        {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount": int(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
+    ]
+
+    activities = []
+    for item in active_projects[:2]:
+        color_a, color_b, accent = company_palette(item.company)
+        activities.append({"project": item.project_name, "company": item.company, "content_type": item.content_type, "progress": item.progress, "date": short_date(item.due_date), "colors": (color_a, color_b), "accent": accent})
+
+    featured = None
+    if active_projects:
+        item = active_projects[0]
+        color_a, color_b, accent = company_palette(item.company)
+        featured = {"project_name": item.project_name, "company": item.company, "content_type": item.content_type, "progress": item.progress, "due_text": short_date(item.due_date), "colors": (color_a, color_b), "accent": accent}
+
+    return {
+        "stats": [
+            {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
+            {"title": "Empresas Contratantes", "value": str(companies), "icon_label": "E"},
+            {"title": "Total Fechado", "value": currency(total_closed), "icon_label": "$"},
+            {"title": "Entrada", "value": currency(entry_value), "icon_label": "+"},
+        ],
+        "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
+        "pipeline": pipeline,
+        "activities": activities,
+        "featured": featured,
+    }
+
+
+def prospection_snapshot(workspace: Workspace) -> dict:
+    prospects = list(Prospect.objects.filter(workspace=workspace))
+    total = len(prospects) or 1
+    meetings = sum(1 for item in prospects if item.meeting_scheduled)
+    negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
+
+    columns = []
+    for stage in ("Prospeccao", "Negociacao"):
+        items = []
+        for item in [candidate for candidate in prospects if candidate.stage == stage]:
+            color_a, color_b, accent = company_palette(item.company)
+            items.append({"id": item.id, "company": item.company, "contact": item.contact, "note": item.note, "proposal_value": currency(item.proposal_value), "meeting_scheduled": item.meeting_scheduled, "accent": accent, "colors": (color_a, color_b)})
+        columns.append({"title": stage, "items": items})
+
+    return {
+        "stats": [
+            {"title": "Novos Leads", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "L"},
+            {"title": "Reunioes", "value": str(meetings), "icon_label": "R"},
+            {"title": "Taxa de resposta", "value": f"{round((negotiation_count / total) * 100)}%", "icon_label": "%"},
+            {"title": "Pipeline previsto", "value": currency(sum_money(item.proposal_value for item in prospects)), "icon_label": "$"},
+        ],
+        "columns": columns,
+    }
+
+
+def jobs_snapshot(workspace: Workspace) -> dict:
+    projects = list(Project.objects.filter(workspace=workspace).order_by("due_date"))
+    active = [item for item in projects if item.stage == "Fechado"]
+    today = date.today()
+    upcoming_limit = today + timedelta(days=21)
+
+    cards = []
+    for item in projects:
+        color_a, color_b, accent = company_palette(item.company)
+        cards.append({"id": item.id, "company": item.company, "project_name": item.project_name, "content_type": item.content_type, "status": item.status, "total_value": currency(item.total_value), "progress": item.progress, "due_text": short_date(item.due_date), "colors": (color_a, color_b), "accent": accent, "stage": item.stage})
+
+    upcoming_deliveries = sum(1 for item in active if today <= item.due_date <= upcoming_limit)
+    average_ticket = round(sum_money(item.total_value for item in active) / len(active)) if active else 0
+    return {
+        "stats": [
+            {"title": "Jobs ativos", "value": str(len(active)), "icon_label": "J"},
+            {"title": "Aguardando cliente", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A"},
+            {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P"},
+            {"title": "Ticket medio", "value": currency(average_ticket), "icon_label": "$"},
+        ],
+        "active": [item for item in cards if item["stage"] == "Fechado"],
+        "delivered": [item for item in cards if item["stage"] == "Entregue"][:4],
+    }
+
+
+def finance_snapshot(workspace: Workspace) -> dict:
+    active_projects = list(Project.objects.filter(workspace=workspace, stage="Fechado").order_by("due_date"))
+    total_closed = sum_money(item.total_value for item in active_projects)
+    received = sum_money(item.received_value for item in active_projects)
+    receivable = total_closed - received
+    entry = sum_money(item.entry_value for item in active_projects)
+
+    schedule = []
+    for item in active_projects:
+        outstanding = max(Decimal(item.total_value) - Decimal(item.received_value), ZERO)
+        if outstanding <= 0:
+            continue
+        _, _, accent = company_palette(item.company)
+        schedule.append({"company": item.company, "kind": "Saldo" if item.received_value > 0 else "Entrada", "due": short_date(item.due_date), "amount": currency(outstanding), "status": "Pendente", "accent": accent})
+
+    return {
+        "stats": [
+            {"title": "Total Fechado", "value": currency(total_closed), "icon_label": "$"},
+            {"title": "Ja recebido", "value": currency(received), "icon_label": "+"},
+            {"title": "A receber", "value": currency(receivable), "icon_label": "A"},
+            {"title": "Entrada media", "value": f"{round((entry / total_closed) * 100) if total_closed else 0}%", "icon_label": "%"},
+        ],
+        "schedule": schedule,
+        "breakdown": [
+            {"label": "Total fechado", "amount_text": currency(total_closed), "progress": 100 if total_closed else 0, "accent": "#20b7a7"},
+            {"label": "Dinheiro de entrada", "amount_text": currency(entry), "progress": round((entry / total_closed) * 100) if total_closed else 0, "accent": "#4d8cff"},
+            {"label": "A receber", "amount_text": currency(receivable), "progress": round((receivable / total_closed) * 100) if total_closed else 0, "accent": "#7f6fff"},
+            {"label": "Ja recebido", "amount_text": currency(received), "progress": round((received / total_closed) * 100) if total_closed else 0, "accent": "#f59a3d"},
+        ],
+    }
+
+
+def reports_snapshot(workspace: Workspace) -> dict:
+    projects = list(Project.objects.filter(workspace=workspace))
+    active = [item for item in projects if item.stage == "Fechado"]
+    delivered = [item for item in projects if item.stage == "Entregue"]
+    prospects = list(Prospect.objects.filter(workspace=workspace))
+
+    delivered_on_time = sum(1 for item in delivered if item.updated_at.date() <= item.due_date)
+    first_pass = sum(1 for item in active if item.status in {"Aprovado", "Entregue"})
+    conversion_rate = round((len(active) / (len(active) + len(prospects))) * 100) if active or prospects else 0
+    payments_base = sum_money(item.entry_value for item in active)
+    payments_on_time = round((sum_money(item.received_value for item in active) / payments_base) * 100) if payments_base else 0
+    delivered_units = sum(item.deliverables_count for item in delivered[-8:])
+    avg_days = average_project_days(projects)
+    active_total = sum_money(item.total_value for item in active)
+    margin = round(((active_total - (active_total * Decimal("0.37"))) / active_total) * 100) if active_total else 0
+    delivered_by_company = {}
+    for item in delivered:
+        delivered_by_company[item.company] = delivered_by_company.get(item.company, 0) + 1
+    repeat_rate = round((sum(1 for count in delivered_by_company.values() if count > 1) / len(delivered_by_company)) * 100) if delivered_by_company else 0
+
+    return {
+        "stats": [
+            {"title": "Conteudos entregues", "value": str(delivered_units), "icon_label": "C"},
+            {"title": "Taxa de recompra", "value": f"{repeat_rate}%", "icon_label": "%"},
+            {"title": "Tempo medio", "value": f"{avg_days:.1f} dias", "icon_label": "T"},
+            {"title": "Margem estimada", "value": f"{margin}%", "icon_label": "M"},
+        ],
+        "breakdown": [
+            {"label": "Propostas convertidas", "amount_text": f"{conversion_rate}%", "progress": conversion_rate, "accent": "#4d8cff"},
+            {"label": "Projetos entregues no prazo", "amount_text": f"{round((delivered_on_time / max(1, len(delivered))) * 100)}%", "progress": round((delivered_on_time / max(1, len(delivered))) * 100), "accent": "#20b7a7"},
+            {"label": "Aprovacao sem retrabalho", "amount_text": f"{round((first_pass / max(1, len(active))) * 100)}%", "progress": round((first_pass / max(1, len(active))) * 100), "accent": "#7f6fff"},
+            {"label": "Recebimentos em dia", "amount_text": f"{payments_on_time}%", "progress": payments_on_time, "accent": "#f59a3d"},
+        ],
+        "highlights": [
+            {"title": "Canal com melhor retorno", "description": "Instagram Reels continua puxando a maior parte dos leads qualificados."},
+            {"title": "Pacote mais lucrativo", "description": "Combos com 3 videos UGC mantem boa margem e recompra recorrente."},
+            {"title": "Gargalo do mes", "description": "Aguardando cliente ainda alonga o prazo dos jobs de moda e beleza."},
+        ],
+    }
+
+
+def average_project_days(projects: list[Project]) -> float:
+    values = [max((item.due_date - item.close_date).days, 1) for item in projects]
+    return round(sum(values) / len(values), 1) if values else 0.0

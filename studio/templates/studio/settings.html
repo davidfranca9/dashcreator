@@ -1,0 +1,22 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stack-section">
+    <p class="muted note-box">As configuracoes abaixo sao salvas automaticamente no banco do workspace.</p>
+    <form method="post" class="stack-list">
+        {% csrf_token %}
+        {% for field in form %}
+            <article class="soft-card setting-row">
+                <div class="setting-copy">
+                    <strong>{{ field.label }}</strong>
+                    <p>{{ field.help_text }}</p>
+                </div>
+                <div class="setting-control">{{ field }}</div>
+            </article>
+        {% endfor %}
+        <div class="form-actions">
+            <button type="submit" class="primary-button">Salvar configuracoes</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

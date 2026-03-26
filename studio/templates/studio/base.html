@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page_title|default:"Hubla" }}</title>
+    <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-block">
+                <img class="brand-logo" src="{% static 'studio/hubla-logo-banner.png' %}" alt="Hubla">
+            </div>
+
+            <nav class="nav-list">
+                {% for item in nav_items %}
+                    <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
+
+            <div class="workspace-chip">
+                <span class="workspace-label">Workspace ativo</span>
+                <strong>{{ workspace.name }}</strong>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <header class="page-header">
+                <div>
+                    <h2>{{ page_title }}</h2>
+                    <p>{{ page_subtitle }}</p>
+                </div>
+                <div class="header-actions">
+                    {% if header_action_url %}
+                        <a class="ghost-button" href="{{ header_action_url }}">{{ header_action_label }}</a>
+                    {% endif %}
+                    <a class="ghost-button" href="{% url 'logout' %}">Sair</a>
+                </div>
+            </header>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

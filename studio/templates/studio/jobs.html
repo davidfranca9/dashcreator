@@ -1,0 +1,75 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stats-grid">
+    {% for item in stats %}
+        <article class="stat-card">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="stack-section">
+    <article class="card">
+        <div class="card-header"><div><h3>Projetos ativos</h3></div></div>
+        <div class="jobs-grid">
+            {% for item in active %}
+                <article class="job-card">
+                    <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
+                        <span>{{ item.company }}</span>
+                    </div>
+                    <div class="meta-line">
+                        <small>{{ item.company }}</small>
+                        <span class="status-pill" style="color: {{ item.accent }}; border-color: {{ item.accent }}44; background: {{ item.accent }}18;">{{ item.status }}</span>
+                    </div>
+                    <strong>{{ item.project_name }}</strong>
+                    <div class="meta-line">
+                        <small>{{ item.content_type }}</small>
+                        <strong>{{ item.total_value }}</strong>
+                    </div>
+                    <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
+                    <div class="card-actions">
+                        <span class="chip">{{ item.due_text }}</span>
+                        <span class="muted">{{ item.progress }}%</span>
+                        <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                        <form method="post" action="{% url 'project_delete' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="danger-button small">Excluir</button>
+                        </form>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="muted">Nenhum projeto ativo cadastrado ainda.</p>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="card-header"><div><h3>Ultimas entregas</h3></div></div>
+        <div class="jobs-grid">
+            {% for item in delivered %}
+                <article class="job-card">
+                    <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
+                        <span>{{ item.company }}</span>
+                    </div>
+                    <strong>{{ item.project_name }}</strong>
+                    <div class="meta-line">
+                        <small>{{ item.content_type }}</small>
+                        <strong>{{ item.total_value }}</strong>
+                    </div>
+                    <div class="card-actions">
+                        <span class="chip">{{ item.due_text }}</span>
+                        <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="muted">Nenhuma entrega registrada ainda.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

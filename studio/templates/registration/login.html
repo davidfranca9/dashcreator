@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar | Hubla</title>
+    <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+</head>
+<body class="auth-body">
+    <div class="auth-card">
+        <div class="auth-copy">
+            <img class="brand-logo brand-logo--auth" src="{% static 'studio/hubla-logo-banner.png' %}" alt="Hubla">
+            <p>Painel SaaS para creators e agencias operarem leads, jobs, caixa e relatorios em um unico lugar.</p>
+        </div>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <h2>Entrar</h2>
+            {{ form.non_field_errors }}
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">Usuario</label>
+                {{ form.username }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.password.id_for_label }}">Senha</label>
+                {{ form.password }}
+            </div>
+            <button type="submit" class="primary-button">Acessar painel</button>
+            <a class="link-inline" href="{% url 'signup' %}">Criar conta</a>
+        </form>
+    </div>
+</body>
+</html>

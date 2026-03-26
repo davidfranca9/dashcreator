@@ -1,0 +1,44 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stats-grid">
+    {% for item in stats %}
+        <article class="stat-card">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="stack-section">
+    <article class="card">
+        <div class="card-header"><div><h3>Radar de performance</h3></div></div>
+        <div class="stack-list">
+            {% for row in breakdown %}
+                <div class="metric-row">
+                    <div class="meta-line">
+                        <strong>{{ row.label }}</strong>
+                        <strong>{{ row.amount_text }}</strong>
+                    </div>
+                    <div class="progress-track"><span style="width: {{ row.progress }}%; background: {{ row.accent }};"></span></div>
+                </div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="card-header"><div><h3>Leituras estrategicas</h3></div></div>
+        <div class="highlight-grid">
+            {% for item in highlights %}
+                <article class="soft-card highlight-card">
+                    <strong>{{ item.title }}</strong>
+                    <p>{{ item.description }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Criar conta | Hubla</title>
+    <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+</head>
+<body class="auth-body">
+    <div class="auth-card auth-card--wide">
+        <div class="auth-copy">
+            <img class="brand-logo brand-logo--auth" src="{% static 'studio/hubla-logo-banner.png' %}" alt="Hubla">
+            <p>Crie seu workspace e suba o painel operacional do seu studio UGC em poucos minutos.</p>
+        </div>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <h2>Criar conta</h2>
+            {% for field in form %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="field-help">{{ field.help_text }}</small>
+                    {% endif %}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <button type="submit" class="primary-button">Criar workspace</button>
+            <a class="link-inline" href="{% url 'login' %}">Ja tenho conta</a>
+        </form>
+    </div>
+</body>
+</html>
