@@ -1,13 +1,14 @@
 import re
 from datetime import date, timedelta
 
+from django.contrib.sessions.models import Session
 from django.core import mail
 from django.core.management import call_command
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import AccessCode, Project, Prospect
+from .models import AccessCode, ActiveUserSession, Project, Prospect
 from .services import get_or_create_workspace_for_user
 
 
@@ -54,11 +55,6 @@ class AuthenticationFlowsTest(TestCase):
             email="creatorhub@example.com",
             password="SenhaSegura123!",
         )
-        self.bound_code = AccessCode.objects.create(
-            code="TCC-P-BOUND01",
-            audience=AccessCode.AUDIENCE_PAID,
-            assigned_user=self.user,
-        )
 
     def test_login_accepts_email_and_persists_session_after_redirect(self):
         response = self.client.post(
@@ -79,7 +75,7 @@ class AuthenticationFlowsTest(TestCase):
         self.assertEqual(len(mail.outbox), 1)
 
         reset_email = mail.outbox[0]
-        self.assertIn("Redefina sua senha no Hubla", reset_email.subject)
+        self.assertIn("Redefina sua senha no The Creators Club", reset_email.subject)
 
         match = re.search(r"http://testserver(?P<path>/\S+)", reset_email.body)
         self.assertIsNotNone(match)
@@ -105,28 +101,31 @@ class AuthenticationFlowsTest(TestCase):
         )
         self.assertRedirects(login_response, reverse("dashboard"))
 
-    def test_login_requires_code_for_account_without_bound_code_and_claims_it(self):
+    def test_password_reset_does_not_send_email_for_inactive_user(self):
+        inactive_user = User.objects.create_user(
+            username="inativo",
+            email="inativo@example.com",
+            password="SenhaSegura123!",
+            is_active=False,
+        )
+
+        response = self.client.post(reverse("password_reset"), {"email": inactive_user.email})
+
+        self.assertRedirects(response, reverse("password_reset_done"))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_login_does_not_require_code_for_account_without_bound_code(self):
         new_user = User.objects.create_user(
             username="semcodigo",
             email="semcodigo@example.com",
             password="SenhaSegura123!",
         )
-        available_code = AccessCode.objects.create(code="TCC-N-NEW0001", audience=AccessCode.AUDIENCE_NON_PAID)
-
-        missing_code_response = self.client.post(
-            reverse("login"),
-            {"username": new_user.email, "password": "SenhaSegura123!"},
-        )
-        self.assertContains(missing_code_response, "Informe seu codigo de acesso para concluir o login.")
 
         login_response = self.client.post(
             reverse("login"),
-            {"username": new_user.email, "password": "SenhaSegura123!", "access_code": available_code.code},
-            follow=True,
+            {"username": new_user.email, "password": "SenhaSegura123!"},
         )
-        self.assertEqual(login_response.status_code, 200)
-        available_code.refresh_from_db()
-        self.assertEqual(available_code.assigned_user, new_user)
+        self.assertRedirects(login_response, reverse("dashboard"))
 
     def test_signup_requires_unused_access_code_and_binds_it_to_new_user(self):
         signup_code = AccessCode.objects.create(code="TCC-P-SIGN001", audience=AccessCode.AUDIENCE_PAID)
@@ -147,9 +146,43 @@ class AuthenticationFlowsTest(TestCase):
         signup_code.refresh_from_db()
         self.assertIsNotNone(signup_code.assigned_user)
         self.assertEqual(signup_code.assigned_user.username, "novocriador")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Seu cadastro foi feito no The Creators Club", mail.outbox[0].subject)
+        self.assertIn("/login/", mail.outbox[0].body)
 
     def test_generate_access_codes_command_creates_paid_and_non_paid_codes(self):
         call_command("generate_access_codes", paid=2, non_paid=3, prefix="CLUB", length=6)
 
-        self.assertEqual(AccessCode.objects.filter(audience=AccessCode.AUDIENCE_PAID).count(), 3)
+        self.assertEqual(AccessCode.objects.filter(audience=AccessCode.AUDIENCE_PAID).count(), 2)
         self.assertEqual(AccessCode.objects.filter(audience=AccessCode.AUDIENCE_NON_PAID).count(), 3)
+
+    def test_second_login_invalidates_previous_session(self):
+        first_client = Client()
+        second_client = Client()
+
+        first_response = first_client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": "SenhaSegura123!"},
+        )
+        self.assertRedirects(first_response, reverse("dashboard"))
+        first_session_key = first_client.session.session_key
+        self.assertTrue(Session.objects.filter(session_key=first_session_key).exists())
+
+        second_response = second_client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": "SenhaSegura123!"},
+        )
+        self.assertRedirects(second_response, reverse("dashboard"))
+        second_session_key = second_client.session.session_key
+
+        self.assertNotEqual(first_session_key, second_session_key)
+        self.assertFalse(Session.objects.filter(session_key=first_session_key).exists())
+        self.assertTrue(Session.objects.filter(session_key=second_session_key).exists())
+        self.assertEqual(
+            ActiveUserSession.objects.get(user=self.user).session_key,
+            second_session_key,
+        )
+
+        old_session_response = first_client.get(reverse("dashboard"))
+        self.assertEqual(old_session_response.status_code, 302)
+        self.assertIn(reverse("login"), old_session_response["Location"])

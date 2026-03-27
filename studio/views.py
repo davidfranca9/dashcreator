@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 
+from .emails import send_signup_confirmation_email
 from .forms import (
     AppPasswordResetForm,
     AppSetPasswordForm,
@@ -36,15 +37,6 @@ class AppLoginView(LoginView):
     template_name = "registration/login.html"
     authentication_form = EmailOrUsernameAuthenticationForm
     redirect_authenticated_user = True
-
-    def form_valid(self, form):
-        claimed_code = form.assign_access_code()
-        if claimed_code is not None:
-            messages.success(
-                self.request,
-                f"Codigo vinculado com sucesso. Conta marcada como {claimed_code.get_audience_display().lower()}.",
-            )
-        return super().form_valid(form)
 
 
 class AppPasswordResetView(PasswordResetView):
@@ -83,7 +75,11 @@ def signup(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
-        messages.success(request, "Conta criada com sucesso.")
+        try:
+            send_signup_confirmation_email(user, request)
+            messages.success(request, "Conta criada com sucesso. Enviamos um email de confirmacao para voce.")
+        except Exception:
+            messages.warning(request, "Conta criada com sucesso, mas nao foi possivel enviar o email de confirmacao agora.")
         return redirect("dashboard")
 
     return render(request, "registration/signup.html", {"form": form})

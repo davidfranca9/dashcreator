@@ -14,21 +14,8 @@ from .services import ensure_default_settings
 UserModel = get_user_model()
 
 
-def assigned_access_code_for_user(user):
-    try:
-        return user.access_code_entry
-    except AccessCode.DoesNotExist:
-        return None
-
-
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
     username = UsernameField(label="Usuario ou email", widget=forms.TextInput(attrs={"autofocus": True}))
-    access_code = forms.CharField(
-        label="Insira seu codigo",
-        required=False,
-        help_text="Obrigatorio no primeiro acesso ou enquanto sua conta ainda nao tiver um codigo vinculado.",
-    )
-    field_order = ["username", "password", "access_code"]
 
     error_messages = {
         **AuthenticationForm.error_messages,
@@ -38,8 +25,6 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
     def clean(self):
         username = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
-        raw_access_code = self.cleaned_data.get("access_code")
-        self.access_code_to_assign = None
 
         if username and password:
             login_value = username.strip()
@@ -56,42 +41,17 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
             self.confirm_login_allowed(self.user_cache)
             self.cleaned_data["username"] = normalized_username
 
-            provided_code = normalize_access_code(raw_access_code)
-            self.cleaned_data["access_code"] = provided_code
-            assigned_code = assigned_access_code_for_user(self.user_cache)
-
-            if assigned_code and not assigned_code.is_active:
-                raise forms.ValidationError("O codigo vinculado a esta conta foi desativado.")
-
-            if assigned_code:
-                if provided_code and provided_code != assigned_code.code:
-                    raise forms.ValidationError("O codigo informado nao pertence a esta conta.")
-            else:
-                if not provided_code:
-                    raise forms.ValidationError("Informe seu codigo de acesso para concluir o login.")
-
-                access_code = AccessCode.objects.filter(code=provided_code, is_active=True).select_related("assigned_user").first()
-                if access_code is None:
-                    raise forms.ValidationError("Codigo de acesso invalido.")
-                if access_code.assigned_user_id and access_code.assigned_user_id != self.user_cache.pk:
-                    raise forms.ValidationError("Este codigo ja esta vinculado a outra conta.")
-
-                self.access_code_to_assign = access_code
-
         return self.cleaned_data
-
-    def assign_access_code(self):
-        if self.access_code_to_assign is None or self.access_code_to_assign.assigned_user_id:
-            return None
-
-        self.access_code_to_assign.assigned_user = self.get_user()
-        self.access_code_to_assign.assigned_at = timezone.now()
-        self.access_code_to_assign.save(update_fields=["assigned_user", "assigned_at", "updated_at"])
-        return self.access_code_to_assign
 
 
 class AppPasswordResetForm(PasswordResetForm):
     email = forms.EmailField(label="Email da conta")
+
+    def get_users(self, email):
+        active_users = UserModel._default_manager.filter(email__iexact=email, is_active=True)
+        for user in active_users:
+            if user.has_usable_password():
+                yield user
 
 
 class AppSetPasswordForm(SetPasswordForm):

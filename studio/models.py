@@ -94,6 +94,17 @@ class AccessCode(TimestampedModel):
         super().save(*args, **kwargs)
 
 
+class ActiveUserSession(TimestampedModel):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="active_session")
+    session_key = models.CharField(max_length=40, unique=True)
+
+    class Meta:
+        ordering = ["user__username"]
+
+    def __str__(self) -> str:
+        return f"{self.user} - {self.session_key}"
+
+
 class WorkspaceOwnedModel(TimestampedModel):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
 

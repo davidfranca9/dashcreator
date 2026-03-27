@@ -4,14 +4,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ page_title|default:"Hubla" }}</title>
+    <title>{{ page_title|default:"The Creators Club" }}</title>
     <link rel="stylesheet" href="{% static 'studio/app.css' %}">
 </head>
 <body>
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
-                <img class="brand-logo" src="{% static 'studio/hubla-logo-banner.png' %}" alt="Hubla">
+                <img class="brand-logo" src="{% static 'studio/creators-club-logo-banner.png' %}" alt="The Creators Club">
             </div>
 
             <nav class="nav-list">
@@ -23,15 +23,6 @@
             <div class="workspace-chip">
                 <span class="workspace-label">Workspace ativo</span>
                 <strong>{{ workspace.name }}</strong>
-                {% if request.user.access_code_entry %}
-                    <span class="workspace-label workspace-label--secondary">Perfil de acesso</span>
-                    <strong>{{ request.user.access_code_entry.get_audience_display }}</strong>
-                    <small class="workspace-meta">{{ request.user.access_code_entry.code }}</small>
-                {% else %}
-                    <span class="workspace-label workspace-label--secondary">Perfil de acesso</span>
-                    <strong>Pendente</strong>
-                    <small class="workspace-meta">Nenhum codigo vinculado</small>
-                {% endif %}
             </div>
         </aside>
 
