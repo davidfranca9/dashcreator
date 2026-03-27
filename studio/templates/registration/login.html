@@ -1,28 +1,56 @@
-{% extends "registration/auth_base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar | The Creators Club</title>
+    <link rel="icon" type="image/png" sizes="64x64" href="{% static 'studio/creators-club-favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+</head>
+<body class="login-body">
+    <main class="login-shell">
+        <section class="login-card">
+            <img class="login-logo" src="{% static 'studio/creators-club-logo-banner.png' %}" alt="Dash Creator">
 
-{% block title %}Entrar | The Creators Club{% endblock %}
-{% block auth_copy %}Sistema para creators operarem trabalhos, leads, financeiro e relatorios em um unico lugar.{% endblock %}
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
-{% block auth_content %}
-    <form method="post" class="auth-form-stack">
-        {% csrf_token %}
-        <h2>Entrar</h2>
-        {{ form.non_field_errors }}
-        {% for field in form %}
-            <div class="form-field">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="field-help">{{ field.help_text|safe }}</small>
+            <form method="post" class="login-form-stack">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="login-field">
+                    {{ form.username }}
+                    {{ form.username.errors }}
+                </div>
+
+                <div class="login-field">
+                    {{ form.password }}
+                    {{ form.password.errors }}
+                </div>
+
+                {% if next %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}">
                 {% endif %}
-                {{ field.errors }}
-            </div>
-        {% endfor %}
-        {% if next %}
-            <input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}">
-        {% endif %}
-        <button type="submit" class="primary-button">Acessar painel</button>
-        <a class="link-inline" href="{% url 'password_reset' %}">Esqueci minha senha</a>
-        <a class="link-inline" href="{% url 'signup' %}">Criar conta</a>
-    </form>
-{% endblock %}
+
+                <div class="login-links-row">
+                    <a class="login-inline-link" href="{% url 'password_reset' %}">Esqueci minha senha</a>
+                </div>
+
+                <button type="submit" class="login-submit-button">Acessar painel</button>
+
+                <p class="login-signup-copy">
+                    Ainda nao tem uma conta?
+                    <a href="{% url 'signup' %}">Cadastre-se</a>
+                </p>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

@@ -204,11 +204,45 @@ textarea {
     box-shadow: 0 12px 28px rgba(5, 11, 21, 0.18);
 }
 
+.workspace-chip-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.workspace-chip-copy {
+    min-width: 0;
+}
+
 .workspace-label {
     display: block;
     font-size: 12px;
     color: #9cafcb;
     margin-bottom: 6px;
+}
+
+.workspace-chip-avatar-image,
+.workspace-chip-avatar-fallback {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.workspace-chip-avatar-image {
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.workspace-chip-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.14);
+    color: #edf5ff;
+    font-size: 18px;
+    font-weight: 700;
 }
 
 .content-area {
@@ -743,6 +777,127 @@ body.theme-dark .danger-button {
     gap: 16px;
 }
 
+.login-body {
+    min-height: 100vh;
+    margin: 0;
+    background: #f8fafc;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+}
+
+.login-shell {
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.login-card {
+    width: min(770px, 100%);
+    display: grid;
+    gap: 18px;
+    justify-items: center;
+    padding: 54px 72px 42px;
+    border-radius: 34px;
+    background: #1f2d59;
+    box-shadow: 0 26px 64px rgba(12, 25, 52, 0.22);
+}
+
+.login-logo {
+    width: min(100%, 280px);
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.login-form-stack {
+    width: min(100%, 566px);
+    display: grid;
+    gap: 20px;
+}
+
+.login-field {
+    display: grid;
+    gap: 8px;
+}
+
+.login-input {
+    width: 100%;
+    min-height: 82px;
+    border: 1px solid rgba(204, 216, 236, 0.9);
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 18px 22px;
+    color: #1a2649;
+    font-size: 18px;
+    box-shadow: none;
+}
+
+.login-input::placeholder {
+    color: #7f8a9f;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #b8d0ff;
+    box-shadow: 0 0 0 4px rgba(126, 166, 255, 0.16);
+}
+
+.login-links-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -8px;
+}
+
+.login-inline-link,
+.login-signup-copy a {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.login-inline-link:hover,
+.login-signup-copy a:hover {
+    color: #dbe7ff;
+}
+
+.login-submit-button {
+    justify-self: center;
+    min-width: 332px;
+    padding: 14px 26px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #dbe6ff 0%, #a8bef8 100%);
+    color: #15264b;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.login-signup-copy {
+    margin: 2px 0 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 18px;
+}
+
+.login-body .messages,
+.login-body .errorlist {
+    width: min(100%, 566px);
+}
+
+.login-body .message {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #f5f8ff;
+}
+
+.login-body .errorlist {
+    margin: 0;
+    color: #ffd2d7;
+    font-size: 14px;
+}
+
 @media (max-width: 1100px) {
     .app-shell {
         grid-template-columns: 1fr;
@@ -778,5 +933,23 @@ body.theme-dark .danger-button {
 
     .auth-card {
         grid-template-columns: 1fr;
+    }
+
+    .login-card {
+        padding: 38px 22px 30px;
+        border-radius: 28px;
+    }
+
+    .login-input {
+        min-height: 72px;
+        font-size: 17px;
+    }
+
+    .login-submit-button {
+        min-width: 100%;
+    }
+
+    .login-signup-copy {
+        font-size: 16px;
     }
 }
