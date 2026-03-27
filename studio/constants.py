@@ -6,7 +6,13 @@ NAV_ITEMS = [
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs"},
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsoes de caixa.", "url_name": "finance"},
     {"key": "reports", "label": "Relatorios", "subtitle": "Indicadores estrategicos do negocio.", "url_name": "reports"},
+    {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile"},
     {"key": "settings", "label": "Configuracoes", "subtitle": "Preferencias visuais e operacionais.", "url_name": "settings"},
+]
+
+NAV_GROUPS = [
+    {"label": "ERP", "keys": ["dashboard", "jobs", "prospection", "finance", "reports"]},
+    {"label": "Perfil", "keys": ["profile", "settings"]},
 ]
 
 PROJECT_STAGE_CHOICES = [
@@ -47,14 +53,14 @@ COMPANY_COLORS = {
 SETTINGS_GROUPS = [
     {
         "title": "Experiencia visual",
-        "description": "O app fixa contraste alto para nao depender do tema do notebook.",
+        "description": "Ajustes visuais para deixar o painel mais confortavel no seu dia a dia.",
         "rows": [
             {
-                "id": "ui_lock_light_contrast",
-                "label": "Contraste claro travado no app",
-                "detail": "Mantem cards claros e textos escuros mesmo com Windows em tema escuro.",
+                "id": "ui_dark_theme",
+                "label": "Tema escuro",
+                "detail": "Ativa uma versao escura do painel para trabalhar com menos claridade.",
                 "type": "check",
-                "value": True,
+                "value": False,
             },
             {
                 "id": "ui_soft_card_shadows",

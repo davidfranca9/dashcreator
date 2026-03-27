@@ -8,23 +8,30 @@
     <link rel="icon" type="image/png" sizes="64x64" href="{% static 'studio/creators-club-favicon.png' %}">
     <link rel="stylesheet" href="{% static 'studio/app.css' %}">
 </head>
-<body>
+<body class="{{ theme_class }}">
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
                 <img class="brand-logo" src="{% static 'studio/creators-club-logo-banner.png' %}" alt="The Creators Club">
             </div>
 
-            <nav class="nav-list">
-                {% for item in nav_items %}
-                    <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}">{{ item.label }}</a>
+            <nav class="nav-groups">
+                {% for group in nav_groups %}
+                    <div class="nav-group">
+                        <span class="nav-group-label">{{ group.label }}</span>
+                        <div class="nav-list">
+                            {% for item in group.items %}
+                                <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}">{{ item.label }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
                 {% endfor %}
             </nav>
 
-            <div class="workspace-chip">
+            <a class="workspace-chip" href="{% url 'profile' %}">
                 <span class="workspace-label">Workspace ativo</span>
                 <strong>{{ workspace.name }}</strong>
-            </div>
+            </a>
         </aside>
 
         <main class="content-area">

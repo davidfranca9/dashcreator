@@ -7,11 +7,39 @@ from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.urls import reverse
 
-from .constants import COMPANY_COLORS, NAV_ITEMS, REVENUE_RANGE_CHOICES, SETTINGS_GROUPS
+from .constants import COMPANY_COLORS, NAV_GROUPS, NAV_ITEMS, REVENUE_RANGE_CHOICES, SETTINGS_GROUPS
 from .models import Membership, Project, Prospect, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
+SHORT_MONTH_NAMES = {
+    1: "Jan",
+    2: "Fev",
+    3: "Mar",
+    4: "Abr",
+    5: "Mai",
+    6: "Jun",
+    7: "Jul",
+    8: "Ago",
+    9: "Set",
+    10: "Out",
+    11: "Nov",
+    12: "Dez",
+}
+FULL_MONTH_NAMES = {
+    1: "Janeiro",
+    2: "Fevereiro",
+    3: "Marco",
+    4: "Abril",
+    5: "Maio",
+    6: "Junho",
+    7: "Julho",
+    8: "Agosto",
+    9: "Setembro",
+    10: "Outubro",
+    11: "Novembro",
+    12: "Dezembro",
+}
 
 
 def currency(value: Decimal | int | float | None) -> str:
@@ -37,39 +65,34 @@ def company_palette(company: str) -> tuple[str, str, str]:
 
 
 def short_date(raw_date: date) -> str:
-    months = {
-        1: "Jan",
-        2: "Fev",
-        3: "Mar",
-        4: "Abr",
-        5: "Mai",
-        6: "Jun",
-        7: "Jul",
-        8: "Ago",
-        9: "Set",
-        10: "Out",
-        11: "Nov",
-        12: "Dez",
-    }
-    return f"{raw_date.day:02d} {months[raw_date.month]}"
+    return f"{raw_date.day:02d} {SHORT_MONTH_NAMES[raw_date.month]}"
 
 
 def month_label(raw_date: date) -> str:
-    months = {
-        1: "Jan",
-        2: "Fev",
-        3: "Mar",
-        4: "Abr",
-        5: "Mai",
-        6: "Jun",
-        7: "Jul",
-        8: "Ago",
-        9: "Set",
-        10: "Out",
-        11: "Nov",
-        12: "Dez",
-    }
-    return f"{months[raw_date.month]}/{raw_date.year % 100:02d}"
+    return f"{SHORT_MONTH_NAMES[raw_date.month]}/{raw_date.year % 100:02d}"
+
+
+def long_month_label(raw_date: date) -> str:
+    return f"{FULL_MONTH_NAMES[raw_date.month]} {raw_date.year}"
+
+
+def month_value(raw_date: date) -> str:
+    return raw_date.strftime("%Y-%m")
+
+
+def parse_month_value(raw_value: str | None) -> date | None:
+    if not raw_value:
+        return None
+    try:
+        return date.fromisoformat(f"{raw_value}-01")
+    except ValueError:
+        return None
+
+
+def format_days(value: float) -> str:
+    if value == int(value):
+        return f"{int(value)} dias"
+    return f"{str(round(value, 1)).replace('.', ',')} dias"
 
 
 def get_or_create_workspace_for_user(user: User) -> Workspace:
@@ -118,15 +141,28 @@ def navigation(page_key: str) -> list[dict]:
     return items
 
 
+def navigation_groups(page_key: str) -> list[dict]:
+    nav_items = {item["key"]: item for item in navigation(page_key)}
+    groups = []
+    for group in NAV_GROUPS:
+        items = [nav_items[key] for key in group["keys"] if key in nav_items]
+        if items:
+            groups.append({"label": group["label"], "items": items})
+    return groups
+
+
 def shell_context(page_key: str, workspace: Workspace, title: str, subtitle: str, action_label: str | None = None, action_url: str | None = None) -> dict:
+    workspace_settings = settings_map(workspace)
     return {
         "nav_items": navigation(page_key),
+        "nav_groups": navigation_groups(page_key),
         "page_key": page_key,
         "page_title": title,
         "page_subtitle": subtitle,
         "header_action_label": action_label,
         "header_action_url": reverse(action_url) if action_url else None,
         "workspace": workspace,
+        "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
     }
 
 
@@ -318,15 +354,28 @@ def jobs_snapshot(workspace: Workspace) -> dict:
     }
 
 
-def finance_snapshot(workspace: Workspace) -> dict:
+def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     active_projects = list(Project.objects.filter(workspace=workspace, stage="Fechado").order_by("due_date"))
-    total_closed = sum_money(item.total_value for item in active_projects)
-    received = sum_money(item.received_value for item in active_projects)
-    receivable = total_closed - received
-    entry = sum_money(item.entry_value for item in active_projects)
+    month_options = sorted({item.due_date.replace(day=1) for item in active_projects} | {date.today().replace(day=1)}, reverse=True)
+    selected_month = parse_month_value(month_filter)
+    if selected_month is None or selected_month.replace(day=1) not in month_options:
+        current_month = date.today().replace(day=1)
+        selected_month = current_month if current_month in month_options else month_options[0]
+    selected_month = selected_month.replace(day=1)
+
+    month_projects = [item for item in active_projects if item.due_date.year == selected_month.year and item.due_date.month == selected_month.month]
+    forecast = sum_money(item.total_value for item in month_projects)
+    received = sum_money(item.received_value for item in month_projects)
+    receivable = max(forecast - received, ZERO)
+    entry = sum_money(item.entry_value for item in month_projects)
+    avg_collection_days = (
+        round(sum(max((item.due_date - item.close_date).days, 1) for item in month_projects) / len(month_projects), 1)
+        if month_projects
+        else 0.0
+    )
 
     schedule = []
-    for item in active_projects:
+    for item in month_projects:
         outstanding = max(Decimal(item.total_value) - Decimal(item.received_value), ZERO)
         if outstanding <= 0:
             continue
@@ -334,18 +383,20 @@ def finance_snapshot(workspace: Workspace) -> dict:
         schedule.append({"company": item.company, "kind": "Saldo" if item.received_value > 0 else "Entrada", "due": short_date(item.due_date), "amount": currency(outstanding), "status": "Pendente", "accent": accent})
 
     return {
+        "month_choices": [{"value": month_value(item), "label": long_month_label(item)} for item in month_options],
+        "selected_month": {"value": month_value(selected_month), "label": long_month_label(selected_month)},
         "stats": [
-            {"title": "Total Fechado", "value": currency(total_closed), "icon_label": "$"},
-            {"title": "Ja recebido", "value": currency(received), "icon_label": "+"},
+            {"title": "Previsao", "value": currency(forecast), "icon_label": "$"},
             {"title": "A receber", "value": currency(receivable), "icon_label": "A"},
-            {"title": "Entrada media", "value": f"{round((entry / total_closed) * 100) if total_closed else 0}%", "icon_label": "%"},
+            {"title": "Recebido", "value": currency(received), "icon_label": "+"},
+            {"title": "Media de recebimento (45 dias)", "value": format_days(avg_collection_days), "icon_label": "M"},
         ],
         "schedule": schedule,
         "breakdown": [
-            {"label": "Total fechado", "amount_text": currency(total_closed), "progress": 100 if total_closed else 0, "accent": "#20b7a7"},
-            {"label": "Dinheiro de entrada", "amount_text": currency(entry), "progress": round((entry / total_closed) * 100) if total_closed else 0, "accent": "#4d8cff"},
-            {"label": "A receber", "amount_text": currency(receivable), "progress": round((receivable / total_closed) * 100) if total_closed else 0, "accent": "#7f6fff"},
-            {"label": "Ja recebido", "amount_text": currency(received), "progress": round((received / total_closed) * 100) if total_closed else 0, "accent": "#f59a3d"},
+            {"label": "Previsao do mes", "amount_text": currency(forecast), "progress": 100 if forecast else 0, "accent": "#20b7a7"},
+            {"label": "Entrada prevista", "amount_text": currency(entry), "progress": round((entry / forecast) * 100) if forecast else 0, "accent": "#4d8cff"},
+            {"label": "A receber", "amount_text": currency(receivable), "progress": round((receivable / forecast) * 100) if forecast else 0, "accent": "#7f6fff"},
+            {"label": "Recebido", "amount_text": currency(received), "progress": round((received / forecast) * 100) if forecast else 0, "accent": "#f59a3d"},
         ],
     }
 
