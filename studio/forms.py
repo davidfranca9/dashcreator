@@ -24,6 +24,23 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
         "invalid_login": "Informe um usuario ou email e uma senha validos.",
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update(
+            {
+                "placeholder": "Usuario",
+                "autocomplete": "username",
+                "class": "login-input",
+            }
+        )
+        self.fields["password"].widget.attrs.update(
+            {
+                "placeholder": "Senha",
+                "autocomplete": "current-password",
+                "class": "login-input",
+            }
+        )
+
     def clean(self):
         username = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
@@ -245,6 +262,7 @@ class ProjectForm(forms.ModelForm):
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Voce pode ajustar manualmente se quiser."
         )
+        self.fields["deliverables_count"].help_text = "Use a quantidade total de videos incluidos neste trabalho."
         self.fields["total_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["received_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
@@ -316,7 +334,7 @@ class ProjectForm(forms.ModelForm):
             "total_value": "Valor total",
             "entry_value": "Entrada",
             "received_value": "Recebido",
-            "deliverables_count": "Pecas",
+            "deliverables_count": "Quantidade de videos",
             "progress": "Progresso (%)",
             "close_date": "Fechamento",
             "due_date": "Entrega",

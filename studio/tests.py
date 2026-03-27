@@ -112,6 +112,8 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(form.default_entry_rate, 40)
         self.assertEqual(form.fields["close_date"].initial, date.today())
+        self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de videos")
+        self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
 
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(
@@ -119,9 +121,10 @@ class DashboardSmokeTest(TestCase):
             defaults={"value": "1"},
         )
 
-        context = shell_context("dashboard", self.workspace, "Dashboard", "Resumo")
+        context = shell_context("dashboard", self.workspace, "Dashboard", "Resumo", user=self.user)
 
         self.assertEqual(context["theme_class"], "theme-dark")
+        self.assertEqual(context["workspace_membership"].user, self.user)
 
     def test_finance_page_filters_month_detail_by_due_date(self):
         Project.objects.create(

@@ -9,7 +9,7 @@
         </div>
     </div>
 
-    <form method="post" class="form-grid">
+    <form method="post" class="form-grid project-form" data-default-entry-rate="{{ form.default_entry_rate|default:50 }}">
         {% csrf_token %}
         {% for field in form %}
             <div class="form-field{% if field.name == 'note' or field.name == 'new_service_category' %} form-field--full{% endif %}">
@@ -17,6 +17,9 @@
                 {{ field }}
                 {% if field.help_text %}
                     <small class="field-help">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.name == "deliverables_count" %}
+                    <small class="field-help value-per-video-help" data-value-per-video>Valor por video: R$0,00</small>
                 {% endif %}
                 {{ field.errors }}
             </div>
@@ -28,4 +31,121 @@
         </div>
     </form>
 </section>
+<script>
+    (() => {
+        const form = document.querySelector(".project-form");
+        if (!form) {
+            return;
+        }
+
+        const totalField = document.getElementById("id_total_value");
+        const entryField = document.getElementById("id_entry_value");
+        const receivedField = document.getElementById("id_received_value");
+        const deliverablesField = document.getElementById("id_deliverables_count");
+        const progressField = document.getElementById("id_progress");
+        const statusField = document.getElementById("id_status");
+        const closeDateField = document.getElementById("id_close_date");
+        const valuePerVideoHelp = document.querySelector("[data-value-per-video]");
+        const defaultEntryRate = Number(form.dataset.defaultEntryRate || 50);
+        const statusProgressMap = {
+            "Briefing": 0,
+            "Em gravacao": 25,
+            "Em edicao": 55,
+            "Aguardando cliente": 80,
+            "Aprovado": 95,
+            "Entregue": 100,
+        };
+
+        const parseNumber = (field) => {
+            if (!field) {
+                return 0;
+            }
+            const rawValue = String(field.value || "").replace(",", ".").trim();
+            const parsed = Number.parseFloat(rawValue);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const formatMoney = (value) => Number(value || 0).toFixed(2);
+        const formatMoneyPreview = (value) => Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        let entryWasEdited = Boolean(entryField && entryField.value && parseNumber(entryField) > 0);
+        let progressWasEdited = Boolean(progressField && progressField.value && parseNumber(progressField) > 0);
+
+        const normalizeMoneyField = (field) => {
+            if (!field || !field.value.trim()) {
+                return;
+            }
+            field.value = formatMoney(parseNumber(field));
+        };
+
+        const syncEntryValue = () => {
+            if (!totalField || !entryField || entryWasEdited) {
+                return;
+            }
+            const total = parseNumber(totalField);
+            entryField.value = formatMoney((total * defaultEntryRate) / 100);
+        };
+
+        const syncProgressFromStatus = () => {
+            if (!statusField || !progressField || progressWasEdited) {
+                return;
+            }
+            const mappedProgress = statusProgressMap[statusField.value];
+            if (mappedProgress !== undefined) {
+                progressField.value = mappedProgress;
+            }
+        };
+
+        const syncValuePerVideo = () => {
+            if (!valuePerVideoHelp || !deliverablesField || !totalField) {
+                return;
+            }
+            const total = parseNumber(totalField);
+            const quantity = Math.max(0, Number.parseInt(deliverablesField.value || "0", 10) || 0);
+            const valuePerVideo = quantity > 0 ? total / quantity : 0;
+            valuePerVideoHelp.textContent = `Valor por video: R$${formatMoneyPreview(valuePerVideo)}`;
+        };
+
+        if (closeDateField && !closeDateField.value) {
+            closeDateField.value = new Date().toISOString().slice(0, 10);
+        }
+
+        syncEntryValue();
+        syncProgressFromStatus();
+        syncValuePerVideo();
+
+        if (totalField) {
+            totalField.addEventListener("input", () => {
+                syncEntryValue();
+                syncValuePerVideo();
+            });
+            totalField.addEventListener("blur", () => normalizeMoneyField(totalField));
+        }
+
+        if (entryField) {
+            entryField.addEventListener("input", () => {
+                entryWasEdited = entryField.value.trim() !== "";
+            });
+            entryField.addEventListener("blur", () => normalizeMoneyField(entryField));
+        }
+
+        if (receivedField) {
+            receivedField.addEventListener("blur", () => normalizeMoneyField(receivedField));
+        }
+
+        if (deliverablesField) {
+            deliverablesField.addEventListener("input", syncValuePerVideo);
+            deliverablesField.addEventListener("change", syncValuePerVideo);
+        }
+
+        if (statusField) {
+            statusField.addEventListener("change", syncProgressFromStatus);
+        }
+
+        if (progressField) {
+            progressField.addEventListener("input", () => {
+                progressWasEdited = progressField.value.trim() !== "";
+            });
+        }
+    })();
+</script>
 {% endblock %}
