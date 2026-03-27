@@ -77,8 +77,6 @@ class DashboardSmokeTest(TestCase):
                 "email": "julia@insider.com",
                 "instagram": "@insiderstore",
                 "whatsapp": "71911111111",
-                "proposal_value": "3200",
-                "meeting_scheduled": "on",
                 "note": "Chegou pelo Instagram",
             },
         )
@@ -114,12 +112,10 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'value="{prospect.contact_date.isoformat()}"', html=False)
 
-    def test_prospect_form_configures_estimated_value_as_decimal_input(self):
+    def test_prospect_form_hides_estimated_value_until_conversion(self):
         form = ProspectForm(workspace=self.workspace)
 
-        self.assertEqual(form.fields["proposal_value"].widget.attrs["step"], "0.01")
-        self.assertEqual(form.fields["proposal_value"].widget.attrs["min"], "0")
-        self.assertEqual(form.fields["proposal_value"].widget.attrs["inputmode"], "decimal")
+        self.assertNotIn("proposal_value", form.fields)
 
     def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
         form = ProspectForm(
@@ -134,7 +130,6 @@ class DashboardSmokeTest(TestCase):
                 "email": "julia@insider.com",
                 "instagram": "@insiderstore",
                 "whatsapp": "71911111111",
-                "proposal_value": "3200",
                 "meeting_scheduled": "on",
                 "meeting_date": "",
                 "note": "Chegou pelo Instagram",
@@ -328,6 +323,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["form"].initial["closing_source"], "Instagram DM")
         self.assertEqual(response.context["form"].initial["niche"], self.niche)
+        self.assertNotIn("total_value", response.context["form"].initial)
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)

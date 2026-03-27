@@ -292,10 +292,10 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     total_closed = sum_money(item.total_value for item in active_projects)
 
     pipeline = [
-        {"stage": "Prospeccao", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount": int(sum_money(item.proposal_value for item in prospects if item.stage == "Prospeccao")), "icon_label": "P", "accent": "#4d8cff", "progress": 54},
-        {"stage": "Negociacao", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount": int(sum_money(item.proposal_value for item in prospects if item.stage == "Negociacao")), "icon_label": "N", "accent": "#4d8cff", "progress": 33},
-        {"stage": "Fechado", "count": len(active_projects), "amount": int(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
-        {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount": int(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
+        {"stage": "Prospeccao", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
+        {"stage": "Negociacao", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
+        {"stage": "Fechado", "count": len(active_projects), "amount_text": currency(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
+        {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount_text": currency(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
     ]
 
     activities = []
@@ -368,7 +368,6 @@ def prospection_snapshot(workspace: Workspace) -> dict:
                     "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
                     "niche": item.niche.name if item.niche_id else "",
                     "note": item.note,
-                    "proposal_value": currency(item.proposal_value),
                     "meeting_scheduled": item.meeting_scheduled,
                     "channels": channels,
                     "accent": accent,
@@ -382,7 +381,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
             {"title": "Novos Leads", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "L"},
             {"title": "Reunioes", "value": str(meetings), "icon_label": "R"},
             {"title": "Taxa de resposta", "value": f"{round((negotiation_count / total) * 100)}%", "icon_label": "%"},
-            {"title": "Pipeline previsto", "value": currency(sum_money(item.proposal_value for item in prospects)), "icon_label": "$"},
+            {"title": "Leads em aberto", "value": str(len(prospects)), "icon_label": "A"},
         ],
         "columns": columns,
     }

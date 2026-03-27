@@ -167,7 +167,6 @@ class ProspectForm(forms.ModelForm):
                 "email",
                 "instagram",
                 "whatsapp",
-                "proposal_value",
                 "meeting_scheduled",
                 "meeting_date",
                 "note",
@@ -183,7 +182,6 @@ class ProspectForm(forms.ModelForm):
             format="%Y-%m-%d",
         )
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
-        self.fields["proposal_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["niche"].queryset = Niche.objects.none()
         if workspace is not None:
             self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
@@ -227,7 +225,6 @@ class ProspectForm(forms.ModelForm):
             "email",
             "instagram",
             "whatsapp",
-            "proposal_value",
             "meeting_scheduled",
             "meeting_date",
             "note",
@@ -242,7 +239,6 @@ class ProspectForm(forms.ModelForm):
             "email": "Email",
             "instagram": "Instagram",
             "whatsapp": "WhatsApp",
-            "proposal_value": "Valor estimado",
             "meeting_scheduled": "Reuniao agendada",
             "meeting_date": "Data da reuniao",
             "note": "Observacoes",

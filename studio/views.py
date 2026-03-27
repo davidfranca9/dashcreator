@@ -10,7 +10,6 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 
 from .emails import send_signup_confirmation_email
-from decimal import Decimal
 
 from .forms import (
     AppPasswordResetForm,
@@ -244,8 +243,6 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         "service_category": None,
         "stage": "Fechado",
         "status": "Briefing",
-        "total_value": prospect.proposal_value,
-        "entry_value": prospect.proposal_value * Decimal("0.5"),
         "received_value": 0,
         "deliverables_count": 3,
         "progress": 15,

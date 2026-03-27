@@ -97,7 +97,9 @@
                                 <strong>{{ item.stage }}</strong>
                                 <p>{{ item.count }} itens</p>
                             </div>
-                            <strong>{{ item.amount|money }}</strong>
+                            {% if item.amount_text %}
+                                <strong>{{ item.amount_text }}</strong>
+                            {% endif %}
                         </div>
                         <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                     </article>

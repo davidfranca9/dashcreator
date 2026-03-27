@@ -31,26 +31,9 @@
 <script>
     (() => {
         const form = document.querySelector(".prospect-form");
-        const proposalField = document.getElementById("id_proposal_value");
-        if (!form || !proposalField) {
+        if (!form) {
             return;
         }
-
-        const parseNumber = (value) => {
-            const normalizedValue = String(value || "").replace(",", ".").trim();
-            const parsed = Number.parseFloat(normalizedValue);
-            return Number.isFinite(parsed) ? parsed : 0;
-        };
-
-        const normalizeMoneyField = () => {
-            if (!proposalField.value.trim()) {
-                return;
-            }
-            proposalField.value = parseNumber(proposalField.value).toFixed(2);
-        };
-
-        proposalField.addEventListener("blur", normalizeMoneyField);
-        form.addEventListener("submit", normalizeMoneyField);
 
         const meetingScheduledField = document.getElementById("id_meeting_scheduled");
         const meetingDateFieldWrapper = form.querySelector(".meeting-date-field");
