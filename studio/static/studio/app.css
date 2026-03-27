@@ -804,10 +804,10 @@ body.theme-dark .danger-button {
 }
 
 .login-logo {
-    width: min(100%, 340px);
+    width: min(100%, 520px);
     height: auto;
     object-fit: contain;
-    margin-bottom: 14px;
+    margin-bottom: 22px;
 }
 
 .login-form-stack {
