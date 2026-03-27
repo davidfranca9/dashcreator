@@ -191,7 +191,8 @@ textarea {
 
 .workspace-chip {
     margin-top: auto;
-    padding: 16px;
+    position: relative;
+    padding: 18px 82px 18px 16px;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.08);
     display: block;
@@ -202,13 +203,6 @@ textarea {
     background: rgba(255, 255, 255, 0.12);
     transform: translateY(-1px);
     box-shadow: 0 12px 28px rgba(5, 11, 21, 0.18);
-}
-
-.workspace-chip-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
 }
 
 .workspace-chip-copy {
@@ -224,8 +218,11 @@ textarea {
 
 .workspace-chip-avatar-image,
 .workspace-chip-avatar-fallback {
-    width: 52px;
-    height: 52px;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     flex-shrink: 0;
 }
