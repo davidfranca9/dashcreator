@@ -123,7 +123,7 @@ textarea {
 
 .brand-logo {
     display: block;
-    width: min(100%, 280px);
+    width: min(100%, 340px);
     max-width: 100%;
     height: auto;
     object-fit: contain;
@@ -131,8 +131,8 @@ textarea {
 }
 
 .brand-logo--auth {
-    width: min(100%, 520px);
-    margin-bottom: 10px;
+    width: min(100%, 620px);
+    margin-bottom: 14px;
 }
 
 .brand-block {
@@ -140,13 +140,13 @@ textarea {
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 138px;
-    padding: 12px 0 18px;
+    min-height: 156px;
+    padding: 16px 0 22px;
 }
 
 .sidebar .brand-logo {
     width: 100%;
-    max-width: 280px;
+    max-width: 320px;
     margin: 0 auto;
 }
 
@@ -804,10 +804,10 @@ body.theme-dark .danger-button {
 }
 
 .login-logo {
-    width: min(100%, 280px);
+    width: min(100%, 340px);
     height: auto;
     object-fit: contain;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .login-form-stack {
