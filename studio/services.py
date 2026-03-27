@@ -210,6 +210,10 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
     current_month = date.today().replace(day=1)
     month_starts = [date(current_year, month, 1) for month in range(1, 13)]
     totals = {item: ZERO for item in month_starts}
+    chart_width = 960
+    chart_height = 260
+    chart_top = 12
+    chart_bottom = 22
 
     for project in projects:
         month_start = project.close_date.replace(day=1)
@@ -217,14 +221,20 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
             totals[month_start] += Decimal(project.total_value or 0)
 
     max_value = max([int(totals[item]) for item in month_starts] + [30000])
+    usable_height = chart_height - chart_top - chart_bottom
     points = []
     for index, month_start in enumerate(month_starts):
         amount = int(totals[month_start])
+        progress_ratio = (amount / max_value) if max_value else 0
+        x_position = 0 if len(month_starts) == 1 else round((chart_width / (len(month_starts) - 1)) * index, 2)
+        y_position = round(chart_height - chart_bottom - (progress_ratio * usable_height), 2)
         points.append(
             {
                 "label": month_label(month_start),
                 "amount": amount,
                 "height": max(6 if amount else 2, int((amount / max_value) * 100)) if max_value else 0,
+                "x": x_position,
+                "y": y_position,
                 "highlighted": month_start == current_month,
             }
         )
@@ -234,7 +244,18 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
         value = int(max_value * step / 3)
         steps.append({"label": currency(value)})
 
-    return {"points": points, "steps": steps}
+    line_path = " ".join(
+        f"{'M' if index == 0 else 'L'} {point['x']} {point['y']}"
+        for index, point in enumerate(points)
+    )
+
+    return {
+        "points": points,
+        "steps": steps,
+        "path": line_path,
+        "chart_width": chart_width,
+        "chart_height": chart_height,
+    }
 
 
 def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
