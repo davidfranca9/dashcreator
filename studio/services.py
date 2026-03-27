@@ -247,7 +247,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     delivered_projects = list(projects.filter(stage="Entregue").order_by("-due_date"))
     prospects = list(Prospect.objects.filter(workspace=workspace))
 
-    active_jobs = sum(item.deliverables_count for item in active_projects)
+    active_empresas = sum(item.deliverables_count for item in active_projects)
     companies = (
         projects.exclude(company__exact="")
         .annotate(company_key=Lower(Trim("company")))
@@ -294,7 +294,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
 
     return {
         "stats": [
-            {"title": "Empresas Ativas", "value": str(active_jobs), "icon_label": "T"},
+            {"title": "Empresas Ativas", "value": str(active_empresas), "icon_label": "T"},
             {"title": "Empresas Contratantes", "value": str(companies), "icon_label": "E"},
             {"title": "Total Fechado", "value": currency(total_closed), "icon_label": "$"},
             {"title": "Entrada", "value": currency(entry_value), "icon_label": "+"},
@@ -355,7 +355,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
     }
 
 
-def jobs_snapshot(workspace: Workspace) -> dict:
+def empresas_snapshot(workspace: Workspace) -> dict:
     projects = list(Project.objects.filter(workspace=workspace).order_by("due_date"))
     active = [item for item in projects if item.stage == "Fechado"]
     today = date.today()
@@ -383,7 +383,7 @@ def jobs_snapshot(workspace: Workspace) -> dict:
     average_ticket = round(sum_money(item.total_value for item in active) / len(active)) if active else 0
     return {
         "stats": [
-            {"title": "Jobs ativos", "value": str(len(active)), "icon_label": "J"},
+            {"title": "Empresas ativas", "value": str(len(active)), "icon_label": "E"},
             {"title": "Aguardando cliente", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A"},
             {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P"},
             {"title": "Ticket medio", "value": currency(average_ticket), "icon_label": "$"},
