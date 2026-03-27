@@ -105,6 +105,15 @@ class DashboardSmokeTest(TestCase):
         self.assertRedirects(project_response, reverse("jobs"))
         self.assertTrue(ServiceCategory.objects.filter(workspace=self.workspace, name="Mentoria UGC").exists())
 
+    def test_prospect_edit_prefills_contact_date_in_iso_format(self):
+        self.client.force_login(self.user)
+        prospect = Prospect.objects.get(workspace=self.workspace, company="Nike")
+
+        response = self.client.get(reverse("prospect_edit", args=[prospect.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'value="{prospect.contact_date.isoformat()}"', html=False)
+
     def test_project_form_uses_workspace_default_entry_rate_and_prefills_close_date(self):
         self.workspace.settings.update_or_create(
             key="ops_default_entry_rate",

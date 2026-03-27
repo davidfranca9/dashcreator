@@ -172,7 +172,11 @@ class ProspectForm(forms.ModelForm):
                 "note",
             ]
         )
-        self.fields["contact_date"].widget = forms.DateInput(attrs={"type": "date"})
+        self.fields["contact_date"].widget = forms.DateInput(
+            attrs={"type": "date"},
+            format="%Y-%m-%d",
+        )
+        self.fields["contact_date"].input_formats = ["%Y-%m-%d"]
         self.fields["niche"].queryset = Niche.objects.none()
         if workspace is not None:
             self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
@@ -268,6 +272,10 @@ class ProjectForm(forms.ModelForm):
             self.fields["service_category"].queryset = ServiceCategory.objects.filter(workspace=workspace)
         if not self.is_bound and not getattr(self.instance, "pk", None) and not self.initial.get("close_date"):
             self.fields["close_date"].initial = timezone.localdate()
+        self.fields["close_date"].widget.format = "%Y-%m-%d"
+        self.fields["close_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["due_date"].widget.format = "%Y-%m-%d"
+        self.fields["due_date"].input_formats = ["%Y-%m-%d"]
 
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
