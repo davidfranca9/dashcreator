@@ -574,16 +574,6 @@ body.theme-dark .chart-gridline {
     stroke-linejoin: round;
 }
 
-.chart-dot {
-    fill: #ffffff;
-    stroke: var(--primary);
-    stroke-width: 3;
-}
-
-.chart-dot.is-highlighted {
-    fill: var(--primary);
-}
-
 .chart-labels {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
