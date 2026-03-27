@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import AccessCode, ActiveUserSession, Project, Prospect
+from .models import AccessCode, ActiveUserSession, Niche, Project, Prospect, ServiceCategory
 from .services import get_or_create_workspace_for_user
 
 
@@ -16,11 +16,19 @@ class DashboardSmokeTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="tester", password="segura123")
         self.workspace = get_or_create_workspace_for_user(self.user)
+        self.niche = Niche.objects.create(workspace=self.workspace, name="Beleza")
+        self.category = ServiceCategory.objects.create(workspace=self.workspace, name="Pacote de videos")
         Prospect.objects.create(
             workspace=self.workspace,
             company="Nike",
             contact="Paula",
+            contact_type="Marketing",
             stage="Prospeccao",
+            contact_date=date.today(),
+            niche=self.niche,
+            email="paula@nike.com",
+            instagram="@nikebrasil",
+            whatsapp="71999999999",
             proposal_value=1800,
             note="Primeiro contato",
             meeting_scheduled=True,
@@ -28,8 +36,9 @@ class DashboardSmokeTest(TestCase):
         Project.objects.create(
             workspace=self.workspace,
             company="Shein",
+            service_category=self.category,
             project_name="Pacote de videos",
-            content_type="UGC Vertical",
+            content_type="",
             stage="Fechado",
             status="Briefing",
             total_value=2400,
@@ -46,6 +55,50 @@ class DashboardSmokeTest(TestCase):
         for name in ["dashboard", "prospection", "jobs", "finance", "reports", "settings"]:
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200, name)
+
+    def test_workspace_can_create_reusable_niche_and_service_category_from_forms(self):
+        self.client.force_login(self.user)
+
+        prospect_response = self.client.post(
+            reverse("prospect_create"),
+            {
+                "company": "Insider",
+                "contact": "Julia",
+                "contact_type": "Social media",
+                "stage": "Prospeccao",
+                "contact_date": date.today().isoformat(),
+                "niche": "",
+                "new_niche": "Fitness",
+                "email": "julia@insider.com",
+                "instagram": "@insiderstore",
+                "whatsapp": "71911111111",
+                "proposal_value": "3200",
+                "meeting_scheduled": "on",
+                "note": "Chegou pelo Instagram",
+            },
+        )
+        self.assertRedirects(prospect_response, reverse("prospection"))
+        self.assertTrue(Niche.objects.filter(workspace=self.workspace, name="Fitness").exists())
+
+        project_response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Insider",
+                "service_category": "",
+                "new_service_category": "Mentoria UGC",
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "4000",
+                "entry_value": "2000",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "progress": "20",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+        )
+        self.assertRedirects(project_response, reverse("jobs"))
+        self.assertTrue(ServiceCategory.objects.filter(workspace=self.workspace, name="Mentoria UGC").exists())
 
 
 class AuthenticationFlowsTest(TestCase):

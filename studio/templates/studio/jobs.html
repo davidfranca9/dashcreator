@@ -15,7 +15,7 @@
 
 <section class="stack-section">
     <article class="card">
-        <div class="card-header"><div><h3>Projetos ativos</h3></div></div>
+        <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
             {% for item in active %}
                 <article class="job-card">
@@ -26,9 +26,9 @@
                         <small>{{ item.company }}</small>
                         <span class="status-pill" style="color: {{ item.accent }}; border-color: {{ item.accent }}44; background: {{ item.accent }}18;">{{ item.status }}</span>
                     </div>
-                    <strong>{{ item.project_name }}</strong>
+                    <strong>{{ item.service_category }}</strong>
                     <div class="meta-line">
-                        <small>{{ item.content_type }}</small>
+                        <small>{{ item.company }}</small>
                         <strong>{{ item.total_value }}</strong>
                     </div>
                     <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
@@ -43,7 +43,7 @@
                     </div>
                 </article>
             {% empty %}
-                <p class="muted">Nenhum projeto ativo cadastrado ainda.</p>
+                <p class="muted">Nenhum trabalho ativo cadastrado ainda.</p>
             {% endfor %}
         </div>
     </article>
@@ -56,9 +56,9 @@
                     <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
                         <span>{{ item.company }}</span>
                     </div>
-                    <strong>{{ item.project_name }}</strong>
+                    <strong>{{ item.service_category }}</strong>
                     <div class="meta-line">
-                        <small>{{ item.content_type }}</small>
+                        <small>{{ item.company }}</small>
                         <strong>{{ item.total_value }}</strong>
                     </div>
                     <div class="card-actions">

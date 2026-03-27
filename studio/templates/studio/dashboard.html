@@ -63,8 +63,8 @@
                                 <span>{{ item.company|slice:":1" }}</span>
                             </div>
                             <div class="activity-copy">
-                                <strong>{{ item.project }}</strong>
-                                <p>{{ item.content_type }}</p>
+                                <strong>{{ item.service_category }}</strong>
+                                <p>{{ item.company }}</p>
                                 <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                             </div>
                             <div class="activity-meta">
@@ -108,7 +108,7 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Projeto em destaque</h3>
+                    <h3>Trabalho em destaque</h3>
                 </div>
             </div>
             {% if featured %}
@@ -116,8 +116,8 @@
                     <span>{{ featured.company }}</span>
                 </div>
                 <div class="feature-copy">
-                    <strong>{{ featured.project_name }}</strong>
-                    <p>{{ featured.content_type }}</p>
+                    <strong>{{ featured.service_category }}</strong>
+                    <p>{{ featured.company }}</p>
                     <div class="progress-track"><span style="width: {{ featured.progress }}%; background: {{ featured.accent }};"></span></div>
                     <div class="meta-line">
                         <span class="chip">{{ featured.due_text }}</span>
@@ -125,7 +125,7 @@
                     </div>
                 </div>
             {% else %}
-                <p class="muted">Quando voce cadastrar um projeto fechado, ele aparece aqui.</p>
+                <p class="muted">Quando voce cadastrar um trabalho fechado, ele aparece aqui.</p>
             {% endif %}
         </article>
     </div>

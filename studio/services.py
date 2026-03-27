@@ -194,13 +194,29 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     activities = []
     for item in active_projects[:2]:
         color_a, color_b, accent = company_palette(item.company)
-        activities.append({"project": item.project_name, "company": item.company, "content_type": item.content_type, "progress": item.progress, "date": short_date(item.due_date), "colors": (color_a, color_b), "accent": accent})
+        activities.append(
+            {
+                "service_category": item.service_category_name,
+                "company": item.company,
+                "progress": item.progress,
+                "date": short_date(item.due_date),
+                "colors": (color_a, color_b),
+                "accent": accent,
+            }
+        )
 
     featured = None
     if active_projects:
         item = active_projects[0]
         color_a, color_b, accent = company_palette(item.company)
-        featured = {"project_name": item.project_name, "company": item.company, "content_type": item.content_type, "progress": item.progress, "due_text": short_date(item.due_date), "colors": (color_a, color_b), "accent": accent}
+        featured = {
+            "service_category": item.service_category_name,
+            "company": item.company,
+            "progress": item.progress,
+            "due_text": short_date(item.due_date),
+            "colors": (color_a, color_b),
+            "accent": accent,
+        }
 
     return {
         "stats": [
@@ -227,7 +243,30 @@ def prospection_snapshot(workspace: Workspace) -> dict:
         items = []
         for item in [candidate for candidate in prospects if candidate.stage == stage]:
             color_a, color_b, accent = company_palette(item.company)
-            items.append({"id": item.id, "company": item.company, "contact": item.contact, "note": item.note, "proposal_value": currency(item.proposal_value), "meeting_scheduled": item.meeting_scheduled, "accent": accent, "colors": (color_a, color_b)})
+            channels = []
+            if item.email:
+                channels.append({"label": "Email", "value": item.email})
+            if item.instagram:
+                channels.append({"label": "Instagram", "value": item.instagram})
+            if item.whatsapp:
+                channels.append({"label": "WhatsApp", "value": item.whatsapp})
+
+            items.append(
+                {
+                    "id": item.id,
+                    "company": item.company,
+                    "contact": item.contact,
+                    "contact_type": item.contact_type,
+                    "contact_date": short_date(item.contact_date) if item.contact_date else "",
+                    "niche": item.niche.name if item.niche_id else "",
+                    "note": item.note,
+                    "proposal_value": currency(item.proposal_value),
+                    "meeting_scheduled": item.meeting_scheduled,
+                    "channels": channels,
+                    "accent": accent,
+                    "colors": (color_a, color_b),
+                }
+            )
         columns.append({"title": stage, "items": items})
 
     return {
@@ -250,7 +289,20 @@ def jobs_snapshot(workspace: Workspace) -> dict:
     cards = []
     for item in projects:
         color_a, color_b, accent = company_palette(item.company)
-        cards.append({"id": item.id, "company": item.company, "project_name": item.project_name, "content_type": item.content_type, "status": item.status, "total_value": currency(item.total_value), "progress": item.progress, "due_text": short_date(item.due_date), "colors": (color_a, color_b), "accent": accent, "stage": item.stage})
+        cards.append(
+            {
+                "id": item.id,
+                "company": item.company,
+                "service_category": item.service_category_name,
+                "status": item.status,
+                "total_value": currency(item.total_value),
+                "progress": item.progress,
+                "due_text": short_date(item.due_date),
+                "colors": (color_a, color_b),
+                "accent": accent,
+                "stage": item.stage,
+            }
+        )
 
     upcoming_deliveries = sum(1 for item in active if today <= item.due_date <= upcoming_limit)
     average_ticket = round(sum_money(item.total_value for item in active) / len(active)) if active else 0

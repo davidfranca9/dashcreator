@@ -2,17 +2,17 @@
 
 {% block content %}
 <section class="card">
-    <div class="card-header">
+        <div class="card-header">
         <div>
             <h3>{{ form_title }}</h3>
-            <p>Cadastre ou ajuste valores, status e datas reais do projeto.</p>
+            <p>Cadastre ou ajuste valores, categoria de servico, status e datas reais do trabalho.</p>
         </div>
     </div>
 
     <form method="post" class="form-grid">
         {% csrf_token %}
         {% for field in form %}
-            <div class="form-field{% if field.name == 'note' %} form-field--full{% endif %}">
+            <div class="form-field{% if field.name == 'note' or field.name == 'new_service_category' %} form-field--full{% endif %}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.help_text %}
@@ -23,7 +23,7 @@
         {% endfor %}
 
         <div class="form-actions form-field--full">
-            <button type="submit" class="primary-button">Salvar projeto</button>
+            <button type="submit" class="primary-button">Salvar trabalho</button>
             <a class="ghost-button" href="{% url cancel_url %}">Cancelar</a>
         </div>
     </form>

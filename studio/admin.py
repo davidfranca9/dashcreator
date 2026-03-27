@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessCode, ActiveUserSession, Membership, Project, Prospect, Workspace, WorkspaceSetting
+from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -31,16 +31,30 @@ class ActiveUserSessionAdmin(admin.ModelAdmin):
 
 @admin.register(Prospect)
 class ProspectAdmin(admin.ModelAdmin):
-    list_display = ("company", "contact", "stage", "proposal_value", "meeting_scheduled", "workspace", "updated_at")
-    list_filter = ("stage", "meeting_scheduled", "workspace")
-    search_fields = ("company", "contact", "note")
+    list_display = ("company", "contact", "contact_type", "stage", "niche", "proposal_value", "workspace", "updated_at")
+    list_filter = ("stage", "meeting_scheduled", "workspace", "niche")
+    search_fields = ("company", "contact", "contact_type", "email", "instagram", "whatsapp", "note")
 
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("project_name", "company", "stage", "status", "total_value", "workspace", "due_date")
+    list_display = ("service_category", "company", "stage", "status", "total_value", "workspace", "due_date")
     list_filter = ("stage", "status", "workspace")
-    search_fields = ("project_name", "company", "content_type")
+    search_fields = ("service_category__name", "project_name", "company")
+
+
+@admin.register(ServiceCategory)
+class ServiceCategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "workspace", "updated_at")
+    list_filter = ("workspace",)
+    search_fields = ("name",)
+
+
+@admin.register(Niche)
+class NicheAdmin(admin.ModelAdmin):
+    list_display = ("name", "workspace", "updated_at")
+    list_filter = ("workspace",)
+    search_fields = ("name",)
 
 
 @admin.register(WorkspaceSetting)

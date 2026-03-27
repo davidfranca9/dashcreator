@@ -112,10 +112,38 @@ class WorkspaceOwnedModel(TimestampedModel):
         abstract = True
 
 
+class ServiceCategory(WorkspaceOwnedModel):
+    name = models.CharField(max_length=160)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = [("workspace", "name")]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Niche(WorkspaceOwnedModel):
+    name = models.CharField(max_length=160)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = [("workspace", "name")]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Prospect(WorkspaceOwnedModel):
     company = models.CharField(max_length=160)
     contact = models.CharField(max_length=160)
+    contact_type = models.CharField(max_length=120, blank=True, default="")
     stage = models.CharField(max_length=30, choices=PROSPECT_STAGE_CHOICES)
+    contact_date = models.DateField(null=True, blank=True)
+    niche = models.ForeignKey(Niche, on_delete=models.SET_NULL, null=True, blank=True, related_name="prospects")
+    email = models.EmailField(blank=True, default="")
+    instagram = models.CharField(max_length=160, blank=True, default="")
+    whatsapp = models.CharField(max_length=40, blank=True, default="")
     proposal_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     note = models.TextField(blank=True, default="")
     meeting_scheduled = models.BooleanField(default=False)
@@ -129,8 +157,15 @@ class Prospect(WorkspaceOwnedModel):
 
 class Project(WorkspaceOwnedModel):
     company = models.CharField(max_length=160)
-    project_name = models.CharField(max_length=180)
-    content_type = models.CharField(max_length=120, default="UGC Vertical")
+    project_name = models.CharField(max_length=180, blank=True, default="")
+    content_type = models.CharField(max_length=120, blank=True, default="")
+    service_category = models.ForeignKey(
+        ServiceCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="projects",
+    )
     stage = models.CharField(max_length=30, choices=PROJECT_STAGE_CHOICES, default="Fechado")
     status = models.CharField(max_length=40, choices=PROJECT_STATUS_CHOICES, default="Briefing")
     total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -145,7 +180,15 @@ class Project(WorkspaceOwnedModel):
         ordering = ["stage", "due_date", "-updated_at"]
 
     def __str__(self) -> str:
-        return self.project_name
+        return self.service_category_name
+
+    @property
+    def service_category_name(self) -> str:
+        if self.service_category_id:
+            return self.service_category.name
+        if self.project_name:
+            return self.project_name
+        return self.company
 
 
 class WorkspaceSetting(TimestampedModel):

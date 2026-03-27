@@ -6,7 +6,7 @@ from pathlib import Path
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
-from studio.models import Project, Prospect, WorkspaceSetting
+from studio.models import Project, Prospect, ServiceCategory, WorkspaceSetting
 from studio.services import ensure_default_settings, get_or_create_workspace_for_user
 
 
@@ -52,11 +52,18 @@ class Command(BaseCommand):
             Prospect.objects.filter(pk=prospect.pk).update(created_at=row["updated_at"], updated_at=row["updated_at"])
 
         for row in projects:
+            service_category = None
+            if row["project_name"]:
+                service_category, _ = ServiceCategory.objects.get_or_create(
+                    workspace=workspace,
+                    name=row["project_name"],
+                )
             project = Project.objects.create(
                 workspace=workspace,
                 company=row["company"],
                 project_name=row["project_name"],
-                content_type=row["content_type"],
+                content_type="",
+                service_category=service_category,
                 stage=row["stage"],
                 status=row["status"],
                 total_value=row["total_value"],

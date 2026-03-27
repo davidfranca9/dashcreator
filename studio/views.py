@@ -97,7 +97,7 @@ def _workspace(request: HttpRequest):
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("dashboard", workspace, "Dashboard", "Visao executiva do negocio UGC.", action_label="Novo projeto", action_url="project_create")
+    context = shell_context("dashboard", workspace, "Dashboard", "Visao executiva do negocio UGC.", action_label="Novo trabalho", action_url="project_create")
     context.update(dashboard_snapshot(workspace, request.GET.get("range", "last_6_months")))
     return render(request, "studio/dashboard.html", context)
 
@@ -113,7 +113,7 @@ def prospection(request: HttpRequest) -> HttpResponse:
 @login_required
 def jobs(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("jobs", workspace, "Trabalhos", "Projetos assinados e entregas em andamento.", action_label="Novo projeto", action_url="project_create")
+    context = shell_context("jobs", workspace, "Trabalhos", "Trabalhos assinados e entregas em andamento.", action_label="Novo trabalho", action_url="project_create")
     context.update(jobs_snapshot(workspace))
     return render(request, "studio/jobs.html", context)
 
@@ -151,7 +151,7 @@ def settings(request: HttpRequest) -> HttpResponse:
 @login_required
 def prospect_create(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    form = ProspectForm(request.POST or None)
+    form = ProspectForm(request.POST or None, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         prospect = form.save(commit=False)
         prospect.workspace = workspace
@@ -168,7 +168,7 @@ def prospect_create(request: HttpRequest) -> HttpResponse:
 def prospect_edit(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
-    form = ProspectForm(request.POST or None, instance=prospect)
+    form = ProspectForm(request.POST or None, instance=prospect, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Lead atualizado.")
@@ -195,8 +195,7 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
     initial = {
         "company": prospect.company,
-        "project_name": f"Projeto {prospect.company}",
-        "content_type": "UGC Vertical",
+        "service_category": None,
         "stage": "Fechado",
         "status": "Briefing",
         "total_value": prospect.proposal_value,
@@ -205,33 +204,33 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         "deliverables_count": 3,
         "progress": 15,
     }
-    form = ProjectForm(request.POST or None, initial=initial)
+    form = ProjectForm(request.POST or None, initial=initial, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         project = form.save(commit=False)
         project.workspace = workspace
         project.save()
         prospect.delete()
-        messages.success(request, "Lead convertido em projeto.")
+        messages.success(request, "Lead convertido em trabalho.")
         return redirect("jobs")
 
-    context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em projeto.")
-    context.update({"form": form, "form_title": "Projeto", "cancel_url": "prospection"})
+    context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em trabalho.")
+    context.update({"form": form, "form_title": "Trabalho", "cancel_url": "prospection"})
     return render(request, "studio/project_form.html", context)
 
 
 @login_required
 def project_create(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    form = ProjectForm(request.POST or None)
+    form = ProjectForm(request.POST or None, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         project = form.save(commit=False)
         project.workspace = workspace
         project.save()
-        messages.success(request, "Projeto salvo com sucesso.")
+        messages.success(request, "Trabalho salvo com sucesso.")
         return redirect("jobs")
 
-    context = shell_context("jobs", workspace, "Novo projeto", "Cadastre um novo trabalho.")
-    context.update({"form": form, "form_title": "Projeto", "cancel_url": "jobs"})
+    context = shell_context("jobs", workspace, "Novo trabalho", "Cadastre um novo trabalho.")
+    context.update({"form": form, "form_title": "Trabalho", "cancel_url": "jobs"})
     return render(request, "studio/project_form.html", context)
 
 
@@ -239,14 +238,14 @@ def project_create(request: HttpRequest) -> HttpResponse:
 def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project, pk=pk, workspace=workspace)
-    form = ProjectForm(request.POST or None, instance=project)
+    form = ProjectForm(request.POST or None, instance=project, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Projeto atualizado.")
+        messages.success(request, "Trabalho atualizado.")
         return redirect("jobs")
 
-    context = shell_context("jobs", workspace, "Editar projeto", "Ajuste valores, datas e status.")
-    context.update({"form": form, "form_title": "Projeto", "cancel_url": "jobs"})
+    context = shell_context("jobs", workspace, "Editar trabalho", "Ajuste valores, datas e status.")
+    context.update({"form": form, "form_title": "Trabalho", "cancel_url": "jobs"})
     return render(request, "studio/project_form.html", context)
 
 
@@ -256,5 +255,5 @@ def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project, pk=pk, workspace=workspace)
     project.delete()
-    messages.success(request, "Projeto removido.")
+    messages.success(request, "Trabalho removido.")
     return redirect("jobs")

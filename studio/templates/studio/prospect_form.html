@@ -12,7 +12,7 @@
     <form method="post" class="form-grid">
         {% csrf_token %}
         {% for field in form %}
-            <div class="form-field{% if field.name == 'note' %} form-field--full{% endif %}">
+            <div class="form-field{% if field.name == 'note' or field.name == 'new_niche' %} form-field--full{% endif %}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.help_text %}

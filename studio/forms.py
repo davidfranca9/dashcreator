@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .constants import SETTINGS_GROUPS
-from .models import AccessCode, Membership, Project, Prospect, Workspace, normalize_access_code
+from .models import AccessCode, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import ensure_default_settings
 
 
@@ -119,13 +119,84 @@ class SignUpForm(UserCreationForm):
 
 
 class ProspectForm(forms.ModelForm):
+    new_niche = forms.CharField(
+        label="Novo nicho",
+        required=False,
+        help_text="Se ainda nao existir, digite aqui para salvar e reutilizar depois.",
+    )
+
+    def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workspace = workspace
+        self.order_fields(
+            [
+                "company",
+                "contact",
+                "contact_type",
+                "stage",
+                "contact_date",
+                "niche",
+                "new_niche",
+                "email",
+                "instagram",
+                "whatsapp",
+                "proposal_value",
+                "meeting_scheduled",
+                "note",
+            ]
+        )
+        self.fields["contact_date"].widget = forms.DateInput(attrs={"type": "date"})
+        self.fields["niche"].queryset = Niche.objects.none()
+        if workspace is not None:
+            self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_niche = (cleaned_data.get("new_niche") or "").strip()
+        self._new_niche_name = new_niche
+
+        if new_niche:
+            if self.workspace is None:
+                raise forms.ValidationError("Nao foi possivel salvar o nicho sem um workspace ativo.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        prospect = super().save(commit=False)
+        if getattr(self, "_new_niche_name", ""):
+            niche, _ = Niche.objects.get_or_create(workspace=self.workspace, name=self._new_niche_name)
+            prospect.niche = niche
+        if commit:
+            prospect.save()
+            self.save_m2m()
+        return prospect
+
     class Meta:
         model = Prospect
-        fields = ["company", "contact", "stage", "proposal_value", "meeting_scheduled", "note"]
+        fields = [
+            "company",
+            "contact",
+            "contact_type",
+            "stage",
+            "contact_date",
+            "niche",
+            "email",
+            "instagram",
+            "whatsapp",
+            "proposal_value",
+            "meeting_scheduled",
+            "note",
+        ]
         labels = {
             "company": "Empresa",
             "contact": "Contato",
+            "contact_type": "Tipo de contato",
             "stage": "Etapa",
+            "contact_date": "Data",
+            "niche": "Nicho",
+            "email": "Email",
+            "instagram": "Instagram",
+            "whatsapp": "WhatsApp",
             "proposal_value": "Valor estimado",
             "meeting_scheduled": "Reuniao agendada",
             "note": "Observacoes",
@@ -134,12 +205,82 @@ class ProspectForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
+    new_service_category = forms.CharField(
+        label="Nova categoria de servico",
+        required=False,
+        help_text="Se ainda nao existir, digite aqui para salvar e reutilizar depois.",
+    )
+
+    def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workspace = workspace
+        self.order_fields(
+            [
+                "company",
+                "service_category",
+                "new_service_category",
+                "stage",
+                "status",
+                "total_value",
+                "entry_value",
+                "received_value",
+                "deliverables_count",
+                "progress",
+                "close_date",
+                "due_date",
+            ]
+        )
+        self.fields["service_category"].queryset = ServiceCategory.objects.none()
+        if workspace is not None:
+            self.fields["service_category"].queryset = ServiceCategory.objects.filter(workspace=workspace)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        service_category = cleaned_data.get("service_category")
+        new_service_category = (cleaned_data.get("new_service_category") or "").strip()
+        self._new_service_category_name = new_service_category
+
+        if new_service_category:
+            if self.workspace is None:
+                raise forms.ValidationError("Nao foi possivel salvar a categoria sem um workspace ativo.")
+            service_category = True
+
+        if service_category is None:
+            self.add_error("service_category", "Selecione uma categoria de servico ou cadastre uma nova.")
+
+        total_value = cleaned_data.get("total_value") or 0
+        entry_value = cleaned_data.get("entry_value") or 0
+        received_value = cleaned_data.get("received_value") or 0
+        progress = cleaned_data.get("progress") or 0
+
+        if entry_value > total_value:
+            self.add_error("entry_value", "A entrada nao pode ser maior que o valor total.")
+        if received_value > total_value:
+            self.add_error("received_value", "O valor recebido nao pode ser maior que o total.")
+        if progress > 100:
+            self.add_error("progress", "O progresso precisa ficar entre 0 e 100.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        project = super().save(commit=False)
+        if getattr(self, "_new_service_category_name", ""):
+            service_category, _ = ServiceCategory.objects.get_or_create(
+                workspace=self.workspace,
+                name=self._new_service_category_name,
+            )
+            project.service_category = service_category
+        project.project_name = project.service_category_name
+        project.content_type = ""
+        if commit:
+            project.save()
+            self.save_m2m()
+        return project
+
     class Meta:
         model = Project
         fields = [
             "company",
-            "project_name",
-            "content_type",
+            "service_category",
             "stage",
             "status",
             "total_value",
@@ -152,8 +293,7 @@ class ProjectForm(forms.ModelForm):
         ]
         labels = {
             "company": "Empresa",
-            "project_name": "Projeto",
-            "content_type": "Tipo de conteudo",
+            "service_category": "Categoria de servico",
             "stage": "Etapa",
             "status": "Status",
             "total_value": "Valor total",
@@ -168,21 +308,6 @@ class ProjectForm(forms.ModelForm):
             "close_date": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
         }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        total_value = cleaned_data.get("total_value") or 0
-        entry_value = cleaned_data.get("entry_value") or 0
-        received_value = cleaned_data.get("received_value") or 0
-        progress = cleaned_data.get("progress") or 0
-
-        if entry_value > total_value:
-            self.add_error("entry_value", "A entrada nao pode ser maior que o valor total.")
-        if received_value > total_value:
-            self.add_error("received_value", "O valor recebido nao pode ser maior que o total.")
-        if progress > 100:
-            self.add_error("progress", "O progresso precisa ficar entre 0 e 100.")
-        return cleaned_data
 
 
 class WorkspaceSettingsForm(forms.Form):
