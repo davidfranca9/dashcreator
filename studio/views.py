@@ -275,7 +275,7 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
     initial = {
         "company": prospect.company,
-        "closing_source": prospect.contact_type,
+        "closing_source": "Prospeccao",
         "niche": prospect.niche,
         "service_category": None,
         "stage": "Fechado",

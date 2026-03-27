@@ -14,6 +14,13 @@ from .services import ensure_default_settings, settings_map
 
 
 UserModel = get_user_model()
+DEFAULT_CLOSING_SOURCE_CHOICES = [
+    ("Inbound", "Inbound"),
+    ("Prospeccao", "Prospeccao"),
+    ("Plataforma", "Plataforma"),
+    ("Agencia", "Agencia"),
+    ("Indicacao", "Indicacao"),
+]
 STATUS_PROGRESS_MAP = {
     "Briefing": 0,
     "Em gravacao": 25,
@@ -269,7 +276,20 @@ class ProjectForm(forms.ModelForm):
             "Voce pode ajustar manualmente se quiser."
         )
         self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
-        self.fields["closing_source"].help_text = "Ex.: Instagram, indicacao, prospeccao ativa, WhatsApp."
+        current_closing_source = (
+            self.data.get(self.add_prefix("closing_source"))
+            if self.is_bound
+            else self.initial.get("closing_source") or getattr(self.instance, "closing_source", "")
+        )
+        closing_source_choices = [("", "Selecione")] + DEFAULT_CLOSING_SOURCE_CHOICES
+        if current_closing_source and current_closing_source not in {value for value, _ in closing_source_choices}:
+            closing_source_choices.append((current_closing_source, current_closing_source))
+        self.fields["closing_source"] = forms.ChoiceField(
+            label="Via de fechamento",
+            choices=closing_source_choices,
+            required=False,
+        )
+        self.fields["closing_source"].help_text = "Selecione por onde esse trabalho foi fechado."
         self.fields["deliverables_count"].help_text = "Use a quantidade total de videos incluidos neste trabalho."
         self.fields["total_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
