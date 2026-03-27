@@ -4,12 +4,14 @@
 {% block content %}
 <section class="stats-grid">
     {% for item in stats %}
-        <article class="stat-card">
-            <span class="stat-icon">{{ item.icon_label }}</span>
-            <div>
-                <p>{{ item.title }}</p>
-                <strong>{{ item.value }}</strong>
-            </div>
+        <article class="stat-card{% if item.blank %} stat-card--blank{% endif %}">
+            {% if not item.blank %}
+                <span class="stat-icon">{{ item.icon_label }}</span>
+                <div>
+                    <p>{{ item.title }}</p>
+                    <strong>{{ item.value }}</strong>
+                </div>
+            {% endif %}
         </article>
     {% endfor %}
 </section>
@@ -19,7 +21,7 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Faturamento anual do ano vigente</h3>
+                    <h3>Faturamento anual</h3>
                 </div>
             </div>
             <div class="chart-grid">

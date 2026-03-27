@@ -476,6 +476,10 @@ body.theme-dark .message {
     gap: 14px;
 }
 
+.stat-card--blank {
+    min-height: 98px;
+}
+
 .stat-card p {
     margin: 0 0 6px;
     color: #5e738f;

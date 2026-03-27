@@ -255,11 +255,10 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
         if normalized_name:
             company_names.add(normalized_name)
     clients_portfolio = len(company_names)
-    total_received = sum_money(item.received_value for item in projects)
-    monthly_forecast = sum_money(
+    monthly_revenue = sum_money(
         item.total_value
-        for item in active_projects
-        if item.due_date.year == current_month.year and item.due_date.month == current_month.month
+        for item in projects
+        if item.close_date.year == current_month.year and item.close_date.month == current_month.month
     )
     total_closed = sum_money(item.total_value for item in active_projects)
 
@@ -301,8 +300,8 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
         "stats": [
             {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
             {"title": "Carteira de Clientes", "value": str(clients_portfolio), "icon_label": "C"},
-            {"title": "Ganhos Totais", "value": currency(total_received), "icon_label": "$"},
-            {"title": "Faturamento Mensal Previsto", "value": currency(monthly_forecast), "icon_label": "+"},
+            {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$"},
+            {"title": "", "value": "", "icon_label": "", "blank": True},
         ],
         "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
         "pipeline": pipeline,
