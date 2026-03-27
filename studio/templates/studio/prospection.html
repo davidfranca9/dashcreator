@@ -38,6 +38,12 @@
                                 {% if item.niche %}<small>Nicho: {{ item.niche }}</small>{% endif %}
                                 {% if item.contact_date %}<small>Data: {{ item.contact_date }}</small>{% endif %}
                             </div>
+                            {% if item.meeting_scheduled %}
+                                <div class="meta-line">
+                                    <small>Reuniao agendada</small>
+                                    {% if item.meeting_date %}<small>Reuniao: {{ item.meeting_date }}</small>{% endif %}
+                                </div>
+                            {% endif %}
                             {% if item.channels %}
                                 <div class="stack-list">
                                     {% for channel in item.channels %}
@@ -47,12 +53,14 @@
                             {% endif %}
                             <p class="muted">{{ item.note|default:"Sem observacoes ainda." }}</p>
                             <div class="card-actions">
-                                <a class="ghost-button small" href="{% url 'prospect_convert' item.id %}">Converter</a>
-                                <a class="ghost-button small" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                <form method="post" action="{% url 'prospect_delete' item.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="danger-button small">Excluir</button>
-                                </form>
+                                <div class="card-actions-group">
+                                    <a class="ghost-button small" href="{% url 'prospect_convert' item.id %}">Converter</a>
+                                    <a class="ghost-button small" href="{% url 'prospect_edit' item.id %}">Editar</a>
+                                    <form method="post" action="{% url 'prospect_delete' item.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="danger-button small">Excluir</button>
+                                    </form>
+                                </div>
                             </div>
                         </article>
                     {% endfor %}

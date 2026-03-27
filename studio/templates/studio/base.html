@@ -9,6 +9,34 @@
     <link rel="stylesheet" href="{% static 'studio/app.css' %}">
 </head>
 <body class="{{ theme_class }}">
+    {% if meeting_alerts %}
+        <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="meeting-alert-{{ workspace.pk }}-{{ meeting_alert_date }}">
+            <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="meeting-popup-title">
+                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">×</button>
+                <span class="meeting-popup-badge">Reunioes de hoje</span>
+                <h3 id="meeting-popup-title">
+                    Voce tem {{ meeting_alerts|length }}
+                    {% if meeting_alerts|length == 1 %}
+                        reuniao agendada para hoje.
+                    {% else %}
+                        reunioes agendadas para hoje.
+                    {% endif %}
+                </h3>
+                <div class="meeting-popup-list">
+                    {% for item in meeting_alerts %}
+                        <article class="meeting-popup-item">
+                            <strong>{{ item.company }}</strong>
+                            <p>{{ item.contact }}{% if item.contact_type %} · {{ item.contact_type }}{% endif %}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+                <div class="meeting-popup-actions">
+                    <a class="primary-button" href="{% url 'prospection' %}">Ver prospeccao</a>
+                    <button type="button" class="ghost-button" data-meeting-popup-close>Fechar</button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
@@ -66,5 +94,40 @@
             {% block content %}{% endblock %}
         </main>
     </div>
+    {% if meeting_alerts %}
+        <script>
+            (() => {
+                const popup = document.querySelector("[data-meeting-popup]");
+                if (!popup) {
+                    return;
+                }
+                const popupKey = popup.dataset.meetingPopupKey;
+                const closePopup = () => {
+                    popup.hidden = true;
+                    try {
+                        sessionStorage.setItem(popupKey, "dismissed");
+                    } catch (error) {
+                    }
+                };
+                let dismissed = false;
+                try {
+                    dismissed = sessionStorage.getItem(popupKey) === "dismissed";
+                } catch (error) {
+                }
+                if (dismissed) {
+                    popup.hidden = true;
+                    return;
+                }
+                popup.querySelectorAll("[data-meeting-popup-close]").forEach((button) => {
+                    button.addEventListener("click", closePopup);
+                });
+                popup.addEventListener("click", (event) => {
+                    if (event.target === popup) {
+                        closePopup();
+                    }
+                });
+            })();
+        </script>
+    {% endif %}
 </body>
 </html>

@@ -151,6 +151,7 @@ class Prospect(WorkspaceOwnedModel):
     contact_type = models.CharField(max_length=120, blank=True, default="")
     stage = models.CharField(max_length=30, choices=PROSPECT_STAGE_CHOICES)
     contact_date = models.DateField(null=True, blank=True)
+    meeting_date = models.DateField(null=True, blank=True)
     niche = models.ForeignKey(Niche, on_delete=models.SET_NULL, null=True, blank=True, related_name="prospects")
     email = models.EmailField(blank=True, default="")
     instagram = models.CharField(max_length=160, blank=True, default="")

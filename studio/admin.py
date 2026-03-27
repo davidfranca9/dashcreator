@@ -31,7 +31,7 @@ class ActiveUserSessionAdmin(admin.ModelAdmin):
 
 @admin.register(Prospect)
 class ProspectAdmin(admin.ModelAdmin):
-    list_display = ("company", "contact", "contact_type", "stage", "niche", "proposal_value", "workspace", "updated_at")
+    list_display = ("company", "contact", "contact_type", "stage", "meeting_date", "niche", "proposal_value", "workspace", "updated_at")
     list_filter = ("stage", "meeting_scheduled", "workspace", "niche")
     search_fields = ("company", "contact", "contact_type", "email", "instagram", "whatsapp", "note")
 

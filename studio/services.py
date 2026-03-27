@@ -165,6 +165,15 @@ def shell_context(
     workspace_membership = None
     if user and getattr(user, "is_authenticated", False):
         workspace_membership = user.memberships.select_related("workspace").filter(workspace=workspace).first()
+    today = date.today()
+    today_meetings = list(
+        Prospect.objects.filter(
+            workspace=workspace,
+            meeting_scheduled=True,
+            meeting_date=today,
+        )
+        .order_by("company", "contact")
+    )
     return {
         "nav_items": navigation(page_key),
         "nav_groups": navigation_groups(page_key),
@@ -175,6 +184,16 @@ def shell_context(
         "header_action_url": reverse(action_url) if action_url else None,
         "workspace": workspace,
         "workspace_membership": workspace_membership,
+        "meeting_alerts": [
+            {
+                "id": item.id,
+                "company": item.company,
+                "contact": item.contact,
+                "contact_type": item.contact_type,
+            }
+            for item in today_meetings
+        ],
+        "meeting_alert_date": today.strftime("%Y-%m-%d"),
         "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
     }
 
@@ -313,6 +332,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
                     "contact": item.contact,
                     "contact_type": item.contact_type,
                     "contact_date": short_date(item.contact_date) if item.contact_date else "",
+                    "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
                     "niche": item.niche.name if item.niche_id else "",
                     "note": item.note,
                     "proposal_value": currency(item.proposal_value),
