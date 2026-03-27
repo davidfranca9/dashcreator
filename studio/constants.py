@@ -24,7 +24,7 @@ PROJECT_STATUS_CHOICES = [
     ("Briefing", "Briefing"),
     ("Em gravacao", "Em gravacao"),
     ("Em edicao", "Em edicao"),
-    ("Aguardando cliente", "Aguardando cliente"),
+    ("Aguardando cliente", "Aguardando aprovacao"),
     ("Aprovado", "Aprovado"),
     ("Entregue", "Entregue"),
 ]
