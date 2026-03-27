@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from .forms import ProjectForm
 from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory
-from .services import get_or_create_workspace_for_user, shell_context
+from .services import dashboard_snapshot, get_or_create_workspace_for_user, shell_context
 
 
 class DashboardSmokeTest(TestCase):
@@ -127,6 +127,30 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de videos")
         self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
         self.assertNotIn("progress", form.fields)
+
+    def test_dashboard_counts_unique_contracting_companies(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company=" shein ",
+            closing_source="Instagram",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=30),
+            due_date=date.today() - timedelta(days=10),
+        )
+
+        snapshot = dashboard_snapshot(self.workspace)
+
+        self.assertEqual(snapshot["stats"][1]["value"], "1")
 
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(

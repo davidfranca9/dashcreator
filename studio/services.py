@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
+from django.db.models.functions import Lower, Trim
 from django.urls import reverse
 
 from .constants import COMPANY_COLORS, NAV_GROUPS, NAV_ITEMS, REVENUE_RANGE_CHOICES, SETTINGS_GROUPS
@@ -228,7 +229,13 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     prospects = list(Prospect.objects.filter(workspace=workspace))
 
     active_jobs = sum(item.deliverables_count for item in active_projects)
-    companies = len({item.company for item in projects})
+    companies = (
+        projects.exclude(company__exact="")
+        .annotate(company_key=Lower(Trim("company")))
+        .values("company_key")
+        .distinct()
+        .count()
+    )
     total_closed = sum_money(item.total_value for item in active_projects)
     entry_value = sum_money(item.entry_value for item in active_projects)
 
@@ -268,7 +275,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
 
     return {
         "stats": [
-            {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
+            {"title": "Empresas Ativas", "value": str(active_jobs), "icon_label": "T"},
             {"title": "Empresas Contratantes", "value": str(companies), "icon_label": "E"},
             {"title": "Total Fechado", "value": currency(total_closed), "icon_label": "$"},
             {"title": "Entrada", "value": currency(entry_value), "icon_label": "+"},
