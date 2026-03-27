@@ -255,7 +255,7 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Hora de retomar contato")
+        self.assertNotContains(response, "Nunca mais lembrar da marca Reserva")
 
     def test_project_form_uses_workspace_default_entry_rate_and_prefills_close_date(self):
         self.workspace.settings.update_or_create(

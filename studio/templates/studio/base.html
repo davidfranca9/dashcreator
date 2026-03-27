@@ -12,14 +12,14 @@
     {% if meeting_alerts %}
         <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="meeting-alert-{{ workspace.pk }}-{{ meeting_alert_date }}">
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="meeting-popup-title">
-                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">×</button>
-                <span class="meeting-popup-badge">Reunioes de hoje</span>
+                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">&times;</button>
+                <span class="meeting-popup-badge">Reuniões de hoje</span>
                 <h3 id="meeting-popup-title">
-                    Voce tem {{ meeting_alerts|length }}
+                    Você tem {{ meeting_alerts|length }}
                     {% if meeting_alerts|length == 1 %}
-                        reuniao agendada para hoje.
+                        reunião agendada para hoje.
                     {% else %}
-                        reunioes agendadas para hoje.
+                        reuniões agendadas para hoje.
                     {% endif %}
                 </h3>
                 <div class="meeting-popup-list">
@@ -31,30 +31,47 @@
                     {% endfor %}
                 </div>
                 <div class="meeting-popup-actions">
-                    <a class="primary-button" href="{% url 'prospection' %}">Ver prospecção</a>
+                    <a class="primary-button" href="{% url 'prospection' %}" data-meeting-popup-close>Ver prospecção</a>
                     <button type="button" class="ghost-button" data-meeting-popup-close>Fechar</button>
                 </div>
             </div>
         </div>
     {% endif %}
-    {% if follow_up_alerts %}
-        <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="follow-up-alert-{{ workspace.pk }}-{{ follow_up_alert_date }}">
+    {% if page_key == "prospection" and follow_up_alerts %}
+        <div
+            class="meeting-popup-backdrop"
+            data-meeting-popup
+            data-meeting-popup-key="follow-up-alert-{{ workspace.pk }}-{{ follow_up_alert_date }}"
+            data-follow-up-popup
+            data-follow-up-store-key="follow-up-dismissed-{{ workspace.pk }}"
+        >
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="follow-up-popup-title">
-                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">Ã—</button>
+                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">&times;</button>
                 <span class="meeting-popup-badge">Follow-up</span>
-                <h3 id="follow-up-popup-title">
+                <h3 id="follow-up-popup-title" data-follow-up-title>
                     Hora de retomar contato com {{ follow_up_alerts|length }} marca{% if follow_up_alerts|length != 1 %}s{% endif %}.
                 </h3>
                 <div class="meeting-popup-list">
                     {% for item in follow_up_alerts %}
-                        <article class="meeting-popup-item">
+                        <article
+                            class="meeting-popup-item meeting-popup-item--follow-up"
+                            data-follow-up-item
+                            data-follow-up-company="{{ item.company }}"
+                            data-follow-up-company-key="{{ item.dismiss_key }}"
+                        >
+                            <button
+                                type="button"
+                                class="meeting-popup-item-dismiss"
+                                data-follow-up-dismiss="{{ item.dismiss_key }}"
+                                aria-label="Nunca mais lembrar da marca {{ item.company }}"
+                            >&times;</button>
                             <strong>{{ item.company }}</strong>
                             <p>{{ item.note }}</p>
                         </article>
                     {% endfor %}
                 </div>
                 <div class="meeting-popup-actions">
-                    <a class="primary-button" href="{% url 'prospection' %}">Ver follow-up</a>
+                    <a class="primary-button" href="#follow-up-column" data-meeting-popup-close>Ver follow-up</a>
                     <button type="button" class="ghost-button" data-meeting-popup-close>Fechar</button>
                 </div>
             </div>
@@ -120,15 +137,32 @@
     {% if meeting_alerts or follow_up_alerts %}
         <script>
             (() => {
+                const hidePopup = (popup, popupKey) => {
+                    popup.hidden = true;
+                    try {
+                        sessionStorage.setItem(popupKey, "dismissed");
+                    } catch (error) {
+                    }
+                };
+
+                const updateFollowUpPopup = (popup) => {
+                    const items = Array.from(popup.querySelectorAll("[data-follow-up-item]"));
+                    const visibleItems = items.filter((item) => !item.hidden);
+                    const title = popup.querySelector("[data-follow-up-title]");
+                    if (title) {
+                        const total = visibleItems.length;
+                        title.textContent = total === 1
+                            ? "Hora de retomar contato com 1 marca."
+                            : `Hora de retomar contato com ${total} marcas.`;
+                    }
+                    if (!visibleItems.length) {
+                        const popupKey = popup.dataset.meetingPopupKey;
+                        hidePopup(popup, popupKey);
+                    }
+                };
+
                 document.querySelectorAll("[data-meeting-popup]").forEach((popup) => {
                     const popupKey = popup.dataset.meetingPopupKey;
-                    const closePopup = () => {
-                        popup.hidden = true;
-                        try {
-                            sessionStorage.setItem(popupKey, "dismissed");
-                        } catch (error) {
-                        }
-                    };
                     let dismissed = false;
                     try {
                         dismissed = sessionStorage.getItem(popupKey) === "dismissed";
@@ -138,12 +172,62 @@
                         popup.hidden = true;
                         return;
                     }
+
+                    if (popup.hasAttribute("data-follow-up-popup")) {
+                        const storageKey = popup.dataset.followUpStoreKey;
+                        let dismissedCompanies = [];
+                        try {
+                            dismissedCompanies = JSON.parse(localStorage.getItem(storageKey) || "[]");
+                        } catch (error) {
+                            dismissedCompanies = [];
+                        }
+
+                        popup.querySelectorAll("[data-follow-up-item]").forEach((item) => {
+                            if (dismissedCompanies.includes(item.dataset.followUpCompanyKey)) {
+                                item.hidden = true;
+                            }
+                        });
+
+                        popup.querySelectorAll("[data-follow-up-dismiss]").forEach((button) => {
+                            button.addEventListener("click", (event) => {
+                                event.preventDefault();
+                                const companyKey = button.dataset.followUpDismiss;
+                                const item = button.closest("[data-follow-up-item]");
+                                let savedCompanies = [];
+                                try {
+                                    savedCompanies = JSON.parse(localStorage.getItem(storageKey) || "[]");
+                                } catch (error) {
+                                    savedCompanies = [];
+                                }
+                                if (!savedCompanies.includes(companyKey)) {
+                                    savedCompanies.push(companyKey);
+                                    try {
+                                        localStorage.setItem(storageKey, JSON.stringify(savedCompanies));
+                                    } catch (error) {
+                                    }
+                                }
+                                if (item) {
+                                    item.hidden = true;
+                                }
+                                updateFollowUpPopup(popup);
+                            });
+                        });
+
+                        updateFollowUpPopup(popup);
+                        if (popup.hidden) {
+                            return;
+                        }
+                    }
+
                     popup.querySelectorAll("[data-meeting-popup-close]").forEach((button) => {
-                        button.addEventListener("click", closePopup);
+                        button.addEventListener("click", () => {
+                            hidePopup(popup, popupKey);
+                        });
                     });
+
                     popup.addEventListener("click", (event) => {
                         if (event.target === popup) {
-                            closePopup();
+                            hidePopup(popup, popupKey);
                         }
                     });
                 });

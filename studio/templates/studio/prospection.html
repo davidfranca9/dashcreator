@@ -15,7 +15,7 @@
 
 <section class="board-grid">
     {% for column in columns %}
-        <article class="card">
+        <article class="card"{% if column.title == "Follow-up" %} id="follow-up-column"{% endif %}>
             <div class="card-header">
                 <div>
                     <h3>{{ column.title }}</h3>

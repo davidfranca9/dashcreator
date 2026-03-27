@@ -389,6 +389,11 @@ textarea {
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.meeting-popup-item--follow-up {
+    position: relative;
+    padding-right: 52px;
+}
+
 .meeting-popup-item strong,
 .meeting-popup-item p {
     margin: 0;
@@ -397,6 +402,28 @@ textarea {
 .meeting-popup-item p {
     margin-top: 4px;
     color: #c4d4ee;
+}
+
+.meeting-popup-item-dismiss {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf5ff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.meeting-popup-item-dismiss:hover {
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .meeting-popup-actions {
