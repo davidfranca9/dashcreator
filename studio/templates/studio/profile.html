@@ -1,0 +1,26 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stack-section">
+    <p class="muted note-box">Aqui voce acompanha os principais dados cadastrais da sua conta e do workspace atual.</p>
+    <div class="profile-grid">
+        {% for section in profile_sections %}
+            <article class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>{{ section.title }}</h3>
+                    </div>
+                </div>
+                <div class="stack-list">
+                    {% for item in section.items %}
+                        <article class="soft-card profile-item">
+                            <span class="workspace-label">{{ item.label }}</span>
+                            <strong>{{ item.value }}</strong>
+                        </article>
+                    {% endfor %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

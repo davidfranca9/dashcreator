@@ -10,6 +10,7 @@ from .views import (
     finance,
     home,
     jobs,
+    profile,
     project_create,
     project_delete,
     project_edit,
@@ -44,5 +45,6 @@ urlpatterns = [
     path("trabalhos/<int:pk>/excluir/", project_delete, name="project_delete"),
     path("financeiro/", finance, name="finance"),
     path("relatorios/", reports, name="reports"),
+    path("perfil/", profile, name="profile"),
     path("configuracoes/", settings, name="settings"),
 ]

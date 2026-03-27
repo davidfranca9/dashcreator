@@ -122,7 +122,7 @@ def jobs(request: HttpRequest) -> HttpResponse:
 def finance(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     context = shell_context("finance", workspace, "Financeiro", "Entradas, recebimentos e previsoes de caixa.")
-    context.update(finance_snapshot(workspace))
+    context.update(finance_snapshot(workspace, request.GET.get("month")))
     return render(request, "studio/finance.html", context)
 
 
@@ -146,6 +146,37 @@ def settings(request: HttpRequest) -> HttpResponse:
     context = shell_context("settings", workspace, "Configuracoes", "Preferencias visuais e operacionais.")
     context.update({"form": form})
     return render(request, "studio/settings.html", context)
+
+
+@login_required
+def profile(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    membership = request.user.memberships.select_related("workspace").filter(workspace=workspace).first()
+    context = shell_context("profile", workspace, "Perfil", "Dados cadastrais da conta e do workspace ativo.")
+    context.update(
+        {
+            "profile_sections": [
+                {
+                    "title": "Conta",
+                    "items": [
+                        {"label": "Usuario", "value": request.user.username or "-"},
+                        {"label": "Email", "value": request.user.email or "-"},
+                        {"label": "Data de cadastro", "value": request.user.date_joined.strftime("%d/%m/%Y")},
+                        {"label": "Ultimo acesso", "value": request.user.last_login.strftime("%d/%m/%Y %H:%M") if request.user.last_login else "Primeiro acesso"},
+                    ],
+                },
+                {
+                    "title": "Workspace",
+                    "items": [
+                        {"label": "Workspace ativo", "value": workspace.name},
+                        {"label": "Slug", "value": workspace.slug},
+                        {"label": "Perfil de acesso", "value": membership.get_role_display() if membership else "-"},
+                    ],
+                },
+            ]
+        }
+    )
+    return render(request, "studio/profile.html", context)
 
 
 @login_required

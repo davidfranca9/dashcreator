@@ -8,8 +8,9 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from .forms import ProjectForm
 from .models import AccessCode, ActiveUserSession, Niche, Project, Prospect, ServiceCategory
-from .services import get_or_create_workspace_for_user
+from .services import get_or_create_workspace_for_user, shell_context
 
 
 class DashboardSmokeTest(TestCase):
@@ -33,7 +34,7 @@ class DashboardSmokeTest(TestCase):
             note="Primeiro contato",
             meeting_scheduled=True,
         )
-        Project.objects.create(
+        self.project = Project.objects.create(
             workspace=self.workspace,
             company="Shein",
             service_category=self.category,
@@ -52,7 +53,7 @@ class DashboardSmokeTest(TestCase):
 
     def test_dashboard_pages_load(self):
         self.client.force_login(self.user)
-        for name in ["dashboard", "prospection", "jobs", "finance", "reports", "settings"]:
+        for name in ["dashboard", "prospection", "jobs", "finance", "reports", "settings", "profile"]:
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200, name)
 
@@ -99,6 +100,56 @@ class DashboardSmokeTest(TestCase):
         )
         self.assertRedirects(project_response, reverse("jobs"))
         self.assertTrue(ServiceCategory.objects.filter(workspace=self.workspace, name="Mentoria UGC").exists())
+
+    def test_project_form_uses_workspace_default_entry_rate_and_prefills_close_date(self):
+        self.workspace.settings.update_or_create(
+            key="ops_default_entry_rate",
+            defaults={"value": "40%"},
+        )
+
+        form = ProjectForm(workspace=self.workspace)
+
+        self.assertEqual(form.default_entry_rate, 40)
+        self.assertEqual(form.fields["close_date"].initial, date.today())
+
+    def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
+        self.workspace.settings.update_or_create(
+            key="ui_dark_theme",
+            defaults={"value": "1"},
+        )
+
+        context = shell_context("dashboard", self.workspace, "Dashboard", "Resumo")
+
+        self.assertEqual(context["theme_class"], "theme-dark")
+
+    def test_finance_page_filters_month_detail_by_due_date(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            service_category=self.category,
+            project_name="Pacote de videos",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=5000,
+            entry_value=2500,
+            received_value=1000,
+            deliverables_count=2,
+            progress=25,
+            close_date=date.today() + timedelta(days=5),
+            due_date=date.today() + timedelta(days=50),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("finance"), {"month": self.project.due_date.strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_month"]["value"], self.project.due_date.strftime("%Y-%m"))
+        self.assertEqual(response.context["stats"][0]["value"], "R$2.400")
+        self.assertEqual(response.context["stats"][1]["value"], "R$1.600")
+        self.assertEqual(response.context["stats"][2]["value"], "R$800")
+        self.assertEqual(response.context["stats"][3]["value"], "10 dias")
+        self.assertEqual(len(response.context["schedule"]), 1)
 
 
 class AuthenticationFlowsTest(TestCase):
