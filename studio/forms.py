@@ -16,7 +16,7 @@ from .services import ensure_default_settings, settings_map
 UserModel = get_user_model()
 DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Inbound", "Inbound"),
-    ("Prospeccao", "Prospeccao"),
+    ("Prospeccao", "Prospecção"),
     ("Plataforma", "Plataforma"),
     ("Agencia", "Agencia"),
     ("Indicacao", "Indicacao"),

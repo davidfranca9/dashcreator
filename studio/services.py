@@ -42,6 +42,14 @@ FULL_MONTH_NAMES = {
     11: "Novembro",
     12: "Dezembro",
 }
+SOURCE_MIX_COLORS = {
+    "Inbound": "#4d8cff",
+    "Prospecção": "#20b7a7",
+    "Indicação": "#7f6fff",
+    "Plataforma": "#f59a3d",
+    "Agência": "#61748e",
+}
+SOURCE_MIX_ORDER = ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"]
 
 
 def currency(value: Decimal | int | float | None) -> str:
@@ -64,6 +72,25 @@ def normalize_company_name(raw_value: str | None) -> str:
     normalized = normalized.casefold()
     normalized = re.sub(r"[^a-z0-9]+", " ", normalized)
     return " ".join(normalized.split())
+
+
+def normalize_closing_source(raw_value: str | None) -> str | None:
+    normalized = normalize_company_name(raw_value)
+    if not normalized:
+        return None
+    if "indic" in normalized:
+        return "Indicação"
+    if "agen" in normalized:
+        return "Agência"
+    if "plata" in normalized:
+        return "Plataforma"
+    if "prospec" in normalized or "outbound" in normalized:
+        return "Prospecção"
+    if "inbound" in normalized:
+        return "Inbound"
+    if normalized in {"instagram", "instagram dm", "whatsapp", "email", "site", "direct", "marketing", "social media"}:
+        return "Inbound"
+    return None
 
 
 def company_palette(company: str) -> tuple[str, str, str]:
@@ -269,6 +296,42 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
     }
 
 
+def closing_source_mix(projects: list[Project]) -> dict:
+    counts = {label: 0 for label in SOURCE_MIX_ORDER}
+    for item in projects:
+        label = normalize_closing_source(item.closing_source)
+        if label in counts:
+            counts[label] += 1
+
+    total = sum(counts.values())
+    legend = []
+    gradient_parts = []
+    start = 0.0
+    for label in SOURCE_MIX_ORDER:
+        count = counts[label]
+        percentage = round((count / total) * 100) if total else 0
+        color = SOURCE_MIX_COLORS[label]
+        legend.append(
+            {
+                "label": label,
+                "count": count,
+                "percentage": percentage,
+                "color": color,
+            }
+        )
+        if total and count:
+            span = (count / total) * 100
+            end = start + span
+            gradient_parts.append(f"{color} {start:.2f}% {end:.2f}%")
+            start = end
+
+    return {
+        "total": total,
+        "items": legend,
+        "gradient": ", ".join(gradient_parts) if gradient_parts else "#dfe8f5 0% 100%",
+    }
+
+
 def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
     projects = Project.objects.filter(workspace=workspace)
     active_projects = list(projects.filter(stage="Fechado").order_by("due_date"))
@@ -301,7 +364,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     total_closed = sum_money(item.total_value for item in active_projects)
 
     pipeline = [
-        {"stage": "Prospeccao", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
+        {"stage": "Prospecção", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
         {"stage": "Negociacao", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
         {"stage": "Fechado", "count": len(active_projects), "amount_text": currency(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
         {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount_text": currency(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
@@ -342,6 +405,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
             {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$"},
         ],
         "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
+        "source_mix": closing_source_mix(list(projects)),
         "pipeline": pipeline,
         "activities": activities,
         "featured": featured,
@@ -383,7 +447,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
                     "colors": (color_a, color_b),
                 }
             )
-        columns.append({"title": stage, "items": items})
+        columns.append({"title": "Prospecção" if stage == "Prospeccao" else stage, "items": items})
 
     return {
         "stats": [

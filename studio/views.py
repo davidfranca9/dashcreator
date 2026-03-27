@@ -108,7 +108,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @login_required
 def prospection(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("prospection", workspace, "Prospeccao", "Leads, follow-ups e negociacoes em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
+    context = shell_context("prospection", workspace, "Prospecção", "Leads, follow-ups e negociacoes em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
     context.update(prospection_snapshot(workspace))
     return render(request, "studio/prospection.html", context)
 
@@ -240,7 +240,7 @@ def prospect_create(request: HttpRequest) -> HttpResponse:
         return redirect("prospection")
 
     context = shell_context("prospection", workspace, "Novo lead", "Registre uma oportunidade comercial.", user=request.user)
-    context.update({"form": form, "form_title": "Lead / prospeccao", "cancel_url": "prospection"})
+    context.update({"form": form, "form_title": "Lead / prospecção", "cancel_url": "prospection"})
     return render(request, "studio/prospect_form.html", context)
 
 
@@ -255,7 +255,7 @@ def prospect_edit(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("prospection")
 
     context = shell_context("prospection", workspace, "Editar lead", "Ajuste os dados da oportunidade.", user=request.user)
-    context.update({"form": form, "form_title": "Lead / prospeccao", "cancel_url": "prospection"})
+    context.update({"form": form, "form_title": "Lead / prospecção", "cancel_url": "prospection"})
     return render(request, "studio/prospect_form.html", context)
 
 

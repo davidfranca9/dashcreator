@@ -201,7 +201,7 @@ class DashboardSmokeTest(TestCase):
             [
                 ("", "Selecione"),
                 ("Inbound", "Inbound"),
-                ("Prospeccao", "Prospeccao"),
+                ("Prospeccao", "Prospecção"),
                 ("Plataforma", "Plataforma"),
                 ("Agencia", "Agencia"),
                 ("Indicacao", "Indicacao"),
@@ -371,6 +371,91 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][0]["title"], "Carteira ativa")
         self.assertEqual(snapshot["stats"][3]["title"], "Finalizado")
         self.assertEqual(snapshot["stats"][3]["value"], "1")
+
+    def test_dashboard_source_mix_uses_fixed_closing_source_legend(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Plataforma",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Boticario",
+            closing_source="Agencia",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Natura",
+            closing_source="Prospeccao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+
+        snapshot = dashboard_snapshot(self.workspace)
+        legend = {item["label"]: item for item in snapshot["source_mix"]["items"]}
+
+        self.assertEqual(snapshot["source_mix"]["total"], 5)
+        self.assertEqual(list(legend.keys()), ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"])
+        self.assertEqual(legend["Inbound"]["count"], 1)
+        self.assertEqual(legend["Prospecção"]["count"], 1)
+        self.assertEqual(legend["Indicação"]["count"], 1)
+        self.assertEqual(legend["Plataforma"]["count"], 1)
+        self.assertEqual(legend["Agência"]["count"], 1)
 
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(

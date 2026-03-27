@@ -2,7 +2,7 @@ from __future__ import annotations
 
 NAV_ITEMS = [
     {"key": "dashboard", "label": "Dashboard", "subtitle": "Visao executiva do negocio UGC.", "url_name": "dashboard"},
-    {"key": "prospection", "label": "Prospeccao", "subtitle": "Leads, follow-ups e negociacoes em aberto.", "url_name": "prospection"},
+    {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociacoes em aberto.", "url_name": "prospection"},
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs"},
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsoes de caixa.", "url_name": "finance"},
     {"key": "reports", "label": "Relatorios", "subtitle": "Indicadores estrategicos do negocio.", "url_name": "reports"},
@@ -30,7 +30,7 @@ PROJECT_STATUS_CHOICES = [
 ]
 
 PROSPECT_STAGE_CHOICES = [
-    ("Prospeccao", "Prospeccao"),
+    ("Prospeccao", "Prospecção"),
     ("Negociacao", "Negociacao"),
 ]
 
