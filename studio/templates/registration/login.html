@@ -11,7 +11,13 @@
 <body class="login-body">
     <main class="login-shell">
         <section class="login-card">
-            <img class="login-logo" src="{% static 'studio/creators-club-logo-banner.png' %}" alt="Dash Creator">
+            <div class="login-brand">
+                <img class="login-logo" src="{% static 'studio/creators-club-logo-banner.png' %}" alt="Dash Creator">
+                <div class="login-copy">
+                    <h1>Bem-vindo de volta</h1>
+                    <p>Acesse sua conta para continuar</p>
+                </div>
+            </div>
 
             {% if messages %}
                 <div class="messages">
@@ -26,12 +32,28 @@
                 {{ form.non_field_errors }}
 
                 <div class="login-field">
-                    {{ form.username }}
+                    <div class="login-input-shell">
+                        <span class="login-field-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                <circle cx="12" cy="8" r="4"></circle>
+                            </svg>
+                        </span>
+                        {{ form.username }}
+                    </div>
                     {{ form.username.errors }}
                 </div>
 
                 <div class="login-field">
-                    {{ form.password }}
+                    <div class="login-input-shell">
+                        <span class="login-field-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                                <path d="M8 11V8a4 4 0 1 1 8 0v3"></path>
+                            </svg>
+                        </span>
+                        {{ form.password }}
+                    </div>
                     {{ form.password.errors }}
                 </div>
 
