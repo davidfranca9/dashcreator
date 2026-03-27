@@ -57,6 +57,7 @@ class DashboardSmokeTest(TestCase):
         for name in ["dashboard", "prospection", "jobs", "finance", "reports", "settings", "profile"]:
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200, name)
+            self.assertContains(response, "workspace-chip-avatar-fallback")
 
     def test_workspace_can_create_reusable_niche_and_service_category_from_forms(self):
         self.client.force_login(self.user)

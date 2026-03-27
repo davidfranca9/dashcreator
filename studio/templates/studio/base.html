@@ -29,8 +29,15 @@
             </nav>
 
             <a class="workspace-chip" href="{% url 'profile' %}">
-                <span class="workspace-label">Workspace ativo</span>
-                <strong>{{ workspace.name }}</strong>
+                <div class="workspace-chip-copy">
+                    <span class="workspace-label">Workspace ativo</span>
+                    <strong>{{ workspace.name }}</strong>
+                </div>
+                {% if workspace_membership and workspace_membership.avatar_data %}
+                    <img class="workspace-chip-avatar-image" src="{{ workspace_membership.avatar_data }}" alt="Foto de perfil">
+                {% else %}
+                    <span class="workspace-chip-avatar-fallback">{{ workspace_membership.initials|default:"P" }}</span>
+                {% endif %}
             </a>
         </aside>
 
