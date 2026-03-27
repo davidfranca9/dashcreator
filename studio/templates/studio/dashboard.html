@@ -30,14 +30,14 @@
                 {% endfor %}
             </div>
             <div class="chart-visual">
-                    <svg class="chart-svg" viewBox="0 0 {{ revenue.chart_width }} {{ revenue.chart_height }}" preserveAspectRatio="none" aria-label="Grafico de faturamento anual">
-                        {% for step in revenue.steps %}
-                            {% if not forloop.last %}
-                                <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 revenue.chart_height %}" x2="{{ revenue.chart_width }}" y2="{% widthratio forloop.counter0 3 revenue.chart_height %}"></line>
-                            {% endif %}
-                        {% endfor %}
-                        <path class="chart-line" d="{{ revenue.path }}"></path>
-                    </svg>
+                <svg class="chart-svg" viewBox="0 0 {{ revenue.chart_width }} {{ revenue.chart_height }}" preserveAspectRatio="none" aria-label="Grafico de faturamento anual">
+                    {% for step in revenue.steps %}
+                        {% if not forloop.last %}
+                            <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 revenue.chart_height %}" x2="{{ revenue.chart_width }}" y2="{% widthratio forloop.counter0 3 revenue.chart_height %}"></line>
+                        {% endif %}
+                    {% endfor %}
+                    <path class="chart-line" d="{{ revenue.path }}"></path>
+                </svg>
                 <div class="chart-labels">
                     {% for point in revenue.points %}
                         <div class="chart-label">
@@ -104,33 +104,6 @@
                         <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                     </article>
                 {% endfor %}
-            </div>
-        </article>
-
-        <article class="card">
-            <div class="card-header">
-                <div>
-                    <h3>Via de fechamento</h3>
-                </div>
-            </div>
-            <div class="source-mix-card">
-                <div class="source-mix-chart" style="--pie-gradient: {{ source_mix.gradient }};">
-                    <div class="source-mix-center">
-                        <strong>{{ source_mix.total }}</strong>
-                        <span>trabalhos</span>
-                    </div>
-                </div>
-                <div class="source-mix-legend">
-                    {% for item in source_mix.items %}
-                        <div class="source-mix-legend-item">
-                            <span class="source-mix-dot" style="background: {{ item.color }};"></span>
-                            <div>
-                                <strong>{{ item.label }}</strong>
-                                <small>{{ item.count }} · {{ item.percentage }}%</small>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
             </div>
         </article>
     </div>

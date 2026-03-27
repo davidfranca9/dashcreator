@@ -15,6 +15,44 @@
 
 <section class="stack-section">
     <article class="card">
+        <div class="card-header"><div><h3>Via de fechamento</h3></div></div>
+        <div class="source-mix-card source-mix-card--horizontal">
+            <div class="source-mix-chart-wrap">
+                <div class="source-mix-chart" style="--pie-gradient: {{ source_mix.gradient }};">
+                    <div class="source-mix-center">
+                        <strong>{{ source_mix.total }}</strong>
+                        <span>trabalhos</span>
+                    </div>
+                </div>
+            </div>
+            <div class="source-mix-summary">
+                <div class="source-mix-summary-head">
+                    <span>Canal</span>
+                    <span>Trabalhos</span>
+                    <span>Participacao</span>
+                </div>
+                <div class="source-mix-summary-body">
+                    {% for item in source_mix.items %}
+                        <div class="source-mix-summary-row">
+                            <div class="source-mix-summary-label">
+                                <span class="source-mix-dot" style="background: {{ item.color }};"></span>
+                                <strong>{{ item.label }}</strong>
+                            </div>
+                            <span>{{ item.count }}</span>
+                            <span>{{ item.percentage }}%</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="source-mix-summary-total">
+                    <strong>Total</strong>
+                    <strong>{{ source_mix.total }}</strong>
+                    <strong>100%</strong>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <article class="card">
         <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
             {% for item in active %}
@@ -33,13 +71,17 @@
                     </div>
                     <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                     <div class="card-actions">
-                        <span class="chip">{{ item.due_text }}</span>
-                        <span class="muted">{{ item.progress }}%</span>
-                        <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
-                        <form method="post" action="{% url 'project_delete' item.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="danger-button small">Excluir</button>
-                        </form>
+                        <div class="card-actions-meta">
+                            <span class="chip">{{ item.due_text }}</span>
+                            <span class="muted">{{ item.progress }}%</span>
+                        </div>
+                        <div class="card-actions-group">
+                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                            <form method="post" action="{% url 'project_delete' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="danger-button small">Excluir</button>
+                            </form>
+                        </div>
                     </div>
                 </article>
             {% empty %}
@@ -62,8 +104,12 @@
                         <strong>{{ item.total_value }}</strong>
                     </div>
                     <div class="card-actions">
-                        <span class="chip">{{ item.due_text }}</span>
-                        <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                        <div class="card-actions-meta">
+                            <span class="chip">{{ item.due_text }}</span>
+                        </div>
+                        <div class="card-actions-group">
+                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                        </div>
                     </div>
                 </article>
             {% empty %}

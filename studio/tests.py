@@ -427,7 +427,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["title"], "Finalizado")
         self.assertEqual(snapshot["stats"][3]["value"], "1")
 
-    def test_dashboard_source_mix_uses_fixed_closing_source_legend(self):
+    def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
             workspace=self.workspace,
             company="Insider",
@@ -501,7 +501,7 @@ class DashboardSmokeTest(TestCase):
             due_date=date.today() + timedelta(days=5),
         )
 
-        snapshot = dashboard_snapshot(self.workspace)
+        snapshot = jobs_snapshot(self.workspace)
         legend = {item["label"]: item for item in snapshot["source_mix"]["items"]}
 
         self.assertEqual(snapshot["source_mix"]["total"], 5)

@@ -448,7 +448,6 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
             {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$"},
         ],
         "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
-        "source_mix": closing_source_mix(list(projects)),
         "pipeline": pipeline,
         "activities": activities,
         "featured": featured,
@@ -550,7 +549,9 @@ def empresas_snapshot(workspace: Workspace) -> dict:
 
 
 def jobs_snapshot(workspace: Workspace) -> dict:
-    return empresas_snapshot(workspace)
+    snapshot = empresas_snapshot(workspace)
+    snapshot["source_mix"] = closing_source_mix(list(Project.objects.filter(workspace=workspace)))
+    return snapshot
 
 
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
