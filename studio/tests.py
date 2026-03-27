@@ -222,12 +222,12 @@ class DashboardSmokeTest(TestCase):
         snapshot = dashboard_snapshot(self.workspace)
 
         self.assertEqual(snapshot["stats"][0]["title"], "Carteira de Clientes")
-        self.assertEqual(snapshot["stats"][1]["title"], "Empresas Ativas")
+        self.assertEqual(snapshot["stats"][1]["title"], "Carteira Ativa")
         self.assertEqual(snapshot["stats"][2]["title"], "Trabalhos Ativos")
         self.assertEqual(snapshot["stats"][3]["title"], "Faturamento Mensal")
         self.assertEqual(snapshot["stats"][0]["value"], "2")
         self.assertEqual(snapshot["stats"][1]["value"], "1")
-        self.assertEqual(snapshot["stats"][2]["value"], "1")
+        self.assertEqual(snapshot["stats"][2]["value"], "3")
         self.assertEqual(snapshot["stats"][3]["value"], "R$2.400")
         self.assertEqual(len(snapshot["revenue"]["points"]), 12)
 

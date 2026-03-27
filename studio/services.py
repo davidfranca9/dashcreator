@@ -267,7 +267,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     prospects = list(Prospect.objects.filter(workspace=workspace))
     current_month = date.today().replace(day=1)
 
-    active_jobs = len(active_projects)
+    active_jobs = sum(item.deliverables_count for item in active_projects)
     company_names = set()
     for raw_name in projects.exclude(company__exact="").values_list("company", flat=True):
         normalized_name = " ".join(str(raw_name).split()).casefold()
@@ -328,7 +328,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     return {
         "stats": [
             {"title": "Carteira de Clientes", "value": str(clients_portfolio), "icon_label": "C"},
-            {"title": "Empresas Ativas", "value": str(active_companies), "icon_label": "E"},
+            {"title": "Carteira Ativa", "value": str(active_companies), "icon_label": "E"},
             {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
             {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$"},
         ],
