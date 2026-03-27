@@ -393,6 +393,10 @@ def empresas_snapshot(workspace: Workspace) -> dict:
     }
 
 
+def jobs_snapshot(workspace: Workspace) -> dict:
+    return empresas_snapshot(workspace)
+
+
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     active_projects = list(Project.objects.filter(workspace=workspace, stage="Fechado").order_by("due_date"))
     month_options = sorted({item.due_date.replace(day=1) for item in active_projects} | {date.today().replace(day=1)}, reverse=True)
