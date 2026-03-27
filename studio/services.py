@@ -454,7 +454,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
             {"title": "Novos Leads", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "L"},
             {"title": "Reunioes", "value": str(meetings), "icon_label": "R"},
             {"title": "Taxa de resposta", "value": f"{round((negotiation_count / total) * 100)}%", "icon_label": "%"},
-            {"title": "Leads em aberto", "value": str(len(prospects)), "icon_label": "A"},
+            {"title": "Negociacao", "value": str(negotiation_count), "icon_label": "N"},
         ],
         "columns": columns,
     }
