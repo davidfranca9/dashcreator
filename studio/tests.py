@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from .forms import ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory
-from .services import dashboard_snapshot, get_or_create_workspace_for_user, shell_context
+from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, shell_context
 
 
 class DashboardSmokeTest(TestCase):
@@ -196,6 +196,17 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(form.fields["close_date"].initial, date.today())
         self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de videos")
         self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
+        self.assertEqual(
+            form.fields["closing_source"].choices,
+            [
+                ("", "Selecione"),
+                ("Inbound", "Inbound"),
+                ("Prospeccao", "Prospeccao"),
+                ("Plataforma", "Plataforma"),
+                ("Agencia", "Agencia"),
+                ("Indicacao", "Indicacao"),
+            ],
+        )
         self.assertNotIn("progress", form.fields)
 
     def test_project_form_syncs_stage_with_status(self):
@@ -296,6 +307,32 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["value"], "R$2.400")
         self.assertEqual(len(snapshot["revenue"]["points"]), 12)
 
+    def test_jobs_snapshot_shows_delivered_total_as_finalizado(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=30),
+            due_date=date.today() - timedelta(days=10),
+        )
+
+        snapshot = jobs_snapshot(self.workspace)
+
+        self.assertEqual(snapshot["stats"][0]["title"], "Carteira ativa")
+        self.assertEqual(snapshot["stats"][3]["title"], "Finalizado")
+        self.assertEqual(snapshot["stats"][3]["value"], "1")
+
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(
             key="ui_dark_theme",
@@ -391,7 +428,7 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("prospect_convert", args=[prospect.pk]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"].initial["closing_source"], "Instagram DM")
+        self.assertEqual(response.context["form"].initial["closing_source"], "Prospeccao")
         self.assertEqual(response.context["form"].initial["niche"], self.niche)
         self.assertNotIn("total_value", response.context["form"].initial)
 

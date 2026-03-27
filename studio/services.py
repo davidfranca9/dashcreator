@@ -412,13 +412,13 @@ def empresas_snapshot(workspace: Workspace) -> dict:
         )
 
     upcoming_deliveries = sum(1 for item in active if today <= item.due_date <= upcoming_limit)
-    average_ticket = round(sum_money(item.total_value for item in active) / len(active)) if active else 0
+    delivered_count = sum(1 for item in projects if item.stage == "Entregue")
     return {
         "stats": [
             {"title": "Carteira ativa", "value": str(len(active)), "icon_label": "E"},
             {"title": "Aguardando aprovacao", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A"},
             {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P"},
-            {"title": "Ticket medio", "value": currency(average_ticket), "icon_label": "$"},
+            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F"},
         ],
         "active": [item for item in cards if item["stage"] == "Fechado"],
         "delivered": [item for item in cards if item["stage"] == "Entregue"][:4],
