@@ -514,15 +514,19 @@ body.theme-dark .stat-card p {
 }
 
 .dashboard-grid {
-    grid-template-columns: minmax(0, 3fr) minmax(320px, 1fr);
+    grid-template-columns: 1fr;
 }
 
-.dashboard-main,
-.dashboard-side,
+.dashboard-lower-grid,
 .stack-section,
 .stack-list {
     display: grid;
     gap: 18px;
+}
+
+.dashboard-lower-grid {
+    grid-template-columns: minmax(0, 1.65fr) minmax(340px, 1fr) minmax(300px, 0.9fr);
+    align-items: start;
 }
 
 .chart-grid {
@@ -582,8 +586,8 @@ body.theme-dark .chart-gridline {
 
 .chart-labels {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 8px;
     padding-top: 4px;
     border-top: 1px solid #e5edf8;
 }
@@ -596,12 +600,12 @@ body.theme-dark .chart-gridline {
 }
 
 .chart-label strong {
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .chart-label span {
     color: var(--muted);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .progress-track {

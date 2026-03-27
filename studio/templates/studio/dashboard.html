@@ -17,43 +17,43 @@
 </section>
 
 <section class="dashboard-grid">
-    <div class="dashboard-main">
-        <article class="card">
-            <div class="card-header">
-                <div>
-                    <h3>Faturamento anual</h3>
-                </div>
+    <article class="card dashboard-chart-card">
+        <div class="card-header">
+            <div>
+                <h3>Faturamento anual</h3>
             </div>
-            <div class="chart-grid">
-                <div class="chart-axis">
+        </div>
+        <div class="chart-grid">
+            <div class="chart-axis">
+                {% for step in revenue.steps %}
+                    <span>{{ step.label }}</span>
+                {% endfor %}
+            </div>
+            <div class="chart-visual">
+                <svg class="chart-svg" viewBox="0 0 {{ revenue.chart_width }} {{ revenue.chart_height }}" preserveAspectRatio="none" aria-label="Grafico de faturamento anual">
                     {% for step in revenue.steps %}
-                        <span>{{ step.label }}</span>
+                        {% if not forloop.last %}
+                            <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 revenue.chart_height %}" x2="{{ revenue.chart_width }}" y2="{% widthratio forloop.counter0 3 revenue.chart_height %}"></line>
+                        {% endif %}
+                    {% endfor %}
+                    <path class="chart-line" d="{{ revenue.path }}"></path>
+                    {% for point in revenue.points %}
+                        <circle class="chart-dot{% if point.highlighted %} is-highlighted{% endif %}" cx="{{ point.x }}" cy="{{ point.y }}" r="{% if point.highlighted %}7{% else %}5{% endif %}"></circle>
+                    {% endfor %}
+                </svg>
+                <div class="chart-labels">
+                    {% for point in revenue.points %}
+                        <div class="chart-label">
+                            <strong>{{ point.amount|money }}</strong>
+                            <span>{{ point.label }}</span>
+                        </div>
                     {% endfor %}
                 </div>
-                <div class="chart-visual">
-                    <svg class="chart-svg" viewBox="0 0 {{ revenue.chart_width }} {{ revenue.chart_height }}" preserveAspectRatio="none" aria-label="Grafico de faturamento anual">
-                        {% for step in revenue.steps %}
-                            {% if not forloop.last %}
-                                <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 revenue.chart_height %}" x2="{{ revenue.chart_width }}" y2="{% widthratio forloop.counter0 3 revenue.chart_height %}"></line>
-                            {% endif %}
-                        {% endfor %}
-                        <path class="chart-line" d="{{ revenue.path }}"></path>
-                        {% for point in revenue.points %}
-                            <circle class="chart-dot{% if point.highlighted %} is-highlighted{% endif %}" cx="{{ point.x }}" cy="{{ point.y }}" r="{% if point.highlighted %}7{% else %}5{% endif %}"></circle>
-                        {% endfor %}
-                    </svg>
-                    <div class="chart-labels">
-                        {% for point in revenue.points %}
-                            <div class="chart-label">
-                                <strong>{{ point.amount|money }}</strong>
-                                <span>{{ point.label }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
             </div>
-        </article>
+        </div>
+    </article>
 
+    <div class="dashboard-lower-grid">
         <article class="card">
             <div class="card-header">
                 <div>
@@ -83,9 +83,7 @@
                 <p class="muted">Nenhuma atividade recente ainda.</p>
             {% endif %}
         </article>
-    </div>
 
-    <div class="dashboard-side">
         <article class="card">
             <div class="card-header">
                 <div>
