@@ -3,12 +3,21 @@ from __future__ import annotations
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 
-from .forms import ProjectForm, ProspectForm, SignUpForm, WorkspaceSettingsForm
+from .forms import (
+    AppPasswordResetForm,
+    AppSetPasswordForm,
+    EmailOrUsernameAuthenticationForm,
+    ProjectForm,
+    ProspectForm,
+    SignUpForm,
+    WorkspaceSettingsForm,
+)
 from .models import Project, Prospect
 from .services import (
     dashboard_snapshot,
@@ -25,7 +34,39 @@ from .services import (
 
 class AppLoginView(LoginView):
     template_name = "registration/login.html"
+    authentication_form = EmailOrUsernameAuthenticationForm
     redirect_authenticated_user = True
+
+    def form_valid(self, form):
+        claimed_code = form.assign_access_code()
+        if claimed_code is not None:
+            messages.success(
+                self.request,
+                f"Codigo vinculado com sucesso. Conta marcada como {claimed_code.get_audience_display().lower()}.",
+            )
+        return super().form_valid(form)
+
+
+class AppPasswordResetView(PasswordResetView):
+    template_name = "registration/hubla_password_reset_form.html"
+    email_template_name = "registration/hubla_password_reset_email.txt"
+    subject_template_name = "registration/hubla_password_reset_subject.txt"
+    form_class = AppPasswordResetForm
+    success_url = reverse_lazy("password_reset_done")
+
+
+class AppPasswordResetDoneView(PasswordResetDoneView):
+    template_name = "registration/hubla_password_reset_done.html"
+
+
+class AppPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = "registration/hubla_password_reset_confirm.html"
+    form_class = AppSetPasswordForm
+    success_url = reverse_lazy("password_reset_complete")
+
+
+class AppPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = "registration/hubla_password_reset_complete.html"
 
 
 def home(request: HttpRequest) -> HttpResponse:

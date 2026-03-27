@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Hubla{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+</head>
+<body class="auth-body">
+    <div class="auth-card{% block auth_card_class %}{% endblock %}">
+        <div class="auth-copy">
+            <img class="brand-logo brand-logo--auth" src="{% static 'studio/hubla-logo-banner.png' %}" alt="Hubla">
+            <p>{% block auth_copy %}{% endblock %}</p>
+        </div>
+        <div class="auth-form">
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block auth_content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

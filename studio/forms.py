@@ -1,17 +1,121 @@
 from __future__ import annotations
 
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import authenticate, get_user_model, password_validation
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, UserCreationForm, UsernameField
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from .constants import SETTINGS_GROUPS
-from .models import Membership, Project, Prospect, Workspace
+from .models import AccessCode, Membership, Project, Prospect, Workspace, normalize_access_code
 from .services import ensure_default_settings
+
+
+UserModel = get_user_model()
+
+
+def assigned_access_code_for_user(user):
+    try:
+        return user.access_code_entry
+    except AccessCode.DoesNotExist:
+        return None
+
+
+class EmailOrUsernameAuthenticationForm(AuthenticationForm):
+    username = UsernameField(label="Usuario ou email", widget=forms.TextInput(attrs={"autofocus": True}))
+    access_code = forms.CharField(
+        label="Insira seu codigo",
+        required=False,
+        help_text="Obrigatorio no primeiro acesso ou enquanto sua conta ainda nao tiver um codigo vinculado.",
+    )
+    field_order = ["username", "password", "access_code"]
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Informe um usuario ou email e uma senha validos.",
+    }
+
+    def clean(self):
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+        raw_access_code = self.cleaned_data.get("access_code")
+        self.access_code_to_assign = None
+
+        if username and password:
+            login_value = username.strip()
+            matched_user = UserModel._default_manager.filter(email__iexact=login_value).first()
+            if matched_user is None:
+                matched_user = UserModel._default_manager.filter(username__iexact=login_value).first()
+
+            normalized_username = matched_user.get_username() if matched_user else login_value
+            self.user_cache = authenticate(self.request, username=normalized_username, password=password)
+
+            if self.user_cache is None:
+                raise self.get_invalid_login_error()
+
+            self.confirm_login_allowed(self.user_cache)
+            self.cleaned_data["username"] = normalized_username
+
+            provided_code = normalize_access_code(raw_access_code)
+            self.cleaned_data["access_code"] = provided_code
+            assigned_code = assigned_access_code_for_user(self.user_cache)
+
+            if assigned_code and not assigned_code.is_active:
+                raise forms.ValidationError("O codigo vinculado a esta conta foi desativado.")
+
+            if assigned_code:
+                if provided_code and provided_code != assigned_code.code:
+                    raise forms.ValidationError("O codigo informado nao pertence a esta conta.")
+            else:
+                if not provided_code:
+                    raise forms.ValidationError("Informe seu codigo de acesso para concluir o login.")
+
+                access_code = AccessCode.objects.filter(code=provided_code, is_active=True).select_related("assigned_user").first()
+                if access_code is None:
+                    raise forms.ValidationError("Codigo de acesso invalido.")
+                if access_code.assigned_user_id and access_code.assigned_user_id != self.user_cache.pk:
+                    raise forms.ValidationError("Este codigo ja esta vinculado a outra conta.")
+
+                self.access_code_to_assign = access_code
+
+        return self.cleaned_data
+
+    def assign_access_code(self):
+        if self.access_code_to_assign is None or self.access_code_to_assign.assigned_user_id:
+            return None
+
+        self.access_code_to_assign.assigned_user = self.get_user()
+        self.access_code_to_assign.assigned_at = timezone.now()
+        self.access_code_to_assign.save(update_fields=["assigned_user", "assigned_at", "updated_at"])
+        return self.access_code_to_assign
+
+
+class AppPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(label="Email da conta")
+
+
+class AppSetPasswordForm(SetPasswordForm):
+    new_password1 = forms.CharField(
+        label="Nova senha",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        help_text=password_validation.password_validators_help_text_html(),
+    )
+    new_password2 = forms.CharField(
+        label="Confirme a nova senha",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
 
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(label="Email")
     workspace_name = forms.CharField(label="Nome do studio", max_length=160)
+    access_code = forms.CharField(
+        label="Insira seu codigo",
+        help_text="Use um codigo de acesso valido para definir se a conta sera pagante ou nao pagante.",
+    )
+    field_order = ["username", "email", "workspace_name", "access_code", "password1", "password2"]
 
     class Meta:
         model = User
@@ -28,6 +132,17 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError("Ja existe uma conta com este email.")
         return email
 
+    def clean_access_code(self):
+        code = normalize_access_code(self.cleaned_data["access_code"])
+        access_code = AccessCode.objects.filter(code=code, is_active=True).select_related("assigned_user").first()
+        if access_code is None:
+            raise forms.ValidationError("Codigo de acesso invalido.")
+        if access_code.assigned_user_id:
+            raise forms.ValidationError("Este codigo ja foi utilizado.")
+
+        self.access_code_instance = access_code
+        return code
+
     def save(self, commit: bool = True) -> User:
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
@@ -36,6 +151,10 @@ class SignUpForm(UserCreationForm):
             workspace = Workspace.objects.create(name=self.cleaned_data["workspace_name"])
             Membership.objects.create(user=user, workspace=workspace, role=Membership.ROLE_OWNER)
             ensure_default_settings(workspace)
+            access_code = self.access_code_instance
+            access_code.assigned_user = user
+            access_code.assigned_at = timezone.now()
+            access_code.save(update_fields=["assigned_user", "assigned_at", "updated_at"])
         return user
 
 

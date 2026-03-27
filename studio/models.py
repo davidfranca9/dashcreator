@@ -7,6 +7,10 @@ from django.utils.text import slugify
 from .constants import PROJECT_STAGE_CHOICES, PROJECT_STATUS_CHOICES, PROSPECT_STAGE_CHOICES
 
 
+def normalize_access_code(raw_code: str) -> str:
+    return (raw_code or "").strip().upper().replace(" ", "")
+
+
 class TimestampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -57,6 +61,37 @@ class Membership(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.workspace}"
+
+
+class AccessCode(TimestampedModel):
+    AUDIENCE_PAID = "paid"
+    AUDIENCE_NON_PAID = "non_paid"
+    AUDIENCE_CHOICES = [
+        (AUDIENCE_PAID, "Pagante"),
+        (AUDIENCE_NON_PAID, "Nao pagante"),
+    ]
+
+    code = models.CharField(max_length=40, unique=True)
+    audience = models.CharField(max_length=20, choices=AUDIENCE_CHOICES)
+    assigned_user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="access_code_entry",
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["audience", "code"]
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.get_audience_display()})"
+
+    def save(self, *args, **kwargs) -> None:
+        self.code = normalize_access_code(self.code)
+        super().save(*args, **kwargs)
 
 
 class WorkspaceOwnedModel(TimestampedModel):

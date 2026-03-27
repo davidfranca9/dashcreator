@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Membership, Project, Prospect, Workspace, WorkspaceSetting
+from .models import AccessCode, Membership, Project, Prospect, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -14,6 +14,13 @@ class MembershipAdmin(admin.ModelAdmin):
     list_display = ("user", "workspace", "role", "created_at")
     list_filter = ("role",)
     search_fields = ("user__username", "user__email", "workspace__name")
+
+
+@admin.register(AccessCode)
+class AccessCodeAdmin(admin.ModelAdmin):
+    list_display = ("code", "audience", "assigned_user", "is_active", "assigned_at", "created_at")
+    list_filter = ("audience", "is_active")
+    search_fields = ("code", "assigned_user__username", "assigned_user__email")
 
 
 @admin.register(Prospect)

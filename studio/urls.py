@@ -2,6 +2,10 @@ from django.urls import path
 
 from .views import (
     AppLoginView,
+    AppPasswordResetCompleteView,
+    AppPasswordResetConfirmView,
+    AppPasswordResetDoneView,
+    AppPasswordResetView,
     dashboard,
     finance,
     home,
@@ -23,6 +27,10 @@ from .views import (
 urlpatterns = [
     path("", home, name="home"),
     path("login/", AppLoginView.as_view(), name="login"),
+    path("senha/esqueci/", AppPasswordResetView.as_view(), name="password_reset"),
+    path("senha/esqueci/enviado/", AppPasswordResetDoneView.as_view(), name="password_reset_done"),
+    path("senha/redefinir/<uidb64>/<token>/", AppPasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+    path("senha/redefinir/concluido/", AppPasswordResetCompleteView.as_view(), name="password_reset_complete"),
     path("signup/", signup, name="signup"),
     path("dashboard/", dashboard, name="dashboard"),
     path("prospeccao/", prospection, name="prospection"),

@@ -142,6 +142,18 @@ textarea {
     margin-bottom: 6px;
 }
 
+.workspace-label--secondary {
+    margin-top: 14px;
+}
+
+.workspace-meta {
+    display: block;
+    margin-top: 6px;
+    color: #b9c8de;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+}
+
 .content-area {
     padding: 28px 34px;
 }
@@ -530,6 +542,11 @@ textarea {
 
 .auth-form {
     padding: 42px;
+    display: grid;
+    gap: 16px;
+}
+
+.auth-form-stack {
     display: grid;
     gap: 16px;
 }
