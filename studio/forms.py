@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from .constants import SETTINGS_GROUPS
 from .models import AccessCode, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
-from .services import ensure_default_settings, settings_map
+from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
 UserModel = get_user_model()
@@ -184,7 +184,15 @@ class ProspectForm(forms.ModelForm):
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
         self.fields["niche"].queryset = Niche.objects.none()
         if workspace is not None:
-            self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
+            ensure_default_niches(workspace)
+            current_niche = self.instance.niche if getattr(self.instance, "pk", None) and self.instance.niche_id else None
+            if current_niche is None:
+                initial_niche = self.initial.get("niche")
+                if isinstance(initial_niche, Niche):
+                    current_niche = initial_niche
+                elif initial_niche:
+                    current_niche = Niche.objects.filter(workspace=workspace, pk=initial_niche).first()
+            self.fields["niche"].queryset = default_niche_queryset(workspace, current_niche)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -262,7 +270,15 @@ class ProjectForm(forms.ModelForm):
         self.fields["niche"].queryset = Niche.objects.none()
         self.fields["service_category"].queryset = ServiceCategory.objects.none()
         if workspace is not None:
-            self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
+            ensure_default_niches(workspace)
+            current_niche = self.instance.niche if getattr(self.instance, "pk", None) and self.instance.niche_id else None
+            if current_niche is None:
+                initial_niche = self.initial.get("niche")
+                if isinstance(initial_niche, Niche):
+                    current_niche = initial_niche
+                elif initial_niche:
+                    current_niche = Niche.objects.filter(workspace=workspace, pk=initial_niche).first()
+            self.fields["niche"].queryset = default_niche_queryset(workspace, current_niche)
             self.fields["service_category"].queryset = ServiceCategory.objects.filter(workspace=workspace)
         if not self.is_bound and not getattr(self.instance, "pk", None) and not self.initial.get("close_date"):
             self.fields["close_date"].initial = timezone.localdate()

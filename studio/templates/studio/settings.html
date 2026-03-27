@@ -24,32 +24,17 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Nichos</h3>
-                    <p>Cadastre os nichos para selecionar nos menus suspensos do workspace.</p>
+                    <h3>Nichos padronizados</h3>
+                    <p>O menu suspenso de nicho agora usa esta lista fixa do sistema.</p>
                 </div>
             </div>
-            <form method="post" class="auth-form-stack">
-                {% csrf_token %}
-                <input type="hidden" name="settings_action" value="add_niche">
-                <div class="form-field">
-                    <label for="{{ niche_form.name.id_for_label }}">{{ niche_form.name.label }}</label>
-                    {{ niche_form.name }}
-                    {% if niche_form.name.help_text %}
-                        <small class="field-help">{{ niche_form.name.help_text }}</small>
-                    {% endif %}
-                    {{ niche_form.name.errors }}
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="primary-button">Adicionar nicho</button>
-                </div>
-            </form>
             <div class="stack-list">
                 {% for item in managed_niches %}
                     <article class="soft-card metric-row">
                         <strong>{{ item.name }}</strong>
                     </article>
                 {% empty %}
-                    <p class="muted">Nenhum nicho cadastrado ainda.</p>
+                    <p class="muted">Nenhum nicho padronizado disponivel.</p>
                 {% endfor %}
             </div>
         </article>

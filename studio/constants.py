@@ -34,6 +34,21 @@ PROSPECT_STAGE_CHOICES = [
     ("Negociacao", "Negociacao"),
 ]
 
+DEFAULT_NICHE_NAMES = [
+    "Tech",
+    "Haircare",
+    "Beleza",
+    "Moda e Acess\u00f3rios",
+    "Sa\u00fade e Bem-estar",
+    "Skincare",
+    "Gastronomia",
+    "Infoproduto e Educa\u00e7\u00e3o",
+    "Aplicativo",
+    "Eventos e Experi\u00eancias",
+    "Casa e Decora\u00e7\u00e3o",
+    "Relacionamento",
+]
+
 COMPANY_COLORS = {
     "Nike": ("#d5e2f4", "#edf4fd", "#39b8d0"),
     "Shein": ("#d6ddef", "#eef3fb", "#4d8cff"),

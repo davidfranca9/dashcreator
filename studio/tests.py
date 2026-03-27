@@ -18,7 +18,7 @@ class DashboardSmokeTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="tester", password="segura123")
         self.workspace = get_or_create_workspace_for_user(self.user)
-        self.niche = Niche.objects.create(workspace=self.workspace, name="Beleza")
+        self.niche = Niche.objects.get(workspace=self.workspace, name="Beleza")
         self.category = ServiceCategory.objects.create(workspace=self.workspace, name="Pacote de videos")
         Prospect.objects.create(
             workspace=self.workspace,
@@ -61,18 +61,8 @@ class DashboardSmokeTest(TestCase):
             self.assertEqual(response.status_code, 200, name)
             self.assertContains(response, "workspace-chip-avatar-fallback")
 
-    def test_workspace_can_create_reusable_niche_and_service_category_from_settings(self):
+    def test_workspace_uses_default_niches_and_can_create_reusable_service_category_from_settings(self):
         self.client.force_login(self.user)
-
-        niche_response = self.client.post(
-            reverse("settings"),
-            {
-                "settings_action": "add_niche",
-                "niche-name": "Fitness",
-            },
-        )
-        self.assertRedirects(niche_response, reverse("settings"))
-        niche = Niche.objects.get(workspace=self.workspace, name="Fitness")
 
         category_response = self.client.post(
             reverse("settings"),
@@ -92,7 +82,7 @@ class DashboardSmokeTest(TestCase):
                 "contact_type": "Social media",
                 "stage": "Prospeccao",
                 "contact_date": date.today().isoformat(),
-                "niche": niche.pk,
+                "niche": self.niche.pk,
                 "email": "julia@insider.com",
                 "instagram": "@insiderstore",
                 "whatsapp": "71911111111",
@@ -100,7 +90,7 @@ class DashboardSmokeTest(TestCase):
             },
         )
         self.assertRedirects(prospect_response, reverse("prospection"))
-        self.assertTrue(Prospect.objects.filter(workspace=self.workspace, niche=niche).exists())
+        self.assertTrue(Prospect.objects.filter(workspace=self.workspace, niche=self.niche).exists())
 
         project_response = self.client.post(
             reverse("project_create"),
@@ -613,7 +603,6 @@ class DashboardSmokeTest(TestCase):
 
     def test_settings_page_lists_managed_dropdown_options(self):
         ServiceCategory.objects.create(workspace=self.workspace, name="Pacote premium")
-        Niche.objects.create(workspace=self.workspace, name="Tech")
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("settings"))
@@ -621,6 +610,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pacote premium")
         self.assertContains(response, "Tech")
+        self.assertNotContains(response, "Adicionar nicho")
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)

@@ -6,11 +6,11 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.urls import reverse
 
-from .constants import COMPANY_COLORS, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
-from .models import Membership, Project, Prospect, Workspace, WorkspaceSetting
+from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
+from .models import Membership, Niche, Project, Prospect, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -135,11 +135,13 @@ def format_days(value: float) -> str:
 def get_or_create_workspace_for_user(user: User) -> Workspace:
     membership = user.memberships.select_related("workspace").first()
     if membership:
+        ensure_default_niches(membership.workspace)
         return membership.workspace
 
     workspace = Workspace.objects.create(name=f"{user.username or user.email or 'Studio'} Studio")
     Membership.objects.create(user=user, workspace=workspace, role=Membership.ROLE_OWNER)
     ensure_default_settings(workspace)
+    ensure_default_niches(workspace)
     return workspace
 
 
@@ -156,8 +158,34 @@ def ensure_default_settings(workspace: Workspace) -> None:
             )
 
 
+def ensure_default_niches(workspace: Workspace) -> None:
+    for name in DEFAULT_NICHE_NAMES:
+        Niche.objects.get_or_create(
+            workspace=workspace,
+            name=name,
+        )
+
+
+def default_niche_queryset(workspace: Workspace, current_niche: Niche | None = None) -> QuerySet[Niche]:
+    ensure_default_niches(workspace)
+    base_filter = Q(name__in=DEFAULT_NICHE_NAMES)
+    if current_niche and current_niche.pk:
+        base_filter |= Q(pk=current_niche.pk)
+    return Niche.objects.filter(workspace=workspace).filter(base_filter).order_by("name")
+
+
+def default_niche_list(workspace: Workspace) -> list[Niche]:
+    ensure_default_niches(workspace)
+    niches_by_name = {
+        item.name: item
+        for item in Niche.objects.filter(workspace=workspace, name__in=DEFAULT_NICHE_NAMES)
+    }
+    return [niches_by_name[name] for name in DEFAULT_NICHE_NAMES if name in niches_by_name]
+
+
 def settings_map(workspace: Workspace) -> dict[str, str]:
     ensure_default_settings(workspace)
+    ensure_default_niches(workspace)
     return {item.key: item.value for item in workspace.settings.all()}
 
 

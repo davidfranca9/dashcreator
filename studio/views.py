@@ -22,9 +22,10 @@ from .forms import (
     SignUpForm,
     WorkspaceSettingsForm,
 )
-from .models import Niche, Project, Prospect, ServiceCategory
+from .models import Project, Prospect, ServiceCategory
 from .services import (
     dashboard_snapshot,
+    default_niche_list,
     finance_snapshot,
     get_or_create_workspace_for_user,
     jobs_snapshot,
@@ -144,12 +145,6 @@ def settings(request: HttpRequest) -> HttpResponse:
         request.POST if request.method == "POST" and request.POST.get("settings_action") == "preferences" else None,
         settings_values=settings_map(workspace),
     )
-    niche_form = ManagedOptionForm(
-        request.POST if request.method == "POST" and request.POST.get("settings_action") == "add_niche" else None,
-        label="Novo nicho",
-        help_text="Cadastre aqui os nichos que depois aparecerao no menu suspenso dos leads e trabalhos.",
-        prefix="niche",
-    )
     service_category_form = ManagedOptionForm(
         request.POST if request.method == "POST" and request.POST.get("settings_action") == "add_service_category" else None,
         label="Nova categoria de servico",
@@ -163,11 +158,6 @@ def settings(request: HttpRequest) -> HttpResponse:
             save_settings(workspace, settings_form.cleaned_data)
             messages.success(request, "Configuracoes atualizadas.")
             return redirect("settings")
-        if action == "add_niche" and niche_form.is_valid():
-            name = niche_form.cleaned_data["name"].strip()
-            niche, created = Niche.objects.get_or_create(workspace=workspace, name=name)
-            messages.success(request, "Nicho cadastrado." if created else "Esse nicho ja existe.")
-            return redirect("settings")
         if action == "add_service_category" and service_category_form.is_valid():
             name = service_category_form.cleaned_data["name"].strip()
             service_category, created = ServiceCategory.objects.get_or_create(workspace=workspace, name=name)
@@ -178,9 +168,8 @@ def settings(request: HttpRequest) -> HttpResponse:
     context.update(
         {
             "form": settings_form,
-            "niche_form": niche_form,
             "service_category_form": service_category_form,
-            "managed_niches": Niche.objects.filter(workspace=workspace).order_by("name"),
+            "managed_niches": default_niche_list(workspace),
             "managed_service_categories": ServiceCategory.objects.filter(workspace=workspace).order_by("name"),
         }
     )
