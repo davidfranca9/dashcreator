@@ -214,6 +214,7 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
     chart_height = 260
     chart_top = 12
     chart_bottom = 22
+    chart_side_padding = 18
 
     for project in projects:
         month_start = project.close_date.replace(day=1)
@@ -226,7 +227,8 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
     for index, month_start in enumerate(month_starts):
         amount = int(totals[month_start])
         progress_ratio = (amount / max_value) if max_value else 0
-        x_position = 0 if len(month_starts) == 1 else round((chart_width / (len(month_starts) - 1)) * index, 2)
+        usable_width = chart_width - (chart_side_padding * 2)
+        x_position = chart_side_padding if len(month_starts) == 1 else round(chart_side_padding + ((usable_width / (len(month_starts) - 1)) * index), 2)
         y_position = round(chart_height - chart_bottom - (progress_ratio * usable_height), 2)
         points.append(
             {
