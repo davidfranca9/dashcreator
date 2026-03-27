@@ -390,6 +390,7 @@ def follow_up_candidates(workspace: Workspace) -> list[dict]:
             {
                 "kind": "follow_up",
                 "company": project.company,
+                "dismiss_key": company_key,
                 "service_category": project.service_category_name,
                 "last_delivery_text": short_date(project.due_date),
                 "days_since_last_job": days_since_last_job,
