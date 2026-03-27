@@ -110,25 +110,28 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Trabalho em destaque</h3>
+                    <h3>Via de fechamento</h3>
                 </div>
             </div>
-            {% if featured %}
-                <div class="feature-hero" style="--color-a: {{ featured.colors.0 }}; --color-b: {{ featured.colors.1 }};">
-                    <span>{{ featured.company }}</span>
-                </div>
-                <div class="feature-copy">
-                    <strong>{{ featured.service_category }}</strong>
-                    <p>{{ featured.company }}</p>
-                    <div class="progress-track"><span style="width: {{ featured.progress }}%; background: {{ featured.accent }};"></span></div>
-                    <div class="meta-line">
-                        <span class="chip">{{ featured.due_text }}</span>
-                        <small>{{ featured.progress }}%</small>
+            <div class="source-mix-card">
+                <div class="source-mix-chart" style="--pie-gradient: {{ source_mix.gradient }};">
+                    <div class="source-mix-center">
+                        <strong>{{ source_mix.total }}</strong>
+                        <span>trabalhos</span>
                     </div>
                 </div>
-            {% else %}
-                <p class="muted">Quando voce cadastrar um trabalho fechado, ele aparece aqui.</p>
-            {% endif %}
+                <div class="source-mix-legend">
+                    {% for item in source_mix.items %}
+                        <div class="source-mix-legend-item">
+                            <span class="source-mix-dot" style="background: {{ item.color }};"></span>
+                            <div>
+                                <strong>{{ item.label }}</strong>
+                                <small>{{ item.count }} · {{ item.percentage }}%</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
         </article>
     </div>
 </section>

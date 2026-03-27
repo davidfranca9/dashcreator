@@ -659,6 +659,82 @@ body.theme-dark .progress-track {
     gap: 10px;
 }
 
+.source-mix-card {
+    display: grid;
+    gap: 22px;
+    align-items: center;
+    justify-items: center;
+}
+
+.source-mix-chart {
+    position: relative;
+    width: min(100%, 240px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: conic-gradient(var(--pie-gradient));
+    box-shadow: inset 0 0 0 1px rgba(77, 140, 255, 0.08);
+}
+
+.source-mix-chart::after {
+    content: "";
+    position: absolute;
+    inset: 24px;
+    border-radius: 50%;
+    background: var(--card);
+    box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.source-mix-center {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    text-align: center;
+}
+
+.source-mix-center strong {
+    font-size: 34px;
+    line-height: 1;
+}
+
+.source-mix-center span {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.source-mix-legend {
+    width: 100%;
+    display: grid;
+    gap: 12px;
+}
+
+.source-mix-legend-item {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.source-mix-legend-item div {
+    display: grid;
+    gap: 2px;
+}
+
+.source-mix-legend-item small {
+    color: var(--muted);
+}
+
+.source-mix-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
 .profile-hero,
 .profile-avatar-panel,
 .profile-avatar-copy,
