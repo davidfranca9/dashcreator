@@ -2,7 +2,32 @@
 
 {% block content %}
 <section class="stack-section">
-    <p class="muted note-box">Aqui voce acompanha os principais dados cadastrais da sua conta e do workspace atual.</p>
+    <article class="card profile-hero">
+        <div class="profile-avatar-panel">
+            {% if membership and membership.avatar_data %}
+                <img class="profile-avatar-image" src="{{ membership.avatar_data }}" alt="Foto de perfil">
+            {% else %}
+                <div class="profile-avatar-fallback">
+                    {{ membership.initials|default:"P" }}
+                </div>
+            {% endif %}
+            <div class="profile-avatar-copy">
+                <h3>Foto de perfil</h3>
+                <p class="muted">Envie uma imagem para personalizar sua conta dentro do workspace.</p>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="profile-photo-form">
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="{{ photo_form.photo.id_for_label }}">{{ photo_form.photo.label }}</label>
+                {{ photo_form.photo }}
+                {{ photo_form.photo.errors }}
+            </div>
+            <button type="submit" class="primary-button">Salvar foto</button>
+        </form>
+    </article>
+
     <div class="profile-grid">
         {% for section in profile_sections %}
             <article class="card">

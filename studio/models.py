@@ -54,6 +54,7 @@ class Membership(TimestampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memberships")
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="memberships")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_OWNER)
+    avatar_data = models.TextField(blank=True, default="")
 
     class Meta:
         unique_together = [("user", "workspace")]
@@ -61,6 +62,16 @@ class Membership(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.workspace}"
+
+    @property
+    def initials(self) -> str:
+        base_name = (self.user.get_full_name() or self.user.username or self.user.email or "Perfil").strip()
+        pieces = [item[0].upper() for item in base_name.split() if item]
+        if len(pieces) >= 2:
+            return "".join(pieces[:2])
+        if pieces:
+            return pieces[0]
+        return "P"
 
 
 class AccessCode(TimestampedModel):

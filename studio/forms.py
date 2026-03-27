@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+
 from django import forms
 from django.contrib.auth import authenticate, get_user_model, password_validation
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, UserCreationForm, UsernameField
@@ -8,7 +10,7 @@ from django.utils import timezone
 
 from .constants import SETTINGS_GROUPS
 from .models import AccessCode, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
-from .services import ensure_default_settings
+from .services import ensure_default_settings, settings_map
 
 
 UserModel = get_user_model()
@@ -214,6 +216,9 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace = workspace
+        settings_values = settings_map(workspace) if workspace is not None else {}
+        default_entry_rate = settings_values.get("ops_default_entry_rate", "50%").replace("%", "").strip()
+        self.default_entry_rate = int(default_entry_rate or 50)
         self.order_fields(
             [
                 "company",
@@ -233,6 +238,18 @@ class ProjectForm(forms.ModelForm):
         self.fields["service_category"].queryset = ServiceCategory.objects.none()
         if workspace is not None:
             self.fields["service_category"].queryset = ServiceCategory.objects.filter(workspace=workspace)
+        if not self.is_bound and not getattr(self.instance, "pk", None) and not self.initial.get("close_date"):
+            self.fields["close_date"].initial = timezone.localdate()
+
+        self.fields["entry_value"].help_text = (
+            f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
+            "Voce pode ajustar manualmente se quiser."
+        )
+        self.fields["total_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
+        self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
+        self.fields["received_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
+        self.fields["deliverables_count"].widget.attrs.update({"min": "1"})
+        self.fields["progress"].widget.attrs.update({"min": "0", "max": "100"})
 
     def clean(self):
         cleaned_data = super().clean()
@@ -311,7 +328,7 @@ class ProjectForm(forms.ModelForm):
 
 
 class WorkspaceSettingsForm(forms.Form):
-    ui_lock_light_contrast = forms.BooleanField(required=False, label="Contraste claro travado no app")
+    ui_dark_theme = forms.BooleanField(required=False, label="Tema escuro")
     ui_soft_card_shadows = forms.BooleanField(required=False, label="Sombras suaves nos cards")
     ui_subtle_navigation_animation = forms.BooleanField(required=False, label="Animacao discreta na navegacao")
     ops_default_entry_rate = forms.ChoiceField(label="Entrada padrao sugerida", choices=[("50%", "50%"), ("40%", "40%"), ("30%", "30%")])
@@ -332,3 +349,24 @@ class WorkspaceSettingsForm(forms.Form):
                     field.initial = str(raw_value).lower() in {"1", "true", "yes", "on"}
                 else:
                     field.initial = raw_value
+
+
+class ProfilePhotoForm(forms.Form):
+    photo = forms.FileField(label="Foto de perfil")
+
+    allowed_types = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+    max_size = 2 * 1024 * 1024
+
+    def clean_photo(self):
+        photo = self.cleaned_data["photo"]
+        content_type = getattr(photo, "content_type", "")
+        if content_type not in self.allowed_types:
+            raise forms.ValidationError("Envie uma imagem em PNG, JPG, WEBP ou GIF.")
+        if photo.size > self.max_size:
+            raise forms.ValidationError("A imagem precisa ter no maximo 2 MB.")
+        return photo
+
+    def image_data_uri(self) -> str:
+        photo = self.cleaned_data["photo"]
+        encoded = base64.b64encode(photo.read()).decode("ascii")
+        return f"data:{photo.content_type};base64,{encoded}"

@@ -5,11 +5,12 @@ from django.contrib.sessions.models import Session
 from django.core import mail
 from django.core.management import call_command
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from .forms import ProjectForm
-from .models import AccessCode, ActiveUserSession, Niche, Project, Prospect, ServiceCategory
+from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import get_or_create_workspace_for_user, shell_context
 
 
@@ -150,6 +151,27 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["stats"][2]["value"], "R$800")
         self.assertEqual(response.context["stats"][3]["value"], "10 dias")
         self.assertEqual(len(response.context["schedule"]), 1)
+
+    def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
+        self.client.force_login(self.user)
+        image_file = SimpleUploadedFile(
+            "avatar.png",
+            (
+                b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+                b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+                b"\x00\x00\x00\rIDATx\x9cc`\x00\x01\x00\x00\x05\x00\x01"
+                b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+            ),
+            content_type="image/png",
+        )
+
+        response = self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
+
+        self.assertRedirects(response, reverse("profile"))
+        membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+        self.assertTrue(membership.avatar_data.startswith("data:image/png;base64,"))
+        self.assertNotContains(response, "Slug")
+        self.assertNotContains(response, "Perfil de acesso")
 
 
 class AuthenticationFlowsTest(TestCase):

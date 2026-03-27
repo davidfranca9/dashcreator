@@ -14,6 +14,7 @@ from .forms import (
     AppPasswordResetForm,
     AppSetPasswordForm,
     EmailOrUsernameAuthenticationForm,
+    ProfilePhotoForm,
     ProjectForm,
     ProspectForm,
     SignUpForm,
@@ -152,9 +153,21 @@ def settings(request: HttpRequest) -> HttpResponse:
 def profile(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     membership = request.user.memberships.select_related("workspace").filter(workspace=workspace).first()
+    photo_form = ProfilePhotoForm()
+
+    if request.method == "POST":
+        photo_form = ProfilePhotoForm(request.POST, request.FILES)
+        if photo_form.is_valid() and membership:
+            membership.avatar_data = photo_form.image_data_uri()
+            membership.save(update_fields=["avatar_data", "updated_at"])
+            messages.success(request, "Foto de perfil atualizada.")
+            return redirect("profile")
+
     context = shell_context("profile", workspace, "Perfil", "Dados cadastrais da conta e do workspace ativo.")
     context.update(
         {
+            "membership": membership,
+            "photo_form": photo_form,
             "profile_sections": [
                 {
                     "title": "Conta",
@@ -169,8 +182,6 @@ def profile(request: HttpRequest) -> HttpResponse:
                     "title": "Workspace",
                     "items": [
                         {"label": "Workspace ativo", "value": workspace.name},
-                        {"label": "Slug", "value": workspace.slug},
-                        {"label": "Perfil de acesso", "value": membership.get_role_display() if membership else "-"},
                     ],
                 },
             ]
