@@ -307,6 +307,45 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["value"], "R$2.400")
         self.assertEqual(len(snapshot["revenue"]["points"]), 12)
 
+    def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="O Boticário!!!",
+            contact="Julia",
+            contact_type="Email",
+            stage="Prospeccao",
+            contact_date=date.today(),
+            niche=self.niche,
+            email="julia@boticario.com",
+            instagram="@boticario",
+            whatsapp="71911111111",
+            note="Mesmo cliente com variacao no nome",
+        )
+        Project.objects.create(
+            workspace=self.workspace,
+            company="o boticario",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+
+        snapshot = dashboard_snapshot(self.workspace)
+        jobs = jobs_snapshot(self.workspace)
+
+        self.assertEqual(snapshot["stats"][0]["value"], "3")
+        self.assertEqual(jobs["stats"][0]["value"], "2")
+
     def test_jobs_snapshot_shows_delivered_total_as_finalizado(self):
         Project.objects.create(
             workspace=self.workspace,

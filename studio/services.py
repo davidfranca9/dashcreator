@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
-from django.db.models.functions import Lower, Trim
 from django.urls import reverse
 
 from .constants import COMPANY_COLORS, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
@@ -55,6 +56,14 @@ def sum_money(values) -> Decimal:
     for value in values:
         total += Decimal(value or 0)
     return total
+
+
+def normalize_company_name(raw_value: str | None) -> str:
+    normalized = unicodedata.normalize("NFKD", str(raw_value or ""))
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = normalized.casefold()
+    normalized = re.sub(r"[^a-z0-9]+", " ", normalized)
+    return " ".join(normalized.split())
 
 
 def company_palette(company: str) -> tuple[str, str, str]:
@@ -270,17 +279,17 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     active_jobs = sum(item.deliverables_count for item in active_projects)
     company_names = set()
     for raw_name in projects.exclude(company__exact="").values_list("company", flat=True):
-        normalized_name = " ".join(str(raw_name).split()).casefold()
+        normalized_name = normalize_company_name(raw_name)
         if normalized_name:
             company_names.add(normalized_name)
     for raw_name in Prospect.objects.filter(workspace=workspace).exclude(company__exact="").values_list("company", flat=True):
-        normalized_name = " ".join(str(raw_name).split()).casefold()
+        normalized_name = normalize_company_name(raw_name)
         if normalized_name:
             company_names.add(normalized_name)
     clients_portfolio = len(company_names)
     active_company_names = set()
     for item in active_projects:
-        normalized_name = " ".join(str(item.company).split()).casefold()
+        normalized_name = normalize_company_name(item.company)
         if normalized_name:
             active_company_names.add(normalized_name)
     active_companies = len(active_company_names)
@@ -411,11 +420,16 @@ def empresas_snapshot(workspace: Workspace) -> dict:
             }
         )
 
+    active_company_names = {
+        normalize_company_name(item.company)
+        for item in active
+        if normalize_company_name(item.company)
+    }
     upcoming_deliveries = sum(1 for item in active if today <= item.due_date <= upcoming_limit)
     delivered_count = sum(1 for item in projects if item.stage == "Entregue")
     return {
         "stats": [
-            {"title": "Carteira ativa", "value": str(len(active)), "icon_label": "E"},
+            {"title": "Carteira ativa", "value": str(len(active_company_names)), "icon_label": "E"},
             {"title": "Aguardando aprovacao", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A"},
             {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P"},
             {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F"},
