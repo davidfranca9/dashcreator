@@ -268,6 +268,7 @@ class ProjectForm(forms.ModelForm):
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Voce pode ajustar manualmente se quiser."
         )
+        self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
         self.fields["closing_source"].help_text = "Ex.: Instagram, indicacao, prospeccao ativa, WhatsApp."
         self.fields["deliverables_count"].help_text = "Use a quantidade total de videos incluidos neste trabalho."
         self.fields["total_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
@@ -296,6 +297,7 @@ class ProjectForm(forms.ModelForm):
         project = super().save(commit=False)
         project.project_name = project.service_category_name
         project.content_type = ""
+        project.stage = "Entregue" if project.status == "Entregue" else "Fechado"
         project.progress = STATUS_PROGRESS_MAP.get(project.status, project.progress)
         if commit:
             project.save()

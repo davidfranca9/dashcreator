@@ -198,6 +198,57 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
         self.assertNotIn("progress", form.fields)
 
+    def test_project_form_syncs_stage_with_status(self):
+        delivered_form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Indicacao",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Fechado",
+                "status": "Entregue",
+                "total_value": "4000",
+                "entry_value": "2000",
+                "received_value": "4000",
+                "deliverables_count": "2",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(delivered_form.is_valid(), delivered_form.errors)
+        delivered_project = delivered_form.save(commit=False)
+        delivered_project.workspace = self.workspace
+        delivered_project.save()
+        self.assertEqual(delivered_project.stage, "Entregue")
+        self.assertEqual(delivered_project.progress, 100)
+
+        active_form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Indicacao",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Entregue",
+                "status": "Briefing",
+                "total_value": "4000",
+                "entry_value": "2000",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(active_form.is_valid(), active_form.errors)
+        active_project = active_form.save(commit=False)
+        active_project.workspace = self.workspace
+        active_project.save()
+        self.assertEqual(active_project.stage, "Fechado")
+        self.assertEqual(active_project.progress, 0)
+
     def test_dashboard_counts_unique_contracting_companies(self):
         Prospect.objects.create(
             workspace=self.workspace,
