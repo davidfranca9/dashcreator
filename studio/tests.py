@@ -61,8 +61,28 @@ class DashboardSmokeTest(TestCase):
             self.assertEqual(response.status_code, 200, name)
             self.assertContains(response, "workspace-chip-avatar-fallback")
 
-    def test_workspace_can_create_reusable_niche_and_service_category_from_forms(self):
+    def test_workspace_can_create_reusable_niche_and_service_category_from_settings(self):
         self.client.force_login(self.user)
+
+        niche_response = self.client.post(
+            reverse("settings"),
+            {
+                "settings_action": "add_niche",
+                "niche-name": "Fitness",
+            },
+        )
+        self.assertRedirects(niche_response, reverse("settings"))
+        niche = Niche.objects.get(workspace=self.workspace, name="Fitness")
+
+        category_response = self.client.post(
+            reverse("settings"),
+            {
+                "settings_action": "add_service_category",
+                "service_category-name": "Mentoria UGC",
+            },
+        )
+        self.assertRedirects(category_response, reverse("settings"))
+        category = ServiceCategory.objects.get(workspace=self.workspace, name="Mentoria UGC")
 
         prospect_response = self.client.post(
             reverse("prospect_create"),
@@ -72,8 +92,7 @@ class DashboardSmokeTest(TestCase):
                 "contact_type": "Social media",
                 "stage": "Prospeccao",
                 "contact_date": date.today().isoformat(),
-                "niche": "",
-                "new_niche": "Fitness",
+                "niche": niche.pk,
                 "email": "julia@insider.com",
                 "instagram": "@insiderstore",
                 "whatsapp": "71911111111",
@@ -81,14 +100,13 @@ class DashboardSmokeTest(TestCase):
             },
         )
         self.assertRedirects(prospect_response, reverse("prospection"))
-        self.assertTrue(Niche.objects.filter(workspace=self.workspace, name="Fitness").exists())
+        self.assertTrue(Prospect.objects.filter(workspace=self.workspace, niche=niche).exists())
 
         project_response = self.client.post(
             reverse("project_create"),
             {
                 "company": "Insider",
-                "service_category": "",
-                "new_service_category": "Mentoria UGC",
+                "service_category": category.pk,
                 "stage": "Fechado",
                 "status": "Briefing",
                 "total_value": "4000",
@@ -101,7 +119,7 @@ class DashboardSmokeTest(TestCase):
             },
         )
         self.assertRedirects(project_response, reverse("jobs"))
-        self.assertTrue(ServiceCategory.objects.filter(workspace=self.workspace, name="Mentoria UGC").exists())
+        self.assertTrue(Project.objects.filter(workspace=self.workspace, service_category=category).exists())
 
     def test_prospect_edit_prefills_contact_date_in_iso_format(self):
         self.client.force_login(self.user)
@@ -116,6 +134,7 @@ class DashboardSmokeTest(TestCase):
         form = ProspectForm(workspace=self.workspace)
 
         self.assertNotIn("proposal_value", form.fields)
+        self.assertNotIn("new_niche", form.fields)
 
     def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
         form = ProspectForm(
@@ -324,6 +343,17 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["form"].initial["closing_source"], "Instagram DM")
         self.assertEqual(response.context["form"].initial["niche"], self.niche)
         self.assertNotIn("total_value", response.context["form"].initial)
+
+    def test_settings_page_lists_managed_dropdown_options(self):
+        ServiceCategory.objects.create(workspace=self.workspace, name="Pacote premium")
+        Niche.objects.create(workspace=self.workspace, name="Tech")
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pacote premium")
+        self.assertContains(response, "Tech")
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)

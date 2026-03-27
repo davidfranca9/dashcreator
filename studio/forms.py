@@ -146,12 +146,6 @@ class SignUpForm(UserCreationForm):
 
 
 class ProspectForm(forms.ModelForm):
-    new_niche = forms.CharField(
-        label="Novo nicho",
-        required=False,
-        help_text="Se ainda nao existir, digite aqui para salvar e reutilizar depois.",
-    )
-
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace = workspace
@@ -163,7 +157,6 @@ class ProspectForm(forms.ModelForm):
                 "stage",
                 "contact_date",
                 "niche",
-                "new_niche",
                 "email",
                 "instagram",
                 "whatsapp",
@@ -188,13 +181,6 @@ class ProspectForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        new_niche = (cleaned_data.get("new_niche") or "").strip()
-        self._new_niche_name = new_niche
-
-        if new_niche:
-            if self.workspace is None:
-                raise forms.ValidationError("Nao foi possivel salvar o nicho sem um workspace ativo.")
-
         if cleaned_data.get("meeting_scheduled") and not cleaned_data.get("meeting_date"):
             self.add_error("meeting_date", "Informe a data da reuniao agendada.")
 
@@ -205,9 +191,6 @@ class ProspectForm(forms.ModelForm):
 
     def save(self, commit=True):
         prospect = super().save(commit=False)
-        if getattr(self, "_new_niche_name", ""):
-            niche, _ = Niche.objects.get_or_create(workspace=self.workspace, name=self._new_niche_name)
-            prospect.niche = niche
         if commit:
             prospect.save()
             self.save_m2m()
@@ -247,12 +230,6 @@ class ProspectForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
-    new_service_category = forms.CharField(
-        label="Nova categoria de servico",
-        required=False,
-        help_text="Se ainda nao existir, digite aqui para salvar e reutilizar depois.",
-    )
-
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace = workspace
@@ -265,7 +242,6 @@ class ProjectForm(forms.ModelForm):
                 "closing_source",
                 "niche",
                 "service_category",
-                "new_service_category",
                 "stage",
                 "status",
                 "total_value",
@@ -302,16 +278,9 @@ class ProjectForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         service_category = cleaned_data.get("service_category")
-        new_service_category = (cleaned_data.get("new_service_category") or "").strip()
-        self._new_service_category_name = new_service_category
-
-        if new_service_category:
-            if self.workspace is None:
-                raise forms.ValidationError("Nao foi possivel salvar a categoria sem um workspace ativo.")
-            service_category = True
 
         if service_category is None:
-            self.add_error("service_category", "Selecione uma categoria de servico ou cadastre uma nova.")
+            self.add_error("service_category", "Selecione uma categoria de servico nas configuracoes do workspace.")
 
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0
@@ -325,12 +294,6 @@ class ProjectForm(forms.ModelForm):
 
     def save(self, commit=True):
         project = super().save(commit=False)
-        if getattr(self, "_new_service_category_name", ""):
-            service_category, _ = ServiceCategory.objects.get_or_create(
-                workspace=self.workspace,
-                name=self._new_service_category_name,
-            )
-            project.service_category = service_category
         project.project_name = project.service_category_name
         project.content_type = ""
         project.progress = STATUS_PROGRESS_MAP.get(project.status, project.progress)
@@ -397,6 +360,15 @@ class WorkspaceSettingsForm(forms.Form):
                     field.initial = str(raw_value).lower() in {"1", "true", "yes", "on"}
                 else:
                     field.initial = raw_value
+
+
+class ManagedOptionForm(forms.Form):
+    name = forms.CharField(max_length=160, label="Nome")
+
+    def __init__(self, *args, label: str, help_text: str, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].label = label
+        self.fields["name"].help_text = help_text
 
 
 class ProfilePhotoForm(forms.Form):

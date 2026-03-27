@@ -5,6 +5,7 @@
     <p class="muted note-box">As configuracoes abaixo sao salvas automaticamente no banco do workspace.</p>
     <form method="post" class="stack-list">
         {% csrf_token %}
+        <input type="hidden" name="settings_action" value="preferences">
         {% for field in form %}
             <article class="soft-card setting-row">
                 <div class="setting-copy">
@@ -18,5 +19,73 @@
             <button type="submit" class="primary-button">Salvar configuracoes</button>
         </div>
     </form>
+
+    <section class="split-grid settings-managed-grid">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Nichos</h3>
+                    <p>Cadastre os nichos para selecionar nos menus suspensos do workspace.</p>
+                </div>
+            </div>
+            <form method="post" class="auth-form-stack">
+                {% csrf_token %}
+                <input type="hidden" name="settings_action" value="add_niche">
+                <div class="form-field">
+                    <label for="{{ niche_form.name.id_for_label }}">{{ niche_form.name.label }}</label>
+                    {{ niche_form.name }}
+                    {% if niche_form.name.help_text %}
+                        <small class="field-help">{{ niche_form.name.help_text }}</small>
+                    {% endif %}
+                    {{ niche_form.name.errors }}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary-button">Adicionar nicho</button>
+                </div>
+            </form>
+            <div class="stack-list">
+                {% for item in managed_niches %}
+                    <article class="soft-card metric-row">
+                        <strong>{{ item.name }}</strong>
+                    </article>
+                {% empty %}
+                    <p class="muted">Nenhum nicho cadastrado ainda.</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Categorias de servico</h3>
+                    <p>Cadastre aqui o que depois aparece no menu suspenso dos trabalhos.</p>
+                </div>
+            </div>
+            <form method="post" class="auth-form-stack">
+                {% csrf_token %}
+                <input type="hidden" name="settings_action" value="add_service_category">
+                <div class="form-field">
+                    <label for="{{ service_category_form.name.id_for_label }}">{{ service_category_form.name.label }}</label>
+                    {{ service_category_form.name }}
+                    {% if service_category_form.name.help_text %}
+                        <small class="field-help">{{ service_category_form.name.help_text }}</small>
+                    {% endif %}
+                    {{ service_category_form.name.errors }}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary-button">Adicionar categoria</button>
+                </div>
+            </form>
+            <div class="stack-list">
+                {% for item in managed_service_categories %}
+                    <article class="soft-card metric-row">
+                        <strong>{{ item.name }}</strong>
+                    </article>
+                {% empty %}
+                    <p class="muted">Nenhuma categoria cadastrada ainda.</p>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
 </section>
 {% endblock %}
