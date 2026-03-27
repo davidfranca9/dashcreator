@@ -169,6 +169,7 @@ class ProspectForm(forms.ModelForm):
                 "whatsapp",
                 "proposal_value",
                 "meeting_scheduled",
+                "meeting_date",
                 "note",
             ]
         )
@@ -177,6 +178,12 @@ class ProspectForm(forms.ModelForm):
             format="%Y-%m-%d",
         )
         self.fields["contact_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["meeting_date"].widget = forms.DateInput(
+            attrs={"type": "date"},
+            format="%Y-%m-%d",
+        )
+        self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["proposal_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["niche"].queryset = Niche.objects.none()
         if workspace is not None:
             self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
@@ -189,6 +196,12 @@ class ProspectForm(forms.ModelForm):
         if new_niche:
             if self.workspace is None:
                 raise forms.ValidationError("Nao foi possivel salvar o nicho sem um workspace ativo.")
+
+        if cleaned_data.get("meeting_scheduled") and not cleaned_data.get("meeting_date"):
+            self.add_error("meeting_date", "Informe a data da reuniao agendada.")
+
+        if not cleaned_data.get("meeting_scheduled"):
+            cleaned_data["meeting_date"] = None
 
         return cleaned_data
 
@@ -216,6 +229,7 @@ class ProspectForm(forms.ModelForm):
             "whatsapp",
             "proposal_value",
             "meeting_scheduled",
+            "meeting_date",
             "note",
         ]
         labels = {
@@ -230,6 +244,7 @@ class ProspectForm(forms.ModelForm):
             "whatsapp": "WhatsApp",
             "proposal_value": "Valor estimado",
             "meeting_scheduled": "Reuniao agendada",
+            "meeting_date": "Data da reuniao",
             "note": "Observacoes",
         }
         widgets = {"note": forms.Textarea(attrs={"rows": 5})}

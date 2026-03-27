@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .forms import ProjectForm
+from .forms import ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, get_or_create_workspace_for_user, shell_context
 
@@ -113,6 +113,62 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'value="{prospect.contact_date.isoformat()}"', html=False)
+
+    def test_prospect_form_configures_estimated_value_as_decimal_input(self):
+        form = ProspectForm(workspace=self.workspace)
+
+        self.assertEqual(form.fields["proposal_value"].widget.attrs["step"], "0.01")
+        self.assertEqual(form.fields["proposal_value"].widget.attrs["min"], "0")
+        self.assertEqual(form.fields["proposal_value"].widget.attrs["inputmode"], "decimal")
+
+    def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
+        form = ProspectForm(
+            data={
+                "company": "Insider",
+                "contact": "Julia",
+                "contact_type": "Social media",
+                "stage": "Prospeccao",
+                "contact_date": date.today().isoformat(),
+                "niche": "",
+                "new_niche": "",
+                "email": "julia@insider.com",
+                "instagram": "@insiderstore",
+                "whatsapp": "71911111111",
+                "proposal_value": "3200",
+                "meeting_scheduled": "on",
+                "meeting_date": "",
+                "note": "Chegou pelo Instagram",
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("meeting_date", form.errors)
+
+    def test_dashboard_pages_show_popup_for_today_meetings(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            contact="Marina",
+            contact_type="Instagram DM",
+            stage="Negociacao",
+            contact_date=date.today(),
+            meeting_date=date.today(),
+            niche=self.niche,
+            email="marina@reserva.com",
+            instagram="@reserva",
+            whatsapp="71988887777",
+            proposal_value=3200,
+            note="Quente",
+            meeting_scheduled=True,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Reunioes de hoje")
+        self.assertContains(response, "Reserva")
 
     def test_project_form_uses_workspace_default_entry_rate_and_prefills_close_date(self):
         self.workspace.settings.update_or_create(
