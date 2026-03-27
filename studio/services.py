@@ -278,6 +278,12 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
         if normalized_name:
             company_names.add(normalized_name)
     clients_portfolio = len(company_names)
+    active_company_names = set()
+    for item in active_projects:
+        normalized_name = " ".join(str(item.company).split()).casefold()
+        if normalized_name:
+            active_company_names.add(normalized_name)
+    active_companies = len(active_company_names)
     monthly_revenue = sum_money(
         item.total_value
         for item in projects
@@ -321,10 +327,10 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
 
     return {
         "stats": [
-            {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
             {"title": "Carteira de Clientes", "value": str(clients_portfolio), "icon_label": "C"},
+            {"title": "Empresas Ativas", "value": str(active_companies), "icon_label": "E"},
+            {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
             {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$"},
-            {"title": "", "value": "", "icon_label": "", "blank": True},
         ],
         "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
         "pipeline": pipeline,
