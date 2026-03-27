@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 from django.db.models.functions import Lower, Trim
 from django.urls import reverse
 
-from .constants import COMPANY_COLORS, NAV_GROUPS, NAV_ITEMS, REVENUE_RANGE_CHOICES, SETTINGS_GROUPS
+from .constants import COMPANY_COLORS, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
 from .models import Membership, Project, Prospect, Workspace, WorkspaceSetting
 
 
@@ -205,14 +205,10 @@ def _shift_month(base_date: date, months: int) -> date:
     return date(year, month, 1)
 
 
-def _month_window(month_count: int) -> list[date]:
-    current_month = date.today().replace(day=1)
-    return [_shift_month(current_month, -offset) for offset in range(month_count - 1, -1, -1)]
-
-
 def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_months") -> dict:
-    month_count = {"current_month": 1, "last_quarter": 3, "last_6_months": 6}.get(revenue_range, 6)
-    month_starts = _month_window(month_count)
+    current_year = date.today().year
+    current_month = date.today().replace(day=1)
+    month_starts = [date(current_year, month, 1) for month in range(1, 13)]
     totals = {item: ZERO for item in month_starts}
 
     for project in projects:
@@ -229,7 +225,7 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
                 "label": month_label(month_start),
                 "amount": amount,
                 "height": max(6 if amount else 2, int((amount / max_value) * 100)) if max_value else 0,
-                "highlighted": index == len(month_starts) - 1,
+                "highlighted": month_start == current_month,
             }
         )
 
@@ -238,7 +234,7 @@ def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_mo
         value = int(max_value * step / 3)
         steps.append({"label": currency(value)})
 
-    return {"points": points, "steps": steps, "choices": REVENUE_RANGE_CHOICES, "current_range": revenue_range}
+    return {"points": points, "steps": steps}
 
 
 def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
@@ -246,17 +242,26 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
     active_projects = list(projects.filter(stage="Fechado").order_by("due_date"))
     delivered_projects = list(projects.filter(stage="Entregue").order_by("-due_date"))
     prospects = list(Prospect.objects.filter(workspace=workspace))
+    current_month = date.today().replace(day=1)
 
-    active_empresas = sum(item.deliverables_count for item in active_projects)
-    companies = (
-        projects.exclude(company__exact="")
-        .annotate(company_key=Lower(Trim("company")))
-        .values("company_key")
-        .distinct()
-        .count()
+    active_jobs = len(active_projects)
+    company_names = set()
+    for raw_name in projects.exclude(company__exact="").values_list("company", flat=True):
+        normalized_name = " ".join(str(raw_name).split()).casefold()
+        if normalized_name:
+            company_names.add(normalized_name)
+    for raw_name in Prospect.objects.filter(workspace=workspace).exclude(company__exact="").values_list("company", flat=True):
+        normalized_name = " ".join(str(raw_name).split()).casefold()
+        if normalized_name:
+            company_names.add(normalized_name)
+    clients_portfolio = len(company_names)
+    total_received = sum_money(item.received_value for item in projects)
+    monthly_forecast = sum_money(
+        item.total_value
+        for item in active_projects
+        if item.due_date.year == current_month.year and item.due_date.month == current_month.month
     )
     total_closed = sum_money(item.total_value for item in active_projects)
-    entry_value = sum_money(item.entry_value for item in active_projects)
 
     pipeline = [
         {"stage": "Prospeccao", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount": int(sum_money(item.proposal_value for item in prospects if item.stage == "Prospeccao")), "icon_label": "P", "accent": "#4d8cff", "progress": 54},
@@ -294,10 +299,10 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
 
     return {
         "stats": [
-            {"title": "Empresas Ativas", "value": str(active_empresas), "icon_label": "T"},
-            {"title": "Empresas Contratantes", "value": str(companies), "icon_label": "E"},
-            {"title": "Total Fechado", "value": currency(total_closed), "icon_label": "$"},
-            {"title": "Entrada", "value": currency(entry_value), "icon_label": "+"},
+            {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
+            {"title": "Carteira de Clientes", "value": str(clients_portfolio), "icon_label": "C"},
+            {"title": "Ganhos Totais", "value": currency(total_received), "icon_label": "$"},
+            {"title": "Faturamento Mensal Previsto", "value": currency(monthly_forecast), "icon_label": "+"},
         ],
         "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
         "pipeline": pipeline,

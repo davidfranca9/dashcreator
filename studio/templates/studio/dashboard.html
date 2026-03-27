@@ -19,15 +19,8 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Faturamento Mensal</h3>
+                    <h3>Faturamento anual do ano vigente</h3>
                 </div>
-                <form method="get">
-                    <select name="range" onchange="this.form.submit()">
-                        {% for key, label in revenue.choices %}
-                            <option value="{{ key }}"{% if revenue.current_range == key %} selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </form>
             </div>
             <div class="chart-grid">
                 <div class="chart-axis">

@@ -185,6 +185,21 @@ class DashboardSmokeTest(TestCase):
         self.assertNotIn("progress", form.fields)
 
     def test_dashboard_counts_unique_contracting_companies(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company=" shein ",
+            contact="Marina",
+            contact_type="Instagram DM",
+            stage="Prospeccao",
+            contact_date=date.today(),
+            niche=self.niche,
+            email="marina@shein.com",
+            instagram="@shein",
+            whatsapp="71988887777",
+            proposal_value=3200,
+            note="Cliente repetido",
+            meeting_scheduled=False,
+        )
         Project.objects.create(
             workspace=self.workspace,
             company=" shein ",
@@ -206,7 +221,13 @@ class DashboardSmokeTest(TestCase):
 
         snapshot = dashboard_snapshot(self.workspace)
 
-        self.assertEqual(snapshot["stats"][1]["value"], "1")
+        self.assertEqual(snapshot["stats"][0]["title"], "Trabalhos Ativos")
+        self.assertEqual(snapshot["stats"][1]["title"], "Carteira de Clientes")
+        self.assertEqual(snapshot["stats"][2]["title"], "Ganhos Totais")
+        self.assertEqual(snapshot["stats"][3]["title"], "Faturamento Mensal Previsto")
+        self.assertEqual(snapshot["stats"][1]["value"], "2")
+        self.assertEqual(snapshot["stats"][2]["value"], "R$2.600")
+        self.assertEqual(len(snapshot["revenue"]["points"]), 12)
 
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(
