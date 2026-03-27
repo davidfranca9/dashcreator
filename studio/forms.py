@@ -14,6 +14,14 @@ from .services import ensure_default_settings, settings_map
 
 
 UserModel = get_user_model()
+STATUS_PROGRESS_MAP = {
+    "Briefing": 0,
+    "Em gravacao": 25,
+    "Em edicao": 55,
+    "Aguardando cliente": 80,
+    "Aprovado": 95,
+    "Entregue": 100,
+}
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
@@ -239,6 +247,8 @@ class ProjectForm(forms.ModelForm):
         self.order_fields(
             [
                 "company",
+                "closing_source",
+                "niche",
                 "service_category",
                 "new_service_category",
                 "stage",
@@ -247,13 +257,14 @@ class ProjectForm(forms.ModelForm):
                 "entry_value",
                 "received_value",
                 "deliverables_count",
-                "progress",
                 "close_date",
                 "due_date",
             ]
         )
+        self.fields["niche"].queryset = Niche.objects.none()
         self.fields["service_category"].queryset = ServiceCategory.objects.none()
         if workspace is not None:
+            self.fields["niche"].queryset = Niche.objects.filter(workspace=workspace)
             self.fields["service_category"].queryset = ServiceCategory.objects.filter(workspace=workspace)
         if not self.is_bound and not getattr(self.instance, "pk", None) and not self.initial.get("close_date"):
             self.fields["close_date"].initial = timezone.localdate()
@@ -262,12 +273,12 @@ class ProjectForm(forms.ModelForm):
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Voce pode ajustar manualmente se quiser."
         )
+        self.fields["closing_source"].help_text = "Ex.: Instagram, indicacao, prospeccao ativa, WhatsApp."
         self.fields["deliverables_count"].help_text = "Use a quantidade total de videos incluidos neste trabalho."
         self.fields["total_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["received_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["deliverables_count"].widget.attrs.update({"min": "1"})
-        self.fields["progress"].widget.attrs.update({"min": "0", "max": "100"})
 
     def clean(self):
         cleaned_data = super().clean()
@@ -286,14 +297,11 @@ class ProjectForm(forms.ModelForm):
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0
         received_value = cleaned_data.get("received_value") or 0
-        progress = cleaned_data.get("progress") or 0
 
         if entry_value > total_value:
             self.add_error("entry_value", "A entrada nao pode ser maior que o valor total.")
         if received_value > total_value:
             self.add_error("received_value", "O valor recebido nao pode ser maior que o total.")
-        if progress > 100:
-            self.add_error("progress", "O progresso precisa ficar entre 0 e 100.")
         return cleaned_data
 
     def save(self, commit=True):
@@ -306,6 +314,7 @@ class ProjectForm(forms.ModelForm):
             project.service_category = service_category
         project.project_name = project.service_category_name
         project.content_type = ""
+        project.progress = STATUS_PROGRESS_MAP.get(project.status, project.progress)
         if commit:
             project.save()
             self.save_m2m()
@@ -315,6 +324,8 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = [
             "company",
+            "closing_source",
+            "niche",
             "service_category",
             "stage",
             "status",
@@ -322,12 +333,13 @@ class ProjectForm(forms.ModelForm):
             "entry_value",
             "received_value",
             "deliverables_count",
-            "progress",
             "close_date",
             "due_date",
         ]
         labels = {
             "company": "Empresa",
+            "closing_source": "Via de fechamento",
+            "niche": "Nicho",
             "service_category": "Categoria de servico",
             "stage": "Etapa",
             "status": "Status",
@@ -335,7 +347,6 @@ class ProjectForm(forms.ModelForm):
             "entry_value": "Entrada",
             "received_value": "Recebido",
             "deliverables_count": "Quantidade de videos",
-            "progress": "Progresso (%)",
             "close_date": "Fechamento",
             "due_date": "Entrega",
         }

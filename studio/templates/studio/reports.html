@@ -1,6 +1,22 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
+<article class="card finance-month-card">
+    <div class="card-header">
+        <div>
+            <h3>Overview do mes</h3>
+            <p class="muted">Mes selecionado: {{ selected_month.label }}</p>
+        </div>
+        <form method="get" class="finance-filter-form">
+            <select name="month" onchange="this.form.submit()">
+                {% for item in month_choices %}
+                    <option value="{{ item.value }}"{% if selected_month.value == item.value %} selected{% endif %}>{{ item.label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</article>
+
 <section class="stats-grid">
     {% for item in stats %}
         <article class="stat-card">
@@ -15,22 +31,27 @@
 
 <section class="stack-section">
     <article class="card">
-        <div class="card-header"><div><h3>Radar de performance</h3></div></div>
-        <div class="stack-list">
-            {% for row in breakdown %}
-                <div class="metric-row">
-                    <div class="meta-line">
-                        <strong>{{ row.label }}</strong>
-                        <strong>{{ row.amount_text }}</strong>
+        <div class="card-header"><div><h3>Distribuicao por via</h3><p class="muted">{{ selected_month.label }}</p></div></div>
+        {% if via_breakdown %}
+            <div class="stack-list">
+                {% for row in via_breakdown %}
+                    <div class="metric-row">
+                        <div class="meta-line">
+                            <strong>{{ row.label }}</strong>
+                            <strong>{{ row.amount_text }}</strong>
+                        </div>
+                        <small class="muted">{{ row.count_text }}</small>
+                        <div class="progress-track"><span style="width: {{ row.progress }}%; background: {{ row.accent }};"></span></div>
                     </div>
-                    <div class="progress-track"><span style="width: {{ row.progress }}%; background: {{ row.accent }};"></span></div>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">Nenhum trabalho fechado em {{ selected_month.label|lower }}.</p>
+        {% endif %}
     </article>
 
     <article class="card">
-        <div class="card-header"><div><h3>Leituras estrategicas</h3></div></div>
+        <div class="card-header"><div><h3>Leituras estrategicas</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         <div class="highlight-grid">
             {% for item in highlights %}
                 <article class="soft-card highlight-card">

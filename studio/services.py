@@ -151,8 +151,19 @@ def navigation_groups(page_key: str) -> list[dict]:
     return groups
 
 
-def shell_context(page_key: str, workspace: Workspace, title: str, subtitle: str, action_label: str | None = None, action_url: str | None = None) -> dict:
+def shell_context(
+    page_key: str,
+    workspace: Workspace,
+    title: str,
+    subtitle: str,
+    user: User | None = None,
+    action_label: str | None = None,
+    action_url: str | None = None,
+) -> dict:
     workspace_settings = settings_map(workspace)
+    workspace_membership = None
+    if user and getattr(user, "is_authenticated", False):
+        workspace_membership = user.memberships.select_related("workspace").filter(workspace=workspace).first()
     return {
         "nav_items": navigation(page_key),
         "nav_groups": navigation_groups(page_key),
@@ -162,6 +173,7 @@ def shell_context(page_key: str, workspace: Workspace, title: str, subtitle: str
         "header_action_label": action_label,
         "header_action_url": reverse(action_url) if action_url else None,
         "workspace": workspace,
+        "workspace_membership": workspace_membership,
         "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
     }
 
@@ -401,43 +413,86 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     }
 
 
-def reports_snapshot(workspace: Workspace) -> dict:
+def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     projects = list(Project.objects.filter(workspace=workspace))
-    active = [item for item in projects if item.stage == "Fechado"]
-    delivered = [item for item in projects if item.stage == "Entregue"]
-    prospects = list(Prospect.objects.filter(workspace=workspace))
+    month_options = sorted({item.close_date.replace(day=1) for item in projects} | {date.today().replace(day=1)}, reverse=True)
+    selected_month = parse_month_value(month_filter)
+    if selected_month is None or selected_month.replace(day=1) not in month_options:
+        current_month = date.today().replace(day=1)
+        selected_month = current_month if current_month in month_options else month_options[0]
+    selected_month = selected_month.replace(day=1)
 
-    delivered_on_time = sum(1 for item in delivered if item.updated_at.date() <= item.due_date)
-    first_pass = sum(1 for item in active if item.status in {"Aprovado", "Entregue"})
-    conversion_rate = round((len(active) / (len(active) + len(prospects))) * 100) if active or prospects else 0
-    payments_base = sum_money(item.entry_value for item in active)
-    payments_on_time = round((sum_money(item.received_value for item in active) / payments_base) * 100) if payments_base else 0
-    delivered_units = sum(item.deliverables_count for item in delivered[-8:])
-    avg_days = average_project_days(projects)
-    active_total = sum_money(item.total_value for item in active)
-    margin = round(((active_total - (active_total * Decimal("0.37"))) / active_total) * 100) if active_total else 0
-    delivered_by_company = {}
-    for item in delivered:
-        delivered_by_company[item.company] = delivered_by_company.get(item.company, 0) + 1
-    repeat_rate = round((sum(1 for count in delivered_by_company.values() if count > 1) / len(delivered_by_company)) * 100) if delivered_by_company else 0
+    month_projects = [item for item in projects if item.close_date.year == selected_month.year and item.close_date.month == selected_month.month]
+    volume = len(month_projects)
+    total_closed = sum_money(item.total_value for item in month_projects)
+    selected_month_label = long_month_label(selected_month)
+
+    source_counts: dict[str, int] = {}
+    niche_counts: dict[str, int] = {}
+    for item in month_projects:
+        source_label = (item.closing_source or "").strip() or "Nao informado"
+        source_counts[source_label] = source_counts.get(source_label, 0) + 1
+        niche_label = item.niche.name if item.niche_id else "Nao informado"
+        niche_counts[niche_label] = niche_counts.get(niche_label, 0) + 1
+
+    source_palette = ["#4d8cff", "#20b7a7", "#7f6fff", "#f59a3d", "#61748e", "#c765c7"]
+    sorted_sources = sorted(source_counts.items(), key=lambda item: (-item[1], item[0]))
+    via_breakdown = []
+    for index, (label, count) in enumerate(sorted_sources):
+        percentage = round((count / volume) * 100) if volume else 0
+        via_breakdown.append(
+            {
+                "label": label,
+                "amount_text": f"{percentage}%",
+                "progress": percentage,
+                "accent": source_palette[index % len(source_palette)],
+                "count_text": f"{count} trabalho{'s' if count != 1 else ''}",
+            }
+        )
+
+    top_source_label, top_source_count = sorted_sources[0] if sorted_sources else ("Sem dados", 0)
+    top_source_percentage = round((top_source_count / volume) * 100) if volume else 0
+    top_niche_label, top_niche_count = (
+        sorted(niche_counts.items(), key=lambda item: (-item[1], item[0]))[0]
+        if niche_counts
+        else ("Sem dados", 0)
+    )
 
     return {
         "stats": [
-            {"title": "Conteudos entregues", "value": str(delivered_units), "icon_label": "C"},
-            {"title": "Taxa de recompra", "value": f"{repeat_rate}%", "icon_label": "%"},
-            {"title": "Tempo medio", "value": f"{avg_days:.1f} dias", "icon_label": "T"},
-            {"title": "Margem estimada", "value": f"{margin}%", "icon_label": "M"},
+            {"title": "Volume de trabalhos", "value": str(volume), "icon_label": "V"},
+            {"title": "Total fechado", "value": currency(total_closed), "icon_label": "$"},
+            {"title": "Via principal", "value": top_source_label, "icon_label": "%"},
+            {"title": "Nicho lider", "value": top_niche_label, "icon_label": "N"},
         ],
-        "breakdown": [
-            {"label": "Propostas convertidas", "amount_text": f"{conversion_rate}%", "progress": conversion_rate, "accent": "#4d8cff"},
-            {"label": "Projetos entregues no prazo", "amount_text": f"{round((delivered_on_time / max(1, len(delivered))) * 100)}%", "progress": round((delivered_on_time / max(1, len(delivered))) * 100), "accent": "#20b7a7"},
-            {"label": "Aprovacao sem retrabalho", "amount_text": f"{round((first_pass / max(1, len(active))) * 100)}%", "progress": round((first_pass / max(1, len(active))) * 100), "accent": "#7f6fff"},
-            {"label": "Recebimentos em dia", "amount_text": f"{payments_on_time}%", "progress": payments_on_time, "accent": "#f59a3d"},
-        ],
+        "month_choices": [{"value": month_value(item), "label": long_month_label(item)} for item in month_options],
+        "selected_month": {"value": month_value(selected_month), "label": long_month_label(selected_month)},
+        "via_breakdown": via_breakdown,
         "highlights": [
-            {"title": "Canal com melhor retorno", "description": "Instagram Reels continua puxando a maior parte dos leads qualificados."},
-            {"title": "Pacote mais lucrativo", "description": "Combos com 3 videos UGC mantem boa margem e recompra recorrente."},
-            {"title": "Gargalo do mes", "description": "Aguardando cliente ainda alonga o prazo dos jobs de moda e beleza."},
+            {
+                "title": "Via com mais fechamentos",
+                "description": (
+                    f"{top_source_label} respondeu por {top_source_percentage}% dos fechamentos de {selected_month_label.lower()}."
+                    if volume
+                    else f"Nenhum trabalho fechado em {selected_month_label.lower()}."
+                ),
+            },
+            {
+                "title": "Nicho que mais fechou",
+                "description": (
+                    f"{top_niche_label} liderou com {top_niche_count} trabalho{'s' if top_niche_count != 1 else ''} fechado{'s' if top_niche_count != 1 else ''} no mes."
+                    if volume
+                    else "Assim que voce cadastrar fechamentos, o nicho lider aparece aqui."
+                ),
+            },
+            {
+                "title": "Resumo do mes",
+                "description": (
+                    f"{volume} trabalho{'s' if volume != 1 else ''} fechados somando {currency(total_closed)} em {selected_month_label.lower()}."
+                    if volume
+                    else "Sem fechamentos no periodo selecionado."
+                ),
+            },
         ],
     }
 

@@ -38,9 +38,9 @@ class ProspectAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("service_category", "company", "stage", "status", "total_value", "workspace", "due_date")
-    list_filter = ("stage", "status", "workspace")
-    search_fields = ("service_category__name", "project_name", "company")
+    list_display = ("service_category", "company", "closing_source", "niche", "stage", "status", "total_value", "workspace", "due_date")
+    list_filter = ("stage", "status", "workspace", "niche")
+    search_fields = ("service_category__name", "project_name", "company", "closing_source", "niche__name")
 
 
 @admin.register(ServiceCategory)

@@ -38,6 +38,8 @@ class DashboardSmokeTest(TestCase):
         self.project = Project.objects.create(
             workspace=self.workspace,
             company="Shein",
+            closing_source="Instagram",
+            niche=self.niche,
             service_category=self.category,
             project_name="Pacote de videos",
             content_type="",
@@ -115,6 +117,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(form.fields["close_date"].initial, date.today())
         self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de videos")
         self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
+        self.assertNotIn("progress", form.fields)
 
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(
@@ -131,6 +134,8 @@ class DashboardSmokeTest(TestCase):
         Project.objects.create(
             workspace=self.workspace,
             company="Insider",
+            closing_source="Indicacao",
+            niche=self.niche,
             service_category=self.category,
             project_name="Pacote de videos",
             content_type="",
@@ -155,6 +160,62 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["stats"][2]["value"], "R$800")
         self.assertEqual(response.context["stats"][3]["value"], "10 dias")
         self.assertEqual(len(response.context["schedule"]), 1)
+
+    def test_reports_page_shows_month_overview_with_via_and_top_niche(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote de videos",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=5000,
+            entry_value=2500,
+            received_value=1000,
+            deliverables_count=2,
+            progress=25,
+            close_date=self.project.close_date,
+            due_date=self.project.due_date + timedelta(days=20),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("reports"), {"month": self.project.close_date.strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_month"]["value"], self.project.close_date.strftime("%Y-%m"))
+        self.assertEqual(response.context["stats"][0]["value"], "2")
+        self.assertEqual(response.context["stats"][1]["value"], "R$7.400")
+        self.assertEqual(response.context["stats"][2]["value"], "Indicacao")
+        self.assertEqual(response.context["stats"][3]["value"], "Beleza")
+        self.assertEqual(response.context["via_breakdown"][0]["amount_text"], "50%")
+        self.assertContains(response, "Distribuicao por via")
+
+    def test_prospect_conversion_prefills_closing_source_and_niche(self):
+        prospect = Prospect.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            contact="Marina",
+            contact_type="Instagram DM",
+            stage="Negociacao",
+            contact_date=date.today(),
+            niche=self.niche,
+            email="marina@reserva.com",
+            instagram="@reserva",
+            whatsapp="71988887777",
+            proposal_value=3200,
+            note="Quente",
+            meeting_scheduled=True,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospect_convert", args=[prospect.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"].initial["closing_source"], "Instagram DM")
+        self.assertEqual(response.context["form"].initial["niche"], self.niche)
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)

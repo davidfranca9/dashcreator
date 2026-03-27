@@ -170,6 +170,8 @@ class Project(WorkspaceOwnedModel):
     company = models.CharField(max_length=160)
     project_name = models.CharField(max_length=180, blank=True, default="")
     content_type = models.CharField(max_length=120, blank=True, default="")
+    closing_source = models.CharField(max_length=120, blank=True, default="")
+    niche = models.ForeignKey(Niche, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects")
     service_category = models.ForeignKey(
         ServiceCategory,
         on_delete=models.SET_NULL,

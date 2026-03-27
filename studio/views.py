@@ -10,6 +10,8 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 
 from .emails import send_signup_confirmation_email
+from decimal import Decimal
+
 from .forms import (
     AppPasswordResetForm,
     AppSetPasswordForm,
@@ -98,7 +100,7 @@ def _workspace(request: HttpRequest):
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("dashboard", workspace, "Dashboard", "Visao executiva do negocio UGC.", action_label="Novo trabalho", action_url="project_create")
+    context = shell_context("dashboard", workspace, "Dashboard", "Visao executiva do negocio UGC.", user=request.user, action_label="Novo trabalho", action_url="project_create")
     context.update(dashboard_snapshot(workspace, request.GET.get("range", "last_6_months")))
     return render(request, "studio/dashboard.html", context)
 
@@ -106,7 +108,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @login_required
 def prospection(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("prospection", workspace, "Prospeccao", "Leads, follow-ups e negociacoes em aberto.", action_label="Novo lead", action_url="prospect_create")
+    context = shell_context("prospection", workspace, "Prospeccao", "Leads, follow-ups e negociacoes em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
     context.update(prospection_snapshot(workspace))
     return render(request, "studio/prospection.html", context)
 
@@ -114,7 +116,7 @@ def prospection(request: HttpRequest) -> HttpResponse:
 @login_required
 def jobs(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("jobs", workspace, "Trabalhos", "Trabalhos assinados e entregas em andamento.", action_label="Novo trabalho", action_url="project_create")
+    context = shell_context("jobs", workspace, "Trabalhos", "Trabalhos assinados e entregas em andamento.", user=request.user, action_label="Novo trabalho", action_url="project_create")
     context.update(jobs_snapshot(workspace))
     return render(request, "studio/jobs.html", context)
 
@@ -122,7 +124,7 @@ def jobs(request: HttpRequest) -> HttpResponse:
 @login_required
 def finance(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("finance", workspace, "Financeiro", "Entradas, recebimentos e previsoes de caixa.")
+    context = shell_context("finance", workspace, "Financeiro", "Entradas, recebimentos e previsoes de caixa.", user=request.user)
     context.update(finance_snapshot(workspace, request.GET.get("month")))
     return render(request, "studio/finance.html", context)
 
@@ -130,8 +132,8 @@ def finance(request: HttpRequest) -> HttpResponse:
 @login_required
 def reports(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("reports", workspace, "Relatorios", "Indicadores estrategicos do negocio.")
-    context.update(reports_snapshot(workspace))
+    context = shell_context("reports", workspace, "Relatorios", "Indicadores estrategicos do negocio.", user=request.user)
+    context.update(reports_snapshot(workspace, request.GET.get("month")))
     return render(request, "studio/reports.html", context)
 
 
@@ -144,7 +146,7 @@ def settings(request: HttpRequest) -> HttpResponse:
         messages.success(request, "Configuracoes atualizadas.")
         return redirect("settings")
 
-    context = shell_context("settings", workspace, "Configuracoes", "Preferencias visuais e operacionais.")
+    context = shell_context("settings", workspace, "Configuracoes", "Preferencias visuais e operacionais.", user=request.user)
     context.update({"form": form})
     return render(request, "studio/settings.html", context)
 
@@ -163,7 +165,7 @@ def profile(request: HttpRequest) -> HttpResponse:
             messages.success(request, "Foto de perfil atualizada.")
             return redirect("profile")
 
-    context = shell_context("profile", workspace, "Perfil", "Dados cadastrais da conta e do workspace ativo.")
+    context = shell_context("profile", workspace, "Perfil", "Dados cadastrais da conta e do workspace ativo.", user=request.user)
     context.update(
         {
             "membership": membership,
@@ -201,7 +203,7 @@ def prospect_create(request: HttpRequest) -> HttpResponse:
         messages.success(request, "Lead salvo com sucesso.")
         return redirect("prospection")
 
-    context = shell_context("prospection", workspace, "Novo lead", "Registre uma oportunidade comercial.")
+    context = shell_context("prospection", workspace, "Novo lead", "Registre uma oportunidade comercial.", user=request.user)
     context.update({"form": form, "form_title": "Lead / prospeccao", "cancel_url": "prospection"})
     return render(request, "studio/prospect_form.html", context)
 
@@ -216,7 +218,7 @@ def prospect_edit(request: HttpRequest, pk: int) -> HttpResponse:
         messages.success(request, "Lead atualizado.")
         return redirect("prospection")
 
-    context = shell_context("prospection", workspace, "Editar lead", "Ajuste os dados da oportunidade.")
+    context = shell_context("prospection", workspace, "Editar lead", "Ajuste os dados da oportunidade.", user=request.user)
     context.update({"form": form, "form_title": "Lead / prospeccao", "cancel_url": "prospection"})
     return render(request, "studio/prospect_form.html", context)
 
@@ -237,11 +239,13 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
     initial = {
         "company": prospect.company,
+        "closing_source": prospect.contact_type,
+        "niche": prospect.niche,
         "service_category": None,
         "stage": "Fechado",
         "status": "Briefing",
         "total_value": prospect.proposal_value,
-        "entry_value": prospect.proposal_value * 0.5,
+        "entry_value": prospect.proposal_value * Decimal("0.5"),
         "received_value": 0,
         "deliverables_count": 3,
         "progress": 15,
@@ -255,7 +259,7 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         messages.success(request, "Lead convertido em trabalho.")
         return redirect("jobs")
 
-    context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em trabalho.")
+    context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em trabalho.", user=request.user)
     context.update({"form": form, "form_title": "Trabalho", "cancel_url": "prospection"})
     return render(request, "studio/project_form.html", context)
 
@@ -271,7 +275,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
         messages.success(request, "Trabalho salvo com sucesso.")
         return redirect("jobs")
 
-    context = shell_context("jobs", workspace, "Novo trabalho", "Cadastre um novo trabalho.")
+    context = shell_context("jobs", workspace, "Novo trabalho", "Cadastre um novo trabalho.", user=request.user)
     context.update({"form": form, "form_title": "Trabalho", "cancel_url": "jobs"})
     return render(request, "studio/project_form.html", context)
 
@@ -286,7 +290,7 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
         messages.success(request, "Trabalho atualizado.")
         return redirect("jobs")
 
-    context = shell_context("jobs", workspace, "Editar trabalho", "Ajuste valores, datas e status.")
+    context = shell_context("jobs", workspace, "Editar trabalho", "Ajuste valores, datas e status.", user=request.user)
     context.update({"form": form, "form_title": "Trabalho", "cancel_url": "jobs"})
     return render(request, "studio/project_form.html", context)
 
