@@ -344,6 +344,11 @@ textarea {
     backdrop-filter: blur(4px);
 }
 
+.meeting-popup-backdrop[hidden],
+.meeting-popup-backdrop.is-hidden {
+    display: none;
+}
+
 .meeting-popup {
     width: min(100%, 520px);
     padding: 24px;

@@ -139,6 +139,7 @@
             (() => {
                 const hidePopup = (popup, popupKey) => {
                     popup.hidden = true;
+                    popup.classList.add("is-hidden");
                     try {
                         sessionStorage.setItem(popupKey, "dismissed");
                     } catch (error) {
