@@ -210,6 +210,7 @@ def shell_context(
         )
         .order_by("company", "contact")
     )
+    follow_up_alerts = follow_up_candidates(workspace) if str(workspace_settings.get("ops_follow_up_reminders", "")).lower() in {"1", "true", "yes", "on"} else []
     return {
         "nav_items": navigation(page_key),
         "nav_groups": navigation_groups(page_key),
@@ -230,6 +231,8 @@ def shell_context(
             for item in today_meetings
         ],
         "meeting_alert_date": today.strftime("%Y-%m-%d"),
+        "follow_up_alerts": follow_up_alerts,
+        "follow_up_alert_date": today.strftime("%Y-%m-%d"),
         "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
     }
 
@@ -332,6 +335,46 @@ def closing_source_mix(projects: list[Project]) -> dict:
     }
 
 
+def follow_up_candidates(workspace: Workspace) -> list[dict]:
+    today = date.today()
+    projects = list(Project.objects.filter(workspace=workspace).order_by("-due_date", "-close_date", "-updated_at"))
+    prospect_companies = {
+        normalize_company_name(item)
+        for item in Prospect.objects.filter(workspace=workspace).exclude(company__exact="").values_list("company", flat=True)
+        if normalize_company_name(item)
+    }
+    latest_by_company: dict[str, Project] = {}
+    for project in projects:
+        company_key = normalize_company_name(project.company)
+        if not company_key or company_key in latest_by_company:
+            continue
+        latest_by_company[company_key] = project
+
+    candidates = []
+    for company_key, project in latest_by_company.items():
+        if company_key in prospect_companies or project.stage != "Entregue":
+            continue
+        days_since_last_job = (today - project.due_date).days
+        if days_since_last_job < 30:
+            continue
+        color_a, color_b, accent = company_palette(project.company)
+        candidates.append(
+            {
+                "kind": "follow_up",
+                "company": project.company,
+                "service_category": project.service_category_name,
+                "last_delivery_text": short_date(project.due_date),
+                "days_since_last_job": days_since_last_job,
+                "note": f'Ja tem {days_since_last_job} dias desde o seu ultimo trabalho para a marca {project.company} que tal mandar um "oi sumido?"',
+                "accent": accent,
+                "colors": (color_a, color_b),
+            }
+        )
+
+    candidates.sort(key=lambda item: (-item["days_since_last_job"], item["company"].casefold()))
+    return candidates
+
+
 def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
     projects = Project.objects.filter(workspace=workspace)
     active_projects = list(projects.filter(stage="Fechado").order_by("due_date"))
@@ -417,6 +460,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
     total = len(prospects) or 1
     meetings = sum(1 for item in prospects if item.meeting_scheduled)
     negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
+    follow_up_items = follow_up_candidates(workspace)
 
     columns = []
     for stage in ("Prospeccao", "Negociacao"):
@@ -433,6 +477,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
 
             items.append(
                 {
+                    "kind": "prospect",
                     "id": item.id,
                     "company": item.company,
                     "contact": item.contact,
@@ -448,6 +493,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
                 }
             )
         columns.append({"title": "Prospecção" if stage == "Prospeccao" else stage, "items": items})
+    columns.append({"title": "Follow-up", "items": follow_up_items})
 
     return {
         "stats": [

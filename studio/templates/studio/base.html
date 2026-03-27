@@ -37,6 +37,29 @@
             </div>
         </div>
     {% endif %}
+    {% if follow_up_alerts %}
+        <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="follow-up-alert-{{ workspace.pk }}-{{ follow_up_alert_date }}">
+            <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="follow-up-popup-title">
+                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">Ã—</button>
+                <span class="meeting-popup-badge">Follow-up</span>
+                <h3 id="follow-up-popup-title">
+                    Hora de retomar contato com {{ follow_up_alerts|length }} marca{% if follow_up_alerts|length != 1 %}s{% endif %}.
+                </h3>
+                <div class="meeting-popup-list">
+                    {% for item in follow_up_alerts %}
+                        <article class="meeting-popup-item">
+                            <strong>{{ item.company }}</strong>
+                            <p>{{ item.note }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+                <div class="meeting-popup-actions">
+                    <a class="primary-button" href="{% url 'prospection' %}">Ver follow-up</a>
+                    <button type="button" class="ghost-button" data-meeting-popup-close>Fechar</button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
@@ -94,37 +117,35 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-    {% if meeting_alerts %}
+    {% if meeting_alerts or follow_up_alerts %}
         <script>
             (() => {
-                const popup = document.querySelector("[data-meeting-popup]");
-                if (!popup) {
-                    return;
-                }
-                const popupKey = popup.dataset.meetingPopupKey;
-                const closePopup = () => {
-                    popup.hidden = true;
+                document.querySelectorAll("[data-meeting-popup]").forEach((popup) => {
+                    const popupKey = popup.dataset.meetingPopupKey;
+                    const closePopup = () => {
+                        popup.hidden = true;
+                        try {
+                            sessionStorage.setItem(popupKey, "dismissed");
+                        } catch (error) {
+                        }
+                    };
+                    let dismissed = false;
                     try {
-                        sessionStorage.setItem(popupKey, "dismissed");
+                        dismissed = sessionStorage.getItem(popupKey) === "dismissed";
                     } catch (error) {
                     }
-                };
-                let dismissed = false;
-                try {
-                    dismissed = sessionStorage.getItem(popupKey) === "dismissed";
-                } catch (error) {
-                }
-                if (dismissed) {
-                    popup.hidden = true;
-                    return;
-                }
-                popup.querySelectorAll("[data-meeting-popup-close]").forEach((button) => {
-                    button.addEventListener("click", closePopup);
-                });
-                popup.addEventListener("click", (event) => {
-                    if (event.target === popup) {
-                        closePopup();
+                    if (dismissed) {
+                        popup.hidden = true;
+                        return;
                     }
+                    popup.querySelectorAll("[data-meeting-popup-close]").forEach((button) => {
+                        button.addEventListener("click", closePopup);
+                    });
+                    popup.addEventListener("click", (event) => {
+                        if (event.target === popup) {
+                            closePopup();
+                        }
+                    });
                 });
             })();
         </script>

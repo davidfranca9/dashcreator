@@ -184,6 +184,61 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "Reunioes de hoje")
         self.assertContains(response, "Reserva")
 
+    def test_prospection_adds_follow_up_column_for_old_delivered_brand(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=45),
+            due_date=date.today() - timedelta(days=40),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Follow-up")
+        self.assertContains(response, "Ja tem 40 dias desde o seu ultimo trabalho para a marca Reserva")
+        self.assertContains(response, "oi sumido?")
+
+    def test_dashboard_shows_follow_up_popup_for_old_delivered_brand(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=45),
+            due_date=date.today() - timedelta(days=40),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Hora de retomar contato")
+        self.assertContains(response, "Reserva")
+
     def test_project_form_uses_workspace_default_entry_rate_and_prefills_close_date(self):
         self.workspace.settings.update_or_create(
             key="ops_default_entry_rate",
