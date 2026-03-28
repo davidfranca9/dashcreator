@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
+from django.db.models import Count
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -163,6 +164,14 @@ def settings(request: HttpRequest) -> HttpResponse:
             service_category, created = ServiceCategory.objects.get_or_create(workspace=workspace, name=name)
             messages.success(request, "Categoria de servico cadastrada." if created else "Essa categoria ja existe.")
             return redirect("settings")
+        if action == "delete_service_category":
+            service_category = get_object_or_404(ServiceCategory, pk=request.POST.get("service_category_id"), workspace=workspace)
+            if service_category.projects.exists():
+                messages.warning(request, "Essa categoria ja foi usada em trabalhos e nao pode mais ser excluida.")
+            else:
+                service_category.delete()
+                messages.success(request, "Categoria de servico removida.")
+            return redirect("settings")
 
     context = shell_context("settings", workspace, "Configuracoes", "Preferencias visuais e operacionais.", user=request.user)
     context.update(
@@ -170,7 +179,7 @@ def settings(request: HttpRequest) -> HttpResponse:
             "form": settings_form,
             "service_category_form": service_category_form,
             "managed_niches": default_niche_list(workspace),
-            "managed_service_categories": ServiceCategory.objects.filter(workspace=workspace).order_by("name"),
+            "managed_service_categories": ServiceCategory.objects.filter(workspace=workspace).annotate(usage_count=Count("projects")).order_by("name"),
         }
     )
     return render(request, "studio/settings.html", context)

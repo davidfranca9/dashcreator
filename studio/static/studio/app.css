@@ -686,6 +686,79 @@ body.theme-dark .progress-track {
     flex: 1;
 }
 
+.metric-row--action {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+.metric-row-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.icon-button-form {
+    margin: 0;
+}
+
+.icon-button {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid #d9e4f3;
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.icon-button:hover {
+    transform: translateY(-1px);
+}
+
+.icon-button--danger {
+    color: var(--danger);
+    border-color: rgba(192, 77, 87, 0.24);
+    background: rgba(192, 77, 87, 0.06);
+}
+
+.icon-button--disabled,
+.icon-button:disabled {
+    cursor: not-allowed;
+    color: var(--muted);
+    background: rgba(112, 131, 157, 0.08);
+    border-color: rgba(112, 131, 157, 0.16);
+    transform: none;
+}
+
+.icon-button--disabled:hover,
+.icon-button:disabled:hover {
+    transform: none;
+}
+
+body.theme-dark .icon-button {
+    background: #132238;
+    border-color: #2a3f5d;
+    color: #edf5ff;
+}
+
+body.theme-dark .icon-button--danger {
+    color: #ff98a1;
+    border-color: rgba(255, 127, 138, 0.22);
+    background: rgba(255, 127, 138, 0.1);
+}
+
+body.theme-dark .icon-button--disabled,
+body.theme-dark .icon-button:disabled {
+    color: #8ea4c4;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
 .activity-meta,
 .feature-copy,
 .prospect-card,

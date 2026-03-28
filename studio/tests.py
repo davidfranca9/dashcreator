@@ -113,6 +113,39 @@ class DashboardSmokeTest(TestCase):
         self.assertRedirects(project_response, reverse("jobs"))
         self.assertTrue(Project.objects.filter(workspace=self.workspace, service_category=category).exists())
 
+    def test_settings_can_delete_unused_service_category(self):
+        self.client.force_login(self.user)
+        category = ServiceCategory.objects.create(workspace=self.workspace, name="Categoria temporaria")
+
+        response = self.client.post(
+            reverse("settings"),
+            {
+                "settings_action": "delete_service_category",
+                "service_category_id": category.pk,
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("settings"))
+        self.assertFalse(ServiceCategory.objects.filter(pk=category.pk).exists())
+        self.assertContains(response, "Categoria de servico removida.")
+
+    def test_settings_does_not_delete_used_service_category(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("settings"),
+            {
+                "settings_action": "delete_service_category",
+                "service_category_id": self.category.pk,
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("settings"))
+        self.assertTrue(ServiceCategory.objects.filter(pk=self.category.pk).exists())
+        self.assertContains(response, "nao pode mais ser excluida")
+
     def test_prospect_edit_prefills_contact_date_in_iso_format(self):
         self.client.force_login(self.user)
         prospect = Prospect.objects.get(workspace=self.workspace, company="Nike")

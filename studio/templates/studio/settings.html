@@ -64,8 +64,25 @@
             </form>
             <div class="stack-list">
                 {% for item in managed_service_categories %}
-                    <article class="soft-card metric-row">
-                        <strong>{{ item.name }}</strong>
+                    <article class="soft-card metric-row metric-row--action">
+                        <div class="metric-row-copy">
+                            <strong>{{ item.name }}</strong>
+                            {% if item.usage_count %}
+                                <small class="muted">Ja utilizada em {{ item.usage_count }} trabalho{{ item.usage_count|pluralize }}</small>
+                            {% else %}
+                                <small class="muted">Pode ser removida se foi cadastrada por engano.</small>
+                            {% endif %}
+                        </div>
+                        {% if item.usage_count %}
+                            <button type="button" class="icon-button icon-button--disabled" title="Essa categoria ja foi usada e nao pode ser excluida" aria-label="Categoria bloqueada para exclusao" disabled>&times;</button>
+                        {% else %}
+                            <form method="post" class="icon-button-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="settings_action" value="delete_service_category">
+                                <input type="hidden" name="service_category_id" value="{{ item.id }}">
+                                <button type="submit" class="icon-button icon-button--danger" title="Excluir categoria" aria-label="Excluir categoria {{ item.name }}">&times;</button>
+                            </form>
+                        {% endif %}
                     </article>
                 {% empty %}
                     <p class="muted">Nenhuma categoria cadastrada ainda.</p>
