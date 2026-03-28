@@ -15,44 +15,6 @@
 
 <section class="stack-section">
     <article class="card">
-        <div class="card-header"><div><h3>Via de fechamento</h3></div></div>
-        <div class="source-mix-card source-mix-card--horizontal">
-            <div class="source-mix-chart-wrap">
-                <div class="source-mix-chart" style="--pie-gradient: {{ source_mix.gradient }};">
-                    <div class="source-mix-center">
-                        <strong>{{ source_mix.total }}</strong>
-                        <span>trabalhos</span>
-                    </div>
-                </div>
-            </div>
-            <div class="source-mix-summary">
-                <div class="source-mix-summary-head">
-                    <span>Canal</span>
-                    <span>Trabalhos</span>
-                    <span>Participacao</span>
-                </div>
-                <div class="source-mix-summary-body">
-                    {% for item in source_mix.items %}
-                        <div class="source-mix-summary-row">
-                            <div class="source-mix-summary-label">
-                                <span class="source-mix-dot" style="background: {{ item.color }};"></span>
-                                <strong>{{ item.label }}</strong>
-                            </div>
-                            <span>{{ item.count }}</span>
-                            <span>{{ item.percentage }}%</span>
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="source-mix-summary-total">
-                    <strong>Total</strong>
-                    <strong>{{ source_mix.total }}</strong>
-                    <strong>100%</strong>
-                </div>
-            </div>
-        </div>
-    </article>
-
-    <article class="card">
         <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
             {% for item in active %}
