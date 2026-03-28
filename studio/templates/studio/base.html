@@ -140,9 +140,41 @@
                 const hidePopup = (popup, popupKey) => {
                     popup.hidden = true;
                     popup.classList.add("is-hidden");
+                    popup.setAttribute("aria-hidden", "true");
+                    popup.style.display = "none";
+                    popup.style.pointerEvents = "none";
                     try {
                         sessionStorage.setItem(popupKey, "dismissed");
                     } catch (error) {
+                    }
+                };
+
+                const showPopup = (popup) => {
+                    popup.hidden = false;
+                    popup.classList.remove("is-hidden");
+                    popup.removeAttribute("aria-hidden");
+                    popup.style.display = "";
+                    popup.style.pointerEvents = "";
+                };
+
+                const closePopupFromTrigger = (event, popup, popupKey) => {
+                    if (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    const trigger = event?.currentTarget;
+                    const targetSelector = trigger?.getAttribute("href");
+                    hidePopup(popup, popupKey);
+
+                    if (targetSelector && targetSelector.startsWith("#")) {
+                        const target = document.querySelector(targetSelector);
+                        if (target) {
+                            requestAnimationFrame(() => {
+                                target.scrollIntoView({behavior: "smooth", block: "start"});
+                            });
+                        }
+                    } else if (targetSelector) {
+                        window.location.href = targetSelector;
                     }
                 };
 
@@ -170,9 +202,11 @@
                     } catch (error) {
                     }
                     if (dismissed) {
-                        popup.hidden = true;
+                        hidePopup(popup, popupKey);
                         return;
                     }
+
+                    showPopup(popup);
 
                     if (popup.hasAttribute("data-follow-up-popup")) {
                         const storageKey = popup.dataset.followUpStoreKey;
@@ -192,6 +226,7 @@
                         popup.querySelectorAll("[data-follow-up-dismiss]").forEach((button) => {
                             button.addEventListener("click", (event) => {
                                 event.preventDefault();
+                                event.stopPropagation();
                                 const companyKey = button.dataset.followUpDismiss;
                                 const item = button.closest("[data-follow-up-item]");
                                 let savedCompanies = [];
@@ -221,8 +256,8 @@
                     }
 
                     popup.querySelectorAll("[data-meeting-popup-close]").forEach((button) => {
-                        button.addEventListener("click", () => {
-                            hidePopup(popup, popupKey);
+                        button.addEventListener("click", (event) => {
+                            closePopupFromTrigger(event, popup, popupKey);
                         });
                     });
 
