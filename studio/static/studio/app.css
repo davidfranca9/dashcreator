@@ -96,6 +96,7 @@ textarea {
     min-height: 100vh;
     display: grid;
     grid-template-columns: 320px 1fr;
+    align-items: start;
 }
 
 .sidebar {
@@ -105,6 +106,10 @@ textarea {
     padding: 32px 24px;
     background: linear-gradient(180deg, var(--sidebar-top), var(--sidebar-bottom));
     color: #edf5ff;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .page-header h2,
@@ -1365,6 +1370,9 @@ body.theme-dark .danger-button {
 
     .sidebar {
         gap: 18px;
+        position: static;
+        height: auto;
+        overflow: visible;
     }
 
     .stats-grid,
