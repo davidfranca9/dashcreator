@@ -1116,12 +1116,12 @@ body.theme-dark .danger-button {
 }
 
 .login-card {
-    width: min(680px, 100%);
+    width: min(620px, 100%);
     display: grid;
-    gap: 20px;
+    gap: 16px;
     justify-items: center;
-    padding: 40px 44px 32px;
-    border-radius: 36px;
+    padding: 32px 36px 26px;
+    border-radius: 32px;
     background:
         linear-gradient(180deg, rgba(62, 83, 134, 0.22) 0%, rgba(25, 40, 84, 0.08) 100%),
         linear-gradient(180deg, #273768 0%, #243460 100%);
@@ -1156,40 +1156,40 @@ body.theme-dark .danger-button {
 .login-brand {
     display: grid;
     justify-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .login-logo {
-    width: min(100%, 380px);
+    width: min(100%, 340px);
     height: auto;
     object-fit: contain;
 }
 
 .login-copy {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     text-align: center;
 }
 
 .login-copy h1 {
     margin: 0;
     color: #f4f7ff;
-    font-size: clamp(30px, 4vw, 48px);
-    line-height: 1.02;
-    letter-spacing: -0.04em;
-    font-weight: 800;
+    font-size: clamp(28px, 3.6vw, 40px);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    font-weight: 780;
 }
 
 .login-copy p {
     margin: 0;
     color: rgba(231, 238, 255, 0.76);
-    font-size: 17px;
+    font-size: 15px;
 }
 
 .login-form-stack {
-    width: min(100%, 510px);
+    width: min(100%, 470px);
     display: grid;
-    gap: 14px;
+    gap: 12px;
 }
 
 .login-field {
@@ -1200,20 +1200,20 @@ body.theme-dark .danger-button {
 .login-input-shell {
     display: flex;
     align-items: center;
-    gap: 14px;
-    min-height: 68px;
+    gap: 12px;
+    min-height: 60px;
     border: 2px solid rgba(158, 184, 238, 0.66);
-    border-radius: 18px;
+    border-radius: 16px;
     background: linear-gradient(90deg, #f8fbff 0%, #ffffff 100%);
-    padding: 0 18px;
+    padding: 0 16px;
     box-shadow:
-        0 14px 24px rgba(18, 32, 68, 0.2),
+        0 12px 20px rgba(18, 32, 68, 0.18),
         inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .login-field-icon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     color: #6b84c4;
     flex-shrink: 0;
 }
@@ -1232,7 +1232,7 @@ body.theme-dark .danger-button {
     background: transparent;
     padding: 0;
     color: #304472;
-    font-size: 17px;
+    font-size: 15px;
     box-shadow: none;
 }
 
@@ -1257,6 +1257,7 @@ body.theme-dark .danger-button {
     justify-content: flex-end;
     margin-top: -2px;
     padding-right: 4px;
+    font-size: 14px;
 }
 
 .login-inline-link,
@@ -1272,19 +1273,19 @@ body.theme-dark .danger-button {
 
 .login-submit-button {
     justify-self: center;
-    min-width: 280px;
-    min-height: 48px;
-    padding: 12px 28px;
+    min-width: 250px;
+    min-height: 44px;
+    padding: 10px 24px;
     border: 0;
     border-radius: 12px;
     background: linear-gradient(180deg, #8db1ff 0%, #79a0f6 48%, #6f90e0 100%);
     color: #ffffff;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     cursor: pointer;
     box-shadow:
-        0 12px 22px rgba(95, 133, 227, 0.26),
+        0 10px 18px rgba(95, 133, 227, 0.24),
         inset 0 1px 0 rgba(255, 255, 255, 0.34);
     transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
@@ -1298,10 +1299,10 @@ body.theme-dark .danger-button {
 }
 
 .login-signup-copy {
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     text-align: center;
     color: rgba(244, 247, 255, 0.82);
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .login-body .messages,
