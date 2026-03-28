@@ -684,6 +684,7 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         ],
         "month_choices": [{"value": month_value(item), "label": long_month_label(item)} for item in month_options],
         "selected_month": {"value": month_value(selected_month), "label": long_month_label(selected_month)},
+        "source_mix": closing_source_mix(month_projects),
         "via_breakdown": via_breakdown,
         "highlights": [
             {

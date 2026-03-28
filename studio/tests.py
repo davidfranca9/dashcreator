@@ -602,7 +602,8 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["stats"][2]["value"], "Indicacao")
         self.assertEqual(response.context["stats"][3]["value"], "Beleza")
         self.assertEqual(response.context["via_breakdown"][0]["amount_text"], "50%")
-        self.assertContains(response, "Distribuicao por via")
+        self.assertEqual(response.context["source_mix"]["total"], 2)
+        self.assertContains(response, "Via de fechamento")
 
     def test_prospect_conversion_prefills_closing_source_and_niche(self):
         prospect = Prospect.objects.create(
