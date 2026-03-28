@@ -12,7 +12,6 @@ NAV_ITEMS = [
 
 NAV_GROUPS = [
     {"label": "ERP", "keys": ["dashboard", "jobs", "prospection", "finance", "reports"]},
-    {"label": "Perfil", "keys": ["profile", "settings"]},
 ]
 
 PROJECT_STAGE_CHOICES = [

@@ -60,6 +60,8 @@ class DashboardSmokeTest(TestCase):
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200, name)
             self.assertContains(response, "workspace-chip-avatar-fallback")
+        dashboard_response = self.client.get(reverse("dashboard"))
+        self.assertNotContains(dashboard_response, 'nav-group-label">Perfil<', html=False)
 
     def test_workspace_uses_default_niches_and_can_create_reusable_service_category_from_settings(self):
         self.client.force_login(self.user)
@@ -661,6 +663,19 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(membership.avatar_data.startswith("data:image/png;base64,"))
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
+
+    def test_profile_and_settings_pages_show_internal_navigation(self):
+        self.client.force_login(self.user)
+
+        profile_response = self.client.get(reverse("profile"))
+        settings_response = self.client.get(reverse("settings"))
+
+        self.assertContains(profile_response, reverse("profile"))
+        self.assertContains(profile_response, reverse("settings"))
+        self.assertContains(profile_response, "profile-nav-link active")
+        self.assertContains(settings_response, reverse("profile"))
+        self.assertContains(settings_response, reverse("settings"))
+        self.assertContains(settings_response, "profile-nav-link active")
 
 
 class AuthenticationFlowsTest(TestCase):

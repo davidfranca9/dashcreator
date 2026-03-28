@@ -2,6 +2,8 @@
 
 {% block content %}
 <section class="stack-section">
+    {% include "studio/includes/workspace_profile_nav.html" %}
+
     <article class="card profile-hero">
         <div class="profile-avatar-panel">
             {% if membership and membership.avatar_data %}

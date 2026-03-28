@@ -840,6 +840,42 @@ body.theme-dark .progress-track {
     gap: 16px;
 }
 
+.profile-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow);
+}
+
+body.theme-dark .profile-nav {
+    background: rgba(15, 27, 45, 0.82);
+}
+
+.profile-nav-link {
+    min-width: 140px;
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: center;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.profile-nav-link:hover {
+    color: var(--text);
+    background: rgba(77, 140, 255, 0.08);
+    transform: translateY(-1px);
+}
+
+.profile-nav-link.active {
+    background: linear-gradient(135deg, rgba(77, 140, 255, 0.18), rgba(77, 140, 255, 0.08));
+    color: var(--text);
+}
+
 .profile-hero {
     margin-bottom: 18px;
     grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
@@ -1338,6 +1374,16 @@ body.theme-dark .danger-button {
     .form-grid,
     .profile-hero {
         grid-template-columns: 1fr;
+    }
+
+    .profile-nav {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .profile-nav-link {
+        min-width: 0;
     }
 }
 

@@ -2,6 +2,8 @@
 
 {% block content %}
 <section class="stack-section">
+    {% include "studio/includes/workspace_profile_nav.html" %}
+
     <p class="muted note-box">As configuracoes abaixo sao salvas automaticamente no banco do workspace.</p>
     <form method="post" class="stack-list">
         {% csrf_token %}
