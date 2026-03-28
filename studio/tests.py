@@ -641,6 +641,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pacote premium")
         self.assertContains(response, "Tech")
+        self.assertContains(response, "Viagem")
         self.assertNotContains(response, "Adicionar nicho")
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):

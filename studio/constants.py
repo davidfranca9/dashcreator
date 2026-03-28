@@ -46,6 +46,7 @@ DEFAULT_NICHE_NAMES = [
     "Eventos e Experi\u00eancias",
     "Casa e Decora\u00e7\u00e3o",
     "Relacionamento",
+    "Viagem",
 ]
 
 COMPANY_COLORS = {
