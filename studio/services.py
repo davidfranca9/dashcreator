@@ -83,6 +83,8 @@ def normalize_closing_source(raw_value: str | None) -> str | None:
     normalized = normalize_company_name(raw_value)
     if not normalized:
         return None
+    if normalized in {"nao se aplica", "na se aplica", "nao aplicavel", "sem aplicacao", "n a"}:
+        return None
     if "indic" in normalized:
         return "Indicação"
     if "agen" in normalized:
@@ -776,8 +778,9 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     source_counts: dict[str, int] = {}
     niche_counts: dict[str, int] = {}
     for item in month_projects:
-        source_label = (item.closing_source or "").strip() or "Nao informado"
-        source_counts[source_label] = source_counts.get(source_label, 0) + 1
+        source_label = normalize_closing_source(item.closing_source)
+        if source_label:
+            source_counts[source_label] = source_counts.get(source_label, 0) + 1
         niche_label = item.niche.name if item.niche_id else "Nao informado"
         niche_counts[niche_label] = niche_counts.get(niche_label, 0) + 1
 

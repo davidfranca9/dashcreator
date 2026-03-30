@@ -20,6 +20,7 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Plataforma", "Plataforma"),
     ("Agencia", "Agencia"),
     ("Indicacao", "Indicacao"),
+    ("Nao se aplica", "NÃ£o se aplica"),
 ]
 STATUS_PROGRESS_MAP = {
     "Briefing": 0,

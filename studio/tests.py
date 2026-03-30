@@ -413,6 +413,7 @@ class DashboardSmokeTest(TestCase):
                 ("Plataforma", "Plataforma"),
                 ("Agencia", "Agencia"),
                 ("Indicacao", "Indicacao"),
+                ("Nao se aplica", "NÃ£o se aplica"),
             ],
         )
         self.assertNotIn("progress", form.fields)
@@ -664,6 +665,33 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(legend["Indicação"]["count"], 1)
         self.assertEqual(legend["Plataforma"]["count"], 1)
         self.assertEqual(legend["Agência"]["count"], 1)
+
+    def test_jobs_source_mix_ignores_nao_se_aplica(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Avon",
+            closing_source="Nao se aplica",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+
+        snapshot = jobs_snapshot(self.workspace)
+        counts = [item["count"] for item in snapshot["source_mix"]["items"]]
+
+        self.assertEqual(snapshot["source_mix"]["total"], 1)
+        self.assertEqual(counts[0], 1)
+        self.assertTrue(all(count == 0 for count in counts[1:]))
 
     def test_shell_context_applies_dark_theme_class_from_workspace_settings(self):
         self.workspace.settings.update_or_create(
