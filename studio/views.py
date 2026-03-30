@@ -270,8 +270,8 @@ def profile(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         photo_form = ProfilePhotoForm(request.POST, request.FILES)
         if photo_form.is_valid() and membership:
-            membership.avatar_data = photo_form.image_data_uri()
-            membership.save(update_fields=["avatar_data", "updated_at"])
+            membership.avatar = photo_form.cleaned_data["photo"]
+            membership.save(update_fields=["avatar", "updated_at"])
             messages.success(request, "Foto de perfil atualizada.")
             return redirect("profile")
 

@@ -1,5 +1,8 @@
 import re
+import shutil
+import tempfile
 from io import StringIO
+from io import BytesIO
 from datetime import date, timedelta
 
 from django.contrib.sessions.models import Session
@@ -10,6 +13,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.core.management.base import CommandError
 from django.urls import reverse
+from PIL import Image
 
 from .forms import ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory
@@ -912,22 +916,26 @@ class DashboardSmokeTest(TestCase):
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)
-        image_file = SimpleUploadedFile(
-            "avatar.png",
-            (
-                b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-                b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-                b"\x00\x00\x00\rIDATx\x9cc`\x00\x01\x00\x00\x05\x00\x01"
-                b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-            ),
-            content_type="image/png",
-        )
+        temp_media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, temp_media_root, ignore_errors=True)
+        buffer = BytesIO()
+        Image.new("RGBA", (1600, 1200), (255, 0, 0, 255)).save(buffer, format="PNG")
+        image_file = SimpleUploadedFile("avatar.png", buffer.getvalue(), content_type="image/png")
 
-        response = self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
+        with self.settings(MEDIA_ROOT=temp_media_root):
+            response = self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
 
-        self.assertRedirects(response, reverse("profile"))
-        membership = Membership.objects.get(user=self.user, workspace=self.workspace)
-        self.assertTrue(membership.avatar_data.startswith("data:image/png;base64,"))
+            self.assertRedirects(response, reverse("profile"))
+            membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+            self.assertTrue(membership.avatar.name.startswith("ugc_fotos/"))
+            self.assertTrue(membership.avatar.name.endswith(".jpg"))
+            self.assertContains(response, membership.avatar.url)
+            self.assertNotContains(response, "data:image/")
+            with Image.open(membership.avatar.path) as stored_image:
+                self.assertEqual(stored_image.format, "JPEG")
+                self.assertLessEqual(stored_image.width, 1080)
+                self.assertLessEqual(stored_image.height, 1080)
+
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
 

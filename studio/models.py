@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from io import BytesIO
+
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.text import slugify
+from PIL import Image, ImageOps
 
 from .constants import PROJECT_STAGE_CHOICES, PROJECT_STATUS_CHOICES, PROSPECT_STAGE_CHOICES
 
@@ -54,7 +58,7 @@ class Membership(TimestampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memberships")
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="memberships")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_OWNER)
-    avatar_data = models.TextField(blank=True, default="")
+    avatar = models.ImageField(upload_to="ugc_fotos/", blank=True, null=True)
 
     class Meta:
         unique_together = [("user", "workspace")]
@@ -62,6 +66,34 @@ class Membership(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.workspace}"
+
+    def save(self, *args, **kwargs) -> None:
+        old_avatar_name = None
+        if self.pk:
+            old_avatar_name = Membership.objects.filter(pk=self.pk).values_list("avatar", flat=True).first()
+
+        avatar_file = self.avatar
+        if avatar_file and (not hasattr(avatar_file, "_committed") or not avatar_file._committed):
+            avatar_file.seek(0)
+            with Image.open(avatar_file) as image:
+                # Corrige a orientacao original do arquivo antes de processar.
+                image = ImageOps.exif_transpose(image)
+                # Garante um formato consistente para salvar em JPEG.
+                image = image.convert("RGB")
+                # Reduz a imagem mantendo proporcao dentro do limite maximo de 1080x1080.
+                image.thumbnail((1080, 1080), Image.Resampling.LANCZOS)
+
+                buffer = BytesIO()
+                # Salva a versao final comprimida em JPEG para reduzir bastante o tamanho.
+                image.save(buffer, format="JPEG", quality=75, optimize=True)
+
+            base_name = slugify(getattr(avatar_file, "name", "").rsplit(".", 1)[0]) or f"avatar-{self.user_id or 'workspace'}"
+            self.avatar.save(f"{base_name}.jpg", ContentFile(buffer.getvalue()), save=False)
+
+        super().save(*args, **kwargs)
+
+        if old_avatar_name and self.avatar and old_avatar_name != self.avatar.name:
+            self.avatar.storage.delete(old_avatar_name)
 
     @property
     def initials(self) -> str:

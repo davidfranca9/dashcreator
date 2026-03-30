@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-
 from django import forms
 from django.contrib.auth import authenticate, get_user_model, password_validation
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, UserCreationForm, UsernameField
@@ -424,8 +422,3 @@ class ProfilePhotoForm(forms.Form):
         if photo.size > self.max_size:
             raise forms.ValidationError("A imagem precisa ter no maximo 2 MB.")
         return photo
-
-    def image_data_uri(self) -> str:
-        photo = self.cleaned_data["photo"]
-        encoded = base64.b64encode(photo.read()).decode("ascii")
-        return f"data:{photo.content_type};base64,{encoded}"

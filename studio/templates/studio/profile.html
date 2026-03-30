@@ -6,8 +6,8 @@
 
     <article class="card profile-hero">
         <div class="profile-avatar-panel">
-            {% if membership and membership.avatar_data %}
-                <img class="profile-avatar-image" src="{{ membership.avatar_data }}" alt="Foto de perfil">
+            {% if membership and membership.avatar %}
+                <img class="profile-avatar-image" src="{{ membership.avatar.url }}" alt="Foto de perfil">
             {% else %}
                 <div class="profile-avatar-fallback">
                     {{ membership.initials|default:"P" }}
