@@ -1,4 +1,5 @@
 import re
+from io import StringIO
 from datetime import date, timedelta
 
 from django.contrib.sessions.models import Session
@@ -7,6 +8,7 @@ from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
+from django.core.management.base import CommandError
 from django.urls import reverse
 
 from .forms import ProjectForm, ProspectForm
@@ -990,6 +992,24 @@ class AuthenticationFlowsTest(TestCase):
 
         self.assertEqual(AccessCode.objects.filter(audience=AccessCode.AUDIENCE_PAID).count(), 2)
         self.assertEqual(AccessCode.objects.filter(audience=AccessCode.AUDIENCE_NON_PAID).count(), 3)
+
+    def test_benchmark_workspace_command_prints_metrics(self):
+        workspace = get_or_create_workspace_for_user(self.user)
+        output = StringIO()
+
+        call_command("benchmark_workspace", workspace=workspace.slug, repeat=1, stdout=output)
+
+        content = output.getvalue()
+        self.assertIn(f"Workspace: {workspace.name} ({workspace.slug})", content)
+        self.assertIn("dashboard_snapshot:", content)
+        self.assertIn("prospection_snapshot:", content)
+        self.assertIn("jobs_snapshot_filtered:", content)
+        self.assertIn("finance_snapshot:", content)
+        self.assertIn("reports_snapshot:", content)
+
+    def test_benchmark_workspace_command_requires_identifier(self):
+        with self.assertRaises(CommandError):
+            call_command("benchmark_workspace")
 
     def test_second_login_invalidates_previous_session(self):
         first_client = Client()
