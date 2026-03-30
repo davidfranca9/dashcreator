@@ -280,6 +280,7 @@ textarea {
     font-size: 34px;
 }
 
+.page-header-tools,
 .header-actions,
 .form-actions,
 .card-actions {
@@ -291,6 +292,34 @@ textarea {
 
 .card-actions {
     justify-content: space-between;
+}
+
+.page-header-tools {
+    margin-left: auto;
+    justify-content: flex-end;
+}
+
+.global-month-form {
+    margin: 0;
+}
+
+.global-month-filter {
+    display: grid;
+    gap: 6px;
+    min-width: 220px;
+}
+
+.global-month-filter span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.global-month-filter select {
+    min-width: 220px;
+    padding: 10px 14px;
 }
 
 .card-actions-meta,
@@ -1605,6 +1634,17 @@ body.theme-dark .danger-button {
 
     .jobs-filter-form {
         grid-template-columns: 1fr;
+    }
+
+    .page-header-tools,
+    .global-month-form,
+    .global-month-filter {
+        width: 100%;
+    }
+
+    .global-month-filter select {
+        min-width: 0;
+        width: 100%;
     }
 
     .login-card {

@@ -3,6 +3,9 @@
 {% block content %}
 <article class="card jobs-filter-bar">
     <form method="get" class="jobs-filter-form" data-jobs-filter-form>
+        {% if selected_month %}
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+        {% endif %}
         <select name="service_category" aria-label="Filtrar por tipo">
             <option value="">Filtrar por Tipo</option>
             {% for item in filters.service_categories %}

@@ -105,8 +105,18 @@ def _workspace(request: HttpRequest):
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("dashboard", workspace, "Dashboard", "Visao executiva do negocio UGC.", user=request.user, action_label="Novo trabalho", action_url="project_create")
-    context.update(dashboard_snapshot(workspace, request.GET.get("range", "last_6_months")))
+    month_filter = request.GET.get("month")
+    context = shell_context(
+        "dashboard",
+        workspace,
+        "Dashboard",
+        "Visao executiva do negocio UGC.",
+        user=request.user,
+        action_label="Novo trabalho",
+        action_url="project_create",
+        month_filter=month_filter,
+    )
+    context.update(dashboard_snapshot(workspace, month_filter))
     return render(request, "studio/dashboard.html", context)
 
 
@@ -149,7 +159,17 @@ def follow_up_start_prospection(request: HttpRequest) -> HttpResponse:
 @login_required
 def jobs(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("jobs", workspace, "Trabalhos", "Trabalhos assinados e entregas em andamento.", user=request.user, action_label="Novo trabalho", action_url="project_create")
+    month_filter = request.GET.get("month")
+    context = shell_context(
+        "jobs",
+        workspace,
+        "Trabalhos",
+        "Trabalhos assinados e entregas em andamento.",
+        user=request.user,
+        action_label="Novo trabalho",
+        action_url="project_create",
+        month_filter=month_filter,
+    )
     context.update(
         jobs_snapshot_filtered(
             workspace,
@@ -157,6 +177,7 @@ def jobs(request: HttpRequest) -> HttpResponse:
             progress_filter=request.GET.get("progress"),
             niche_filter=request.GET.get("niche"),
             search=request.GET.get("search"),
+            month_filter=month_filter,
         )
     )
     return render(request, "studio/jobs.html", context)
@@ -165,16 +186,32 @@ def jobs(request: HttpRequest) -> HttpResponse:
 @login_required
 def finance(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("finance", workspace, "Financeiro", "Entradas, recebimentos e previsoes de caixa.", user=request.user)
-    context.update(finance_snapshot(workspace, request.GET.get("month")))
+    month_filter = request.GET.get("month")
+    context = shell_context(
+        "finance",
+        workspace,
+        "Financeiro",
+        "Entradas, recebimentos e previsoes de caixa.",
+        user=request.user,
+        month_filter=month_filter,
+    )
+    context.update(finance_snapshot(workspace, month_filter))
     return render(request, "studio/finance.html", context)
 
 
 @login_required
 def reports(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("reports", workspace, "Relatorios", "Indicadores estrategicos do negocio.", user=request.user)
-    context.update(reports_snapshot(workspace, request.GET.get("month")))
+    month_filter = request.GET.get("month")
+    context = shell_context(
+        "reports",
+        workspace,
+        "Relatorios",
+        "Indicadores estrategicos do negocio.",
+        user=request.user,
+        month_filter=month_filter,
+    )
+    context.update(reports_snapshot(workspace, month_filter))
     return render(request, "studio/reports.html", context)
 
 

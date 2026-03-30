@@ -123,11 +123,30 @@
                     <h2>{{ page_title }}</h2>
                     <p>{{ page_subtitle }}</p>
                 </div>
-                <div class="header-actions">
-                    {% if header_action_url %}
-                        <a class="ghost-button" href="{{ header_action_url }}">{{ header_action_label }}</a>
+                <div class="page-header-tools">
+                    {% if month_choices and selected_month %}
+                        <form method="get" class="global-month-form">
+                            {% for key, value in request.GET.items %}
+                                {% if key != "month" %}
+                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                {% endif %}
+                            {% endfor %}
+                            <label class="global-month-filter">
+                                <span>Mes</span>
+                                <select name="month" onchange="this.form.submit()">
+                                    {% for item in month_choices %}
+                                        <option value="{{ item.value }}"{% if selected_month.value == item.value %} selected{% endif %}>{{ item.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </form>
                     {% endif %}
-                    <a class="ghost-button" href="{% url 'logout' %}">Sair</a>
+                    <div class="header-actions">
+                        {% if header_action_url %}
+                            <a class="ghost-button" href="{{ header_action_url }}">{{ header_action_label }}</a>
+                        {% endif %}
+                        <a class="ghost-button" href="{% url 'logout' %}">Sair</a>
+                    </div>
                 </div>
             </header>
 
@@ -145,6 +164,12 @@
     {% if meeting_alerts or follow_up_alerts %}
         <script>
             (() => {
+                const syncBodyScrollLock = () => {
+                    const hasVisiblePopup = Array.from(document.querySelectorAll("[data-meeting-popup]"))
+                        .some((popup) => !popup.hidden && !popup.classList.contains("is-hidden"));
+                    document.body.classList.toggle("has-popup-open", hasVisiblePopup);
+                };
+
                 const hidePopup = (popup, popupKey, persist = true) => {
                     popup.hidden = true;
                     popup.classList.add("is-hidden");
@@ -157,6 +182,7 @@
                         } catch (error) {
                         }
                     }
+                    syncBodyScrollLock();
                 };
 
                 const showPopup = (popup) => {
@@ -165,6 +191,7 @@
                     popup.removeAttribute("aria-hidden");
                     popup.style.display = "";
                     popup.style.pointerEvents = "";
+                    syncBodyScrollLock();
                 };
 
                 const closePopupFromTrigger = (event, popup, popupKey, persist = true) => {
@@ -223,6 +250,8 @@
                         }
                     });
                 });
+
+                syncBodyScrollLock();
             })();
         </script>
     {% endif %}

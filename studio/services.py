@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from urllib.parse import urlencode
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -51,6 +52,7 @@ SOURCE_MIX_COLORS = {
     "Agência": "#61748e",
 }
 SOURCE_MIX_ORDER = ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"]
+MONTH_FILTER_PAGE_KEYS = {"dashboard", "jobs", "finance", "reports"}
 
 
 FOLLOW_UP_CONFIRMED_COMPANIES_KEY = "ops_follow_up_confirmed_companies"
@@ -137,6 +139,28 @@ def format_days(value: float) -> str:
     if value == int(value):
         return f"{int(value)} dias"
     return f"{str(round(value, 1)).replace('.', ',')} dias"
+
+
+def month_options_for_workspace(workspace: Workspace) -> list[date]:
+    months = {date.today().replace(day=1)}
+    for close_date, due_date in Project.objects.filter(workspace=workspace).values_list("close_date", "due_date"):
+        if close_date:
+            months.add(close_date.replace(day=1))
+        if due_date:
+            months.add(due_date.replace(day=1))
+    return sorted(months, reverse=True)
+
+
+def resolve_selected_month(month_filter: str | None, month_options: list[date]) -> date:
+    selected_month = parse_month_value(month_filter)
+    if selected_month is None or selected_month.replace(day=1) not in month_options:
+        current_month = date.today().replace(day=1)
+        selected_month = current_month if current_month in month_options else month_options[0]
+    return selected_month.replace(day=1)
+
+
+def month_choice_payload(month_options: list[date]) -> list[dict[str, str]]:
+    return [{"value": month_value(item), "label": long_month_label(item)} for item in month_options]
 
 
 def get_or_create_workspace_for_user(user: User) -> Workspace:
@@ -232,15 +256,18 @@ def save_settings(workspace: Workspace, cleaned_data: dict) -> None:
         )
 
 
-def navigation(page_key: str) -> list[dict]:
+def navigation(page_key: str, month_filter: str | None = None) -> list[dict]:
     items = []
     for item in NAV_ITEMS:
-        items.append({**item, "url": reverse(item["url_name"]), "active": item["key"] == page_key})
+        url = reverse(item["url_name"])
+        if month_filter and item["key"] in MONTH_FILTER_PAGE_KEYS:
+            url = f"{url}?{urlencode({'month': month_filter})}"
+        items.append({**item, "url": url, "active": item["key"] == page_key})
     return items
 
 
-def navigation_groups(page_key: str) -> list[dict]:
-    nav_items = {item["key"]: item for item in navigation(page_key)}
+def navigation_groups(page_key: str, month_filter: str | None = None) -> list[dict]:
+    nav_items = {item["key"]: item for item in navigation(page_key, month_filter)}
     groups = []
     for group in NAV_GROUPS:
         items = [nav_items[key] for key in group["keys"] if key in nav_items]
@@ -257,6 +284,7 @@ def shell_context(
     user: User | None = None,
     action_label: str | None = None,
     action_url: str | None = None,
+    month_filter: str | None = None,
 ) -> dict:
     workspace_settings = settings_map(workspace)
     workspace_membership = None
@@ -273,8 +301,8 @@ def shell_context(
     )
     follow_up_alerts = follow_up_popup_alerts(workspace) if str(workspace_settings.get("ops_follow_up_reminders", "")).lower() in {"1", "true", "yes", "on"} else []
     return {
-        "nav_items": navigation(page_key),
-        "nav_groups": navigation_groups(page_key),
+        "nav_items": navigation(page_key, month_filter),
+        "nav_groups": navigation_groups(page_key, month_filter),
         "page_key": page_key,
         "page_title": title,
         "page_subtitle": subtitle,
@@ -305,8 +333,8 @@ def _shift_month(base_date: date, months: int) -> date:
     return date(year, month, 1)
 
 
-def revenue_context(projects: QuerySet[Project], revenue_range: str = "last_6_months") -> dict:
-    current_year = date.today().year
+def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: int | None = None) -> dict:
+    current_year = selected_year or date.today().year
     current_month = date.today().replace(day=1)
     month_starts = [date(current_year, month, 1) for month in range(1, 13)]
     totals = {item: ZERO for item in month_starts}
@@ -535,20 +563,39 @@ def start_follow_up_prospection(workspace: Workspace, company_key: str) -> Prosp
     return prospect
 
 
-def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
-    projects = Project.objects.filter(workspace=workspace)
-    active_projects = list(projects.filter(stage="Fechado").order_by("due_date"))
-    delivered_projects = list(projects.filter(stage="Entregue").order_by("-due_date"))
-    prospects = list(Prospect.objects.filter(workspace=workspace))
-    current_month = date.today().replace(day=1)
+def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
+    projects = list(Project.objects.filter(workspace=workspace).order_by("close_date", "due_date"))
+    month_options = month_options_for_workspace(workspace)
+    selected_month = resolve_selected_month(month_filter, month_options)
+    active_projects = [
+        item
+        for item in projects
+        if item.stage == "Fechado" and item.close_date.year == selected_month.year and item.close_date.month == selected_month.month
+    ]
+    delivered_projects = [
+        item
+        for item in projects
+        if item.stage == "Entregue" and item.close_date.year == selected_month.year and item.close_date.month == selected_month.month
+    ]
+    prospects = list(
+        Prospect.objects.filter(
+            workspace=workspace,
+            contact_date__year=selected_month.year,
+            contact_date__month=selected_month.month,
+        )
+    )
 
     active_jobs = sum(item.deliverables_count for item in active_projects)
     company_names = set()
-    for raw_name in projects.exclude(company__exact="").values_list("company", flat=True):
-        normalized_name = normalize_company_name(raw_name)
+    for item in active_projects + delivered_projects:
+        normalized_name = normalize_company_name(item.company)
         if normalized_name:
             company_names.add(normalized_name)
-    for raw_name in Prospect.objects.filter(workspace=workspace).exclude(company__exact="").values_list("company", flat=True):
+    for raw_name in Prospect.objects.filter(
+        workspace=workspace,
+        contact_date__year=selected_month.year,
+        contact_date__month=selected_month.month,
+    ).exclude(company__exact="").values_list("company", flat=True):
         normalized_name = normalize_company_name(raw_name)
         if normalized_name:
             company_names.add(normalized_name)
@@ -559,11 +606,7 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
         if normalized_name:
             active_company_names.add(normalized_name)
     active_companies = len(active_company_names)
-    monthly_revenue = sum_money(
-        item.total_value
-        for item in projects
-        if item.close_date.year == current_month.year and item.close_date.month == current_month.month
-    )
+    monthly_revenue = sum_money(item.total_value for item in active_projects + delivered_projects)
     total_closed = sum_money(item.total_value for item in active_projects)
 
     pipeline = [
@@ -607,7 +650,9 @@ def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months
             {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T"},
             {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$"},
         ],
-        "revenue": revenue_context(projects.order_by("close_date"), revenue_range),
+        "month_choices": month_choice_payload(month_options),
+        "selected_month": {"value": month_value(selected_month), "label": long_month_label(selected_month)},
+        "revenue": revenue_context(projects, selected_month.year),
         "pipeline": pipeline,
         "activities": activities,
         "featured": featured,
@@ -723,8 +768,19 @@ def jobs_snapshot_filtered(
     progress_filter: str | None = None,
     niche_filter: str | None = None,
     search: str | None = None,
+    month_filter: str | None = None,
 ) -> dict:
-    projects_query = Project.objects.filter(workspace=workspace).select_related("service_category", "niche").order_by("due_date")
+    month_options = month_options_for_workspace(workspace)
+    selected_month = resolve_selected_month(month_filter, month_options)
+    projects_query = (
+        Project.objects.filter(
+            workspace=workspace,
+            close_date__year=selected_month.year,
+            close_date__month=selected_month.month,
+        )
+        .select_related("service_category", "niche")
+        .order_by("due_date")
+    )
 
     if service_category_filter and service_category_filter.isdigit():
         projects_query = projects_query.filter(service_category_id=int(service_category_filter))
@@ -748,6 +804,8 @@ def jobs_snapshot_filtered(
     filtered_projects = list(projects_query)
     snapshot = empresas_snapshot(workspace, filtered_projects)
     snapshot["source_mix"] = closing_source_mix(filtered_projects)
+    snapshot["month_choices"] = month_choice_payload(month_options)
+    snapshot["selected_month"] = {"value": month_value(selected_month), "label": long_month_label(selected_month)}
     snapshot["filters"] = {
         "service_category": service_category_filter or "",
         "progress": progress_filter or "",
@@ -767,12 +825,8 @@ def jobs_snapshot_filtered(
 
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     active_projects = list(Project.objects.filter(workspace=workspace, stage="Fechado").order_by("due_date"))
-    month_options = sorted({item.due_date.replace(day=1) for item in active_projects} | {date.today().replace(day=1)}, reverse=True)
-    selected_month = parse_month_value(month_filter)
-    if selected_month is None or selected_month.replace(day=1) not in month_options:
-        current_month = date.today().replace(day=1)
-        selected_month = current_month if current_month in month_options else month_options[0]
-    selected_month = selected_month.replace(day=1)
+    month_options = month_options_for_workspace(workspace)
+    selected_month = resolve_selected_month(month_filter, month_options)
 
     month_projects = [item for item in active_projects if item.due_date.year == selected_month.year and item.due_date.month == selected_month.month]
     forecast = sum_money(item.total_value for item in month_projects)
@@ -794,7 +848,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         schedule.append({"company": item.company, "kind": "Saldo" if item.received_value > 0 else "Entrada", "due": short_date(item.due_date), "amount": currency(outstanding), "status": "Pendente", "accent": accent})
 
     return {
-        "month_choices": [{"value": month_value(item), "label": long_month_label(item)} for item in month_options],
+        "month_choices": month_choice_payload(month_options),
         "selected_month": {"value": month_value(selected_month), "label": long_month_label(selected_month)},
         "stats": [
             {"title": "Previsao", "value": currency(forecast), "icon_label": "$"},
@@ -814,12 +868,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
 
 def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     projects = list(Project.objects.filter(workspace=workspace))
-    month_options = sorted({item.close_date.replace(day=1) for item in projects} | {date.today().replace(day=1)}, reverse=True)
-    selected_month = parse_month_value(month_filter)
-    if selected_month is None or selected_month.replace(day=1) not in month_options:
-        current_month = date.today().replace(day=1)
-        selected_month = current_month if current_month in month_options else month_options[0]
-    selected_month = selected_month.replace(day=1)
+    month_options = month_options_for_workspace(workspace)
+    selected_month = resolve_selected_month(month_filter, month_options)
 
     month_projects = [item for item in projects if item.close_date.year == selected_month.year and item.close_date.month == selected_month.month]
     volume = len(month_projects)
@@ -865,7 +915,7 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             {"title": "Via principal", "value": top_source_label, "icon_label": "%"},
             {"title": "Nicho lider", "value": top_niche_label, "icon_label": "N"},
         ],
-        "month_choices": [{"value": month_value(item), "label": long_month_label(item)} for item in month_options],
+        "month_choices": month_choice_payload(month_options),
         "selected_month": {"value": month_value(selected_month), "label": long_month_label(selected_month)},
         "source_mix": closing_source_mix(month_projects),
         "via_breakdown": via_breakdown,

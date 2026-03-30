@@ -1,21 +1,29 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
-<section class="stats-grid">
-    {% for item in stats %}
-        <article class="stat-card">
-            <span class="stat-icon">{{ item.icon_label }}</span>
-            <div>
-                <p>{{ item.title }}</p>
-                <strong>{{ item.value }}</strong>
-            </div>
-        </article>
-    {% endfor %}
-</section>
+<article class="card finance-month-card">
+    <div class="card-header">
+        <div>
+            <h3>Detalhamento do mes</h3>
+            <p class="muted">Mes selecionado: {{ selected_month.label }}</p>
+        </div>
+    </div>
+    <section class="stats-grid finance-stats-grid">
+        {% for item in stats %}
+            <article class="stat-card">
+                <span class="stat-icon">{{ item.icon_label }}</span>
+                <div>
+                    <p>{{ item.title }}</p>
+                    <strong>{{ item.value }}</strong>
+                </div>
+            </article>
+        {% endfor %}
+    </section>
+</article>
 
 <section class="split-grid">
     <article class="card">
-        <div class="card-header"><div><h3>Agenda de recebimentos</h3></div></div>
+        <div class="card-header"><div><h3>Agenda de recebimentos</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         {% if schedule %}
             <div class="stack-list">
                 {% for item in schedule %}
@@ -33,12 +41,12 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p class="muted">Nenhum recebimento pendente no momento.</p>
+            <p class="muted">Nenhum recebimento pendente em {{ selected_month.label|lower }}.</p>
         {% endif %}
     </article>
 
     <article class="card">
-        <div class="card-header"><div><h3>Distribuicao do caixa</h3></div></div>
+        <div class="card-header"><div><h3>Distribuicao do caixa</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         <div class="stack-list">
             {% for row in breakdown %}
                 <div class="metric-row">

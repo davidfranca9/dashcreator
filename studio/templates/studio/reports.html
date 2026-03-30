@@ -7,13 +7,6 @@
             <h3>Overview do mes</h3>
             <p class="muted">Mes selecionado: {{ selected_month.label }}</p>
         </div>
-        <form method="get" class="finance-filter-form">
-            <select name="month" onchange="this.form.submit()">
-                {% for item in month_choices %}
-                    <option value="{{ item.value }}"{% if selected_month.value == item.value %} selected{% endif %}>{{ item.label }}</option>
-                {% endfor %}
-            </select>
-        </form>
     </div>
 </article>
 

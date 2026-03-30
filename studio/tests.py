@@ -626,6 +626,37 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(len(response.context["delivered"]), 1)
         self.assertEqual(response.context["delivered"][0]["company"], "Insider")
 
+    def test_jobs_page_applies_global_month_filter_and_preserves_it_in_links(self):
+        previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote anterior",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=previous_month,
+            due_date=previous_month + timedelta(days=8),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("jobs"), {"month": self.project.close_date.strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_month"]["value"], self.project.close_date.strftime("%Y-%m"))
+        self.assertEqual(len(response.context["active"]), 1)
+        self.assertEqual(response.context["active"][0]["company"], "Shein")
+        self.assertContains(response, f'name="month" value="{self.project.close_date.strftime("%Y-%m")}"', html=False)
+        self.assertContains(response, f'{reverse("finance")}?month={self.project.close_date.strftime("%Y-%m")}')
+
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
             workspace=self.workspace,
@@ -780,6 +811,35 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["stats"][3]["value"], "10 dias")
         self.assertEqual(len(response.context["schedule"]), 1)
 
+    def test_dashboard_snapshot_respects_selected_global_month(self):
+        previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote anterior",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1500,
+            entry_value=750,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=previous_month,
+            due_date=previous_month + timedelta(days=12),
+        )
+
+        snapshot = dashboard_snapshot(self.workspace, previous_month.strftime("%Y-%m"))
+
+        self.assertEqual(snapshot["selected_month"]["value"], previous_month.strftime("%Y-%m"))
+        self.assertEqual(snapshot["stats"][0]["value"], "1")
+        self.assertEqual(snapshot["stats"][1]["value"], "1")
+        self.assertEqual(snapshot["stats"][2]["value"], "1")
+        self.assertEqual(snapshot["stats"][3]["value"], "R$1.500")
+
     def test_reports_page_shows_month_overview_with_via_and_top_niche(self):
         Project.objects.create(
             workspace=self.workspace,
@@ -807,7 +867,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["selected_month"]["value"], self.project.close_date.strftime("%Y-%m"))
         self.assertEqual(response.context["stats"][0]["value"], "2")
         self.assertEqual(response.context["stats"][1]["value"], "R$7.400")
-        self.assertEqual(response.context["stats"][2]["value"], "Indicacao")
+        self.assertEqual(response.context["stats"][2]["value"], "Inbound")
         self.assertEqual(response.context["stats"][3]["value"], "Beleza")
         self.assertEqual(response.context["via_breakdown"][0]["amount_text"], "50%")
         self.assertEqual(response.context["source_mix"]["total"], 2)
