@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 from datetime import date, timedelta
@@ -50,6 +51,10 @@ SOURCE_MIX_COLORS = {
     "Agência": "#61748e",
 }
 SOURCE_MIX_ORDER = ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"]
+
+
+FOLLOW_UP_CONFIRMED_COMPANIES_KEY = "ops_follow_up_confirmed_companies"
+FOLLOW_UP_DISMISSED_COMPANIES_KEY = "ops_follow_up_dismissed_companies"
 
 
 def currency(value: Decimal | int | float | None) -> str:
@@ -189,6 +194,32 @@ def settings_map(workspace: Workspace) -> dict[str, str]:
     return {item.key: item.value for item in workspace.settings.all()}
 
 
+def _workspace_key_list(workspace: Workspace, setting_key: str) -> set[str]:
+    raw_value = WorkspaceSetting.objects.filter(workspace=workspace, key=setting_key).values_list("value", flat=True).first()
+    if not raw_value:
+        return set()
+    try:
+        parsed = json.loads(raw_value)
+    except json.JSONDecodeError:
+        parsed = []
+    return {normalize_company_name(item) for item in parsed if normalize_company_name(item)}
+
+
+def _save_workspace_key_list(workspace: Workspace, setting_key: str, values: set[str]) -> None:
+    WorkspaceSetting.objects.update_or_create(
+        workspace=workspace,
+        key=setting_key,
+        defaults={"value": json.dumps(sorted(values))},
+    )
+
+
+def follow_up_state(workspace: Workspace) -> tuple[set[str], set[str]]:
+    return (
+        _workspace_key_list(workspace, FOLLOW_UP_CONFIRMED_COMPANIES_KEY),
+        _workspace_key_list(workspace, FOLLOW_UP_DISMISSED_COMPANIES_KEY),
+    )
+
+
 def save_settings(workspace: Workspace, cleaned_data: dict) -> None:
     for key, value in cleaned_data.items():
         stored_value = "1" if value is True else "0" if value is False else str(value)
@@ -238,7 +269,7 @@ def shell_context(
         )
         .order_by("company", "contact")
     )
-    follow_up_alerts = follow_up_candidates(workspace) if str(workspace_settings.get("ops_follow_up_reminders", "")).lower() in {"1", "true", "yes", "on"} else []
+    follow_up_alerts = follow_up_popup_alerts(workspace) if str(workspace_settings.get("ops_follow_up_reminders", "")).lower() in {"1", "true", "yes", "on"} else []
     return {
         "nav_items": navigation(page_key),
         "nav_groups": navigation_groups(page_key),
@@ -404,6 +435,104 @@ def follow_up_candidates(workspace: Workspace) -> list[dict]:
     return candidates
 
 
+def follow_up_popup_alerts(workspace: Workspace) -> list[dict]:
+    confirmed_keys, dismissed_keys = follow_up_state(workspace)
+    return [
+        item
+        for item in follow_up_candidates(workspace)
+        if item["dismiss_key"] not in confirmed_keys and item["dismiss_key"] not in dismissed_keys
+    ]
+
+
+def confirmed_follow_up_items(workspace: Workspace) -> list[dict]:
+    confirmed_keys, dismissed_keys = follow_up_state(workspace)
+    return [
+        item
+        for item in follow_up_candidates(workspace)
+        if item["dismiss_key"] in confirmed_keys and item["dismiss_key"] not in dismissed_keys
+    ]
+
+
+def confirm_follow_up_companies(workspace: Workspace, company_keys: list[str]) -> list[str]:
+    eligible_keys = {item["dismiss_key"] for item in follow_up_candidates(workspace)}
+    confirmed_keys, dismissed_keys = follow_up_state(workspace)
+    added_keys = []
+    for raw_key in company_keys:
+        company_key = normalize_company_name(raw_key)
+        if not company_key or company_key not in eligible_keys:
+            continue
+        if company_key not in confirmed_keys:
+            added_keys.append(company_key)
+        confirmed_keys.add(company_key)
+        dismissed_keys.discard(company_key)
+    _save_workspace_key_list(workspace, FOLLOW_UP_CONFIRMED_COMPANIES_KEY, confirmed_keys)
+    _save_workspace_key_list(workspace, FOLLOW_UP_DISMISSED_COMPANIES_KEY, dismissed_keys)
+    return added_keys
+
+
+def dismiss_follow_up_company(workspace: Workspace, company_key: str) -> None:
+    normalized_key = normalize_company_name(company_key)
+    if not normalized_key:
+        return
+    confirmed_keys, dismissed_keys = follow_up_state(workspace)
+    confirmed_keys.discard(normalized_key)
+    dismissed_keys.add(normalized_key)
+    _save_workspace_key_list(workspace, FOLLOW_UP_CONFIRMED_COMPANIES_KEY, confirmed_keys)
+    _save_workspace_key_list(workspace, FOLLOW_UP_DISMISSED_COMPANIES_KEY, dismissed_keys)
+
+
+def follow_up_source_project(workspace: Workspace, company_key: str) -> Project | None:
+    normalized_key = normalize_company_name(company_key)
+    if not normalized_key:
+        return None
+
+    if any(
+        normalize_company_name(item) == normalized_key
+        for item in Prospect.objects.filter(workspace=workspace).exclude(company__exact="").values_list("company", flat=True)
+    ):
+        return None
+
+    latest_project = None
+    for project in Project.objects.filter(workspace=workspace).order_by("-due_date", "-close_date", "-updated_at"):
+        if normalize_company_name(project.company) == normalized_key:
+            latest_project = project
+            break
+
+    if latest_project is None or latest_project.stage != "Entregue":
+        return None
+
+    if (date.today() - latest_project.due_date).days < 30:
+        return None
+
+    return latest_project
+
+
+def start_follow_up_prospection(workspace: Workspace, company_key: str) -> Prospect | None:
+    project = follow_up_source_project(workspace, company_key)
+    if project is None:
+        return None
+
+    normalized_key = normalize_company_name(company_key)
+    note = f"Retomada de follow-up apos ultimo trabalho entregue em {short_date(project.due_date)}."
+    prospect = Prospect.objects.create(
+        workspace=workspace,
+        company=project.company,
+        contact="Contato principal",
+        contact_type="Follow-up",
+        stage="Prospeccao",
+        contact_date=date.today(),
+        niche=project.niche,
+        note=note,
+    )
+
+    confirmed_keys, dismissed_keys = follow_up_state(workspace)
+    confirmed_keys.discard(normalized_key)
+    dismissed_keys.discard(normalized_key)
+    _save_workspace_key_list(workspace, FOLLOW_UP_CONFIRMED_COMPANIES_KEY, confirmed_keys)
+    _save_workspace_key_list(workspace, FOLLOW_UP_DISMISSED_COMPANIES_KEY, dismissed_keys)
+    return prospect
+
+
 def dashboard_snapshot(workspace: Workspace, revenue_range: str = "last_6_months") -> dict:
     projects = Project.objects.filter(workspace=workspace)
     active_projects = list(projects.filter(stage="Fechado").order_by("due_date"))
@@ -488,7 +617,7 @@ def prospection_snapshot(workspace: Workspace) -> dict:
     total = len(prospects) or 1
     meetings = sum(1 for item in prospects if item.meeting_scheduled)
     negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
-    follow_up_items = follow_up_candidates(workspace)
+    follow_up_items = confirmed_follow_up_items(workspace)
 
     columns = []
     for stage in ("Prospeccao", "Negociacao"):
