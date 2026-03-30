@@ -971,6 +971,26 @@ class DashboardSmokeTest(TestCase):
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
 
+    def test_profile_avatar_file_is_served_by_media_url(self):
+        self.client.force_login(self.user)
+        temp_media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, temp_media_root, ignore_errors=True)
+        buffer = BytesIO()
+        Image.new("RGBA", (900, 900), (0, 80, 255, 255)).save(buffer, format="PNG")
+        image_file = SimpleUploadedFile("avatar-producao.png", buffer.getvalue(), content_type="image/png")
+
+        with self.settings(MEDIA_ROOT=temp_media_root, DEBUG=False):
+            self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
+            membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+
+            media_response = self.client.get(membership.avatar.url)
+
+        self.assertEqual(media_response.status_code, 200)
+        self.assertEqual(media_response["Content-Type"], "image/jpeg")
+        self.assertIn("max-age=86400", media_response["Cache-Control"])
+        streamed_content = b"".join(media_response.streaming_content)
+        self.assertGreater(len(streamed_content), 0)
+
     def test_profile_and_settings_pages_show_internal_navigation(self):
         self.client.force_login(self.user)
 

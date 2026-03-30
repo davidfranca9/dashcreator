@@ -3,10 +3,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from studio.views import logout_view
+from studio.views import logout_view, serve_media_file
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("media/<path:path>", serve_media_file, name="serve_media_file"),
     path("logout/", logout_view, name="logout"),
     path("", include("studio.urls")),
 ]

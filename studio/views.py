@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import mimetypes
+from pathlib import Path
+
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
 from django.db.models import Count
-from django.http import HttpRequest, HttpResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils._os import safe_join
 from django.views.decorators.http import require_POST
 
 from .emails import send_signup_confirmation_email
@@ -73,6 +78,24 @@ def home(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("dashboard")
     return redirect("login")
+
+
+def serve_media_file(request: HttpRequest, path: str) -> FileResponse:
+    media_root = Path(django_settings.MEDIA_ROOT)
+
+    try:
+        absolute_path = Path(safe_join(str(media_root), path))
+    except ValueError as exc:
+        raise Http404("Arquivo invalido.") from exc
+
+    if not absolute_path.is_file():
+        raise Http404("Arquivo nao encontrado.")
+
+    content_type, _ = mimetypes.guess_type(absolute_path.name)
+    response = FileResponse(absolute_path.open("rb"), content_type=content_type or "application/octet-stream")
+    response["Cache-Control"] = "public, max-age=86400"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 def signup(request: HttpRequest) -> HttpResponse:
