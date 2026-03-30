@@ -43,10 +43,9 @@
             data-meeting-popup
             data-meeting-popup-key="follow-up-alert-{{ workspace.pk }}-{{ follow_up_alert_date }}"
             data-follow-up-popup
-            data-follow-up-store-key="follow-up-dismissed-{{ workspace.pk }}"
         >
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="follow-up-popup-title">
-                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">&times;</button>
+                <button type="button" class="meeting-popup-close" data-follow-up-close-temporary aria-label="Fechar aviso">&times;</button>
                 <span class="meeting-popup-badge">Follow-up</span>
                 <h3 id="follow-up-popup-title" data-follow-up-title>
                     Hora de retomar contato com {{ follow_up_alerts|length }} marca{% if follow_up_alerts|length != 1 %}s{% endif %}.
@@ -59,20 +58,29 @@
                             data-follow-up-company="{{ item.company }}"
                             data-follow-up-company-key="{{ item.dismiss_key }}"
                         >
-                            <button
-                                type="button"
-                                class="meeting-popup-item-dismiss"
-                                data-follow-up-dismiss="{{ item.dismiss_key }}"
-                                aria-label="Nunca mais lembrar da marca {{ item.company }}"
-                            >&times;</button>
+                            <form method="post" action="{% url 'follow_up_dismiss' %}" class="meeting-popup-item-dismiss-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="company_key" value="{{ item.dismiss_key }}">
+                                <button
+                                    type="submit"
+                                    class="meeting-popup-item-dismiss"
+                                    aria-label="Nunca mais lembrar da marca {{ item.company }}"
+                                >&times;</button>
+                            </form>
                             <strong>{{ item.company }}</strong>
                             <p>{{ item.note }}</p>
                         </article>
                     {% endfor %}
                 </div>
                 <div class="meeting-popup-actions">
-                    <a class="primary-button" href="#follow-up-column" data-meeting-popup-close>Ver follow-up</a>
-                    <button type="button" class="ghost-button" data-meeting-popup-close>Fechar</button>
+                    <form method="post" action="{% url 'follow_up_confirm' %}" class="meeting-popup-action-form">
+                        {% csrf_token %}
+                        {% for item in follow_up_alerts %}
+                            <input type="hidden" name="company_keys" value="{{ item.dismiss_key }}">
+                        {% endfor %}
+                        <button type="submit" class="primary-button">Ver follow-up</button>
+                    </form>
+                    <button type="button" class="ghost-button" data-follow-up-close-temporary>Fechar</button>
                 </div>
             </div>
         </div>
@@ -137,15 +145,17 @@
     {% if meeting_alerts or follow_up_alerts %}
         <script>
             (() => {
-                const hidePopup = (popup, popupKey) => {
+                const hidePopup = (popup, popupKey, persist = true) => {
                     popup.hidden = true;
                     popup.classList.add("is-hidden");
                     popup.setAttribute("aria-hidden", "true");
                     popup.style.display = "none";
                     popup.style.pointerEvents = "none";
-                    try {
-                        sessionStorage.setItem(popupKey, "dismissed");
-                    } catch (error) {
+                    if (persist && popupKey) {
+                        try {
+                            sessionStorage.setItem(popupKey, "dismissed");
+                        } catch (error) {
+                        }
                     }
                 };
 
@@ -157,14 +167,14 @@
                     popup.style.pointerEvents = "";
                 };
 
-                const closePopupFromTrigger = (event, popup, popupKey) => {
+                const closePopupFromTrigger = (event, popup, popupKey, persist = true) => {
                     if (event) {
                         event.preventDefault();
                         event.stopPropagation();
                     }
                     const trigger = event?.currentTarget;
                     const targetSelector = trigger?.getAttribute("href");
-                    hidePopup(popup, popupKey);
+                    hidePopup(popup, popupKey, persist);
 
                     if (targetSelector && targetSelector.startsWith("#")) {
                         const target = document.querySelector(targetSelector);
@@ -178,92 +188,38 @@
                     }
                 };
 
-                const updateFollowUpPopup = (popup) => {
-                    const items = Array.from(popup.querySelectorAll("[data-follow-up-item]"));
-                    const visibleItems = items.filter((item) => !item.hidden);
-                    const title = popup.querySelector("[data-follow-up-title]");
-                    if (title) {
-                        const total = visibleItems.length;
-                        title.textContent = total === 1
-                            ? "Hora de retomar contato com 1 marca."
-                            : `Hora de retomar contato com ${total} marcas.`;
-                    }
-                    if (!visibleItems.length) {
-                        const popupKey = popup.dataset.meetingPopupKey;
-                        hidePopup(popup, popupKey);
-                    }
-                };
-
                 document.querySelectorAll("[data-meeting-popup]").forEach((popup) => {
                     const popupKey = popup.dataset.meetingPopupKey;
+                    const isFollowUpPopup = popup.hasAttribute("data-follow-up-popup");
                     let dismissed = false;
-                    try {
-                        dismissed = sessionStorage.getItem(popupKey) === "dismissed";
-                    } catch (error) {
+                    if (!isFollowUpPopup) {
+                        try {
+                            dismissed = sessionStorage.getItem(popupKey) === "dismissed";
+                        } catch (error) {
+                        }
                     }
                     if (dismissed) {
-                        hidePopup(popup, popupKey);
+                        hidePopup(popup, popupKey, false);
                         return;
                     }
 
                     showPopup(popup);
 
-                    if (popup.hasAttribute("data-follow-up-popup")) {
-                        const storageKey = popup.dataset.followUpStoreKey;
-                        let dismissedCompanies = [];
-                        try {
-                            dismissedCompanies = JSON.parse(localStorage.getItem(storageKey) || "[]");
-                        } catch (error) {
-                            dismissedCompanies = [];
-                        }
-
-                        popup.querySelectorAll("[data-follow-up-item]").forEach((item) => {
-                            if (dismissedCompanies.includes(item.dataset.followUpCompanyKey)) {
-                                item.hidden = true;
-                            }
-                        });
-
-                        popup.querySelectorAll("[data-follow-up-dismiss]").forEach((button) => {
-                            button.addEventListener("click", (event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                const companyKey = button.dataset.followUpDismiss;
-                                const item = button.closest("[data-follow-up-item]");
-                                let savedCompanies = [];
-                                try {
-                                    savedCompanies = JSON.parse(localStorage.getItem(storageKey) || "[]");
-                                } catch (error) {
-                                    savedCompanies = [];
-                                }
-                                if (!savedCompanies.includes(companyKey)) {
-                                    savedCompanies.push(companyKey);
-                                    try {
-                                        localStorage.setItem(storageKey, JSON.stringify(savedCompanies));
-                                    } catch (error) {
-                                    }
-                                }
-                                if (item) {
-                                    item.hidden = true;
-                                }
-                                updateFollowUpPopup(popup);
-                            });
-                        });
-
-                        updateFollowUpPopup(popup);
-                        if (popup.hidden) {
-                            return;
-                        }
-                    }
-
                     popup.querySelectorAll("[data-meeting-popup-close]").forEach((button) => {
                         button.addEventListener("click", (event) => {
-                            closePopupFromTrigger(event, popup, popupKey);
+                            closePopupFromTrigger(event, popup, popupKey, true);
+                        });
+                    });
+
+                    popup.querySelectorAll("[data-follow-up-close-temporary]").forEach((button) => {
+                        button.addEventListener("click", (event) => {
+                            closePopupFromTrigger(event, popup, popupKey, false);
                         });
                     });
 
                     popup.addEventListener("click", (event) => {
                         if (event.target === popup) {
-                            hidePopup(popup, popupKey);
+                            hidePopup(popup, popupKey, !isFollowUpPopup);
                         }
                     });
                 });
