@@ -234,8 +234,7 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Follow-up")
-        self.assertContains(response, "Ja tem 40 dias desde o seu ultimo trabalho para a marca Reserva")
-        self.assertContains(response, "oi sumido?")
+        self.assertEqual(response.context["columns"][-1]["items"], [])
 
     def test_prospection_shows_follow_up_popup_for_old_delivered_brand(self):
         Project.objects.create(
@@ -263,8 +262,109 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Hora de retomar contato")
         self.assertContains(response, "Reserva")
-        self.assertContains(response, 'href="#follow-up-column"', html=False)
+        self.assertContains(response, reverse("follow_up_confirm"))
+        self.assertContains(response, reverse("follow_up_dismiss"))
         self.assertContains(response, "Nunca mais lembrar da marca Reserva")
+
+    def test_follow_up_confirm_moves_popup_brands_to_follow_up_column(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=45),
+            due_date=date.today() - timedelta(days=40),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("follow_up_confirm"),
+            {"company_keys": ["reserva"]},
+            follow=True,
+        )
+
+        self.assertRedirects(response, f"{reverse('prospection')}#follow-up-column")
+        self.assertContains(response, "Marcas enviadas para o follow-up.")
+        self.assertEqual(len(response.context["columns"][-1]["items"]), 1)
+        self.assertEqual(response.context["columns"][-1]["items"][0]["company"], "Reserva")
+        self.assertEqual(response.context["follow_up_alerts"], [])
+
+    def test_follow_up_dismiss_hides_brand_from_future_popups(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=45),
+            due_date=date.today() - timedelta(days=40),
+        )
+        self.client.force_login(self.user)
+
+        self.client.post(reverse("follow_up_dismiss"), {"company_key": "reserva"})
+        response = self.client.get(reverse("prospection"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["follow_up_alerts"], [])
+        self.assertEqual(response.context["columns"][-1]["items"], [])
+        self.assertNotContains(response, "Nunca mais lembrar da marca Reserva")
+
+    def test_follow_up_start_prospection_creates_new_lead_and_clears_follow_up(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=45),
+            due_date=date.today() - timedelta(days=40),
+        )
+        self.client.force_login(self.user)
+        self.client.post(reverse("follow_up_confirm"), {"company_keys": ["reserva"]})
+
+        response = self.client.post(
+            reverse("follow_up_start_prospection"),
+            {"company_key": "reserva"},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("prospection"))
+        self.assertContains(response, "Reserva voltou para Prospecção.")
+        lead = Prospect.objects.get(workspace=self.workspace, company="Reserva")
+        self.assertEqual(lead.stage, "Prospeccao")
+        self.assertEqual(lead.contact, "Contato principal")
+        self.assertEqual(lead.contact_type, "Follow-up")
+        self.assertEqual(response.context["columns"][-1]["items"], [])
+        prospection_companies = [item["company"] for item in response.context["columns"][0]["items"]]
+        self.assertIn("Reserva", prospection_companies)
 
     def test_dashboard_does_not_show_follow_up_popup(self):
         Project.objects.create(
