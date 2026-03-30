@@ -41,6 +41,10 @@ body {
     font-family: "Segoe UI", "Trebuchet MS", sans-serif;
 }
 
+body.has-popup-open {
+    overflow: hidden;
+}
+
 a {
     color: inherit;
     text-decoration: none;
@@ -349,6 +353,8 @@ textarea {
     padding: 24px;
     background: rgba(9, 18, 35, 0.34);
     backdrop-filter: blur(4px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .meeting-popup-backdrop[hidden],
@@ -358,6 +364,7 @@ textarea {
 
 .meeting-popup {
     width: min(100%, 520px);
+    max-height: calc(100vh - 48px);
     padding: 24px;
     border-radius: 24px;
     border: 1px solid rgba(132, 164, 224, 0.28);
@@ -365,6 +372,9 @@ textarea {
     color: #edf5ff;
     box-shadow: 0 28px 80px rgba(7, 15, 31, 0.34);
     position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .meeting-popup-badge {
@@ -511,6 +521,57 @@ body.theme-dark .message {
 
 .finance-filter-form select {
     min-width: 220px;
+}
+
+.jobs-filter-bar {
+    margin-bottom: 18px;
+    padding: 16px 18px;
+}
+
+.jobs-filter-form {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 0.95fr) minmax(180px, 1fr) minmax(240px, 1.25fr);
+    gap: 12px;
+    align-items: center;
+}
+
+.jobs-filter-form select,
+.jobs-filter-search {
+    min-height: 52px;
+    border-radius: 14px;
+    border: 1px solid #d7e2f2;
+    background: #fdfefe;
+}
+
+.jobs-filter-form select {
+    padding: 0 16px;
+    color: #17315f;
+}
+
+.jobs-filter-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+}
+
+.jobs-filter-search span {
+    color: #61748e;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.jobs-filter-search input {
+    width: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: #17315f;
+    font: inherit;
+}
+
+.jobs-filter-search input::placeholder {
+    color: #7e92af;
 }
 
 .stat-card {
@@ -1507,6 +1568,10 @@ body.theme-dark .danger-button {
     .profile-nav-link {
         min-width: 0;
     }
+
+    .jobs-filter-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 860px) {
@@ -1536,6 +1601,10 @@ body.theme-dark .danger-button {
 
     .source-mix-summary {
         padding: 18px;
+    }
+
+    .jobs-filter-form {
+        grid-template-columns: 1fr;
     }
 
     .login-card {

@@ -11,7 +11,7 @@ from django.db.models import Q, QuerySet
 from django.urls import reverse
 
 from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
-from .models import Membership, Niche, Project, Prospect, Workspace, WorkspaceSetting
+from .models import Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -756,11 +756,6 @@ def jobs_snapshot_filtered(
         "service_categories": [
             {"value": str(item.pk), "label": item.name}
             for item in ServiceCategory.objects.filter(workspace=workspace).order_by("name")
-        ],
-        "progress_options": [
-            {"value": "", "label": "Em andamento"},
-            {"value": "andamento", "label": "Em andamento"},
-            {"value": "entregue", "label": "Entregue"},
         ],
         "niches": [
             {"value": str(item.pk), "label": item.name}

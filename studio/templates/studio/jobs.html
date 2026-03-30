@@ -1,6 +1,32 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
+<article class="card jobs-filter-bar">
+    <form method="get" class="jobs-filter-form" data-jobs-filter-form>
+        <select name="service_category" aria-label="Filtrar por tipo">
+            <option value="">Filtrar por Tipo</option>
+            {% for item in filters.service_categories %}
+                <option value="{{ item.value }}" {% if filters.service_category == item.value %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+        </select>
+        <select name="progress" aria-label="Filtrar por andamento">
+            <option value="">Filtrar por Andamento</option>
+            <option value="andamento" {% if filters.progress == "andamento" %}selected{% endif %}>Em andamento</option>
+            <option value="entregue" {% if filters.progress == "entregue" %}selected{% endif %}>Entregue</option>
+        </select>
+        <select name="niche" aria-label="Filtrar por nicho">
+            <option value="">Filtrar por Nicho</option>
+            {% for item in filters.niches %}
+                <option value="{{ item.value }}" {% if filters.niche == item.value %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+        </select>
+        <label class="jobs-filter-search" aria-label="Pesquisar pelo nome">
+            <span>⌕</span>
+            <input type="search" name="search" value="{{ filters.search }}" placeholder="Pesquise pelo nome">
+        </label>
+    </form>
+</article>
+
 <section class="stats-grid">
     {% for item in stats %}
         <article class="stat-card">
@@ -80,4 +106,28 @@
         </div>
     </article>
 </section>
+
+<script>
+    (() => {
+        const form = document.querySelector("[data-jobs-filter-form]");
+        if (!form) {
+            return;
+        }
+
+        form.querySelectorAll("select").forEach((field) => {
+            field.addEventListener("change", () => form.requestSubmit());
+        });
+
+        const searchField = form.querySelector('input[name="search"]');
+        if (!searchField) {
+            return;
+        }
+
+        let timerId = null;
+        searchField.addEventListener("input", () => {
+            window.clearTimeout(timerId);
+            timerId = window.setTimeout(() => form.requestSubmit(), 300);
+        });
+    })();
+</script>
 {% endblock %}

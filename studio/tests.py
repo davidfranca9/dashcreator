@@ -581,6 +581,49 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["title"], "Finalizado")
         self.assertEqual(snapshot["stats"][3]["value"], "1")
 
+    def test_jobs_page_filters_by_type_progress_niche_and_search(self):
+        tech_niche = Niche.objects.get(workspace=self.workspace, name="Tech")
+        second_category = ServiceCategory.objects.create(workspace=self.workspace, name="Stories")
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Inbound",
+            niche=tech_niche,
+            service_category=second_category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=date.today() - timedelta(days=5),
+            due_date=date.today() - timedelta(days=1),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("jobs"),
+            {
+                "service_category": str(second_category.pk),
+                "progress": "entregue",
+                "niche": str(tech_niche.pk),
+                "search": "insider",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Filtrar por Tipo")
+        self.assertEqual(response.context["filters"]["service_category"], str(second_category.pk))
+        self.assertEqual(response.context["filters"]["progress"], "entregue")
+        self.assertEqual(response.context["filters"]["niche"], str(tech_niche.pk))
+        self.assertEqual(response.context["filters"]["search"], "insider")
+        self.assertEqual(len(response.context["active"]), 0)
+        self.assertEqual(len(response.context["delivered"]), 1)
+        self.assertEqual(response.context["delivered"][0]["company"], "Insider")
+
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
             workspace=self.workspace,

@@ -31,7 +31,7 @@ from .services import (
     dismiss_follow_up_company,
     finance_snapshot,
     get_or_create_workspace_for_user,
-    jobs_snapshot,
+    jobs_snapshot_filtered,
     prospection_snapshot,
     reports_snapshot,
     save_settings,
@@ -150,7 +150,15 @@ def follow_up_start_prospection(request: HttpRequest) -> HttpResponse:
 def jobs(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     context = shell_context("jobs", workspace, "Trabalhos", "Trabalhos assinados e entregas em andamento.", user=request.user, action_label="Novo trabalho", action_url="project_create")
-    context.update(jobs_snapshot(workspace))
+    context.update(
+        jobs_snapshot_filtered(
+            workspace,
+            service_category_filter=request.GET.get("service_category"),
+            progress_filter=request.GET.get("progress"),
+            niche_filter=request.GET.get("niche"),
+            search=request.GET.get("search"),
+        )
+    )
     return render(request, "studio/jobs.html", context)
 
 
