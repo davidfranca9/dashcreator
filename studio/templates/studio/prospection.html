@@ -24,18 +24,37 @@
             {% if column.items %}
                 <div class="stack-list">
                     {% for item in column.items %}
-                        <article class="soft-card prospect-card">
+                        <article class="soft-card prospect-card{% if item.kind == 'follow_up' %} prospect-card--follow-up{% endif %}">
                             <div class="prospect-top">
-                                <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
-                                <strong>{{ item.company }}</strong>
+                                {% if item.kind == "follow_up" %}
+                                    <div class="follow-up-brand">
+                                        <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
+                                        <div class="follow-up-brand-copy">
+                                            <strong>{{ item.company }}</strong>
+                                            <span class="muted">{{ item.service_category }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="chip">{{ item.days_since_last_job }} dias</span>
+                                {% else %}
+                                    <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
+                                    <strong>{{ item.company }}</strong>
+                                {% endif %}
                             </div>
                             {% if item.kind == "follow_up" %}
-                                <p class="muted strong">{{ item.service_category }}</p>
-                                <div class="meta-line">
+                                <div class="follow-up-meta">
                                     <small>Ultima entrega: {{ item.last_delivery_text }}</small>
-                                    <small>{{ item.days_since_last_job }} dias sem novo trabalho</small>
+                                    <small>Sem novo trabalho ha {{ item.days_since_last_job }} dias</small>
                                 </div>
-                                <p class="muted">{{ item.note }}</p>
+                                <p class="muted follow-up-note">{{ item.note }}</p>
+                                <div class="card-actions">
+                                    <div class="card-actions-group">
+                                        <form method="post" action="{% url 'follow_up_start_prospection' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="company_key" value="{{ item.dismiss_key }}">
+                                            <button type="submit" class="primary-button small">Prospecção</button>
+                                        </form>
+                                    </div>
+                                </div>
                             {% else %}
                                 <p class="muted strong">
                                     {{ item.contact }}
