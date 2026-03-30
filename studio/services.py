@@ -665,8 +665,13 @@ def prospection_snapshot(workspace: Workspace) -> dict:
     }
 
 
-def empresas_snapshot(workspace: Workspace) -> dict:
-    projects = list(Project.objects.filter(workspace=workspace).order_by("due_date"))
+def empresas_snapshot(workspace: Workspace, projects: list[Project] | None = None) -> dict:
+    if projects is None:
+        projects = list(
+            Project.objects.filter(workspace=workspace)
+            .select_related("service_category", "niche")
+            .order_by("due_date")
+        )
     active = [item for item in projects if item.stage == "Fechado"]
     today = date.today()
     upcoming_limit = today + timedelta(days=21)
@@ -709,8 +714,59 @@ def empresas_snapshot(workspace: Workspace) -> dict:
 
 
 def jobs_snapshot(workspace: Workspace) -> dict:
-    snapshot = empresas_snapshot(workspace)
-    snapshot["source_mix"] = closing_source_mix(list(Project.objects.filter(workspace=workspace)))
+    return jobs_snapshot_filtered(workspace)
+
+
+def jobs_snapshot_filtered(
+    workspace: Workspace,
+    service_category_filter: str | None = None,
+    progress_filter: str | None = None,
+    niche_filter: str | None = None,
+    search: str | None = None,
+) -> dict:
+    projects_query = Project.objects.filter(workspace=workspace).select_related("service_category", "niche").order_by("due_date")
+
+    if service_category_filter and service_category_filter.isdigit():
+        projects_query = projects_query.filter(service_category_id=int(service_category_filter))
+
+    if progress_filter == "andamento":
+        projects_query = projects_query.filter(stage="Fechado")
+    elif progress_filter == "entregue":
+        projects_query = projects_query.filter(stage="Entregue")
+
+    if niche_filter and niche_filter.isdigit():
+        projects_query = projects_query.filter(niche_id=int(niche_filter))
+
+    search_term = (search or "").strip()
+    if search_term:
+        projects_query = projects_query.filter(
+            Q(company__icontains=search_term)
+            | Q(service_category__name__icontains=search_term)
+            | Q(project_name__icontains=search_term)
+        )
+
+    filtered_projects = list(projects_query)
+    snapshot = empresas_snapshot(workspace, filtered_projects)
+    snapshot["source_mix"] = closing_source_mix(filtered_projects)
+    snapshot["filters"] = {
+        "service_category": service_category_filter or "",
+        "progress": progress_filter or "",
+        "niche": niche_filter or "",
+        "search": search_term,
+        "service_categories": [
+            {"value": str(item.pk), "label": item.name}
+            for item in ServiceCategory.objects.filter(workspace=workspace).order_by("name")
+        ],
+        "progress_options": [
+            {"value": "", "label": "Em andamento"},
+            {"value": "andamento", "label": "Em andamento"},
+            {"value": "entregue", "label": "Entregue"},
+        ],
+        "niches": [
+            {"value": str(item.pk), "label": item.name}
+            for item in default_niche_list(workspace)
+        ],
+    }
     return snapshot
 
 
