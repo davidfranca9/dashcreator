@@ -844,6 +844,38 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][2]["value"], "1")
         self.assertEqual(snapshot["stats"][3]["value"], "R$1.500")
 
+    def test_global_month_choices_include_all_and_are_sorted_ascending(self):
+        previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote anterior",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1500,
+            entry_value=750,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=previous_month,
+            due_date=previous_month + timedelta(days=12),
+        )
+
+        snapshot = dashboard_snapshot(self.workspace, "all")
+
+        self.assertEqual(snapshot["selected_month"]["value"], "all")
+        self.assertEqual(snapshot["month_choices"][0]["value"], "all")
+        self.assertEqual(snapshot["month_choices"][0]["label"], "Todos")
+        month_values = [item["value"] for item in snapshot["month_choices"][1:]]
+        self.assertEqual(month_values, sorted(month_values))
+        self.assertIn(previous_month.strftime("%Y-%m"), month_values)
+        self.assertIn(self.project.close_date.strftime("%Y-%m"), month_values)
+        self.assertEqual(snapshot["stats"][0]["value"], "3")
+
     def test_reports_page_shows_month_overview_with_via_and_top_niche(self):
         Project.objects.create(
             workspace=self.workspace,
