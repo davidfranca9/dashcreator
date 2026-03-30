@@ -297,6 +297,7 @@ textarea {
 .page-header-tools {
     margin-left: auto;
     justify-content: flex-end;
+    align-items: flex-end;
 }
 
 .global-month-form {
@@ -320,6 +321,11 @@ textarea {
 .global-month-filter select {
     min-width: 220px;
     padding: 10px 14px;
+}
+
+.page-header .header-actions {
+    align-items: flex-end;
+    align-self: flex-end;
 }
 
 .card-actions-meta,
