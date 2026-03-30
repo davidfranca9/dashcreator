@@ -7,7 +7,7 @@ from django.contrib.auth.views import LoginView, PasswordResetCompleteView, Pass
 from django.db.models import Count
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 
 from .emails import send_signup_confirmation_email
@@ -25,8 +25,10 @@ from .forms import (
 )
 from .models import Project, Prospect, ServiceCategory
 from .services import (
+    confirm_follow_up_companies,
     dashboard_snapshot,
     default_niche_list,
+    dismiss_follow_up_company,
     finance_snapshot,
     get_or_create_workspace_for_user,
     jobs_snapshot,
@@ -35,6 +37,7 @@ from .services import (
     save_settings,
     settings_map,
     shell_context,
+    start_follow_up_prospection,
 )
 
 
@@ -113,6 +116,34 @@ def prospection(request: HttpRequest) -> HttpResponse:
     context = shell_context("prospection", workspace, "Prospecção", "Leads, follow-ups e negociacoes em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
     context.update(prospection_snapshot(workspace))
     return render(request, "studio/prospection.html", context)
+
+
+@login_required
+@require_POST
+def follow_up_confirm(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    added_keys = confirm_follow_up_companies(workspace, request.POST.getlist("company_keys"))
+    if added_keys:
+        messages.success(request, "Marcas enviadas para o follow-up.")
+    return redirect(f"{reverse('prospection')}#follow-up-column")
+
+
+@login_required
+@require_POST
+def follow_up_dismiss(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    dismiss_follow_up_company(workspace, request.POST.get("company_key", ""))
+    return redirect("prospection")
+
+
+@login_required
+@require_POST
+def follow_up_start_prospection(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    prospect = start_follow_up_prospection(workspace, request.POST.get("company_key", ""))
+    if prospect:
+        messages.success(request, f"{prospect.company} voltou para Prospecção.")
+    return redirect("prospection")
 
 
 @login_required
