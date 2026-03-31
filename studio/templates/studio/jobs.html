@@ -100,6 +100,10 @@
                         </div>
                         <div class="card-actions-group">
                             <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                            <form method="post" action="{% url 'project_delete' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="danger-button small">Excluir</button>
+                            </form>
                         </div>
                     </div>
                 </article>
