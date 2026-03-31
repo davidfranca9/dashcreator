@@ -758,6 +758,8 @@ def empresas_snapshot(workspace: Workspace, projects: list[Project] | None = Non
                 "colors": (color_a, color_b),
                 "accent": accent,
                 "stage": item.stage,
+                "close_date": item.close_date,
+                "due_date": item.due_date,
             }
         )
 
@@ -776,7 +778,11 @@ def empresas_snapshot(workspace: Workspace, projects: list[Project] | None = Non
             {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F"},
         ],
         "active": [item for item in cards if item["stage"] == "Fechado"],
-        "delivered": [item for item in cards if item["stage"] == "Entregue"][:4],
+        "delivered": sorted(
+            [item for item in cards if item["stage"] == "Entregue"],
+            key=lambda item: (item["due_date"], item["close_date"]),
+            reverse=True,
+        )[:4],
     }
 
 

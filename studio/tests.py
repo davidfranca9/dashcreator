@@ -687,6 +687,54 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, f'name="month" value="{self.project.close_date.strftime("%Y-%m")}"', html=False)
         self.assertContains(response, f'{reverse("finance")}?month={self.project.close_date.strftime("%Y-%m")}')
 
+    def test_jobs_page_all_months_keeps_latest_deliveries(self):
+        previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Entrega anterior",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=1800,
+            entry_value=900,
+            received_value=1800,
+            deliverables_count=2,
+            progress=100,
+            close_date=previous_month,
+            due_date=previous_month + timedelta(days=8),
+        )
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Entrega recente",
+            content_type="",
+            stage="Entregue",
+            status="Entregue",
+            total_value=2200,
+            entry_value=1100,
+            received_value=2200,
+            deliverables_count=3,
+            progress=100,
+            close_date=self.project.close_date,
+            due_date=self.project.due_date + timedelta(days=2),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("jobs"), {"month": "all"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_month"]["value"], "all")
+        self.assertEqual(len(response.context["delivered"]), 2)
+        self.assertEqual(response.context["delivered"][0]["company"], "Reserva")
+        self.assertEqual(response.context["delivered"][1]["company"], "Insider")
+
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
             workspace=self.workspace,
