@@ -22,6 +22,7 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
 ]
 STATUS_PROGRESS_MAP = {
     "Briefing": 0,
+    "Aguardando produto": 10,
     "Em gravacao": 25,
     "Em edicao": 55,
     "Aguardando cliente": 80,

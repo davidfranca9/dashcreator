@@ -423,6 +423,7 @@ class DashboardSmokeTest(TestCase):
             ],
         )
         self.assertNotIn("progress", form.fields)
+        self.assertIn(("Aguardando produto", "Aguardando produto"), form.fields["status"].choices)
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
@@ -474,6 +475,31 @@ class DashboardSmokeTest(TestCase):
         active_project.save()
         self.assertEqual(active_project.stage, "Fechado")
         self.assertEqual(active_project.progress, 0)
+
+        waiting_product_form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Indicacao",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Fechado",
+                "status": "Aguardando produto",
+                "total_value": "4000",
+                "entry_value": "2000",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(waiting_product_form.is_valid(), waiting_product_form.errors)
+        waiting_product_project = waiting_product_form.save(commit=False)
+        waiting_product_project.workspace = self.workspace
+        waiting_product_project.save()
+        self.assertEqual(waiting_product_project.stage, "Fechado")
+        self.assertEqual(waiting_product_project.progress, 10)
 
     def test_dashboard_counts_unique_contracting_companies(self):
         Prospect.objects.create(

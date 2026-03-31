@@ -21,6 +21,7 @@ PROJECT_STAGE_CHOICES = [
 
 PROJECT_STATUS_CHOICES = [
     ("Briefing", "Briefing"),
+    ("Aguardando produto", "Aguardando produto"),
     ("Em gravacao", "Em gravacao"),
     ("Em edicao", "Em edicao"),
     ("Aguardando cliente", "Aguardando aprovacao"),
