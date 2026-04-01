@@ -62,7 +62,7 @@ class DashboardSmokeTest(TestCase):
 
     def test_dashboard_pages_load(self):
         self.client.force_login(self.user)
-        for name in ["dashboard", "prospection", "jobs", "finance", "reports", "settings", "profile"]:
+        for name in ["dashboard", "prospection", "jobs", "finance", "distribution", "legal", "reports", "settings", "profile"]:
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200, name)
             self.assertContains(response, "workspace-chip-avatar-fallback")
@@ -419,16 +419,20 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["closing_source"].choices)
         self.assertNotIn("progress", form.fields)
         self.assertIn(("Aguardando produto", "Aguardando produto"), form.fields["status"].choices)
+        self.assertIn(("Organico", "Organico"), form.fields["content_distribution"].choices)
+        self.assertIn(("Ads", "Ads"), form.fields["content_distribution"].choices)
         self.assertIn("payment_due_date", form.fields)
         self.assertIn("meeting_scheduled", form.fields)
         self.assertIn("meeting_date", form.fields)
         self.assertIn("note", form.fields)
+        self.assertIn("image_license_term_days", form.fields)
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
             data={
                 "company": "Insider",
                 "closing_source": "Indicacao",
+                "content_distribution": "Organico",
                 "niche": self.niche.pk,
                 "service_category": self.category.pk,
                 "stage": "Fechado",
@@ -454,6 +458,7 @@ class DashboardSmokeTest(TestCase):
             data={
                 "company": "Insider",
                 "closing_source": "Indicacao",
+                "content_distribution": "Organico",
                 "niche": self.niche.pk,
                 "service_category": self.category.pk,
                 "stage": "Entregue",
@@ -479,6 +484,7 @@ class DashboardSmokeTest(TestCase):
             data={
                 "company": "Insider",
                 "closing_source": "Follow-up",
+                "content_distribution": "Ads",
                 "niche": self.niche.pk,
                 "service_category": self.category.pk,
                 "stage": "Fechado",
@@ -487,6 +493,7 @@ class DashboardSmokeTest(TestCase):
                 "entry_value": "2000",
                 "received_value": "0",
                 "deliverables_count": "2",
+                "image_license_term_days": "90",
                 "payment_due_date": (date.today() + timedelta(days=15)).isoformat(),
                 "meeting_scheduled": "on",
                 "meeting_date": "",
@@ -504,6 +511,7 @@ class DashboardSmokeTest(TestCase):
             data={
                 "company": "Insider",
                 "closing_source": "Indicacao",
+                "content_distribution": "Organico",
                 "niche": self.niche.pk,
                 "service_category": self.category.pk,
                 "stage": "Fechado",
@@ -524,6 +532,64 @@ class DashboardSmokeTest(TestCase):
         waiting_product_project.save()
         self.assertEqual(waiting_product_project.stage, "Fechado")
         self.assertEqual(waiting_product_project.progress, 10)
+
+        ads_without_term_form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Inbound",
+                "content_distribution": "Ads",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "3000",
+                "entry_value": "1500",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertFalse(ads_without_term_form.is_valid())
+        self.assertIn("image_license_term_days", ads_without_term_form.errors)
+
+    def test_distribution_and_legal_pages_reflect_ads_licensing(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            content_distribution="Ads",
+            image_license_term_days=90,
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=date.today() - timedelta(days=90),
+            due_date=date.today() - timedelta(days=90),
+            note="Ads com licenciamento",
+        )
+        self.client.force_login(self.user)
+
+        distribution_response = self.client.get(reverse("distribution"))
+        legal_response = self.client.get(reverse("legal"))
+
+        self.assertContains(distribution_response, "Ads")
+        self.assertContains(distribution_response, "Reserva")
+        self.assertContains(legal_response, "Direito de uso de imagem")
+        self.assertContains(legal_response, "90 dias")
+        self.assertContains(
+            legal_response,
+            "Oi, tester O DIREITO DE USO DE IMAGEM DA MARCA Reserva ESTÁ VENCENDO HOJE, QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?",
+        )
 
     def test_dashboard_counts_unique_contracting_companies(self):
         Prospect.objects.create(
@@ -1348,5 +1414,40 @@ class AuthenticationFlowsTest(TestCase):
         old_session_response = first_client.get(reverse("dashboard"))
         self.assertEqual(old_session_response.status_code, 302)
         self.assertIn(reverse("login"), old_session_response["Location"])
+
+    def test_layfeamorim_allows_multiple_active_sessions(self):
+        privileged_user = User.objects.create_user(
+            username="layfeamorim",
+            email="layfeamorim@example.com",
+            password="SenhaSegura123!",
+        )
+        get_or_create_workspace_for_user(privileged_user)
+        first_client = Client()
+        second_client = Client()
+
+        first_response = first_client.post(
+            reverse("login"),
+            {"username": privileged_user.username, "password": "SenhaSegura123!"},
+        )
+        self.assertRedirects(first_response, reverse("dashboard"))
+        first_session_key = first_client.session.session_key
+        self.assertTrue(Session.objects.filter(session_key=first_session_key).exists())
+
+        second_response = second_client.post(
+            reverse("login"),
+            {"username": privileged_user.username, "password": "SenhaSegura123!"},
+        )
+        self.assertRedirects(second_response, reverse("dashboard"))
+        second_session_key = second_client.session.session_key
+
+        self.assertNotEqual(first_session_key, second_session_key)
+        self.assertTrue(Session.objects.filter(session_key=first_session_key).exists())
+        self.assertTrue(Session.objects.filter(session_key=second_session_key).exists())
+        self.assertFalse(ActiveUserSession.objects.filter(user=privileged_user).exists())
+
+        first_dashboard = first_client.get(reverse("dashboard"))
+        second_dashboard = second_client.get(reverse("dashboard"))
+        self.assertEqual(first_dashboard.status_code, 200)
+        self.assertEqual(second_dashboard.status_code, 200)
 
 
