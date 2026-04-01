@@ -54,6 +54,15 @@ SOURCE_MIX_COLORS = {
 SOURCE_MIX_ORDER = ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"]
 MONTH_FILTER_PAGE_KEYS = {"dashboard", "jobs", "finance", "reports"}
 ALL_MONTH_VALUE = "all"
+SOURCE_MIX_COLORS = {
+    "Inbound": "#4d8cff",
+    "Prospec\u00e7\u00e3o": "#20b7a7",
+    "Follow-up": "#6f7eff",
+    "Indica\u00e7\u00e3o": "#7f6fff",
+    "Plataforma": "#f59a3d",
+    "Ag\u00eancia": "#61748e",
+}
+SOURCE_MIX_ORDER = ["Inbound", "Prospec\u00e7\u00e3o", "Follow-up", "Indica\u00e7\u00e3o", "Plataforma", "Ag\u00eancia"]
 
 
 FOLLOW_UP_CONFIRMED_COMPANIES_KEY = "ops_follow_up_confirmed_companies"
@@ -103,6 +112,29 @@ def normalize_closing_source(raw_value: str | None) -> str | None:
     return None
 
 
+def normalize_closing_source(raw_value: str | None) -> str | None:
+    normalized = normalize_company_name(raw_value)
+    if not normalized:
+        return None
+    if normalized in {"nao se aplica", "na se aplica", "nao aplicavel", "sem aplicacao", "n a"}:
+        return None
+    if "indic" in normalized:
+        return "Indica\u00e7\u00e3o"
+    if "agen" in normalized:
+        return "Ag\u00eancia"
+    if "plata" in normalized:
+        return "Plataforma"
+    if "follow up" in normalized or "followup" in normalized:
+        return "Follow-up"
+    if "prospec" in normalized or "outbound" in normalized:
+        return "Prospec\u00e7\u00e3o"
+    if "inbound" in normalized:
+        return "Inbound"
+    if normalized in {"instagram", "instagram dm", "whatsapp", "email", "site", "direct", "marketing", "social media"}:
+        return "Inbound"
+    return None
+
+
 def company_palette(company: str) -> tuple[str, str, str]:
     if company in COMPANY_COLORS:
         return COMPANY_COLORS[company]
@@ -142,13 +174,38 @@ def format_days(value: float) -> str:
     return f"{str(round(value, 1)).replace('.', ',')} dias"
 
 
+def payment_reference_date(project: Project) -> date:
+    return project.payment_due_date or project.due_date
+
+
+def google_calendar_event_url(title: str, event_date: date, details: str = "") -> str:
+    next_day = event_date + timedelta(days=1)
+    return "https://calendar.google.com/calendar/render?" + urlencode(
+        {
+            "action": "TEMPLATE",
+            "text": title,
+            "dates": f"{event_date.strftime('%Y%m%d')}/{next_day.strftime('%Y%m%d')}",
+            "details": details,
+        }
+    )
+
+
 def month_options_for_workspace(workspace: Workspace) -> list[date]:
     months = {date.today().replace(day=1)}
-    for close_date, due_date in Project.objects.filter(workspace=workspace).values_list("close_date", "due_date"):
+    for close_date, due_date, payment_due_date, meeting_date in Project.objects.filter(workspace=workspace).values_list(
+        "close_date",
+        "due_date",
+        "payment_due_date",
+        "meeting_date",
+    ):
         if close_date:
             months.add(close_date.replace(day=1))
         if due_date:
             months.add(due_date.replace(day=1))
+        if payment_due_date:
+            months.add(payment_due_date.replace(day=1))
+        if meeting_date:
+            months.add(meeting_date.replace(day=1))
     return sorted(months)
 
 
@@ -732,7 +789,11 @@ def prospection_snapshot(workspace: Workspace) -> dict:
     }
 
 
-def empresas_snapshot(workspace: Workspace, projects: list[Project] | None = None) -> dict:
+def empresas_snapshot(
+    workspace: Workspace,
+    projects: list[Project] | None = None,
+    overdue_projects: list[Project] | None = None,
+) -> dict:
     if projects is None:
         projects = list(
             Project.objects.filter(workspace=workspace)
@@ -743,40 +804,51 @@ def empresas_snapshot(workspace: Workspace, projects: list[Project] | None = Non
     today = date.today()
     upcoming_limit = today + timedelta(days=21)
 
-    cards = []
-    for item in projects:
+    def serialize_job_card(item: Project) -> dict:
         color_a, color_b, accent = company_palette(item.company)
-        cards.append(
-            {
-                "id": item.id,
-                "company": item.company,
-                "service_category": item.service_category_name,
-                "status": item.status,
-                "total_value": currency(item.total_value),
-                "progress": item.progress,
-                "due_text": short_date(item.due_date),
-                "colors": (color_a, color_b),
-                "accent": accent,
-                "stage": item.stage,
-                "close_date": item.close_date,
-                "due_date": item.due_date,
-            }
-        )
+        return {
+            "id": item.id,
+            "company": item.company,
+            "service_category": item.service_category_name,
+            "status": item.status,
+            "total_value": currency(item.total_value),
+            "progress": item.progress,
+            "due_text": short_date(item.due_date),
+            "payment_due_text": short_date(item.payment_due_date) if item.payment_due_date else "",
+            "meeting_date_text": short_date(item.meeting_date) if item.meeting_date else "",
+            "meeting_scheduled": item.meeting_scheduled,
+            "google_calendar_url": google_calendar_event_url(
+                f"Reuniao - {item.company}",
+                item.meeting_date,
+                f"Reuniao agendada do trabalho {item.service_category_name} com {item.company}.",
+            )
+            if item.meeting_scheduled and item.meeting_date
+            else "",
+            "note": item.note,
+            "colors": (color_a, color_b),
+            "accent": accent,
+            "stage": item.stage,
+            "close_date": item.close_date,
+            "due_date": item.due_date,
+        }
 
-    active_company_names = {
-        normalize_company_name(item.company)
-        for item in active
-        if normalize_company_name(item.company)
-    }
+    cards = [serialize_job_card(item) for item in projects]
+    overdue_source = overdue_projects if overdue_projects is not None else [item for item in active if item.due_date < today]
+    overdue_cards = [serialize_job_card(item) for item in overdue_source]
+
     upcoming_deliveries = sum(1 for item in active if today <= item.due_date <= upcoming_limit)
     delivered_count = sum(1 for item in projects if item.stage == "Entregue")
     return {
         "stats": [
-            {"title": "Carteira ativa", "value": str(len(active_company_names)), "icon_label": "E"},
+            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!"},
             {"title": "Aguardando aprovacao", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A"},
             {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P"},
             {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F"},
         ],
+        "overdue": sorted(
+            overdue_cards,
+            key=lambda item: item["due_date"],
+        ),
         "active": [item for item in cards if item["stage"] == "Fechado"],
         "delivered": sorted(
             [item for item in cards if item["stage"] == "Entregue"],
@@ -800,12 +872,8 @@ def jobs_snapshot_filtered(
 ) -> dict:
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
-    projects_query = Project.objects.filter(workspace=workspace).select_related("service_category", "niche").order_by("due_date")
-    if selected_month is not None:
-        projects_query = projects_query.filter(
-            close_date__year=selected_month.year,
-            close_date__month=selected_month.month,
-        )
+    base_projects_query = Project.objects.filter(workspace=workspace).select_related("service_category", "niche")
+    projects_query = base_projects_query
 
     if service_category_filter and service_category_filter.isdigit():
         projects_query = projects_query.filter(service_category_id=int(service_category_filter))
@@ -826,8 +894,16 @@ def jobs_snapshot_filtered(
             | Q(project_name__icontains=search_term)
         )
 
-    filtered_projects = list(projects_query)
-    snapshot = empresas_snapshot(workspace, filtered_projects)
+    overdue_projects_query = projects_query if progress_filter != "entregue" else projects_query.none()
+    if selected_month is not None:
+        projects_query = projects_query.filter(
+            close_date__year=selected_month.year,
+            close_date__month=selected_month.month,
+        )
+
+    filtered_projects = list(projects_query.order_by("due_date"))
+    overdue_projects = list(overdue_projects_query.filter(stage="Fechado", due_date__lt=date.today()).order_by("due_date"))
+    snapshot = empresas_snapshot(workspace, filtered_projects, overdue_projects=overdue_projects)
     snapshot["source_mix"] = closing_source_mix(filtered_projects)
     snapshot["month_choices"] = month_choice_payload(month_options)
     snapshot["selected_month"] = selected_month_payload(selected_month)
@@ -855,14 +931,18 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     month_projects = (
         active_projects
         if selected_month is None
-        else [item for item in active_projects if item.due_date.year == selected_month.year and item.due_date.month == selected_month.month]
+        else [
+            item
+            for item in active_projects
+            if payment_reference_date(item).year == selected_month.year and payment_reference_date(item).month == selected_month.month
+        ]
     )
     forecast = sum_money(item.total_value for item in month_projects)
     received = sum_money(item.received_value for item in month_projects)
     receivable = max(forecast - received, ZERO)
     entry = sum_money(item.entry_value for item in month_projects)
     avg_collection_days = (
-        round(sum(max((item.due_date - item.close_date).days, 1) for item in month_projects) / len(month_projects), 1)
+        round(sum(max((payment_reference_date(item) - item.close_date).days, 1) for item in month_projects) / len(month_projects), 1)
         if month_projects
         else 0.0
     )
@@ -873,7 +953,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         if outstanding <= 0:
             continue
         _, _, accent = company_palette(item.company)
-        schedule.append({"company": item.company, "kind": "Saldo" if item.received_value > 0 else "Entrada", "due": short_date(item.due_date), "amount": currency(outstanding), "status": "Pendente", "accent": accent})
+        schedule.append({"company": item.company, "kind": "Saldo" if item.received_value > 0 else "Entrada", "due": short_date(payment_reference_date(item)), "amount": currency(outstanding), "status": "Pendente", "accent": accent})
 
     return {
         "month_choices": month_choice_payload(month_options),

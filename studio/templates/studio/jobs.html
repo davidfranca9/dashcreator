@@ -44,6 +44,52 @@
 
 <section class="stack-section">
     <article class="card">
+        <div class="card-header"><div><h3>Trabalhos atrasados</h3></div></div>
+        <div class="jobs-grid">
+            {% for item in overdue %}
+                <article class="job-card">
+                    <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
+                        <span>{{ item.company }}</span>
+                    </div>
+                    <div class="meta-line">
+                        <small>{{ item.company }}</small>
+                        <span class="status-pill" style="color: {{ item.accent }}; border-color: {{ item.accent }}44; background: {{ item.accent }}18;">{{ item.status }}</span>
+                    </div>
+                    <strong>{{ item.service_category }}</strong>
+                    <div class="job-meta-list">
+                        <span class="chip">Entrega {{ item.due_text }}</span>
+                        {% if item.payment_due_text %}
+                            <span class="chip">Pagamento {{ item.payment_due_text }}</span>
+                        {% endif %}
+                        {% if item.meeting_date_text %}
+                            <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                        {% endif %}
+                    </div>
+                    {% if item.note %}
+                        <p class="job-note">{{ item.note }}</p>
+                    {% endif %}
+                    <div class="card-actions">
+                        <div class="card-actions-meta">
+                            {% if item.google_calendar_url %}
+                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
+                            {% endif %}
+                        </div>
+                        <div class="card-actions-group">
+                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                            <form method="post" action="{% url 'project_delete' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="danger-button small">Excluir</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="muted">Nenhum trabalho atrasado no momento.</p>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="card">
         <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
             {% for item in active %}
@@ -56,6 +102,18 @@
                         <span class="status-pill" style="color: {{ item.accent }}; border-color: {{ item.accent }}44; background: {{ item.accent }}18;">{{ item.status }}</span>
                     </div>
                     <strong>{{ item.service_category }}</strong>
+                    <div class="job-meta-list">
+                        <span class="chip">Entrega {{ item.due_text }}</span>
+                        {% if item.payment_due_text %}
+                            <span class="chip">Pagamento {{ item.payment_due_text }}</span>
+                        {% endif %}
+                        {% if item.meeting_date_text %}
+                            <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                        {% endif %}
+                    </div>
+                    {% if item.note %}
+                        <p class="job-note">{{ item.note }}</p>
+                    {% endif %}
                     <div class="meta-line">
                         <small>{{ item.company }}</small>
                         <strong>{{ item.total_value }}</strong>
@@ -63,7 +121,9 @@
                     <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                     <div class="card-actions">
                         <div class="card-actions-meta">
-                            <span class="chip">{{ item.due_text }}</span>
+                            {% if item.google_calendar_url %}
+                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
+                            {% endif %}
                             <span class="muted">{{ item.progress }}%</span>
                         </div>
                         <div class="card-actions-group">
@@ -90,13 +150,27 @@
                         <span>{{ item.company }}</span>
                     </div>
                     <strong>{{ item.service_category }}</strong>
+                    <div class="job-meta-list">
+                        <span class="chip">Entrega {{ item.due_text }}</span>
+                        {% if item.payment_due_text %}
+                            <span class="chip">Pagamento {{ item.payment_due_text }}</span>
+                        {% endif %}
+                        {% if item.meeting_date_text %}
+                            <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                        {% endif %}
+                    </div>
+                    {% if item.note %}
+                        <p class="job-note">{{ item.note }}</p>
+                    {% endif %}
                     <div class="meta-line">
                         <small>{{ item.company }}</small>
                         <strong>{{ item.total_value }}</strong>
                     </div>
                     <div class="card-actions">
                         <div class="card-actions-meta">
-                            <span class="chip">{{ item.due_text }}</span>
+                            {% if item.google_calendar_url %}
+                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
+                            {% endif %}
                         </div>
                         <div class="card-actions-group">
                             <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>

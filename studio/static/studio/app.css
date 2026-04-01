@@ -1186,6 +1186,10 @@ body.theme-dark .status-pill {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.profile-business-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .form-field--full {
     grid-column: 1 / -1;
 }
@@ -1257,6 +1261,19 @@ body.theme-dark .danger-button {
 .link-inline {
     color: var(--primary-dark);
     font-weight: 700;
+}
+
+.job-meta-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 6px;
+}
+
+.job-note {
+    margin: 0 0 10px;
+    color: var(--muted);
+    line-height: 1.5;
 }
 
 .strong {

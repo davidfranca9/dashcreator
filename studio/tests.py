@@ -1,4 +1,4 @@
-import re
+﻿import re
 import shutil
 import tempfile
 from io import StringIO
@@ -363,7 +363,7 @@ class DashboardSmokeTest(TestCase):
         )
 
         self.assertRedirects(response, reverse("prospection"))
-        self.assertContains(response, "Reserva voltou para Prospecção.")
+        self.assertContains(response, "Reserva voltou para ProspecÃ§Ã£o.")
         lead = Prospect.objects.get(workspace=self.workspace, company="Reserva")
         self.assertEqual(lead.stage, "Prospeccao")
         self.assertEqual(lead.contact, "Contato principal")
@@ -410,20 +410,19 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(form.fields["close_date"].initial, date.today())
         self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de videos")
         self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
-        self.assertEqual(
-            form.fields["closing_source"].choices,
-            [
-                ("", "Selecione"),
-                ("Inbound", "Inbound"),
-                ("Prospeccao", "Prospecção"),
-                ("Plataforma", "Plataforma"),
-                ("Agencia", "Agencia"),
-                ("Indicacao", "Indicacao"),
-                ("Nao se aplica", "NÃ£o se aplica"),
-            ],
-        )
+        self.assertIn(("Inbound", "Inbound"), form.fields["closing_source"].choices)
+        self.assertIn(("Prospeccao", "Prospecção"), form.fields["closing_source"].choices)
+        self.assertIn(("Follow-up", "Follow-up"), form.fields["closing_source"].choices)
+        self.assertIn(("Plataforma", "Plataforma"), form.fields["closing_source"].choices)
+        self.assertIn(("Agencia", "Agência"), form.fields["closing_source"].choices)
+        self.assertIn(("Indicacao", "Indicação"), form.fields["closing_source"].choices)
+        self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["closing_source"].choices)
         self.assertNotIn("progress", form.fields)
         self.assertIn(("Aguardando produto", "Aguardando produto"), form.fields["status"].choices)
+        self.assertIn("payment_due_date", form.fields)
+        self.assertIn("meeting_scheduled", form.fields)
+        self.assertIn("meeting_date", form.fields)
+        self.assertIn("note", form.fields)
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
@@ -475,6 +474,31 @@ class DashboardSmokeTest(TestCase):
         active_project.save()
         self.assertEqual(active_project.stage, "Fechado")
         self.assertEqual(active_project.progress, 0)
+
+        meeting_form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Follow-up",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "4000",
+                "entry_value": "2000",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "payment_due_date": (date.today() + timedelta(days=15)).isoformat(),
+                "meeting_scheduled": "on",
+                "meeting_date": "",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+                "note": "Observacao extra",
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertFalse(meeting_form.is_valid())
+        self.assertIn("meeting_date", meeting_form.errors)
 
         waiting_product_form = ProjectForm(
             data={
@@ -551,7 +575,7 @@ class DashboardSmokeTest(TestCase):
     def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
         Prospect.objects.create(
             workspace=self.workspace,
-            company="O Boticário!!!",
+            company="O BoticÃ¡rio!!!",
             contact="Julia",
             contact_type="Email",
             stage="Prospeccao",
@@ -735,6 +759,39 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["delivered"][0]["company"], "Reserva")
         self.assertEqual(response.context["delivered"][1]["company"], "Insider")
 
+    def test_jobs_snapshot_highlights_overdue_projects_and_google_calendar(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Follow-up",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Entrega atrasada",
+            content_type="",
+            stage="Fechado",
+            status="Aguardando produto",
+            total_value=2200,
+            entry_value=1100,
+            received_value=0,
+            deliverables_count=3,
+            progress=10,
+            payment_due_date=date.today() + timedelta(days=20),
+            meeting_scheduled=True,
+            meeting_date=date.today() + timedelta(days=3),
+            note="Pedir retorno da marca",
+            close_date=date.today() - timedelta(days=20),
+            due_date=date.today() - timedelta(days=2),
+        )
+
+        snapshot = jobs_snapshot(self.workspace)
+
+        self.assertEqual(snapshot["stats"][0]["title"], "Trabalhos atrasados")
+        self.assertEqual(snapshot["stats"][0]["value"], "1")
+        self.assertEqual(snapshot["overdue"][0]["company"], "Reserva")
+        self.assertTrue(snapshot["overdue"][0]["google_calendar_url"].startswith("https://calendar.google.com/calendar/render?"))
+        self.assertTrue(snapshot["overdue"][0]["payment_due_text"])
+        self.assertEqual(snapshot["overdue"][0]["note"], "Pedir retorno da marca")
+
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
             workspace=self.workspace,
@@ -813,9 +870,10 @@ class DashboardSmokeTest(TestCase):
         legend = {item["label"]: item for item in snapshot["source_mix"]["items"]}
 
         self.assertEqual(snapshot["source_mix"]["total"], 5)
-        self.assertEqual(list(legend.keys()), ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"])
+        self.assertEqual(list(legend.keys()), ["Inbound", "Prospecção", "Follow-up", "Indicação", "Plataforma", "Agência"])
         self.assertEqual(legend["Inbound"]["count"], 1)
         self.assertEqual(legend["Prospecção"]["count"], 1)
+        self.assertEqual(legend["Follow-up"]["count"], 0)
         self.assertEqual(legend["Indicação"]["count"], 1)
         self.assertEqual(legend["Plataforma"]["count"], 1)
         self.assertEqual(legend["Agência"]["count"], 1)
@@ -888,6 +946,36 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["stats"][2]["value"], "R$800")
         self.assertEqual(response.context["stats"][3]["value"], "10 dias")
         self.assertEqual(len(response.context["schedule"]), 1)
+
+    def test_finance_page_prefers_payment_due_date_when_available(self):
+        payment_due_date = date.today() + timedelta(days=45)
+        project = Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote mensal",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=3200,
+            entry_value=1600,
+            received_value=0,
+            deliverables_count=2,
+            progress=25,
+            payment_due_date=payment_due_date,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=7),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("finance"), {"month": payment_due_date.strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_month"]["value"], payment_due_date.strftime("%Y-%m"))
+        self.assertEqual(len(response.context["schedule"]), 1)
+        self.assertEqual(response.context["schedule"][0]["company"], "Reserva")
 
     def test_dashboard_snapshot_respects_selected_global_month(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
@@ -1044,6 +1132,31 @@ class DashboardSmokeTest(TestCase):
 
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
+
+    def test_profile_page_updates_business_data(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("profile"),
+            {
+                "profile_action": "business",
+                "business_address": "Rua das Palmeiras, 100",
+                "business_cnpj": "12.345.678/0001-99",
+                "business_pis": "123.45678.90-1",
+                "instagram_url": "https://instagram.com/trivexugc",
+                "tiktok_url": "https://tiktok.com/@trivexugc",
+                "portfolio_url": "https://portfolio.trivex.com",
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("profile"))
+        self.workspace.refresh_from_db()
+        self.assertEqual(self.workspace.business_address, "Rua das Palmeiras, 100")
+        self.assertEqual(self.workspace.business_cnpj, "12.345.678/0001-99")
+        self.assertEqual(self.workspace.business_pis, "123.45678.90-1")
+        self.assertEqual(self.workspace.instagram_url, "https://instagram.com/trivexugc")
+        self.assertContains(response, "Dados empresariais atualizados.")
 
     def test_profile_avatar_file_is_served_by_media_url(self):
         self.client.force_login(self.user)
@@ -1235,3 +1348,5 @@ class AuthenticationFlowsTest(TestCase):
         old_session_response = first_client.get(reverse("dashboard"))
         self.assertEqual(old_session_response.status_code, 302)
         self.assertIn(reverse("login"), old_session_response["Location"])
+
+

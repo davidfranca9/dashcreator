@@ -29,6 +29,15 @@ STATUS_PROGRESS_MAP = {
     "Aprovado": 95,
     "Entregue": 100,
 }
+DEFAULT_CLOSING_SOURCE_CHOICES = [
+    ("Inbound", "Inbound"),
+    ("Prospeccao", "Prospec\u00e7\u00e3o"),
+    ("Follow-up", "Follow-up"),
+    ("Plataforma", "Plataforma"),
+    ("Agencia", "Ag\u00eancia"),
+    ("Indicacao", "Indica\u00e7\u00e3o"),
+    ("Nao se aplica", "N\u00e3o se aplica"),
+]
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
@@ -263,8 +272,12 @@ class ProjectForm(forms.ModelForm):
                 "entry_value",
                 "received_value",
                 "deliverables_count",
+                "payment_due_date",
+                "meeting_scheduled",
+                "meeting_date",
                 "close_date",
                 "due_date",
+                "note",
             ]
         )
         self.fields["niche"].queryset = Niche.objects.none()
@@ -286,12 +299,19 @@ class ProjectForm(forms.ModelForm):
         self.fields["close_date"].input_formats = ["%Y-%m-%d"]
         self.fields["due_date"].widget.format = "%Y-%m-%d"
         self.fields["due_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["payment_due_date"].widget.format = "%Y-%m-%d"
+        self.fields["payment_due_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["meeting_date"].widget.format = "%Y-%m-%d"
+        self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
 
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Voce pode ajustar manualmente se quiser."
         )
         self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
+        self.fields["payment_due_date"].help_text = "Use a data prevista para o recebimento desse trabalho."
+        self.fields["meeting_date"].help_text = "Defina a data da reuniao para gerar o atalho do Google Agenda."
+        self.fields["note"].help_text = "Campo livre para anotacoes extras desse job."
         current_closing_source = (
             self.data.get(self.add_prefix("closing_source"))
             if self.is_bound
@@ -327,6 +347,10 @@ class ProjectForm(forms.ModelForm):
             self.add_error("entry_value", "A entrada nao pode ser maior que o valor total.")
         if received_value > total_value:
             self.add_error("received_value", "O valor recebido nao pode ser maior que o total.")
+        if cleaned_data.get("meeting_scheduled") and not cleaned_data.get("meeting_date"):
+            self.add_error("meeting_date", "Informe a data da reuniao agendada.")
+        if not cleaned_data.get("meeting_scheduled"):
+            cleaned_data["meeting_date"] = None
         return cleaned_data
 
     def save(self, commit=True):
@@ -353,8 +377,12 @@ class ProjectForm(forms.ModelForm):
             "entry_value",
             "received_value",
             "deliverables_count",
+            "payment_due_date",
+            "meeting_scheduled",
+            "meeting_date",
             "close_date",
             "due_date",
+            "note",
         ]
         labels = {
             "company": "Empresa",
@@ -367,12 +395,43 @@ class ProjectForm(forms.ModelForm):
             "entry_value": "Entrada",
             "received_value": "Recebido",
             "deliverables_count": "Quantidade de videos",
+            "payment_due_date": "Data prevista de pagamento",
+            "meeting_scheduled": "Reuniao agendada",
+            "meeting_date": "Data da reuniao",
             "close_date": "Fechamento",
             "due_date": "Entrega",
+            "note": "Observacoes",
         }
         widgets = {
+            "payment_due_date": forms.DateInput(attrs={"type": "date"}),
+            "meeting_date": forms.DateInput(attrs={"type": "date"}),
             "close_date": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
+            "note": forms.Textarea(attrs={"rows": 5}),
+        }
+
+
+class WorkspaceBusinessForm(forms.ModelForm):
+    class Meta:
+        model = Workspace
+        fields = [
+            "business_address",
+            "business_cnpj",
+            "business_pis",
+            "instagram_url",
+            "tiktok_url",
+            "portfolio_url",
+        ]
+        labels = {
+            "business_address": "Endereco",
+            "business_cnpj": "CNPJ",
+            "business_pis": "Numero do PIS",
+            "instagram_url": "Instagram",
+            "tiktok_url": "TikTok",
+            "portfolio_url": "Portfolio",
+        }
+        widgets = {
+            "business_address": forms.Textarea(attrs={"rows": 3}),
         }
 
 

@@ -21,12 +21,36 @@
 
         <form method="post" enctype="multipart/form-data" class="profile-photo-form">
             {% csrf_token %}
+            <input type="hidden" name="profile_action" value="photo">
             <div class="form-field">
                 <label for="{{ photo_form.photo.id_for_label }}">{{ photo_form.photo.label }}</label>
                 {{ photo_form.photo }}
                 {{ photo_form.photo.errors }}
             </div>
             <button type="submit" class="primary-button">Salvar foto</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <h3>Dados empresariais</h3>
+                <p>Cadastre aqui os dados da sua empresa e os links principais do workspace.</p>
+            </div>
+        </div>
+        <form method="post" class="form-grid profile-business-form">
+            {% csrf_token %}
+            <input type="hidden" name="profile_action" value="business">
+            {% for field in business_form %}
+                <div class="form-field{% if field.name == 'business_address' %} form-field--full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <div class="form-actions form-field--full">
+                <button type="submit" class="primary-button">Salvar dados empresariais</button>
+            </div>
         </form>
     </article>
 

@@ -26,6 +26,12 @@ class TimestampedModel(models.Model):
 class Workspace(TimestampedModel):
     name = models.CharField(max_length=160)
     slug = models.SlugField(max_length=180, unique=True, blank=True)
+    business_address = models.CharField(max_length=255, blank=True, default="")
+    business_cnpj = models.CharField(max_length=18, blank=True, default="")
+    business_pis = models.CharField(max_length=20, blank=True, default="")
+    instagram_url = models.URLField(blank=True, default="")
+    tiktok_url = models.URLField(blank=True, default="")
+    portfolio_url = models.URLField(blank=True, default="")
 
     class Meta:
         ordering = ["name"]
@@ -219,6 +225,10 @@ class Project(WorkspaceOwnedModel):
     received_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     deliverables_count = models.PositiveIntegerField(default=1)
     progress = models.PositiveSmallIntegerField(default=0)
+    payment_due_date = models.DateField(null=True, blank=True)
+    meeting_scheduled = models.BooleanField(default=False)
+    meeting_date = models.DateField(null=True, blank=True)
+    note = models.TextField(blank=True, default="")
     close_date = models.DateField()
     due_date = models.DateField()
 
