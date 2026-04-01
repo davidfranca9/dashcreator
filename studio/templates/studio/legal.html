@@ -1,0 +1,59 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="stats-grid">
+    {% for item in stats %}
+        <article class="stat-card">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="stack-section">
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <h3>Direito de uso de imagem</h3>
+                <p class="muted">Licenciamentos monitorados automaticamente para trabalhos marcados como Ads.</p>
+            </div>
+        </div>
+        {% if records %}
+            <div class="stack-list">
+                {% for item in records %}
+                    <article class="soft-card prospect-card">
+                        <div class="prospect-top">
+                            <div class="follow-up-brand">
+                                <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
+                                <div class="follow-up-brand-copy">
+                                    <strong>{{ item.company }}</strong>
+                                    <span class="muted">{{ item.service_category }}</span>
+                                </div>
+                            </div>
+                            <span class="chip">{{ item.status_text }}</span>
+                        </div>
+                        <div class="job-meta-list">
+                            <span class="chip">{{ item.distribution }}</span>
+                            <span class="chip">Entrega {{ item.delivery_text }}</span>
+                            <span class="chip">Uso {{ item.term_text }}</span>
+                            <span class="chip">Vence {{ item.expires_text }}</span>
+                        </div>
+                        <p class="muted">{{ item.reminder_message }}</p>
+                        <div class="card-actions">
+                            <div class="card-actions-group">
+                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
+                                <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">Nenhum trabalho com Ads e direito de uso ativo ainda.</p>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

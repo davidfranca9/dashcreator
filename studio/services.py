@@ -190,6 +190,28 @@ def google_calendar_event_url(title: str, event_date: date, details: str = "") -
     )
 
 
+def user_display_name(user: User | None) -> str:
+    if not user:
+        return "criadora"
+    return (user.first_name or user.get_full_name() or user.username or user.email or "criadora").split()[0]
+
+
+def image_usage_expires_on(project: Project) -> date | None:
+    if project.content_distribution != "Ads" or not project.image_license_term_days:
+        return None
+    return project.due_date + timedelta(days=project.image_license_term_days)
+
+
+def image_usage_term_label(project: Project) -> str:
+    if not project.image_license_term_days:
+        return ""
+    return f"{project.image_license_term_days} dias"
+
+
+def distribution_label(project: Project) -> str:
+    return project.content_distribution or "Nao definido"
+
+
 def month_options_for_workspace(workspace: Workspace) -> list[date]:
     months = {date.today().replace(day=1)}
     for close_date, due_date, payment_due_date, meeting_date in Project.objects.filter(workspace=workspace).values_list(
@@ -369,6 +391,7 @@ def shell_context(
         .order_by("company", "contact")
     )
     follow_up_alerts = follow_up_popup_alerts(workspace) if str(workspace_settings.get("ops_follow_up_reminders", "")).lower() in {"1", "true", "yes", "on"} else []
+    legal_alerts = legal_usage_alerts(workspace, user) if page_key == "legal" else []
     return {
         "nav_items": navigation(page_key, month_filter),
         "nav_groups": navigation_groups(page_key, month_filter),
@@ -391,6 +414,8 @@ def shell_context(
         "meeting_alert_date": today.strftime("%Y-%m-%d"),
         "follow_up_alerts": follow_up_alerts,
         "follow_up_alert_date": today.strftime("%Y-%m-%d"),
+        "legal_alerts": legal_alerts,
+        "legal_alert_date": today.strftime("%Y-%m-%d"),
         "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
     }
 
@@ -550,6 +575,71 @@ def confirmed_follow_up_items(workspace: Workspace) -> list[dict]:
         for item in follow_up_candidates(workspace)
         if item["dismiss_key"] in confirmed_keys and item["dismiss_key"] not in dismissed_keys
     ]
+
+
+def legal_usage_items(workspace: Workspace) -> list[dict]:
+    today = date.today()
+    projects = list(
+        Project.objects.filter(workspace=workspace, content_distribution="Ads")
+        .select_related("service_category", "niche")
+        .order_by("due_date", "company")
+    )
+    items = []
+    for project in projects:
+        expires_on = image_usage_expires_on(project)
+        if not expires_on:
+            continue
+        days_until_expiry = (expires_on - today).days
+        color_a, color_b, accent = company_palette(project.company)
+        reminder_message = (
+            f'Oi, {{NOME}} O DIREITO DE USO DE IMAGEM DA MARCA {project.company} ESTÁ VENCENDO HOJE, '
+            'QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?'
+        )
+        items.append(
+            {
+                "id": project.id,
+                "company": project.company,
+                "service_category": project.service_category_name,
+                "distribution": distribution_label(project),
+                "term_text": image_usage_term_label(project),
+                "expires_on": expires_on,
+                "expires_text": short_date(expires_on),
+                "delivery_text": short_date(project.due_date),
+                "days_until_expiry": days_until_expiry,
+                "status_text": (
+                    "Vence hoje"
+                    if days_until_expiry == 0
+                    else f"Vence em {days_until_expiry} dias"
+                    if days_until_expiry > 0
+                    else f"Expirou ha {abs(days_until_expiry)} dias"
+                ),
+                "reminder_message": reminder_message,
+                "google_calendar_url": google_calendar_event_url(
+                    f"Vencimento de licenciamento - {project.company}",
+                    expires_on,
+                    reminder_message.replace("{NOME}", project.company),
+                ),
+                "colors": (color_a, color_b),
+                "accent": accent,
+                "note": project.note,
+            }
+        )
+    return items
+
+
+def legal_usage_alerts(workspace: Workspace, user: User | None = None) -> list[dict]:
+    display_name = user_display_name(user)
+    alerts = []
+    for item in legal_usage_items(workspace):
+        if item["days_until_expiry"] != 0:
+            continue
+        alerts.append(
+            {
+                **item,
+                "popup_message": item["reminder_message"].replace("{NOME}", display_name),
+            }
+        )
+    return alerts
 
 
 def confirm_follow_up_companies(workspace: Workspace, company_keys: list[str]) -> list[str]:
@@ -806,6 +896,7 @@ def empresas_snapshot(
 
     def serialize_job_card(item: Project) -> dict:
         color_a, color_b, accent = company_palette(item.company)
+        expires_on = image_usage_expires_on(item)
         return {
             "id": item.id,
             "company": item.company,
@@ -817,6 +908,9 @@ def empresas_snapshot(
             "payment_due_text": short_date(item.payment_due_date) if item.payment_due_date else "",
             "meeting_date_text": short_date(item.meeting_date) if item.meeting_date else "",
             "meeting_scheduled": item.meeting_scheduled,
+            "distribution_text": distribution_label(item),
+            "image_license_term_text": image_usage_term_label(item),
+            "image_usage_expires_text": short_date(expires_on) if expires_on else "",
             "google_calendar_url": google_calendar_event_url(
                 f"Reuniao - {item.company}",
                 item.meeting_date,
@@ -922,6 +1016,66 @@ def jobs_snapshot_filtered(
         ],
     }
     return snapshot
+
+
+def distribution_snapshot(workspace: Workspace) -> dict:
+    projects = list(
+        Project.objects.filter(workspace=workspace)
+        .select_related("service_category", "niche")
+        .order_by("-updated_at", "-due_date")
+    )
+    grouped = {"Organico": [], "Ads": [], "Nao definido": []}
+    for project in projects:
+        color_a, color_b, accent = company_palette(project.company)
+        expires_on = image_usage_expires_on(project)
+        bucket = distribution_label(project)
+        grouped.setdefault(bucket, [])
+        grouped[bucket].append(
+            {
+                "id": project.id,
+                "company": project.company,
+                "service_category": project.service_category_name,
+                "distribution": bucket,
+                "delivery_text": short_date(project.due_date),
+                "term_text": image_usage_term_label(project),
+                "expires_text": short_date(expires_on) if expires_on else "",
+                "accent": accent,
+                "colors": (color_a, color_b),
+            }
+        )
+
+    ads_count = len(grouped["Ads"])
+    organic_count = len(grouped["Organico"])
+    return {
+        "stats": [
+            {"title": "Organico", "value": str(organic_count), "icon_label": "O"},
+            {"title": "Ads", "value": str(ads_count), "icon_label": "A"},
+            {"title": "Licenciamento ativo", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] >= 0)), "icon_label": "L"},
+            {"title": "Vence hoje", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] == 0)), "icon_label": "!"},
+        ],
+        "columns": [
+            {"title": "Organico", "items": grouped["Organico"]},
+            {"title": "Ads", "items": grouped["Ads"]},
+            {"title": "Nao definido", "items": grouped["Nao definido"]},
+        ],
+    }
+
+
+def legal_snapshot(workspace: Workspace) -> dict:
+    items = legal_usage_items(workspace)
+    expiring_today = [item for item in items if item["days_until_expiry"] == 0]
+    expiring_soon = [item for item in items if 0 < item["days_until_expiry"] <= 30]
+    expired = [item for item in items if item["days_until_expiry"] < 0]
+    active = [item for item in items if item["days_until_expiry"] >= 0]
+    return {
+        "stats": [
+            {"title": "Licencas ativas", "value": str(len(active)), "icon_label": "L"},
+            {"title": "Vencendo hoje", "value": str(len(expiring_today)), "icon_label": "!"},
+            {"title": "Proximos 30 dias", "value": str(len(expiring_soon)), "icon_label": "30"},
+            {"title": "Expirados", "value": str(len(expired)), "icon_label": "E"},
+        ],
+        "records": items,
+    }
 
 
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:

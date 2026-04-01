@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, Set
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from .constants import SETTINGS_GROUPS
+from .constants import IMAGE_LICENSE_TERM_CHOICES, PROJECT_DISTRIBUTION_CHOICES, SETTINGS_GROUPS
 from .models import AccessCode, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
@@ -264,6 +264,8 @@ class ProjectForm(forms.ModelForm):
             [
                 "company",
                 "closing_source",
+                "content_distribution",
+                "image_license_term_days",
                 "niche",
                 "service_category",
                 "stage",
@@ -312,6 +314,20 @@ class ProjectForm(forms.ModelForm):
         self.fields["payment_due_date"].help_text = "Use a data prevista para o recebimento desse trabalho."
         self.fields["meeting_date"].help_text = "Defina a data da reuniao para gerar o atalho do Google Agenda."
         self.fields["note"].help_text = "Campo livre para anotacoes extras desse job."
+        self.fields["content_distribution"] = forms.ChoiceField(
+            label="Destino do conteudo",
+            choices=PROJECT_DISTRIBUTION_CHOICES,
+            required=False,
+        )
+        self.fields["content_distribution"].help_text = "Marque se o material sera usado de forma organica ou em Ads."
+        self.fields["image_license_term_days"] = forms.TypedChoiceField(
+            label="Direito de uso de imagem",
+            choices=[("", "Selecione")] + list(IMAGE_LICENSE_TERM_CHOICES),
+            coerce=int,
+            empty_value=None,
+            required=False,
+        )
+        self.fields["image_license_term_days"].help_text = "Selecione o prazo de licenciamento quando o destino for Ads."
         current_closing_source = (
             self.data.get(self.add_prefix("closing_source"))
             if self.is_bound
@@ -342,11 +358,17 @@ class ProjectForm(forms.ModelForm):
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0
         received_value = cleaned_data.get("received_value") or 0
+        content_distribution = cleaned_data.get("content_distribution")
+        image_license_term_days = cleaned_data.get("image_license_term_days")
 
         if entry_value > total_value:
             self.add_error("entry_value", "A entrada nao pode ser maior que o valor total.")
         if received_value > total_value:
             self.add_error("received_value", "O valor recebido nao pode ser maior que o total.")
+        if content_distribution == "Ads" and not image_license_term_days:
+            self.add_error("image_license_term_days", "Selecione o prazo do direito de uso de imagem para Ads.")
+        if content_distribution != "Ads":
+            cleaned_data["image_license_term_days"] = None
         if cleaned_data.get("meeting_scheduled") and not cleaned_data.get("meeting_date"):
             self.add_error("meeting_date", "Informe a data da reuniao agendada.")
         if not cleaned_data.get("meeting_scheduled"):
@@ -369,6 +391,8 @@ class ProjectForm(forms.ModelForm):
         fields = [
             "company",
             "closing_source",
+            "content_distribution",
+            "image_license_term_days",
             "niche",
             "service_category",
             "stage",
@@ -387,6 +411,8 @@ class ProjectForm(forms.ModelForm):
         labels = {
             "company": "Empresa",
             "closing_source": "Via de fechamento",
+            "content_distribution": "Destino do conteudo",
+            "image_license_term_days": "Direito de uso de imagem",
             "niche": "Nicho",
             "service_category": "Categoria de servico",
             "stage": "Etapa",

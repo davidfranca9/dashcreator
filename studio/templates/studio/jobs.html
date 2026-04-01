@@ -57,12 +57,19 @@
                     </div>
                     <strong>{{ item.service_category }}</strong>
                     <div class="job-meta-list">
+                        <span class="chip">{{ item.distribution_text }}</span>
                         <span class="chip">Entrega {{ item.due_text }}</span>
                         {% if item.payment_due_text %}
                             <span class="chip">Pagamento {{ item.payment_due_text }}</span>
                         {% endif %}
                         {% if item.meeting_date_text %}
                             <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                        {% endif %}
+                        {% if item.image_license_term_text %}
+                            <span class="chip">Uso {{ item.image_license_term_text }}</span>
+                        {% endif %}
+                        {% if item.image_usage_expires_text %}
+                            <span class="chip">Vence {{ item.image_usage_expires_text }}</span>
                         {% endif %}
                     </div>
                     {% if item.note %}
@@ -103,12 +110,19 @@
                     </div>
                     <strong>{{ item.service_category }}</strong>
                     <div class="job-meta-list">
+                        <span class="chip">{{ item.distribution_text }}</span>
                         <span class="chip">Entrega {{ item.due_text }}</span>
                         {% if item.payment_due_text %}
                             <span class="chip">Pagamento {{ item.payment_due_text }}</span>
                         {% endif %}
                         {% if item.meeting_date_text %}
                             <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                        {% endif %}
+                        {% if item.image_license_term_text %}
+                            <span class="chip">Uso {{ item.image_license_term_text }}</span>
+                        {% endif %}
+                        {% if item.image_usage_expires_text %}
+                            <span class="chip">Vence {{ item.image_usage_expires_text }}</span>
                         {% endif %}
                     </div>
                     {% if item.note %}
@@ -151,12 +165,19 @@
                     </div>
                     <strong>{{ item.service_category }}</strong>
                     <div class="job-meta-list">
+                        <span class="chip">{{ item.distribution_text }}</span>
                         <span class="chip">Entrega {{ item.due_text }}</span>
                         {% if item.payment_due_text %}
                             <span class="chip">Pagamento {{ item.payment_due_text }}</span>
                         {% endif %}
                         {% if item.meeting_date_text %}
                             <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                        {% endif %}
+                        {% if item.image_license_term_text %}
+                            <span class="chip">Uso {{ item.image_license_term_text }}</span>
+                        {% endif %}
+                        {% if item.image_usage_expires_text %}
+                            <span class="chip">Vence {{ item.image_usage_expires_text }}</span>
                         {% endif %}
                     </div>
                     {% if item.note %}

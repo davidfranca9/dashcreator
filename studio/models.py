@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from io import BytesIO
 
 from django.conf import settings
@@ -8,7 +9,13 @@ from django.db import models
 from django.utils.text import slugify
 from PIL import Image, ImageOps
 
-from .constants import PROJECT_STAGE_CHOICES, PROJECT_STATUS_CHOICES, PROSPECT_STAGE_CHOICES
+from .constants import (
+    IMAGE_LICENSE_TERM_CHOICES,
+    PROJECT_DISTRIBUTION_CHOICES,
+    PROJECT_STAGE_CHOICES,
+    PROJECT_STATUS_CHOICES,
+    PROSPECT_STAGE_CHOICES,
+)
 
 
 def normalize_access_code(raw_code: str) -> str:
@@ -210,6 +217,8 @@ class Project(WorkspaceOwnedModel):
     project_name = models.CharField(max_length=180, blank=True, default="")
     content_type = models.CharField(max_length=120, blank=True, default="")
     closing_source = models.CharField(max_length=120, blank=True, default="")
+    content_distribution = models.CharField(max_length=20, choices=PROJECT_DISTRIBUTION_CHOICES, blank=True, default="")
+    image_license_term_days = models.PositiveSmallIntegerField(choices=IMAGE_LICENSE_TERM_CHOICES, null=True, blank=True)
     niche = models.ForeignKey(Niche, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects")
     service_category = models.ForeignKey(
         ServiceCategory,
@@ -245,6 +254,12 @@ class Project(WorkspaceOwnedModel):
         if self.project_name:
             return self.project_name
         return self.company
+
+    @property
+    def image_usage_expires_on(self):
+        if self.content_distribution != "Ads" or not self.image_license_term_days:
+            return None
+        return self.due_date + timedelta(days=self.image_license_term_days)
 
 
 class WorkspaceSetting(TimestampedModel):

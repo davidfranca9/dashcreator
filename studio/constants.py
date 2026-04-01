@@ -5,13 +5,15 @@ NAV_ITEMS = [
     {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociacoes em aberto.", "url_name": "prospection"},
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs"},
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsoes de caixa.", "url_name": "finance"},
+    {"key": "distribution", "label": "Distribuicao", "subtitle": "Destino do material entregue entre organico e ads.", "url_name": "distribution"},
+    {"key": "legal", "label": "Juridico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal"},
     {"key": "reports", "label": "Relatorios", "subtitle": "Indicadores estrategicos do negocio.", "url_name": "reports"},
     {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile"},
     {"key": "settings", "label": "Configuracoes", "subtitle": "Preferencias visuais e operacionais.", "url_name": "settings"},
 ]
 
 NAV_GROUPS = [
-    {"label": "ERP", "keys": ["dashboard", "jobs", "prospection", "finance", "reports"]},
+    {"label": "ERP", "keys": ["dashboard", "jobs", "prospection", "finance", "distribution", "legal", "reports"]},
 ]
 
 PROJECT_STAGE_CHOICES = [
@@ -129,4 +131,17 @@ REVENUE_RANGE_CHOICES = [
     ("current_month", "Este mes"),
     ("last_quarter", "Ultimo trimestre"),
     ("last_6_months", "Ultimos 6 meses"),
+]
+
+PROJECT_DISTRIBUTION_CHOICES = [
+    ("", "Selecione"),
+    ("Organico", "Organico"),
+    ("Ads", "Ads"),
+]
+
+IMAGE_LICENSE_TERM_CHOICES = [
+    (90, "90 dias"),
+    (180, "180 dias"),
+    (270, "270 dias"),
+    (360, "360 dias"),
 ]

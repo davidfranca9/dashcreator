@@ -34,10 +34,12 @@ from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
     default_niche_list,
+    distribution_snapshot,
     dismiss_follow_up_company,
     finance_snapshot,
     get_or_create_workspace_for_user,
     jobs_snapshot_filtered,
+    legal_snapshot,
     prospection_snapshot,
     reports_snapshot,
     save_settings,
@@ -224,6 +226,34 @@ def finance(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+def distribution(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    context = shell_context(
+        "distribution",
+        workspace,
+        "Distribuicao",
+        "Controle onde cada material vai rodar entre organico e ads.",
+        user=request.user,
+    )
+    context.update(distribution_snapshot(workspace))
+    return render(request, "studio/distribution.html", context)
+
+
+@login_required
+def legal(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    context = shell_context(
+        "legal",
+        workspace,
+        "Juridico",
+        "Acompanhe o direito de uso de imagem e os vencimentos de licenciamento.",
+        user=request.user,
+    )
+    context.update(legal_snapshot(workspace))
+    return render(request, "studio/legal.html", context)
+
+
+@login_required
 def reports(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
@@ -394,6 +424,8 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         "meeting_scheduled": prospect.meeting_scheduled,
         "meeting_date": prospect.meeting_date,
         "note": prospect.note,
+        "content_distribution": "",
+        "image_license_term_days": None,
     }
     form = ProjectForm(request.POST or None, initial=initial, workspace=workspace)
     if request.method == "POST" and form.is_valid():
@@ -402,6 +434,8 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         project.save()
         prospect.delete()
         messages.success(request, "Lead convertido em trabalho.")
+        if project.content_distribution == "Ads" and project.image_license_term_days:
+            messages.info(request, "Direito de uso de imagem ativado. O Juridico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em trabalho.", user=request.user)
@@ -418,6 +452,8 @@ def project_create(request: HttpRequest) -> HttpResponse:
         project.workspace = workspace
         project.save()
         messages.success(request, "Trabalho salvo com sucesso.")
+        if project.content_distribution == "Ads" and project.image_license_term_days:
+            messages.info(request, "Direito de uso de imagem ativado. O Juridico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("jobs", workspace, "Novo trabalho", "Cadastre um novo trabalho.", user=request.user)
@@ -431,8 +467,10 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
     project = get_object_or_404(Project, pk=pk, workspace=workspace)
     form = ProjectForm(request.POST or None, instance=project, workspace=workspace)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        project = form.save()
         messages.success(request, "Trabalho atualizado.")
+        if project.content_distribution == "Ads" and project.image_license_term_days:
+            messages.info(request, "Direito de uso de imagem ativado. O Juridico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("jobs", workspace, "Editar trabalho", "Ajuste valores, datas e status.", user=request.user)

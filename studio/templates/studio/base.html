@@ -85,6 +85,33 @@
             </div>
         </div>
     {% endif %}
+    {% if page_key == "legal" and legal_alerts %}
+        <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="legal-alert-{{ workspace.pk }}-{{ legal_alert_date }}">
+            <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="legal-popup-title">
+                <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">&times;</button>
+                <span class="meeting-popup-badge">Juridico</span>
+                <h3 id="legal-popup-title">
+                    {% if legal_alerts|length == 1 %}
+                        O licenciamento de imagem vence hoje.
+                    {% else %}
+                        Existem {{ legal_alerts|length }} licencas vencendo hoje.
+                    {% endif %}
+                </h3>
+                <div class="meeting-popup-list">
+                    {% for item in legal_alerts %}
+                        <article class="meeting-popup-item">
+                            <strong>{{ item.company }}</strong>
+                            <p>{{ item.popup_message }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+                <div class="meeting-popup-actions">
+                    <a class="primary-button" href="{% url 'legal' %}" data-meeting-popup-close>Ver juridico</a>
+                    <button type="button" class="ghost-button" data-meeting-popup-close>Fechar</button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
