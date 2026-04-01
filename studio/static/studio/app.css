@@ -1199,6 +1199,10 @@ body.theme-dark .status-pill {
     gap: 8px;
 }
 
+.form-field[hidden] {
+    display: none !important;
+}
+
 .field-help {
     color: var(--muted);
     font-size: 12px;
