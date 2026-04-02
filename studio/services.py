@@ -978,25 +978,62 @@ def empresas_snapshot(
     overdue_source = overdue_projects if overdue_projects is not None else [item for item in active if item.due_date < today]
     overdue_cards = [serialize_job_card(item) for item in overdue_source]
 
-    upcoming_deliveries = sum(1 for item in active if today <= item.due_date <= upcoming_limit)
-    delivered_count = sum(1 for item in projects if item.stage == "Entregue")
+    active_cards = [item for item in cards if item["stage"] == "Fechado"]
+    approval_cards = [item for item in active_cards if item["status"] == "Aguardando cliente"]
+    upcoming_cards = [
+        item for item in active_cards
+        if today <= item["due_date"] <= upcoming_limit
+    ]
+    delivered_cards = sorted(
+        [item for item in cards if item["stage"] == "Entregue"],
+        key=lambda item: (item["due_date"], item["close_date"]),
+        reverse=True,
+    )
+    upcoming_deliveries = len(upcoming_cards)
+    delivered_count = len(delivered_cards)
     return {
         "stats": [
-            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "section": "overdue"},
-            {"title": "Aguardando aprovacao", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A", "section": "active"},
-            {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P", "section": "active"},
-            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "section": "delivered"},
+            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "modal_id": "jobs-kpi-overdue"},
+            {"title": "Aguardando aprovacao", "value": str(len(approval_cards)), "icon_label": "A", "modal_id": "jobs-kpi-approval"},
+            {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P", "modal_id": "jobs-kpi-upcoming"},
+            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "modal_id": "jobs-kpi-delivered"},
+        ],
+        "stat_lists": [
+            {
+                "modal_id": "jobs-kpi-overdue",
+                "title": "Trabalhos atrasados",
+                "description": "Entregas que ja passaram da data e ainda precisam de atencao.",
+                "items": sorted(overdue_cards, key=lambda item: item["due_date"]),
+                "empty_message": "Nenhum trabalho atrasado no momento.",
+            },
+            {
+                "modal_id": "jobs-kpi-approval",
+                "title": "Aguardando aprovacao",
+                "description": "Jobs esperando retorno da marca para seguir.",
+                "items": approval_cards,
+                "empty_message": "Nenhum trabalho aguardando aprovacao.",
+            },
+            {
+                "modal_id": "jobs-kpi-upcoming",
+                "title": "Entregas proximas",
+                "description": "Trabalhos com entrega prevista para os proximos dias.",
+                "items": sorted(upcoming_cards, key=lambda item: item["due_date"]),
+                "empty_message": "Nenhuma entrega proxima cadastrada.",
+            },
+            {
+                "modal_id": "jobs-kpi-delivered",
+                "title": "Finalizado",
+                "description": "Trabalhos ja entregues para consulta rapida.",
+                "items": delivered_cards,
+                "empty_message": "Nenhum trabalho finalizado ainda.",
+            },
         ],
         "overdue": sorted(
             overdue_cards,
             key=lambda item: item["due_date"],
         ),
-        "active": [item for item in cards if item["stage"] == "Fechado"],
-        "delivered": sorted(
-            [item for item in cards if item["stage"] == "Entregue"],
-            key=lambda item: (item["due_date"], item["close_date"]),
-            reverse=True,
-        )[:4],
+        "active": active_cards,
+        "delivered": delivered_cards[:4],
     }
 
 
