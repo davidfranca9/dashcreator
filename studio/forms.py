@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from django import forms
 from django.contrib.auth import authenticate, get_user_model, password_validation
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, UserCreationForm, UsernameField
@@ -438,10 +440,21 @@ class ProjectForm(forms.ModelForm):
 
 
 class WorkspaceBusinessForm(forms.ModelForm):
+    def clean_business_zip_code(self):
+        zip_code = re.sub(r"\D", "", self.cleaned_data.get("business_zip_code", ""))
+        if not zip_code:
+            return ""
+        if len(zip_code) != 8:
+            raise forms.ValidationError("Informe um CEP com 8 digitos.")
+        return f"{zip_code[:5]}-{zip_code[5:]}"
+
     class Meta:
         model = Workspace
         fields = [
-            "business_address",
+            "business_zip_code",
+            "business_street",
+            "business_number",
+            "business_complement",
             "business_cnpj",
             "business_pis",
             "instagram_url",
@@ -449,7 +462,10 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "portfolio_url",
         ]
         labels = {
-            "business_address": "Endereco",
+            "business_zip_code": "CEP",
+            "business_street": "Rua",
+            "business_number": "Numero",
+            "business_complement": "Complemento",
             "business_cnpj": "CNPJ",
             "business_pis": "Numero do PIS",
             "instagram_url": "Instagram",
@@ -457,7 +473,9 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "portfolio_url": "Portfolio",
         }
         widgets = {
-            "business_address": forms.Textarea(attrs={"rows": 3}),
+            "business_zip_code": forms.TextInput(attrs={"inputmode": "numeric", "placeholder": "00000-000"}),
+            "business_number": forms.TextInput(attrs={"placeholder": "Numero"}),
+            "business_complement": forms.TextInput(attrs={"placeholder": "Complemento"}),
         }
 
 

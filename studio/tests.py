@@ -1,6 +1,7 @@
 ﻿import re
 import shutil
 import tempfile
+from unittest.mock import patch
 from io import StringIO
 from io import BytesIO
 from datetime import date, timedelta
@@ -858,6 +859,25 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(snapshot["overdue"][0]["payment_due_text"])
         self.assertEqual(snapshot["overdue"][0]["note"], "Pedir retorno da marca")
 
+    def test_jobs_kpis_link_to_matching_sections(self):
+        self.client.force_login(self.user)
+
+        snapshot = jobs_snapshot(self.workspace)
+        self.assertEqual(snapshot["stats"][0]["target"], "#jobs-overdue")
+        self.assertEqual(snapshot["stats"][1]["target"], "#jobs-active")
+        self.assertEqual(snapshot["stats"][2]["target"], "#jobs-active")
+        self.assertEqual(snapshot["stats"][3]["target"], "#jobs-delivered")
+
+        response = self.client.get(reverse("jobs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="#jobs-overdue"', html=False)
+        self.assertContains(response, 'href="#jobs-active"', html=False)
+        self.assertContains(response, 'href="#jobs-delivered"', html=False)
+        self.assertContains(response, 'id="jobs-overdue"', html=False)
+        self.assertContains(response, 'id="jobs-active"', html=False)
+        self.assertContains(response, 'id="jobs-delivered"', html=False)
+
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
             workspace=self.workspace,
@@ -1206,7 +1226,10 @@ class DashboardSmokeTest(TestCase):
             reverse("profile"),
             {
                 "profile_action": "business",
-                "business_address": "Rua das Palmeiras, 100",
+                "business_zip_code": "41810-205",
+                "business_street": "Rua das Palmeiras",
+                "business_number": "100",
+                "business_complement": "Sala 04",
                 "business_cnpj": "12.345.678/0001-99",
                 "business_pis": "123.45678.90-1",
                 "instagram_url": "https://instagram.com/trivexugc",
@@ -1218,11 +1241,37 @@ class DashboardSmokeTest(TestCase):
 
         self.assertRedirects(response, reverse("profile"))
         self.workspace.refresh_from_db()
-        self.assertEqual(self.workspace.business_address, "Rua das Palmeiras, 100")
+        self.assertEqual(self.workspace.business_zip_code, "41810-205")
+        self.assertEqual(self.workspace.business_street, "Rua das Palmeiras")
+        self.assertEqual(self.workspace.business_number, "100")
+        self.assertEqual(self.workspace.business_complement, "Sala 04")
         self.assertEqual(self.workspace.business_cnpj, "12.345.678/0001-99")
         self.assertEqual(self.workspace.business_pis, "123.45678.90-1")
         self.assertEqual(self.workspace.instagram_url, "https://instagram.com/trivexugc")
         self.assertContains(response, "Dados empresariais atualizados.")
+
+    @patch("studio.views.urlopen")
+    def test_profile_zip_lookup_returns_street_from_api_brasil_payload(self, mocked_urlopen):
+        self.client.force_login(self.user)
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = (
+            b'{"result": {"cep": "41810-205", "logradouro": "Rua das Palmeiras"}}'
+        )
+
+        with self.settings(
+            APIBRASIL_CEP_URL="https://api.apibrasil.example/cep/{cep}",
+            APIBRASIL_CEP_TOKEN="token-teste",
+        ):
+            response = self.client.post(reverse("business_zip_lookup"), {"cep": "41810205"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "ok": True,
+                "zip_code": "41810-205",
+                "street": "Rua das Palmeiras",
+            },
+        )
 
     def test_profile_avatar_file_is_served_by_media_url(self):
         self.client.force_login(self.user)

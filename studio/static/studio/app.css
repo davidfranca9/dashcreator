@@ -101,6 +101,7 @@ textarea {
     display: grid;
     grid-template-columns: 296px 1fr;
     align-items: start;
+    overflow-x: hidden;
 }
 
 .sidebar {
@@ -114,6 +115,15 @@ textarea {
     top: 0;
     height: 100vh;
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 .page-header h2,
@@ -614,6 +624,16 @@ body.theme-dark .message {
     display: flex;
     align-items: center;
     gap: 14px;
+}
+
+.stat-card-link {
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.stat-card-link:hover {
+    transform: translateY(-1px);
+    border-color: rgba(77, 140, 255, 0.24);
+    box-shadow: 0 22px 46px rgba(16, 38, 66, 0.11);
 }
 
 .stat-card--blank {
@@ -1166,6 +1186,10 @@ body.theme-dark .status-pill {
     gap: 18px;
 }
 
+.stack-section > .card[id] {
+    scroll-margin-top: 24px;
+}
+
 .jobs-grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
@@ -1188,6 +1212,30 @@ body.theme-dark .status-pill {
 
 .profile-business-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+}
+
+.profile-business-field--zip {
+    gap: 10px;
+}
+
+.profile-zip-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.profile-zip-input .ghost-button {
+    white-space: nowrap;
+}
+
+.profile-business-feedback[data-state="error"] {
+    color: var(--danger);
+}
+
+.profile-business-feedback[data-state="success"] {
+    color: var(--primary-dark);
 }
 
 .form-field--full {
@@ -1627,6 +1675,10 @@ body.theme-dark .danger-button {
 
     .jobs-filter-form {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .profile-zip-input {
+        grid-template-columns: 1fr;
     }
 }
 

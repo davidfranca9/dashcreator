@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
 import mimetypes
+import re
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from django.conf import settings as django_settings
 from django.contrib import messages
@@ -9,7 +13,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
 from django.db.models import Count
-from django.http import FileResponse, Http404, HttpRequest, HttpResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils._os import safe_join
@@ -99,6 +103,85 @@ def serve_media_file(request: HttpRequest, path: str) -> FileResponse:
     response["Cache-Control"] = "public, max-age=86400"
     response["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+def _first_non_empty(*values):
+    for value in values:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+@login_required
+@require_POST
+def business_zip_lookup(request: HttpRequest) -> JsonResponse:
+    zip_code = re.sub(r"\D", "", request.POST.get("cep", ""))
+    if len(zip_code) != 8:
+        return JsonResponse({"ok": False, "error": "Informe um CEP valido com 8 digitos."}, status=400)
+
+    if not django_settings.APIBRASIL_CEP_URL:
+        return JsonResponse({"ok": False, "error": "Busca de CEP nao configurada no ambiente."}, status=503)
+
+    headers = {"Accept": "application/json"}
+    if django_settings.APIBRASIL_CEP_TOKEN:
+        headers["Authorization"] = f"Bearer {django_settings.APIBRASIL_CEP_TOKEN}"
+        headers["X-API-KEY"] = django_settings.APIBRASIL_CEP_TOKEN
+
+    request_url = django_settings.APIBRASIL_CEP_URL.format(cep=zip_code)
+    request_object = Request(request_url, headers=headers)
+
+    try:
+        with urlopen(request_object, timeout=django_settings.APIBRASIL_CEP_TIMEOUT) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError:
+        return JsonResponse({"ok": False, "error": "Nao foi possivel consultar esse CEP agora."}, status=502)
+    except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        return JsonResponse({"ok": False, "error": "A busca de CEP falhou. Tente novamente."}, status=502)
+
+    data = payload
+    if isinstance(payload, dict):
+        for key in ("result", "data", "response"):
+            nested = payload.get(key)
+            if isinstance(nested, dict):
+                data = nested
+                break
+
+    if not isinstance(data, dict):
+        data = {}
+
+    if isinstance(payload, dict) and (payload.get("error") or payload.get("status") in {"ERROR", "error"}):
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": _first_non_empty(
+                    payload.get("message"),
+                    data.get("message"),
+                    "CEP nao encontrado.",
+                ),
+            },
+            status=404,
+        )
+
+    street = _first_non_empty(
+        data.get("street"),
+        data.get("logradouro"),
+        data.get("address"),
+        data.get("endereco"),
+    )
+    if not street:
+        return JsonResponse({"ok": False, "error": "Nao encontramos a rua desse CEP."}, status=404)
+    normalized_zip_code = _first_non_empty(
+        data.get("cep"),
+        payload.get("cep") if isinstance(payload, dict) else "",
+    ) or f"{zip_code[:5]}-{zip_code[5:]}"
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "zip_code": normalized_zip_code,
+            "street": street,
+        }
+    )
 
 
 def signup(request: HttpRequest) -> HttpResponse:

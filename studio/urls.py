@@ -9,6 +9,7 @@ from .views import (
     dashboard,
     distribution,
     finance,
+    business_zip_lookup,
     follow_up_confirm,
     follow_up_dismiss,
     follow_up_start_prospection,
@@ -56,5 +57,6 @@ urlpatterns = [
     path("juridico/", legal, name="legal"),
     path("relatorios/", reports, name="reports"),
     path("perfil/", profile, name="profile"),
+    path("perfil/cep/", business_zip_lookup, name="business_zip_lookup"),
     path("configuracoes/", settings, name="settings"),
 ]
