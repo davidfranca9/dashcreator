@@ -955,10 +955,10 @@ def empresas_snapshot(
     delivered_count = sum(1 for item in projects if item.stage == "Entregue")
     return {
         "stats": [
-            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "target": "#jobs-overdue"},
-            {"title": "Aguardando aprovacao", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A", "target": "#jobs-active"},
-            {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P", "target": "#jobs-active"},
-            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "target": "#jobs-delivered"},
+            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "section": "overdue"},
+            {"title": "Aguardando aprovacao", "value": str(sum(1 for item in active if item.status == "Aguardando cliente")), "icon_label": "A", "section": "active"},
+            {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P", "section": "active"},
+            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "section": "delivered"},
         ],
         "overdue": sorted(
             overdue_cards,

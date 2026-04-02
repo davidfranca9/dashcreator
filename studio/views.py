@@ -489,6 +489,7 @@ def follow_up_start_prospection(request: HttpRequest) -> HttpResponse:
 def jobs(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
+    active_section = request.GET.get("section", "").strip().lower()
     context = shell_context(
         "jobs",
         workspace,
@@ -509,6 +510,18 @@ def jobs(request: HttpRequest) -> HttpResponse:
             month_filter=month_filter,
         )
     )
+    if active_section not in {"overdue", "active", "delivered"}:
+        active_section = ""
+    context["active_jobs_section"] = active_section
+
+    current_params = request.GET.copy()
+    current_params.pop("section", None)
+    context["jobs_show_all_url"] = f"{reverse('jobs')}?{current_params.urlencode()}" if current_params else reverse("jobs")
+    for item in context["stats"]:
+        section_params = current_params.copy()
+        section_params["section"] = item["section"]
+        item["url"] = f"{reverse('jobs')}?{section_params.urlencode()}"
+
     return render(request, "studio/jobs.html", context)
 
 
