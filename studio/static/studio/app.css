@@ -676,6 +676,10 @@ body.theme-dark .stat-card p {
     place-items: center;
 }
 
+.jobs-kpi-backdrop[hidden] {
+    display: none !important;
+}
+
 .jobs-kpi-modal {
     width: min(760px, 100%);
     max-height: min(78vh, 760px);
