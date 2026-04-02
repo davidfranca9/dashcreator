@@ -194,7 +194,7 @@ def _long_date_label(raw_date: date) -> str:
     months = {
         1: "janeiro",
         2: "fevereiro",
-        3: "marco",
+        3: "março",
         4: "abril",
         5: "maio",
         6: "junho",
@@ -214,14 +214,26 @@ def _contract_placeholder(value: str | None, fallback: str = "________________")
 
 
 def _project_contract_payload(workspace, user, project: Project) -> dict:
-    creator_name = _contract_placeholder(user.get_full_name() or user.username)
+    settings_values = settings_map(workspace)
+    creator_name = _contract_placeholder(
+        settings_values.get("legal_contract_signer_name") or user.get_full_name() or user.username
+    )
     creator_email = _contract_placeholder(user.email)
     creator_address = _contract_placeholder(workspace_business_address_summary(workspace))
     creator_cnpj = _contract_placeholder(workspace.business_cnpj)
     creator_pix_key = _contract_placeholder(workspace.business_pis)
     company_name = _contract_placeholder(project.company)
-    distribution_label = "TRAFEGO PAGO (ADS)" if project.content_distribution == "Ads" else "USO ORGANICO"
-    mixed_distribution_label = "TRAFEGO PAGO (ADS) e USO ORGANICO" if project.content_distribution == "Ads" else "USO ORGANICO"
+    distribution_label = "tráfego pago (ads)" if project.content_distribution == "Ads" else "uso orgânico"
+    mixed_distribution_label = (
+        "uso orgânico e tráfego pago (ads)"
+        if project.content_distribution == "Ads"
+        else "uso orgânico"
+    )
+    contract_title = (
+        "CONTRATO DE CRIAÇÃO DE CONTEÚDO UGC PARA USO ORGÂNICO E TRÁFEGO PAGO (ADS)."
+        if project.content_distribution == "Ads"
+        else "CONTRATO DE CRIAÇÃO DE CONTEÚDO UGC PARA USO ORGÂNICO."
+    )
     service_name = _contract_placeholder(project.service_category_name)
     total_value = f"R$ {project.total_value:.2f}".replace(".", ",")
     entry_value = f"R$ {project.entry_value:.2f}".replace(".", ",")
@@ -232,6 +244,7 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
     license_expires_on = project.image_usage_expires_on or project.due_date
 
     return {
+        "contract_title": contract_title,
         "creator_name": creator_name,
         "creator_email": creator_email,
         "creator_address": creator_address,
@@ -245,13 +258,16 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
         "distribution_label": distribution_label,
         "mixed_distribution_label": mixed_distribution_label,
         "deliverables_count": project.deliverables_count,
+        "deliverables_text": f"{project.deliverables_count} vídeo(s) UGC",
         "total_value": total_value,
         "entry_value": entry_value,
         "balance_value": balance_value,
         "close_date_text": close_date_text,
         "due_date_text": due_date_text,
+        "payment_due_date_text": _long_date_label(project.payment_due_date or project.due_date),
         "image_term": image_term,
         "license_expires_on_text": _long_date_label(license_expires_on),
+        "project_note": (project.note or "").strip(),
     }
 
 
@@ -273,6 +289,7 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
         topMargin=1.8 * cm,
         bottomMargin=1.8 * cm,
         title=f"Contrato - {payload['company_name']}",
+        pageCompression=0,
     )
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
@@ -313,91 +330,154 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
     )
 
     story = [
-        Paragraph("CONTRATO DE CRIACAO DE CONTEUDO UGC", title_style),
+        Paragraph(payload["contract_title"], title_style),
         Paragraph(
             (
-                f"<b>Contratada:</b> {payload['creator_name']}, inscrita no CNPJ {payload['creator_cnpj']}, "
-                f"Chave PIX {payload['creator_pix_key']}, endereco {payload['creator_address']}, e-mail {payload['creator_email']}.<br/>"
-                f"<b>Contratante:</b> {payload['company_name']}, CNPJ {payload['company_cnpj']}, endereco {payload['company_address']}, "
-                f"e-mail {payload['company_email']}."
+                f"<b>CONTRATADA:</b> {payload['creator_name']}, inscrita no CNPJ sob nº {payload['creator_cnpj']}, "
+                f"com endereço em {payload['creator_address']}, e-mail {payload['creator_email']} e chave PIX "
+                f"{payload['creator_pix_key']}.<br/>"
+                f"<b>CONTRATANTE:</b> {payload['company_name']}, inscrita no CNPJ sob nº {payload['company_cnpj']}, "
+                f"com endereço em {payload['company_address']} e e-mail {payload['company_email']}."
             ),
             body_style,
         ),
-        Paragraph("1. OBJETO DO CONTRATO", section_style),
         Paragraph(
             (
-                f"O presente contrato tem como objeto a prestacao de servicos de criacao de conteudo UGC para "
-                f"{payload['mixed_distribution_label']}, referentes ao trabalho <b>{payload['service_name']}</b>, "
-                f"personalizado para a marca {payload['company_name']}."
+                "As partes acima identificadas têm entre si justo e contratado o presente instrumento "
+                "particular para criação de conteúdo UGC, que se regerá pelas cláusulas e condições abaixo."
             ),
             body_style,
         ),
-        Paragraph("2. ENTREGAVEIS", section_style),
+        Paragraph("1. DO OBJETO DO CONTRATO", section_style),
         Paragraph(
             (
-                f"A contratada entregara <b>{payload['deliverables_count']} video(s)</b>, incluindo captacao, "
-                f"edicao e entrega final ate <b>{payload['due_date_text']}</b>, conforme briefing alinhado entre as partes."
+                f"1.1. O presente contrato tem como objeto a prestação de serviços de criação de conteúdo UGC "
+                f"para a marca <b>{payload['company_name']}</b>, referente ao trabalho <b>{payload['service_name']}</b>.<br/>"
+                f"1.2. O conteúdo poderá ser utilizado em <b>{payload['mixed_distribution_label']}</b>, "
+                "respeitadas as condições de prazo, mídia e licenciamento estabelecidas neste instrumento."
             ),
             body_style,
         ),
-        Paragraph("3. OBRIGACOES DA CONTRATADA", section_style),
+        Paragraph("2. DA OBRIGAÇÃO DA CRIADORA DE CONTEÚDO UGC", section_style),
         Paragraph(
             (
-                "A contratada se compromete a produzir conteudos originais, respeitar o briefing aprovado, "
-                "realizar ajustes razoaveis dentro do escopo combinado e entregar o material final no prazo acordado."
+                "2.1. A CONTRATADA se compromete a produzir conteúdo original, autoral e compatível com o briefing aprovado.<br/>"
+                "2.2. A CONTRATADA deverá realizar a captação, produção, edição e entrega do material final "
+                f"até <b>{payload['due_date_text']}</b>.<br/>"
+                "2.3. Ajustes razoáveis dentro do escopo contratado poderão ser realizados após o primeiro envio do material."
             ),
             body_style,
         ),
-        Paragraph("4. OBRIGACOES DA CONTRATANTE", section_style),
+        Paragraph("3. DAS OBRIGAÇÕES DA MARCA", section_style),
         Paragraph(
             (
-                "A contratante se compromete a fornecer briefing, materiais de apoio, aprovacoes em tempo habil, "
-                "bem como realizar os pagamentos nas condicoes definidas neste contrato."
+                "3.1. A CONTRATANTE deverá fornecer briefing, referências, informações técnicas, acessos, produtos "
+                "ou materiais necessários para execução do trabalho.<br/>"
+                "3.2. A CONTRATANTE se compromete a aprovar ou solicitar ajustes em tempo hábil para não comprometer os prazos.<br/>"
+                "3.3. A CONTRATANTE se compromete a realizar os pagamentos nos prazos e condições definidos neste contrato."
             ),
             body_style,
         ),
-        Paragraph("5. VIGENCIA E DIREITO DE USO DE IMAGEM", section_style),
+        Paragraph("4. DOS ENTREGÁVEIS", section_style),
         Paragraph(
             (
-                f"O uso do conteudo em {payload['distribution_label']} tera inicio na entrega final do material. "
-                f"Para Ads, o direito de uso de imagem fica concedido por <b>{payload['image_term']} dias</b>, "
-                f"com vencimento previsto em <b>{payload['license_expires_on_text']}</b>. Renovacoes devem ser negociadas por termo aditivo."
+                f"4.1. Fica ajustada a entrega de <b>{payload['deliverables_text']}</b>, vinculados à categoria "
+                f"de serviço <b>{payload['service_name']}</b>.<br/>"
+                f"4.2. A entrega final do conteúdo deverá ocorrer até <b>{payload['due_date_text']}</b>."
             ),
             body_style,
         ),
-        Paragraph("6. PAGAMENTO", section_style),
         Paragraph(
             (
-                f"O valor total ajustado para o trabalho e de <b>{payload['total_value']}</b>, sendo "
-                f"<b>{payload['entry_value']}</b> na entrada e <b>{payload['balance_value']}</b> no saldo final."
+                f"4.3. Observações adicionais do job: "
+                f"{payload['project_note'] or 'seguir o briefing e alinhamentos aprovados entre as partes.'}"
             ),
             body_style,
         ),
-        Paragraph("7. DIREITOS AUTORAIS E CONFIDENCIALIDADE", section_style),
+        Paragraph("5. DA VIGÊNCIA DO CONTRATO E DO PRAZO DE VEICULAÇÃO DO CONTEÚDO", section_style),
         Paragraph(
             (
-                "A titularidade autoral do conteudo permanece com a criadora, sendo concedida apenas a licenca de uso "
-                "necessaria para a finalidade contratada. As partes tambem se comprometem a manter sigilo sobre materiais, "
-                "estrategias e informacoes trocadas neste projeto."
+                f"5.1. Este contrato passa a produzir efeitos a partir de <b>{payload['close_date_text']}</b> e "
+                "permanece vigente até o cumprimento integral das obrigações assumidas pelas partes.<br/>"
+                f"5.2. O prazo de veiculação do conteúdo em <b>{payload['distribution_label']}</b> deverá observar "
+                "os limites de mídia e licenciamento descritos neste instrumento.<br/>"
+                f"5.3. Quando houver uso em anúncios, o direito de uso de imagem fica autorizado por "
+                f"<b>{payload['image_term']} dias</b>, com vencimento previsto em "
+                f"<b>{payload['license_expires_on_text']}</b>, salvo renovação expressa entre as partes."
             ),
             body_style,
         ),
-        Paragraph("8. DISPOSICOES GERAIS", section_style),
+        Paragraph("6. DO PAGAMENTO", section_style),
         Paragraph(
             (
-                "Qualquer ajuste futuro devera ser formalizado por escrito. Este documento pode ser complementado com "
-                "informacoes comerciais e juridicas adicionais da contratante antes da assinatura final."
+                f"6.1. O valor total ajustado para o presente trabalho é de <b>{payload['total_value']}</b>.<br/>"
+                f"6.2. A entrada combinada corresponde a <b>{payload['entry_value']}</b>.<br/>"
+                f"6.3. O saldo remanescente corresponde a <b>{payload['balance_value']}</b> e deverá ser quitado "
+                f"até <b>{payload['payment_due_date_text']}</b>.<br/>"
+                f"6.4. O pagamento poderá ser realizado por PIX, utilizando a chave <b>{payload['creator_pix_key']}</b>, "
+                "ou por outro meio acordado formalmente entre as partes."
+            ),
+            body_style,
+        ),
+        Paragraph("7. DOS DIREITOS AUTORAIS E DO USO DE IMAGEM", section_style),
+        Paragraph(
+            (
+                "7.1. A titularidade autoral do conteúdo produzido permanece com a CONTRATADA, ficando a CONTRATANTE "
+                "com licença de uso limitada ao escopo, canais, mídia e prazo contratados.<br/>"
+                "7.2. A utilização do conteúdo fora do escopo original, em novos formatos, campanhas, veículos ou "
+                "períodos, dependerá de novo alinhamento comercial e jurídico entre as partes.<br/>"
+                "7.3. O uso de imagem da CONTRATADA para campanhas pagas deverá respeitar o prazo expressamente contratado."
+            ),
+            body_style,
+        ),
+        Paragraph("8. DA EXCLUSIVIDADE E CONFIDENCIALIDADE", section_style),
+        Paragraph(
+            (
+                "8.1. A exclusividade somente existirá se houver previsão expressa entre as partes, por prazo determinado.<br/>"
+                "8.2. As partes comprometem-se a manter sigilo sobre estratégias, dados, documentos, briefings e "
+                "informações sensíveis compartilhadas durante a execução do trabalho."
+            ),
+            body_style,
+        ),
+        Paragraph("9. DA RESPONSABILIDADE DAS PARTES", section_style),
+        Paragraph(
+            (
+                "9.1. Cada parte responde pelas informações, materiais, declarações e autorizações que fornecer no âmbito deste contrato.<br/>"
+                "9.2. A CONTRATADA não se responsabiliza por resultados de performance da campanha, uma vez que estes "
+                "dependem de variáveis externas à criação do conteúdo.<br/>"
+                "9.3. A CONTRATANTE é responsável pelo uso do material dentro das regras de mídia, plataforma e legislação aplicável."
+            ),
+            body_style,
+        ),
+        Paragraph("10. DA LGPD", section_style),
+        Paragraph(
+            (
+                "10.1. As partes comprometem-se a tratar eventuais dados pessoais em conformidade com a Lei Geral de Proteção de Dados, "
+                "utilizando-os apenas para execução deste contrato e obrigações legais correlatas."
+            ),
+            body_style,
+        ),
+        Paragraph("11. DAS DISPOSIÇÕES GERAIS E DO FORO", section_style),
+        Paragraph(
+            (
+                "11.1. Qualquer alteração deste contrato deverá ser formalizada por escrito entre as partes.<br/>"
+                "11.2. Fica eleito o foro do domicílio da CONTRATADA para dirimir eventuais controvérsias decorrentes "
+                "deste instrumento, com renúncia a qualquer outro, por mais privilegiado que seja."
             ),
             body_style,
         ),
         Spacer(1, 20),
-        Paragraph(f"Salvador - BA, {payload['close_date_text']}.", body_style),
+        Paragraph(
+            "E, por estarem justas e contratadas, as partes assinam o presente instrumento em comum acordo.",
+            body_style,
+        ),
+        Paragraph(f"Data-base do contrato: {payload['close_date_text']}.", body_style),
         Spacer(1, 26),
         Paragraph("__________________________________", signature_style),
-        Paragraph(payload["creator_name"], signature_style),
+        Paragraph(f"{payload['creator_name']}<br/>CONTRATADA", signature_style),
         Spacer(1, 12),
         Paragraph("__________________________________", signature_style),
-        Paragraph(payload["company_name"], signature_style),
+        Paragraph(f"{payload['company_name']}<br/>CONTRATANTE", signature_style),
     ]
 
     document.build(story)

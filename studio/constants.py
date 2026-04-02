@@ -125,6 +125,19 @@ SETTINGS_GROUPS = [
             },
         ],
     },
+    {
+        "title": "Jurídico",
+        "description": "Dados usados na geração dos contratos do workspace.",
+        "rows": [
+            {
+                "id": "legal_contract_signer_name",
+                "label": "Nome no contrato",
+                "detail": "Usado como nome da contratada no contrato principal.",
+                "type": "text",
+                "value": "",
+            },
+        ],
+    },
 ]
 
 REVENUE_RANGE_CHOICES = [

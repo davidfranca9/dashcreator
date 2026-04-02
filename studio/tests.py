@@ -19,6 +19,7 @@ from PIL import Image
 from .forms import ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
+from .views import _project_contract_payload
 
 
 class DashboardSmokeTest(TestCase):
@@ -624,6 +625,25 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(".pdf", response["Content-Disposition"])
         pdf_bytes = b"".join(response.streaming_content) if hasattr(response, "streaming_content") else response.content
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+
+    def test_contract_payload_uses_name_configured_in_settings(self):
+        self.workspace.settings.update_or_create(
+            key="legal_contract_signer_name",
+            defaults={"value": "Layfe Amorim"},
+        )
+
+        payload = _project_contract_payload(self.workspace, self.user, self.project)
+
+        self.assertEqual(payload["creator_name"], "Layfe Amorim")
+        self.assertIn("CRIAÇÃO DE CONTEÚDO UGC", payload["contract_title"])
+
+    def test_settings_page_shows_contract_signer_name_field(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("settings"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nome no contrato")
 
     def test_dashboard_counts_unique_contracting_companies(self):
         Prospect.objects.create(

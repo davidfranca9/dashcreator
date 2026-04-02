@@ -487,6 +487,7 @@ class WorkspaceSettingsForm(forms.Form):
     ops_default_entry_rate = forms.ChoiceField(label="Entrada padrao sugerida", choices=[("50%", "50%"), ("40%", "40%"), ("30%", "30%")])
     ops_primary_currency = forms.ChoiceField(label="Moeda principal", choices=[("BRL (R$)", "BRL (R$)"), ("USD ($)", "USD ($)"), ("EUR (EUR)", "EUR (EUR)")])
     ops_follow_up_reminders = forms.BooleanField(required=False, label="Lembretes de follow-up")
+    legal_contract_signer_name = forms.CharField(required=False, label="Nome no contrato", max_length=160)
 
     def __init__(self, *args, settings_values: dict[str, str] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
