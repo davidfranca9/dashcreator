@@ -896,20 +896,26 @@ class DashboardSmokeTest(TestCase):
         self.client.force_login(self.user)
 
         snapshot = jobs_snapshot(self.workspace)
-        self.assertEqual(snapshot["stats"][0]["target"], "#jobs-overdue")
-        self.assertEqual(snapshot["stats"][1]["target"], "#jobs-active")
-        self.assertEqual(snapshot["stats"][2]["target"], "#jobs-active")
-        self.assertEqual(snapshot["stats"][3]["target"], "#jobs-delivered")
+        self.assertEqual(snapshot["stats"][0]["section"], "overdue")
+        self.assertEqual(snapshot["stats"][1]["section"], "active")
+        self.assertEqual(snapshot["stats"][2]["section"], "active")
+        self.assertEqual(snapshot["stats"][3]["section"], "delivered")
 
         response = self.client.get(reverse("jobs"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'href="#jobs-overdue"', html=False)
-        self.assertContains(response, 'href="#jobs-active"', html=False)
-        self.assertContains(response, 'href="#jobs-delivered"', html=False)
+        self.assertContains(response, 'href="/trabalhos/?section=overdue"', html=False)
+        self.assertContains(response, 'href="/trabalhos/?section=active"', html=False)
+        self.assertContains(response, 'href="/trabalhos/?section=delivered"', html=False)
         self.assertContains(response, 'id="jobs-overdue"', html=False)
         self.assertContains(response, 'id="jobs-active"', html=False)
         self.assertContains(response, 'id="jobs-delivered"', html=False)
+
+        filtered_response = self.client.get(reverse("jobs"), {"section": "overdue"})
+        self.assertContains(filtered_response, "Trabalhos atrasados")
+        self.assertNotContains(filtered_response, "Trabalhos ativos")
+        self.assertNotContains(filtered_response, "Ultimas entregas")
+        self.assertContains(filtered_response, "Mostrar tudo")
 
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(

@@ -636,6 +636,12 @@ body.theme-dark .message {
     box-shadow: 0 22px 46px rgba(16, 38, 66, 0.11);
 }
 
+.stat-card-link--active {
+    border-color: rgba(77, 140, 255, 0.34);
+    box-shadow: 0 20px 40px rgba(16, 38, 66, 0.1);
+    background: linear-gradient(180deg, rgba(77, 140, 255, 0.1), rgba(255, 255, 255, 0.98));
+}
+
 .stat-card--blank {
     min-height: 98px;
 }
@@ -649,8 +655,19 @@ body.theme-dark .stat-card p {
     color: #9bb0cc;
 }
 
+body.theme-dark .stat-card-link--active {
+    background: linear-gradient(180deg, rgba(77, 140, 255, 0.18), rgba(27, 42, 67, 0.96));
+}
+
 .stat-card strong {
     font-size: 26px;
+}
+
+.section-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 
 .stat-icon,

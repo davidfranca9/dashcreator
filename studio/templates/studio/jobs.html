@@ -6,6 +6,9 @@
         {% if selected_month %}
             <input type="hidden" name="month" value="{{ selected_month.value }}">
         {% endif %}
+        {% if active_jobs_section %}
+            <input type="hidden" name="section" value="{{ active_jobs_section }}">
+        {% endif %}
         <select name="service_category" aria-label="Filtrar por tipo">
             <option value="">Filtrar por Tipo</option>
             {% for item in filters.service_categories %}
@@ -32,27 +35,25 @@
 
 <section class="stats-grid">
     {% for item in stats %}
-        {% if item.target %}
-            <a class="stat-card stat-card-link" href="{{ item.target }}">
-                <span class="stat-icon">{{ item.icon_label }}</span>
-                <div>
-                    <p>{{ item.title }}</p>
-                    <strong>{{ item.value }}</strong>
-                </div>
-            </a>
-        {% else %}
-            <article class="stat-card">
-                <span class="stat-icon">{{ item.icon_label }}</span>
-                <div>
-                    <p>{{ item.title }}</p>
-                    <strong>{{ item.value }}</strong>
-                </div>
-            </article>
-        {% endif %}
+        <a class="stat-card stat-card-link {% if active_jobs_section == item.section %}stat-card-link--active{% endif %}" href="{{ item.url }}">
+            <span class="stat-icon">{{ item.icon_label }}</span>
+            <div>
+                <p>{{ item.title }}</p>
+                <strong>{{ item.value }}</strong>
+            </div>
+        </a>
     {% endfor %}
 </section>
 
 <section class="stack-section">
+    {% if active_jobs_section %}
+        <div class="section-filter-bar">
+            <p class="muted">Lista aberta pelo KPI selecionado.</p>
+            <a class="ghost-button small" href="{{ jobs_show_all_url }}">Mostrar tudo</a>
+        </div>
+    {% endif %}
+
+    {% if not active_jobs_section or active_jobs_section == "overdue" %}
     <article class="card" id="jobs-overdue">
         <div class="card-header"><div><h3>Trabalhos atrasados</h3></div></div>
         <div class="jobs-grid">
@@ -105,7 +106,9 @@
             {% endfor %}
         </div>
     </article>
+    {% endif %}
 
+    {% if not active_jobs_section or active_jobs_section == "active" %}
     <article class="card" id="jobs-active">
         <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
@@ -164,7 +167,9 @@
             {% endfor %}
         </div>
     </article>
+    {% endif %}
 
+    {% if not active_jobs_section or active_jobs_section == "delivered" %}
     <article class="card" id="jobs-delivered">
         <div class="card-header"><div><h3>Ultimas entregas</h3></div></div>
         <div class="jobs-grid">
@@ -217,6 +222,7 @@
             {% endfor %}
         </div>
     </article>
+    {% endif %}
 </section>
 
 <script>
