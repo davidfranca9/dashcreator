@@ -150,6 +150,7 @@ PROJECT_DISTRIBUTION_CHOICES = [
     ("", "Selecione"),
     ("Organico", "Organico"),
     ("Ads", "Ads"),
+    ("Nao se aplica", "Não se aplica"),
 ]
 
 IMAGE_LICENSE_TERM_CHOICES = [

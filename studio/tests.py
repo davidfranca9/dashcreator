@@ -423,6 +423,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(("Aguardando produto", "Aguardando produto"), form.fields["status"].choices)
         self.assertIn(("Organico", "Organico"), form.fields["content_distribution"].choices)
         self.assertIn(("Ads", "Ads"), form.fields["content_distribution"].choices)
+        self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["content_distribution"].choices)
         self.assertIn("payment_due_date", form.fields)
         self.assertIn("meeting_scheduled", form.fields)
         self.assertIn("meeting_date", form.fields)
@@ -595,6 +596,34 @@ class DashboardSmokeTest(TestCase):
             "Oi, tester O DIREITO DE USO DE IMAGEM DA MARCA Reserva ESTÁ VENCENDO HOJE, QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?",
         )
         self.assertContains(legal_response, reverse("legal_contract_pdf", args=[project.pk]))
+
+    def test_distribution_page_groups_nao_se_aplica(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            content_distribution="Nao se aplica",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("distribution"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Não se aplica")
+        self.assertContains(response, "Reserva")
 
     def test_legal_contract_pdf_downloads_generated_document(self):
         project = Project.objects.create(

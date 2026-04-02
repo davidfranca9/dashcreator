@@ -332,7 +332,7 @@ class ProjectForm(forms.ModelForm):
             choices=PROJECT_DISTRIBUTION_CHOICES,
             required=False,
         )
-        self.fields["content_distribution"].help_text = "Marque se o material sera usado de forma organica ou em Ads."
+        self.fields["content_distribution"].help_text = "Marque se o material sera usado de forma organica, em Ads ou se não se aplica."
         self.fields["image_license_term_days"] = forms.TypedChoiceField(
             label="Direito de uso de imagem",
             choices=[("", "Selecione")] + list(IMAGE_LICENSE_TERM_CHOICES),

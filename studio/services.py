@@ -227,6 +227,8 @@ def workspace_business_address_summary(workspace: Workspace) -> str:
 
 
 def distribution_label(project: Project) -> str:
+    if project.content_distribution == "Nao se aplica":
+        return "Não se aplica"
     return project.content_distribution or "Nao definido"
 
 
@@ -1121,7 +1123,7 @@ def distribution_snapshot(workspace: Workspace) -> dict:
         .select_related("service_category", "niche")
         .order_by("-updated_at", "-due_date")
     )
-    grouped = {"Organico": [], "Ads": [], "Nao definido": []}
+    grouped = {"Organico": [], "Ads": [], "Não se aplica": [], "Nao definido": []}
     for project in projects:
         color_a, color_b, accent = company_palette(project.company)
         expires_on = image_usage_expires_on(project)
@@ -1153,6 +1155,7 @@ def distribution_snapshot(workspace: Workspace) -> dict:
         "columns": [
             {"title": "Organico", "items": grouped["Organico"]},
             {"title": "Ads", "items": grouped["Ads"]},
+            {"title": "Não se aplica", "items": grouped["Não se aplica"]},
             {"title": "Nao definido", "items": grouped["Nao definido"]},
         ],
     }
