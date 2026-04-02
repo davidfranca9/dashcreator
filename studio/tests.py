@@ -625,6 +625,37 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(".pdf", response["Content-Disposition"])
         pdf_bytes = b"".join(response.streaming_content) if hasattr(response, "streaming_content") else response.content
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+        project.refresh_from_db()
+        self.assertEqual(project.contract_status, Project.CONTRACT_STATUS_GENERATED)
+
+    def test_legal_page_can_dismiss_contract_item(self):
+        project = Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=date.today() - timedelta(days=5),
+            due_date=date.today() + timedelta(days=5),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse("legal_contract_dismiss", args=[project.pk]), follow=True)
+
+        self.assertRedirects(response, reverse("legal"))
+        project.refresh_from_db()
+        self.assertEqual(project.contract_status, Project.CONTRACT_STATUS_DISMISSED)
+        self.assertContains(response, "Contrato dispensado para Reserva.")
+        self.assertNotContains(response, reverse("legal_contract_pdf", args=[project.pk]))
 
     def test_contract_payload_uses_name_configured_in_settings(self):
         self.workspace.settings.update_or_create(

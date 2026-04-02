@@ -669,11 +669,25 @@ def legal(request: HttpRequest) -> HttpResponse:
 def legal_contract_pdf(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
+    if project.contract_status != Project.CONTRACT_STATUS_GENERATED:
+        project.contract_status = Project.CONTRACT_STATUS_GENERATED
+        project.save(update_fields=["contract_status", "updated_at"])
     pdf_content = _build_contract_pdf(workspace, request.user, project)
     filename = slugify(f"contrato-{project.company}-{project.service_category_name}") or f"contrato-{project.pk}"
     response = HttpResponse(pdf_content, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{filename}.pdf"'
     return response
+
+
+@login_required
+@require_POST
+def legal_contract_dismiss(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace = _workspace(request)
+    project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
+    project.contract_status = Project.CONTRACT_STATUS_DISMISSED
+    project.save(update_fields=["contract_status", "updated_at"])
+    messages.success(request, f"Contrato dispensado para {project.company}.")
+    return redirect("legal")
 
 
 @login_required

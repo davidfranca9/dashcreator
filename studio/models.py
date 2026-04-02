@@ -217,6 +217,15 @@ class Prospect(WorkspaceOwnedModel):
 
 
 class Project(WorkspaceOwnedModel):
+    CONTRACT_STATUS_PENDING = "pending"
+    CONTRACT_STATUS_GENERATED = "generated"
+    CONTRACT_STATUS_DISMISSED = "dismissed"
+    CONTRACT_STATUS_CHOICES = [
+        (CONTRACT_STATUS_PENDING, "Pendente"),
+        (CONTRACT_STATUS_GENERATED, "Contrato gerado"),
+        (CONTRACT_STATUS_DISMISSED, "Dispensado"),
+    ]
+
     company = models.CharField(max_length=160)
     project_name = models.CharField(max_length=180, blank=True, default="")
     content_type = models.CharField(max_length=120, blank=True, default="")
@@ -242,6 +251,11 @@ class Project(WorkspaceOwnedModel):
     meeting_scheduled = models.BooleanField(default=False)
     meeting_date = models.DateField(null=True, blank=True)
     note = models.TextField(blank=True, default="")
+    contract_status = models.CharField(
+        max_length=20,
+        choices=CONTRACT_STATUS_CHOICES,
+        default=CONTRACT_STATUS_PENDING,
+    )
     close_date = models.DateField()
     due_date = models.DateField()
 

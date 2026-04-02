@@ -33,9 +33,16 @@
                                     <span class="muted">{{ item.service_category }}</span>
                                 </div>
                             </div>
-                            <span class="chip">{{ item.amount_text }}</span>
+                            <div class="card-actions-group">
+                                <span class="chip">{{ item.amount_text }}</span>
+                                <form method="post" class="icon-button-form" action="{% url 'legal_contract_dismiss' item.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="icon-button icon-button--danger" title="Dispensar contrato" aria-label="Dispensar contrato de {{ item.company }}">&times;</button>
+                                </form>
+                            </div>
                         </div>
                         <div class="job-meta-list">
+                            <span class="chip">{{ item.contract_status_text }}</span>
                             <span class="chip">{{ item.distribution }}</span>
                             <span class="chip">Fechamento {{ item.close_text }}</span>
                             <span class="chip">Entrega {{ item.delivery_text }}</span>

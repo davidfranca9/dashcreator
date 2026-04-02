@@ -650,7 +650,7 @@ def legal_usage_items(workspace: Workspace) -> list[dict]:
 
 def legal_contract_items(workspace: Workspace) -> list[dict]:
     projects = list(
-        Project.objects.filter(workspace=workspace)
+        Project.objects.filter(workspace=workspace).exclude(contract_status=Project.CONTRACT_STATUS_DISMISSED)
         .select_related("service_category", "niche")
         .order_by("-close_date", "-due_date", "-updated_at")
     )
@@ -667,6 +667,8 @@ def legal_contract_items(workspace: Workspace) -> list[dict]:
                 "delivery_text": short_date(project.due_date),
                 "amount_text": currency(project.total_value),
                 "deliverables_text": f"{project.deliverables_count} video{'s' if project.deliverables_count != 1 else ''}",
+                "contract_status": project.contract_status,
+                "contract_status_text": project.get_contract_status_display(),
                 "colors": (color_a, color_b),
                 "accent": accent,
                 "note": project.note,
