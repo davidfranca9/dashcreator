@@ -18,7 +18,7 @@ from PIL import Image
 
 from .forms import ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
-from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, shell_context
+from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
 
 
 class DashboardSmokeTest(TestCase):
@@ -810,6 +810,33 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["active"][0]["company"], "Shein")
         self.assertContains(response, f'name="month" value="{self.project.close_date.strftime("%Y-%m")}"', html=False)
         self.assertContains(response, f'{reverse("finance")}?month={self.project.close_date.strftime("%Y-%m")}')
+
+    def test_jobs_upcoming_deliveries_respect_delivery_month(self):
+        march_date = date(2026, 3, 20)
+        april_delivery = date(2026, 4, 3)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Entrega abril",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=march_date,
+            due_date=april_delivery,
+        )
+
+        snapshot = jobs_snapshot_filtered(self.workspace, month_filter="2026-03")
+
+        self.assertEqual(snapshot["stats"][2]["value"], "0")
+        self.assertEqual(len(snapshot["stat_lists"][2]["items"]), 0)
 
     def test_jobs_page_all_months_keeps_latest_deliveries(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
