@@ -585,6 +585,8 @@ class DashboardSmokeTest(TestCase):
 
         self.assertContains(distribution_response, "Ads")
         self.assertContains(distribution_response, "Reserva")
+        self.assertContains(legal_response, "Contratos dos trabalhos")
+        self.assertContains(legal_response, "Gerar contrato")
         self.assertContains(legal_response, "Direito de uso de imagem")
         self.assertContains(legal_response, "90 dias")
         self.assertContains(
@@ -598,8 +600,6 @@ class DashboardSmokeTest(TestCase):
             workspace=self.workspace,
             company="Reserva",
             closing_source="Indicacao",
-            content_distribution="Ads",
-            image_license_term_days=90,
             niche=self.niche,
             service_category=self.category,
             project_name="Pacote extra",

@@ -601,10 +601,7 @@ def legal(request: HttpRequest) -> HttpResponse:
 @login_required
 def legal_contract_pdf(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
-    project = get_object_or_404(
-        Project.objects.filter(workspace=workspace, content_distribution="Ads"),
-        pk=pk,
-    )
+    project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
     pdf_content = _build_contract_pdf(workspace, request.user, project)
     filename = slugify(f"contrato-{project.company}-{project.service_category_name}") or f"contrato-{project.pk}"
     response = HttpResponse(pdf_content, content_type="application/pdf")

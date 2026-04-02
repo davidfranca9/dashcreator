@@ -648,6 +648,33 @@ def legal_usage_items(workspace: Workspace) -> list[dict]:
     return items
 
 
+def legal_contract_items(workspace: Workspace) -> list[dict]:
+    projects = list(
+        Project.objects.filter(workspace=workspace)
+        .select_related("service_category", "niche")
+        .order_by("-close_date", "-due_date", "-updated_at")
+    )
+    items = []
+    for project in projects:
+        color_a, color_b, accent = company_palette(project.company)
+        items.append(
+            {
+                "id": project.id,
+                "company": project.company,
+                "service_category": project.service_category_name,
+                "distribution": distribution_label(project),
+                "close_text": short_date(project.close_date),
+                "delivery_text": short_date(project.due_date),
+                "amount_text": currency(project.total_value),
+                "deliverables_text": f"{project.deliverables_count} video{'s' if project.deliverables_count != 1 else ''}",
+                "colors": (color_a, color_b),
+                "accent": accent,
+                "note": project.note,
+            }
+        )
+    return items
+
+
 def legal_usage_alerts(workspace: Workspace, user: User | None = None) -> list[dict]:
     display_name = user_display_name(user)
     alerts = []
@@ -1084,17 +1111,20 @@ def distribution_snapshot(workspace: Workspace) -> dict:
 
 def legal_snapshot(workspace: Workspace) -> dict:
     items = legal_usage_items(workspace)
+    contract_items = legal_contract_items(workspace)
     expiring_today = [item for item in items if item["days_until_expiry"] == 0]
     expiring_soon = [item for item in items if 0 < item["days_until_expiry"] <= 30]
     expired = [item for item in items if item["days_until_expiry"] < 0]
     active = [item for item in items if item["days_until_expiry"] >= 0]
     return {
         "stats": [
+            {"title": "Contratos", "value": str(len(contract_items)), "icon_label": "C"},
             {"title": "Licencas ativas", "value": str(len(active)), "icon_label": "L"},
             {"title": "Vencendo hoje", "value": str(len(expiring_today)), "icon_label": "!"},
             {"title": "Proximos 30 dias", "value": str(len(expiring_soon)), "icon_label": "30"},
             {"title": "Expirados", "value": str(len(expired)), "icon_label": "E"},
         ],
+        "contracts": contract_items,
         "records": items,
     }
 
