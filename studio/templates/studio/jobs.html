@@ -32,18 +32,28 @@
 
 <section class="stats-grid">
     {% for item in stats %}
-        <article class="stat-card">
-            <span class="stat-icon">{{ item.icon_label }}</span>
-            <div>
-                <p>{{ item.title }}</p>
-                <strong>{{ item.value }}</strong>
-            </div>
-        </article>
+        {% if item.target %}
+            <a class="stat-card stat-card-link" href="{{ item.target }}">
+                <span class="stat-icon">{{ item.icon_label }}</span>
+                <div>
+                    <p>{{ item.title }}</p>
+                    <strong>{{ item.value }}</strong>
+                </div>
+            </a>
+        {% else %}
+            <article class="stat-card">
+                <span class="stat-icon">{{ item.icon_label }}</span>
+                <div>
+                    <p>{{ item.title }}</p>
+                    <strong>{{ item.value }}</strong>
+                </div>
+            </article>
+        {% endif %}
     {% endfor %}
 </section>
 
 <section class="stack-section">
-    <article class="card">
+    <article class="card" id="jobs-overdue">
         <div class="card-header"><div><h3>Trabalhos atrasados</h3></div></div>
         <div class="jobs-grid">
             {% for item in overdue %}
@@ -96,7 +106,7 @@
         </div>
     </article>
 
-    <article class="card">
+    <article class="card" id="jobs-active">
         <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
             {% for item in active %}
@@ -155,7 +165,7 @@
         </div>
     </article>
 
-    <article class="card">
+    <article class="card" id="jobs-delivered">
         <div class="card-header"><div><h3>Ultimas entregas</h3></div></div>
         <div class="jobs-grid">
             {% for item in delivered %}
