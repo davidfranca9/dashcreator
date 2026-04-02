@@ -557,7 +557,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("image_license_term_days", ads_without_term_form.errors)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):
-        Project.objects.create(
+        project = Project.objects.create(
             workspace=self.workspace,
             company="Reserva",
             closing_source="Indicacao",
@@ -591,6 +591,39 @@ class DashboardSmokeTest(TestCase):
             legal_response,
             "Oi, tester O DIREITO DE USO DE IMAGEM DA MARCA Reserva ESTÁ VENCENDO HOJE, QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?",
         )
+        self.assertContains(legal_response, reverse("legal_contract_pdf", args=[project.pk]))
+
+    def test_legal_contract_pdf_downloads_generated_document(self):
+        project = Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            content_distribution="Ads",
+            image_license_term_days=90,
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=date.today() - timedelta(days=5),
+            due_date=date.today() + timedelta(days=5),
+            note="Ads com licenciamento",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("legal_contract_pdf", args=[project.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn(".pdf", response["Content-Disposition"])
+        pdf_bytes = b"".join(response.streaming_content) if hasattr(response, "streaming_content") else response.content
+        self.assertTrue(pdf_bytes.startswith(b"%PDF"))
 
     def test_dashboard_counts_unique_contracting_companies(self):
         Prospect.objects.create(

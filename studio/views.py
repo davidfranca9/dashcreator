@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import mimetypes
 import re
+from datetime import date
 from pathlib import Path
+from io import BytesIO
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -17,7 +19,14 @@ from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonRe
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils._os import safe_join
+from django.utils.text import slugify
 from django.views.decorators.http import require_POST
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 from .emails import send_signup_confirmation_email
 
@@ -50,6 +59,7 @@ from .services import (
     settings_map,
     shell_context,
     start_follow_up_prospection,
+    workspace_business_address_summary,
 )
 
 
@@ -182,6 +192,213 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
             "street": street,
         }
     )
+
+
+def _long_date_label(raw_date: date) -> str:
+    months = {
+        1: "janeiro",
+        2: "fevereiro",
+        3: "marco",
+        4: "abril",
+        5: "maio",
+        6: "junho",
+        7: "julho",
+        8: "agosto",
+        9: "setembro",
+        10: "outubro",
+        11: "novembro",
+        12: "dezembro",
+    }
+    return f"{raw_date.day} de {months[raw_date.month]} de {raw_date.year}"
+
+
+def _contract_placeholder(value: str | None, fallback: str = "________________") -> str:
+    normalized = (value or "").strip()
+    return normalized or fallback
+
+
+def _project_contract_payload(workspace, user, project: Project) -> dict:
+    creator_name = _contract_placeholder(user.get_full_name() or user.username)
+    creator_email = _contract_placeholder(user.email)
+    creator_address = _contract_placeholder(workspace_business_address_summary(workspace))
+    creator_cnpj = _contract_placeholder(workspace.business_cnpj)
+    creator_pis = _contract_placeholder(workspace.business_pis)
+    company_name = _contract_placeholder(project.company)
+    distribution_label = "TRAFEGO PAGO (ADS)" if project.content_distribution == "Ads" else "USO ORGANICO"
+    mixed_distribution_label = "TRAFEGO PAGO (ADS) e USO ORGANICO" if project.content_distribution == "Ads" else "USO ORGANICO"
+    service_name = _contract_placeholder(project.service_category_name)
+    total_value = f"R$ {project.total_value:.2f}".replace(".", ",")
+    entry_value = f"R$ {project.entry_value:.2f}".replace(".", ",")
+    balance_value = f"R$ {(project.total_value - project.entry_value):.2f}".replace(".", ",")
+    due_date_text = _long_date_label(project.due_date)
+    close_date_text = _long_date_label(project.close_date)
+    image_term = project.image_license_term_days or 90
+    license_expires_on = project.image_usage_expires_on or project.due_date
+
+    return {
+        "creator_name": creator_name,
+        "creator_email": creator_email,
+        "creator_address": creator_address,
+        "creator_cnpj": creator_cnpj,
+        "creator_pis": creator_pis,
+        "company_name": company_name,
+        "company_cnpj": "________________",
+        "company_address": "________________",
+        "company_email": "________________",
+        "service_name": service_name,
+        "distribution_label": distribution_label,
+        "mixed_distribution_label": mixed_distribution_label,
+        "deliverables_count": project.deliverables_count,
+        "total_value": total_value,
+        "entry_value": entry_value,
+        "balance_value": balance_value,
+        "close_date_text": close_date_text,
+        "due_date_text": due_date_text,
+        "image_term": image_term,
+        "license_expires_on_text": _long_date_label(license_expires_on),
+    }
+
+
+def _build_contract_pdf(workspace, user, project: Project) -> bytes:
+    payload = _project_contract_payload(workspace, user, project)
+    buffer = BytesIO()
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=2 * cm,
+        leftMargin=2 * cm,
+        topMargin=1.8 * cm,
+        bottomMargin=1.8 * cm,
+        title=f"Contrato - {payload['company_name']}",
+    )
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "ContractTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=15,
+        leading=19,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#1a2649"),
+        spaceAfter=14,
+    )
+    section_style = ParagraphStyle(
+        "ContractSection",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        leading=14,
+        textColor=colors.HexColor("#1a2649"),
+        spaceBefore=12,
+        spaceAfter=6,
+    )
+    body_style = ParagraphStyle(
+        "ContractBody",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9.6,
+        leading=14,
+        alignment=TA_JUSTIFY,
+        textColor=colors.HexColor("#24334d"),
+        spaceAfter=6,
+    )
+    signature_style = ParagraphStyle(
+        "ContractSignature",
+        parent=body_style,
+        alignment=TA_CENTER,
+        spaceBefore=10,
+    )
+
+    story = [
+        Paragraph("CONTRATO DE CRIACAO DE CONTEUDO UGC", title_style),
+        Paragraph(
+            (
+                f"<b>Contratada:</b> {payload['creator_name']}, inscrita no CNPJ {payload['creator_cnpj']}, "
+                f"PIS {payload['creator_pis']}, endereco {payload['creator_address']}, e-mail {payload['creator_email']}.<br/>"
+                f"<b>Contratante:</b> {payload['company_name']}, CNPJ {payload['company_cnpj']}, endereco {payload['company_address']}, "
+                f"e-mail {payload['company_email']}."
+            ),
+            body_style,
+        ),
+        Paragraph("1. OBJETO DO CONTRATO", section_style),
+        Paragraph(
+            (
+                f"O presente contrato tem como objeto a prestacao de servicos de criacao de conteudo UGC para "
+                f"{payload['mixed_distribution_label']}, referentes ao trabalho <b>{payload['service_name']}</b>, "
+                f"personalizado para a marca {payload['company_name']}."
+            ),
+            body_style,
+        ),
+        Paragraph("2. ENTREGAVEIS", section_style),
+        Paragraph(
+            (
+                f"A contratada entregara <b>{payload['deliverables_count']} video(s)</b>, incluindo captacao, "
+                f"edicao e entrega final ate <b>{payload['due_date_text']}</b>, conforme briefing alinhado entre as partes."
+            ),
+            body_style,
+        ),
+        Paragraph("3. OBRIGACOES DA CONTRATADA", section_style),
+        Paragraph(
+            (
+                "A contratada se compromete a produzir conteudos originais, respeitar o briefing aprovado, "
+                "realizar ajustes razoaveis dentro do escopo combinado e entregar o material final no prazo acordado."
+            ),
+            body_style,
+        ),
+        Paragraph("4. OBRIGACOES DA CONTRATANTE", section_style),
+        Paragraph(
+            (
+                "A contratante se compromete a fornecer briefing, materiais de apoio, aprovacoes em tempo habil, "
+                "bem como realizar os pagamentos nas condicoes definidas neste contrato."
+            ),
+            body_style,
+        ),
+        Paragraph("5. VIGENCIA E DIREITO DE USO DE IMAGEM", section_style),
+        Paragraph(
+            (
+                f"O uso do conteudo em {payload['distribution_label']} tera inicio na entrega final do material. "
+                f"Para Ads, o direito de uso de imagem fica concedido por <b>{payload['image_term']} dias</b>, "
+                f"com vencimento previsto em <b>{payload['license_expires_on_text']}</b>. Renovacoes devem ser negociadas por termo aditivo."
+            ),
+            body_style,
+        ),
+        Paragraph("6. PAGAMENTO", section_style),
+        Paragraph(
+            (
+                f"O valor total ajustado para o trabalho e de <b>{payload['total_value']}</b>, sendo "
+                f"<b>{payload['entry_value']}</b> na entrada e <b>{payload['balance_value']}</b> no saldo final."
+            ),
+            body_style,
+        ),
+        Paragraph("7. DIREITOS AUTORAIS E CONFIDENCIALIDADE", section_style),
+        Paragraph(
+            (
+                "A titularidade autoral do conteudo permanece com a criadora, sendo concedida apenas a licenca de uso "
+                "necessaria para a finalidade contratada. As partes tambem se comprometem a manter sigilo sobre materiais, "
+                "estrategias e informacoes trocadas neste projeto."
+            ),
+            body_style,
+        ),
+        Paragraph("8. DISPOSICOES GERAIS", section_style),
+        Paragraph(
+            (
+                "Qualquer ajuste futuro devera ser formalizado por escrito. Este documento pode ser complementado com "
+                "informacoes comerciais e juridicas adicionais da contratante antes da assinatura final."
+            ),
+            body_style,
+        ),
+        Spacer(1, 20),
+        Paragraph(f"Salvador - BA, {payload['close_date_text']}.", body_style),
+        Spacer(1, 26),
+        Paragraph("__________________________________", signature_style),
+        Paragraph(payload["creator_name"], signature_style),
+        Spacer(1, 12),
+        Paragraph("__________________________________", signature_style),
+        Paragraph(payload["company_name"], signature_style),
+    ]
+
+    document.build(story)
+    return buffer.getvalue()
 
 
 def signup(request: HttpRequest) -> HttpResponse:
@@ -334,6 +551,20 @@ def legal(request: HttpRequest) -> HttpResponse:
     )
     context.update(legal_snapshot(workspace))
     return render(request, "studio/legal.html", context)
+
+
+@login_required
+def legal_contract_pdf(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace = _workspace(request)
+    project = get_object_or_404(
+        Project.objects.filter(workspace=workspace, content_distribution="Ads"),
+        pk=pk,
+    )
+    pdf_content = _build_contract_pdf(workspace, request.user, project)
+    filename = slugify(f"contrato-{project.company}-{project.service_category_name}") or f"contrato-{project.pk}"
+    response = HttpResponse(pdf_content, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}.pdf"'
+    return response
 
 
 @login_required

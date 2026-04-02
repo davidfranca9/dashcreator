@@ -44,6 +44,7 @@
                         <p class="muted">{{ item.reminder_message }}</p>
                         <div class="card-actions">
                             <div class="card-actions-group">
+                                <a class="primary-button small" href="{% url 'legal_contract_pdf' item.id %}" target="_blank" rel="noopener noreferrer">Gerar contrato</a>
                                 <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
                                 <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
                             </div>

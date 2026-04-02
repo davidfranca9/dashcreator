@@ -208,6 +208,24 @@ def image_usage_term_label(project: Project) -> str:
     return f"{project.image_license_term_days} dias"
 
 
+def workspace_business_address_summary(workspace: Workspace) -> str:
+    parts = []
+    street_line = " ".join(
+        part
+        for part in [workspace.business_street, f"Nº {workspace.business_number}" if workspace.business_number else ""]
+        if part
+    ).strip()
+    if street_line:
+        parts.append(street_line)
+    if workspace.business_complement:
+        parts.append(workspace.business_complement)
+    if workspace.business_zip_code:
+        parts.append(f"CEP {workspace.business_zip_code}")
+    if workspace.business_address:
+        parts.append(workspace.business_address)
+    return ", ".join(parts)
+
+
 def distribution_label(project: Project) -> str:
     return project.content_distribution or "Nao definido"
 
