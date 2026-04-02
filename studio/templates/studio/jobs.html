@@ -6,9 +6,6 @@
         {% if selected_month %}
             <input type="hidden" name="month" value="{{ selected_month.value }}">
         {% endif %}
-        {% if active_jobs_section %}
-            <input type="hidden" name="section" value="{{ active_jobs_section }}">
-        {% endif %}
         <select name="service_category" aria-label="Filtrar por tipo">
             <option value="">Filtrar por Tipo</option>
             {% for item in filters.service_categories %}
@@ -35,25 +32,59 @@
 
 <section class="stats-grid">
     {% for item in stats %}
-        <a class="stat-card stat-card-link {% if active_jobs_section == item.section %}stat-card-link--active{% endif %}" href="{{ item.url }}">
+        <button type="button" class="stat-card stat-card-link" data-jobs-kpi-open="{{ item.modal_id }}">
             <span class="stat-icon">{{ item.icon_label }}</span>
             <div>
                 <p>{{ item.title }}</p>
                 <strong>{{ item.value }}</strong>
             </div>
-        </a>
+        </button>
     {% endfor %}
 </section>
 
-<section class="stack-section">
-    {% if active_jobs_section %}
-        <div class="section-filter-bar">
-            <p class="muted">Lista aberta pelo KPI selecionado.</p>
-            <a class="ghost-button small" href="{{ jobs_show_all_url }}">Mostrar tudo</a>
+{% for modal in stat_lists %}
+    <div class="jobs-kpi-backdrop" data-jobs-kpi-modal="{{ modal.modal_id }}" hidden>
+        <div class="jobs-kpi-modal" role="dialog" aria-modal="true" aria-labelledby="{{ modal.modal_id }}-title">
+            <button type="button" class="jobs-kpi-modal-close" data-jobs-kpi-close aria-label="Fechar lista">&times;</button>
+            <div class="jobs-kpi-modal-header">
+                <div>
+                    <span class="meeting-popup-badge">Trabalhos</span>
+                    <h3 id="{{ modal.modal_id }}-title">{{ modal.title }}</h3>
+                    <p class="muted">{{ modal.description }}</p>
+                </div>
+            </div>
+            <div class="jobs-kpi-modal-list">
+                {% for item in modal.items %}
+                    <article class="jobs-kpi-row">
+                        <div class="jobs-kpi-row-copy">
+                            <strong>{{ item.company }}</strong>
+                            <p>{{ item.service_category }}</p>
+                            <div class="job-meta-list">
+                                <span class="chip">Entrega {{ item.due_text }}</span>
+                                {% if item.payment_due_text %}
+                                    <span class="chip">Pagamento {{ item.payment_due_text }}</span>
+                                {% endif %}
+                                {% if item.meeting_date_text %}
+                                    <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="jobs-kpi-row-meta">
+                            {% if item.total_value %}
+                                <strong>{{ item.total_value }}</strong>
+                            {% endif %}
+                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Ver trabalho</a>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="muted">{{ modal.empty_message }}</p>
+                {% endfor %}
+            </div>
         </div>
-    {% endif %}
+    </div>
+{% endfor %}
 
-    {% if not active_jobs_section or active_jobs_section == "overdue" %}
+<section class="stack-section">
     <article class="card" id="jobs-overdue">
         <div class="card-header"><div><h3>Trabalhos atrasados</h3></div></div>
         <div class="jobs-grid">
@@ -106,9 +137,7 @@
             {% endfor %}
         </div>
     </article>
-    {% endif %}
 
-    {% if not active_jobs_section or active_jobs_section == "active" %}
     <article class="card" id="jobs-active">
         <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
         <div class="jobs-grid">
@@ -167,9 +196,7 @@
             {% endfor %}
         </div>
     </article>
-    {% endif %}
 
-    {% if not active_jobs_section or active_jobs_section == "delivered" %}
     <article class="card" id="jobs-delivered">
         <div class="card-header"><div><h3>Ultimas entregas</h3></div></div>
         <div class="jobs-grid">
@@ -222,7 +249,6 @@
             {% endfor %}
         </div>
     </article>
-    {% endif %}
 </section>
 
 <script>
@@ -245,6 +271,38 @@
         searchField.addEventListener("input", () => {
             window.clearTimeout(timerId);
             timerId = window.setTimeout(() => form.requestSubmit(), 300);
+        });
+
+        const closeAllModals = () => {
+            document.querySelectorAll("[data-jobs-kpi-modal]").forEach((modal) => {
+                modal.hidden = true;
+            });
+            document.body.classList.remove("has-popup-open");
+        };
+
+        document.querySelectorAll("[data-jobs-kpi-open]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const modalId = button.dataset.jobsKpiOpen;
+                const modal = document.querySelector(`[data-jobs-kpi-modal="${modalId}"]`);
+                if (!modal) {
+                    return;
+                }
+                closeAllModals();
+                modal.hidden = false;
+                document.body.classList.add("has-popup-open");
+            });
+        });
+
+        document.querySelectorAll("[data-jobs-kpi-close]").forEach((button) => {
+            button.addEventListener("click", closeAllModals);
+        });
+
+        document.querySelectorAll("[data-jobs-kpi-modal]").forEach((modal) => {
+            modal.addEventListener("click", (event) => {
+                if (event.target === modal) {
+                    closeAllModals();
+                }
+            });
         });
     })();
 </script>

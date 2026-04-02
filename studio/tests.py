@@ -892,30 +892,27 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(snapshot["overdue"][0]["payment_due_text"])
         self.assertEqual(snapshot["overdue"][0]["note"], "Pedir retorno da marca")
 
-    def test_jobs_kpis_link_to_matching_sections(self):
+    def test_jobs_kpis_open_subtle_modal_lists(self):
         self.client.force_login(self.user)
 
         snapshot = jobs_snapshot(self.workspace)
-        self.assertEqual(snapshot["stats"][0]["section"], "overdue")
-        self.assertEqual(snapshot["stats"][1]["section"], "active")
-        self.assertEqual(snapshot["stats"][2]["section"], "active")
-        self.assertEqual(snapshot["stats"][3]["section"], "delivered")
+        self.assertEqual(snapshot["stats"][0]["modal_id"], "jobs-kpi-overdue")
+        self.assertEqual(snapshot["stats"][1]["modal_id"], "jobs-kpi-approval")
+        self.assertEqual(snapshot["stats"][2]["modal_id"], "jobs-kpi-upcoming")
+        self.assertEqual(snapshot["stats"][3]["modal_id"], "jobs-kpi-delivered")
 
         response = self.client.get(reverse("jobs"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'href="/trabalhos/?section=overdue"', html=False)
-        self.assertContains(response, 'href="/trabalhos/?section=active"', html=False)
-        self.assertContains(response, 'href="/trabalhos/?section=delivered"', html=False)
-        self.assertContains(response, 'id="jobs-overdue"', html=False)
-        self.assertContains(response, 'id="jobs-active"', html=False)
-        self.assertContains(response, 'id="jobs-delivered"', html=False)
-
-        filtered_response = self.client.get(reverse("jobs"), {"section": "overdue"})
-        self.assertContains(filtered_response, "Trabalhos atrasados")
-        self.assertNotContains(filtered_response, "Trabalhos ativos")
-        self.assertNotContains(filtered_response, "Ultimas entregas")
-        self.assertContains(filtered_response, "Mostrar tudo")
+        self.assertContains(response, 'data-jobs-kpi-open="jobs-kpi-overdue"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-open="jobs-kpi-approval"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-open="jobs-kpi-upcoming"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-open="jobs-kpi-delivered"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-overdue"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-approval"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-upcoming"', html=False)
+        self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-delivered"', html=False)
+        self.assertContains(response, "Entregas que ja passaram da data e ainda precisam de atencao.")
 
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
