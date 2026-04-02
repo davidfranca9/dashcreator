@@ -98,9 +98,8 @@ textarea {
 
 .app-shell {
     min-height: 100vh;
-    display: grid;
-    grid-template-columns: 296px 1fr;
-    align-items: start;
+    min-height: 100dvh;
+    padding-left: 296px;
     overflow-x: hidden;
 }
 
@@ -111,9 +110,15 @@ textarea {
     padding: 26px 20px 22px;
     background: linear-gradient(180deg, var(--sidebar-top), var(--sidebar-bottom));
     color: #edf5ff;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    bottom: 0;
+    width: 296px;
+    min-height: 100vh;
+    min-height: 100dvh;
     height: 100vh;
+    height: 100dvh;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
@@ -264,6 +269,8 @@ textarea {
 }
 
 .content-area {
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 28px 34px;
 }
 
@@ -1661,12 +1668,16 @@ body.theme-dark .danger-button {
 
 @media (max-width: 1100px) {
     .app-shell {
+        padding-left: 0;
+        display: grid;
         grid-template-columns: 1fr;
     }
 
     .sidebar {
         gap: 18px;
         position: static;
+        width: auto;
+        min-height: 0;
         height: auto;
         overflow: visible;
     }
