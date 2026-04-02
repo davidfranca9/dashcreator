@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .constants import IMAGE_LICENSE_TERM_CHOICES, PROJECT_DISTRIBUTION_CHOICES, SETTINGS_GROUPS
-from .models import AccessCode, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
+from .models import AccessCode, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
@@ -526,3 +526,24 @@ class ProfilePhotoForm(forms.Form):
         if photo.size > self.max_size:
             raise forms.ValidationError("A imagem precisa ter no maximo 2 MB.")
         return photo
+
+
+class FinanceEntryForm(forms.ModelForm):
+    class Meta:
+        model = FinanceEntry
+        fields = ["amount", "occurred_on", "description"]
+        labels = {
+            "amount": "Valor",
+            "occurred_on": "Data",
+            "description": "Descricao",
+        }
+        widgets = {
+            "occurred_on": forms.DateInput(attrs={"type": "date"}),
+            "description": forms.TextInput(attrs={"placeholder": "Ex.: cliente pagou entrada / impulsionamento / editor"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
+        self.fields["occurred_on"].input_formats = ["%Y-%m-%d"]
+        self.fields["occurred_on"].widget.format = "%Y-%m-%d"

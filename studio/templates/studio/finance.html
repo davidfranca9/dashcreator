@@ -23,6 +23,79 @@
 
 <section class="split-grid">
     <article class="card">
+        <div class="card-header">
+            <div>
+                <h3>Registrar entrada</h3>
+                <p class="muted">Use para pagamentos confirmados que ja entraram no caixa.</p>
+            </div>
+        </div>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            <input type="hidden" name="finance_action" value="incoming">
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+            {% for field in incoming_form %}
+                <div class="form-field{% if field.name == 'description' %} form-field--full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <div class="form-actions form-field--full">
+                <button type="submit" class="primary-button">Salvar entrada</button>
+            </div>
+        </form>
+    </article>
+
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <h3>Registrar saida</h3>
+                <p class="muted">Use para custos de producao, ferramentas ou investimentos.</p>
+            </div>
+        </div>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            <input type="hidden" name="finance_action" value="outgoing">
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+            {% for field in outgoing_form %}
+                <div class="form-field{% if field.name == 'description' %} form-field--full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <div class="form-actions form-field--full">
+                <button type="submit" class="danger-button">Salvar saida</button>
+            </div>
+        </form>
+    </article>
+</section>
+
+<section class="split-grid">
+    <article class="card">
+        <div class="card-header"><div><h3>Fluxo de caixa</h3><p class="muted">{{ selected_month.label }}</p></div></div>
+        {% if ledger %}
+            <div class="stack-list">
+                {% for item in ledger %}
+                    <article class="soft-card schedule-row">
+                        <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">{% if item.kind == "incoming" %}+{% else %}-{% endif %}</span>
+                        <div class="activity-copy">
+                            <strong>{{ item.label }}</strong>
+                            <p>{{ item.description }}</p>
+                        </div>
+                        <div class="activity-meta">
+                            <strong>{{ item.amount_text }}</strong>
+                            <small>{{ item.date_text }}</small>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">Nenhuma entrada ou saida registrada em {{ selected_month.label|lower }}.</p>
+        {% endif %}
+    </article>
+
+    <article class="card">
         <div class="card-header"><div><h3>Agenda de recebimentos</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         {% if schedule %}
             <div class="stack-list">
@@ -31,7 +104,7 @@
                         <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">$</span>
                         <div class="activity-copy">
                             <strong>{{ item.company }}</strong>
-                            <p>{{ item.kind }} | vence {{ item.due }}</p>
+                            <p>{{ item.kind }} | previsto para {{ item.due }}</p>
                         </div>
                         <div class="activity-meta">
                             <strong>{{ item.amount }}</strong>
@@ -46,7 +119,7 @@
     </article>
 
     <article class="card">
-        <div class="card-header"><div><h3>Distribuicao do caixa</h3><p class="muted">{{ selected_month.label }}</p></div></div>
+        <div class="card-header"><div><h3>Resumo do fluxo</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         <div class="stack-list">
             {% for row in breakdown %}
                 <div class="metric-row">

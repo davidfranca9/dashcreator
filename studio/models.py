@@ -266,6 +266,26 @@ class Project(WorkspaceOwnedModel):
         return self.due_date + timedelta(days=self.image_license_term_days)
 
 
+class FinanceEntry(WorkspaceOwnedModel):
+    KIND_INCOMING = "incoming"
+    KIND_OUTGOING = "outgoing"
+    KIND_CHOICES = [
+        (KIND_INCOMING, "Entrada"),
+        (KIND_OUTGOING, "Saida"),
+    ]
+
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    occurred_on = models.DateField()
+    description = models.CharField(max_length=180, blank=True, default="")
+
+    class Meta:
+        ordering = ["-occurred_on", "-updated_at"]
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} - {self.amount}"
+
+
 class WorkspaceSetting(TimestampedModel):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="settings")
     key = models.CharField(max_length=120)

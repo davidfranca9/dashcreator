@@ -34,6 +34,7 @@ from .forms import (
     AppPasswordResetForm,
     AppSetPasswordForm,
     EmailOrUsernameAuthenticationForm,
+    FinanceEntryForm,
     ManagedOptionForm,
     ProfilePhotoForm,
     ProjectForm,
@@ -53,6 +54,7 @@ from .services import (
     get_or_create_workspace_for_user,
     jobs_snapshot_filtered,
     legal_snapshot,
+    parse_month_value,
     prospection_snapshot,
     reports_snapshot,
     save_settings,
@@ -512,16 +514,59 @@ def jobs(request: HttpRequest) -> HttpResponse:
 @login_required
 def finance(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    month_filter = request.GET.get("month")
+    month_filter = request.GET.get("month") or request.POST.get("month")
+    selected_month = parse_month_value(month_filter) if month_filter and month_filter != "all" else None
+    today = date.today()
+    initial_date = (
+        today
+        if selected_month is None or (selected_month.year == today.year and selected_month.month == today.month)
+        else selected_month
+    )
+    incoming_form = FinanceEntryForm(prefix="incoming", initial={"occurred_on": initial_date})
+    outgoing_form = FinanceEntryForm(prefix="outgoing", initial={"occurred_on": initial_date})
+
+    if request.method == "POST":
+        action = request.POST.get("finance_action")
+        if action == "incoming":
+            incoming_form = FinanceEntryForm(request.POST, prefix="incoming")
+            if incoming_form.is_valid():
+                entry = incoming_form.save(commit=False)
+                entry.workspace = workspace
+                entry.kind = "incoming"
+                entry.save()
+                messages.success(request, "Entrada registrada.")
+                redirect_url = reverse("finance")
+                if month_filter:
+                    redirect_url = f"{redirect_url}?month={month_filter}"
+                return redirect(redirect_url)
+        elif action == "outgoing":
+            outgoing_form = FinanceEntryForm(request.POST, prefix="outgoing")
+            if outgoing_form.is_valid():
+                entry = outgoing_form.save(commit=False)
+                entry.workspace = workspace
+                entry.kind = "outgoing"
+                entry.save()
+                messages.success(request, "Saida registrada.")
+                redirect_url = reverse("finance")
+                if month_filter:
+                    redirect_url = f"{redirect_url}?month={month_filter}"
+                return redirect(redirect_url)
+
     context = shell_context(
         "finance",
         workspace,
         "Financeiro",
-        "Entradas, recebimentos e previsoes de caixa.",
+        "Fluxo de caixa, despesas e saldo de recebiveis.",
         user=request.user,
         month_filter=month_filter,
     )
     context.update(finance_snapshot(workspace, month_filter))
+    context.update(
+        {
+            "incoming_form": incoming_form,
+            "outgoing_form": outgoing_form,
+        }
+    )
     return render(request, "studio/finance.html", context)
 
 

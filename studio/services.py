@@ -12,7 +12,7 @@ from django.db.models import Q, QuerySet
 from django.urls import reverse
 
 from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
-from .models import Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -246,6 +246,9 @@ def month_options_for_workspace(workspace: Workspace) -> list[date]:
             months.add(payment_due_date.replace(day=1))
         if meeting_date:
             months.add(meeting_date.replace(day=1))
+    for occurred_on in FinanceEntry.objects.filter(workspace=workspace).exclude(occurred_on__isnull=True).values_list("occurred_on", flat=True):
+        if occurred_on:
+            months.add(occurred_on.replace(day=1))
     return sorted(months)
 
 
@@ -1097,51 +1100,80 @@ def legal_snapshot(workspace: Workspace) -> dict:
 
 
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
-    active_projects = list(Project.objects.filter(workspace=workspace, stage="Fechado").order_by("due_date"))
+    projects = list(Project.objects.filter(workspace=workspace).order_by("payment_due_date", "due_date"))
+    finance_entries = list(FinanceEntry.objects.filter(workspace=workspace).order_by("-occurred_on", "-updated_at"))
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
     month_projects = (
-        active_projects
+        projects
         if selected_month is None
         else [
-            item
-            for item in active_projects
-            if payment_reference_date(item).year == selected_month.year and payment_reference_date(item).month == selected_month.month
+            item for item in projects if payment_reference_date(item).year == selected_month.year and payment_reference_date(item).month == selected_month.month
         ]
     )
-    forecast = sum_money(item.total_value for item in month_projects)
-    received = sum_money(item.received_value for item in month_projects)
-    receivable = max(forecast - received, ZERO)
-    entry = sum_money(item.entry_value for item in month_projects)
-    avg_collection_days = (
-        round(sum(max((payment_reference_date(item) - item.close_date).days, 1) for item in month_projects) / len(month_projects), 1)
-        if month_projects
-        else 0.0
+    month_entries = (
+        finance_entries
+        if selected_month is None
+        else [
+            item for item in finance_entries if item.occurred_on.year == selected_month.year and item.occurred_on.month == selected_month.month
+        ]
     )
+    incoming_total = sum_money(item.amount for item in month_entries if item.kind == FinanceEntry.KIND_INCOMING)
+    outgoing_total = sum_money(item.amount for item in month_entries if item.kind == FinanceEntry.KIND_OUTGOING)
+    receivable_projects = [
+        item
+        for item in month_projects
+        if max(Decimal(item.total_value) - Decimal(item.received_value), ZERO) > 0 and payment_reference_date(item) >= date.today()
+    ]
+    receivable_balance = sum_money(
+        max(Decimal(item.total_value) - Decimal(item.received_value), ZERO)
+        for item in receivable_projects
+    )
+    cash_balance = incoming_total - outgoing_total
 
     schedule = []
-    for item in month_projects:
+    for item in receivable_projects:
         outstanding = max(Decimal(item.total_value) - Decimal(item.received_value), ZERO)
-        if outstanding <= 0:
-            continue
         _, _, accent = company_palette(item.company)
-        schedule.append({"company": item.company, "kind": "Saldo" if item.received_value > 0 else "Entrada", "due": short_date(payment_reference_date(item)), "amount": currency(outstanding), "status": "Pendente", "accent": accent})
+        schedule.append(
+            {
+                "company": item.company,
+                "kind": "Saldo" if item.received_value > 0 else "Entrada",
+                "due": short_date(payment_reference_date(item)),
+                "amount": currency(outstanding),
+                "status": "Previsto",
+                "accent": accent,
+            }
+        )
+
+    ledger = [
+        {
+            "label": "Entrada" if item.kind == FinanceEntry.KIND_INCOMING else "Saida",
+            "description": item.description or ("Pagamento confirmado" if item.kind == FinanceEntry.KIND_INCOMING else "Despesa / investimento"),
+            "date_text": short_date(item.occurred_on),
+            "amount_text": currency(item.amount),
+            "accent": "#20b7a7" if item.kind == FinanceEntry.KIND_INCOMING else "#c04d57",
+            "kind": item.kind,
+        }
+        for item in month_entries
+    ]
 
     return {
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
         "stats": [
-            {"title": "Previsao", "value": currency(forecast), "icon_label": "$"},
-            {"title": "A receber", "value": currency(receivable), "icon_label": "A"},
-            {"title": "Recebido", "value": currency(received), "icon_label": "+"},
-            {"title": "Media de recebimento (45 dias)", "value": format_days(avg_collection_days), "icon_label": "M"},
+            {"title": "Entradas", "value": currency(incoming_total), "icon_label": "+"},
+            {"title": "Saidas", "value": currency(outgoing_total), "icon_label": "-"},
+            {"title": "Saldo de recebiveis", "value": currency(receivable_balance), "icon_label": "R"},
+            {"title": "Saldo", "value": currency(cash_balance), "icon_label": "$"},
         ],
         "schedule": schedule,
+        "ledger": ledger,
         "breakdown": [
-            {"label": "Previsao do mes", "amount_text": currency(forecast), "progress": 100 if forecast else 0, "accent": "#20b7a7"},
-            {"label": "Entrada prevista", "amount_text": currency(entry), "progress": round((entry / forecast) * 100) if forecast else 0, "accent": "#4d8cff"},
-            {"label": "A receber", "amount_text": currency(receivable), "progress": round((receivable / forecast) * 100) if forecast else 0, "accent": "#7f6fff"},
-            {"label": "Recebido", "amount_text": currency(received), "progress": round((received / forecast) * 100) if forecast else 0, "accent": "#f59a3d"},
+            {"label": "Entradas confirmadas", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
+            {"label": "Saidas registradas", "amount_text": currency(outgoing_total), "progress": round((outgoing_total / incoming_total) * 100) if incoming_total else 0, "accent": "#c04d57"},
+            {"label": "Saldo de recebiveis", "amount_text": currency(receivable_balance), "progress": round((receivable_balance / (incoming_total + receivable_balance)) * 100) if (incoming_total + receivable_balance) else 0, "accent": "#7f6fff"},
+            {"label": "Saldo do periodo", "amount_text": currency(cash_balance), "progress": round((cash_balance / incoming_total) * 100) if incoming_total and cash_balance > 0 else 0, "accent": "#4d8cff"},
         ],
     }
 
