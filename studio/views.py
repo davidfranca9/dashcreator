@@ -21,12 +21,6 @@ from django.urls import reverse, reverse_lazy
 from django.utils._os import safe_join
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 from .emails import send_signup_confirmation_email
 
@@ -262,6 +256,13 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
 
 
 def _build_contract_pdf(workspace, user, project: Project) -> bytes:
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+
     payload = _project_contract_payload(workspace, user, project)
     buffer = BytesIO()
     document = SimpleDocTemplate(
