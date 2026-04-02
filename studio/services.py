@@ -1101,7 +1101,9 @@ def legal_snapshot(workspace: Workspace) -> dict:
 
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     projects = list(Project.objects.filter(workspace=workspace).order_by("payment_due_date", "due_date"))
-    finance_entries = list(FinanceEntry.objects.filter(workspace=workspace).order_by("-occurred_on", "-updated_at"))
+    finance_entries = list(
+        FinanceEntry.objects.filter(workspace=workspace, kind=FinanceEntry.KIND_OUTGOING).order_by("-occurred_on", "-updated_at")
+    )
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
     month_projects = (
@@ -1118,8 +1120,9 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             item for item in finance_entries if item.occurred_on.year == selected_month.year and item.occurred_on.month == selected_month.month
         ]
     )
-    incoming_total = sum_money(item.amount for item in month_entries if item.kind == FinanceEntry.KIND_INCOMING)
-    outgoing_total = sum_money(item.amount for item in month_entries if item.kind == FinanceEntry.KIND_OUTGOING)
+    confirmed_incoming_projects = [item for item in month_projects if Decimal(item.received_value) > 0]
+    incoming_total = sum_money(Decimal(item.received_value) for item in confirmed_incoming_projects)
+    outgoing_total = sum_money(item.amount for item in month_entries)
     receivable_projects = [
         item
         for item in month_projects
@@ -1148,15 +1151,31 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
 
     ledger = [
         {
-            "label": "Entrada" if item.kind == FinanceEntry.KIND_INCOMING else "Saida",
-            "description": item.description or ("Pagamento confirmado" if item.kind == FinanceEntry.KIND_INCOMING else "Despesa / investimento"),
+            "label": "Entrada",
+            "description": f"Recebido no trabalho de {item.company}",
+            "date_text": short_date(payment_reference_date(item)),
+            "amount_text": currency(item.received_value),
+            "accent": "#20b7a7",
+            "kind": "incoming",
+            "sort_date": payment_reference_date(item),
+        }
+        for item in confirmed_incoming_projects
+    ]
+    ledger.extend(
+        {
+            "label": "Saida",
+            "description": item.description or "Despesa / investimento",
             "date_text": short_date(item.occurred_on),
             "amount_text": currency(item.amount),
-            "accent": "#20b7a7" if item.kind == FinanceEntry.KIND_INCOMING else "#c04d57",
+            "accent": "#c04d57",
             "kind": item.kind,
+            "sort_date": item.occurred_on,
         }
         for item in month_entries
-    ]
+    )
+    ledger.sort(key=lambda item: item["sort_date"], reverse=True)
+    for item in ledger:
+        item.pop("sort_date", None)
 
     return {
         "month_choices": month_choice_payload(month_options),
@@ -1170,7 +1189,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         "schedule": schedule,
         "ledger": ledger,
         "breakdown": [
-            {"label": "Entradas confirmadas", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
+            {"label": "Entradas dos trabalhos", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
             {"label": "Saidas registradas", "amount_text": currency(outgoing_total), "progress": round((outgoing_total / incoming_total) * 100) if incoming_total else 0, "accent": "#c04d57"},
             {"label": "Saldo de recebiveis", "amount_text": currency(receivable_balance), "progress": round((receivable_balance / (incoming_total + receivable_balance)) * 100) if (incoming_total + receivable_balance) else 0, "accent": "#7f6fff"},
             {"label": "Saldo do periodo", "amount_text": currency(cash_balance), "progress": round((cash_balance / incoming_total) * 100) if incoming_total and cash_balance > 0 else 0, "accent": "#4d8cff"},

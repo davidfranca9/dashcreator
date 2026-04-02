@@ -1044,13 +1044,6 @@ class DashboardSmokeTest(TestCase):
     def test_finance_page_filters_month_detail_by_due_date(self):
         FinanceEntry.objects.create(
             workspace=self.workspace,
-            kind=FinanceEntry.KIND_INCOMING,
-            amount=1500,
-            occurred_on=self.project.due_date,
-            description="Pagamento confirmado da Shein",
-        )
-        FinanceEntry.objects.create(
-            workspace=self.workspace,
             kind=FinanceEntry.KIND_OUTGOING,
             amount=320,
             occurred_on=self.project.due_date,
@@ -1080,10 +1073,10 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected_month"]["value"], self.project.due_date.strftime("%Y-%m"))
-        self.assertEqual(response.context["stats"][0]["value"], "R$1.500")
+        self.assertEqual(response.context["stats"][0]["value"], "R$800")
         self.assertEqual(response.context["stats"][1]["value"], "R$320")
         self.assertEqual(response.context["stats"][2]["value"], "R$1.600")
-        self.assertEqual(response.context["stats"][3]["value"], "R$1.180")
+        self.assertEqual(response.context["stats"][3]["value"], "R$480")
         self.assertEqual(len(response.context["ledger"]), 2)
         self.assertEqual(len(response.context["schedule"]), 1)
 
@@ -1117,23 +1110,13 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(len(response.context["schedule"]), 1)
         self.assertEqual(response.context["schedule"][0]["company"], "Reserva")
 
-    def test_finance_page_creates_incoming_and_outgoing_entries(self):
+    def test_finance_page_uses_job_receipts_and_creates_outgoing_entries(self):
         self.client.force_login(self.user)
 
-        incoming_response = self.client.post(
-            reverse("finance"),
-            {
-                "finance_action": "incoming",
-                "month": self.project.due_date.strftime("%Y-%m"),
-                "incoming-amount": "1200",
-                "incoming-occurred_on": self.project.due_date.isoformat(),
-                "incoming-description": "PIX da marca",
-            },
-            follow=True,
-        )
-        self.assertRedirects(incoming_response, f"{reverse('finance')}?month={self.project.due_date.strftime('%Y-%m')}")
-        self.assertEqual(FinanceEntry.objects.filter(workspace=self.workspace, kind=FinanceEntry.KIND_INCOMING).count(), 1)
-        self.assertContains(incoming_response, "Entrada registrada.")
+        page_response = self.client.get(reverse("finance"), {"month": self.project.due_date.strftime("%Y-%m")})
+        self.assertContains(page_response, "Entradas")
+        self.assertContains(page_response, "R$800")
+        self.assertNotContains(page_response, "Registrar entrada")
 
         outgoing_response = self.client.post(
             reverse("finance"),

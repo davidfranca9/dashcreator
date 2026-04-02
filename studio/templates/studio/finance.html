@@ -6,6 +6,7 @@
         <div>
             <h3>Detalhamento do mes</h3>
             <p class="muted">Mes selecionado: {{ selected_month.label }}</p>
+            <p class="muted">As entradas confirmadas sao puxadas automaticamente do campo recebido dos trabalhos.</p>
         </div>
     </div>
     <section class="stats-grid finance-stats-grid">
@@ -22,30 +23,6 @@
 </article>
 
 <section class="split-grid">
-    <article class="card">
-        <div class="card-header">
-            <div>
-                <h3>Registrar entrada</h3>
-                <p class="muted">Use para pagamentos confirmados que ja entraram no caixa.</p>
-            </div>
-        </div>
-        <form method="post" class="form-grid">
-            {% csrf_token %}
-            <input type="hidden" name="finance_action" value="incoming">
-            <input type="hidden" name="month" value="{{ selected_month.value }}">
-            {% for field in incoming_form %}
-                <div class="form-field{% if field.name == 'description' %} form-field--full{% endif %}">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {{ field.errors }}
-                </div>
-            {% endfor %}
-            <div class="form-actions form-field--full">
-                <button type="submit" class="primary-button">Salvar entrada</button>
-            </div>
-        </form>
-    </article>
-
     <article class="card">
         <div class="card-header">
             <div>
@@ -133,4 +110,29 @@
         </div>
     </article>
 </section>
+<script>
+    (() => {
+        const moneyFields = document.querySelectorAll('input[name$="-amount"]');
+        if (!moneyFields.length) {
+            return;
+        }
+
+        const parseNumber = (value) => {
+            const rawValue = String(value || "").replace(",", ".").trim();
+            const parsed = Number.parseFloat(rawValue);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+        moneyFields.forEach((field) => {
+            field.addEventListener("blur", () => {
+                if (!field.value.trim()) {
+                    return;
+                }
+                field.value = formatMoney(parseNumber(field.value));
+            });
+        });
+    })();
+</script>
 {% endblock %}

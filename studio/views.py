@@ -536,24 +536,11 @@ def finance(request: HttpRequest) -> HttpResponse:
         if selected_month is None or (selected_month.year == today.year and selected_month.month == today.month)
         else selected_month
     )
-    incoming_form = FinanceEntryForm(prefix="incoming", initial={"occurred_on": initial_date})
     outgoing_form = FinanceEntryForm(prefix="outgoing", initial={"occurred_on": initial_date})
 
     if request.method == "POST":
         action = request.POST.get("finance_action")
-        if action == "incoming":
-            incoming_form = FinanceEntryForm(request.POST, prefix="incoming")
-            if incoming_form.is_valid():
-                entry = incoming_form.save(commit=False)
-                entry.workspace = workspace
-                entry.kind = "incoming"
-                entry.save()
-                messages.success(request, "Entrada registrada.")
-                redirect_url = reverse("finance")
-                if month_filter:
-                    redirect_url = f"{redirect_url}?month={month_filter}"
-                return redirect(redirect_url)
-        elif action == "outgoing":
+        if action == "outgoing":
             outgoing_form = FinanceEntryForm(request.POST, prefix="outgoing")
             if outgoing_form.is_valid():
                 entry = outgoing_form.save(commit=False)
@@ -577,7 +564,6 @@ def finance(request: HttpRequest) -> HttpResponse:
     context.update(finance_snapshot(workspace, month_filter))
     context.update(
         {
-            "incoming_form": incoming_form,
             "outgoing_form": outgoing_form,
         }
     )
