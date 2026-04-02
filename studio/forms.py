@@ -467,7 +467,7 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "business_number": "Numero",
             "business_complement": "Complemento",
             "business_cnpj": "CNPJ",
-            "business_pis": "Numero do PIS",
+            "business_pis": "Chave PIX",
             "instagram_url": "Instagram",
             "tiktok_url": "TikTok",
             "portfolio_url": "Portfolio",
@@ -476,6 +476,7 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "business_zip_code": forms.TextInput(attrs={"inputmode": "numeric", "placeholder": "00000-000"}),
             "business_number": forms.TextInput(attrs={"placeholder": "Numero"}),
             "business_complement": forms.TextInput(attrs={"placeholder": "Complemento"}),
+            "business_pis": forms.TextInput(attrs={"placeholder": "Chave PIX"}),
         }
 
 

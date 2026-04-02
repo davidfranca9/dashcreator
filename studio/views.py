@@ -224,7 +224,7 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
     creator_email = _contract_placeholder(user.email)
     creator_address = _contract_placeholder(workspace_business_address_summary(workspace))
     creator_cnpj = _contract_placeholder(workspace.business_cnpj)
-    creator_pis = _contract_placeholder(workspace.business_pis)
+    creator_pix_key = _contract_placeholder(workspace.business_pis)
     company_name = _contract_placeholder(project.company)
     distribution_label = "TRAFEGO PAGO (ADS)" if project.content_distribution == "Ads" else "USO ORGANICO"
     mixed_distribution_label = "TRAFEGO PAGO (ADS) e USO ORGANICO" if project.content_distribution == "Ads" else "USO ORGANICO"
@@ -242,7 +242,7 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
         "creator_email": creator_email,
         "creator_address": creator_address,
         "creator_cnpj": creator_cnpj,
-        "creator_pis": creator_pis,
+        "creator_pix_key": creator_pix_key,
         "company_name": company_name,
         "company_cnpj": "________________",
         "company_address": "________________",
@@ -316,7 +316,7 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
         Paragraph(
             (
                 f"<b>Contratada:</b> {payload['creator_name']}, inscrita no CNPJ {payload['creator_cnpj']}, "
-                f"PIS {payload['creator_pis']}, endereco {payload['creator_address']}, e-mail {payload['creator_email']}.<br/>"
+                f"Chave PIX {payload['creator_pix_key']}, endereco {payload['creator_address']}, e-mail {payload['creator_email']}.<br/>"
                 f"<b>Contratante:</b> {payload['company_name']}, CNPJ {payload['company_cnpj']}, endereco {payload['company_address']}, "
                 f"e-mail {payload['company_email']}."
             ),
