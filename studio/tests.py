@@ -618,7 +618,15 @@ class DashboardSmokeTest(TestCase):
         )
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse("legal_contract_pdf", args=[project.pk]))
+        response = self.client.post(
+            reverse("legal_contract_pdf", args=[project.pk]),
+            {
+                "company_legal_name": "Reserva LTDA",
+                "company_cnpj": "12.345.678/0001-99",
+                "company_address": "Rua das Flores, 123",
+                "company_phone": "(71) 99999-0000",
+            },
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/pdf")
@@ -627,6 +635,8 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
         project.refresh_from_db()
         self.assertEqual(project.contract_status, Project.CONTRACT_STATUS_GENERATED)
+        self.assertEqual(project.company_legal_name, "Reserva LTDA")
+        self.assertEqual(project.company_cnpj, "12.345.678/0001-99")
 
     def test_legal_page_can_dismiss_contract_item(self):
         project = Project.objects.create(
@@ -1371,6 +1381,7 @@ class DashboardSmokeTest(TestCase):
             reverse("profile"),
             {
                 "profile_action": "business",
+                "business_full_name": "Layfe Amorim",
                 "business_zip_code": "41810-205",
                 "business_street": "Rua das Palmeiras",
                 "business_number": "100",
@@ -1386,6 +1397,7 @@ class DashboardSmokeTest(TestCase):
 
         self.assertRedirects(response, reverse("profile"))
         self.workspace.refresh_from_db()
+        self.assertEqual(self.workspace.business_full_name, "Layfe Amorim")
         self.assertEqual(self.workspace.business_zip_code, "41810-205")
         self.assertEqual(self.workspace.business_street, "Rua das Palmeiras")
         self.assertEqual(self.workspace.business_number, "100")
@@ -1537,6 +1549,7 @@ class AuthenticationFlowsTest(TestCase):
         response = self.client.post(
             reverse("signup"),
             {
+                "full_name": "Layfe Amorim",
                 "username": "novocriador",
                 "email": "novocriador@example.com",
                 "workspace_name": "Studio Novo",
@@ -1550,6 +1563,8 @@ class AuthenticationFlowsTest(TestCase):
         signup_code.refresh_from_db()
         self.assertIsNotNone(signup_code.assigned_user)
         self.assertEqual(signup_code.assigned_user.username, "novocriador")
+        self.assertEqual(signup_code.assigned_user.get_full_name(), "Layfe Amorim")
+        self.assertEqual(signup_code.assigned_user.memberships.first().workspace.business_full_name, "Layfe Amorim")
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Seu cadastro foi feito no The Creators Club", mail.outbox[0].subject)
         self.assertIn("/login/", mail.outbox[0].body)

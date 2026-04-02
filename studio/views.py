@@ -27,6 +27,7 @@ from .emails import send_signup_confirmation_email
 from .forms import (
     AppPasswordResetForm,
     AppSetPasswordForm,
+    ContractBrandForm,
     EmailOrUsernameAuthenticationForm,
     FinanceEntryForm,
     ManagedOptionForm,
@@ -216,13 +217,13 @@ def _contract_placeholder(value: str | None, fallback: str = "________________")
 def _project_contract_payload(workspace, user, project: Project) -> dict:
     settings_values = settings_map(workspace)
     creator_name = _contract_placeholder(
-        settings_values.get("legal_contract_signer_name") or user.get_full_name() or user.username
+        workspace.business_full_name or settings_values.get("legal_contract_signer_name") or user.get_full_name() or user.username
     )
     creator_email = _contract_placeholder(user.email)
     creator_address = _contract_placeholder(workspace_business_address_summary(workspace))
     creator_cnpj = _contract_placeholder(workspace.business_cnpj)
     creator_pix_key = _contract_placeholder(workspace.business_pis)
-    company_name = _contract_placeholder(project.company)
+    company_name = _contract_placeholder(project.company_legal_name or project.company)
     distribution_label = "tráfego pago (ads)" if project.content_distribution == "Ads" else "uso orgânico"
     mixed_distribution_label = (
         "uso orgânico e tráfego pago (ads)"
@@ -251,8 +252,10 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
         "creator_cnpj": creator_cnpj,
         "creator_pix_key": creator_pix_key,
         "company_name": company_name,
-        "company_cnpj": "________________",
-        "company_address": "________________",
+        "company_display_name": _contract_placeholder(project.company),
+        "company_cnpj": _contract_placeholder(project.company_cnpj),
+        "company_address": _contract_placeholder(project.company_address),
+        "company_phone": _contract_placeholder(project.company_phone),
         "company_email": "________________",
         "service_name": service_name,
         "distribution_label": distribution_label,
@@ -337,7 +340,7 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
                 f"com endereço em {payload['creator_address']}, e-mail {payload['creator_email']} e chave PIX "
                 f"{payload['creator_pix_key']}.<br/>"
                 f"<b>CONTRATANTE:</b> {payload['company_name']}, inscrita no CNPJ sob nº {payload['company_cnpj']}, "
-                f"com endereço em {payload['company_address']} e e-mail {payload['company_email']}."
+                f"com endereço em {payload['company_address']}, telefone {payload['company_phone']} e e-mail {payload['company_email']}."
             ),
             body_style,
         ),
@@ -352,7 +355,7 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
         Paragraph(
             (
                 f"1.1. O presente contrato tem como objeto a prestação de serviços de criação de conteúdo UGC "
-                f"para a marca <b>{payload['company_name']}</b>, referente ao trabalho <b>{payload['service_name']}</b>.<br/>"
+                f"para a marca <b>{payload['company_display_name']}</b>, referente ao trabalho <b>{payload['service_name']}</b>.<br/>"
                 f"1.2. O conteúdo poderá ser utilizado em <b>{payload['mixed_distribution_label']}</b>, "
                 "respeitadas as condições de prazo, mídia e licenciamento estabelecidas neste instrumento."
             ),
@@ -669,6 +672,22 @@ def legal(request: HttpRequest) -> HttpResponse:
 def legal_contract_pdf(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
+    if request.method == "POST":
+        form = ContractBrandForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, "Preencha os dados da marca para gerar o contrato.")
+            return redirect("legal")
+        for field_name, value in form.cleaned_data.items():
+            setattr(project, field_name, value)
+        project.save(
+            update_fields=[
+                "company_legal_name",
+                "company_cnpj",
+                "company_address",
+                "company_phone",
+                "updated_at",
+            ]
+        )
     if project.contract_status != Project.CONTRACT_STATUS_GENERATED:
         project.contract_status = Project.CONTRACT_STATUS_GENERATED
         project.save(update_fields=["contract_status", "updated_at"])

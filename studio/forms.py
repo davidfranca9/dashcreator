@@ -114,13 +114,14 @@ class AppSetPasswordForm(SetPasswordForm):
 
 
 class SignUpForm(UserCreationForm):
+    full_name = forms.CharField(label="Nome completo", max_length=160)
     email = forms.EmailField(label="Email")
     workspace_name = forms.CharField(label="Nome do studio", max_length=160)
     access_code = forms.CharField(
         label="Insira seu codigo",
         help_text="Use um codigo de acesso valido para definir se a conta sera pagante ou nao pagante.",
     )
-    field_order = ["username", "email", "workspace_name", "access_code", "password1", "password2"]
+    field_order = ["full_name", "username", "email", "workspace_name", "access_code", "password1", "password2"]
 
     class Meta:
         model = User
@@ -137,6 +138,9 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError("Ja existe uma conta com este email.")
         return email
 
+    def clean_full_name(self):
+        return " ".join(self.cleaned_data["full_name"].split())
+
     def clean_access_code(self):
         code = normalize_access_code(self.cleaned_data["access_code"])
         access_code = AccessCode.objects.filter(code=code, is_active=True).select_related("assigned_user").first()
@@ -151,9 +155,16 @@ class SignUpForm(UserCreationForm):
     def save(self, commit: bool = True) -> User:
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
+        full_name = self.cleaned_data["full_name"]
+        name_parts = full_name.split(" ", 1)
+        user.first_name = name_parts[0]
+        user.last_name = name_parts[1] if len(name_parts) > 1 else ""
         if commit:
             user.save()
-            workspace = Workspace.objects.create(name=self.cleaned_data["workspace_name"])
+            workspace = Workspace.objects.create(
+                name=self.cleaned_data["workspace_name"],
+                business_full_name=full_name,
+            )
             Membership.objects.create(user=user, workspace=workspace, role=Membership.ROLE_OWNER)
             ensure_default_settings(workspace)
             access_code = self.access_code_instance
@@ -451,6 +462,7 @@ class WorkspaceBusinessForm(forms.ModelForm):
     class Meta:
         model = Workspace
         fields = [
+            "business_full_name",
             "business_zip_code",
             "business_street",
             "business_number",
@@ -462,6 +474,7 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "portfolio_url",
         ]
         labels = {
+            "business_full_name": "Nome completo",
             "business_zip_code": "CEP",
             "business_street": "Rua",
             "business_number": "Numero",
@@ -473,11 +486,26 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "portfolio_url": "Portfolio",
         }
         widgets = {
+            "business_full_name": forms.TextInput(attrs={"placeholder": "Nome completo"}),
             "business_zip_code": forms.TextInput(attrs={"inputmode": "numeric", "placeholder": "00000-000"}),
             "business_number": forms.TextInput(attrs={"placeholder": "Numero"}),
             "business_complement": forms.TextInput(attrs={"placeholder": "Complemento"}),
             "business_pis": forms.TextInput(attrs={"placeholder": "Chave PIX"}),
         }
+
+
+class ContractBrandForm(forms.Form):
+    company_legal_name = forms.CharField(label="Razão social", max_length=180)
+    company_cnpj = forms.CharField(label="CNPJ", max_length=18)
+    company_address = forms.CharField(label="Endereço", max_length=255)
+    company_phone = forms.CharField(label="Telefone", max_length=40)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["company_legal_name"].widget.attrs.update({"placeholder": "Razão social da marca"})
+        self.fields["company_cnpj"].widget.attrs.update({"placeholder": "00.000.000/0000-00"})
+        self.fields["company_address"].widget.attrs.update({"placeholder": "Endereço completo da marca"})
+        self.fields["company_phone"].widget.attrs.update({"placeholder": "(00) 00000-0000"})
 
 
 class WorkspaceSettingsForm(forms.Form):

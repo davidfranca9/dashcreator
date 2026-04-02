@@ -42,7 +42,7 @@
                             </div>
                         </div>
                         <div class="job-meta-list">
-                            <span class="chip">{{ item.contract_status_text }}</span>
+                            <span class="chip" data-contract-status-chip="{{ item.id }}">{{ item.contract_status_text }}</span>
                             <span class="chip">{{ item.distribution }}</span>
                             <span class="chip">Fechamento {{ item.close_text }}</span>
                             <span class="chip">Entrega {{ item.delivery_text }}</span>
@@ -53,11 +53,45 @@
                         {% endif %}
                         <div class="card-actions">
                             <div class="card-actions-group">
-                                <a class="primary-button small" href="{% url 'legal_contract_pdf' item.id %}" target="_blank" rel="noopener noreferrer">Gerar contrato</a>
+                                <button type="button" class="primary-button small" data-contract-modal-open="{{ item.id }}">Gerar contrato</button>
                                 <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar trabalho</a>
                             </div>
                         </div>
                     </article>
+                    <div class="jobs-kpi-backdrop" data-contract-modal="{{ item.id }}" hidden>
+                        <div class="jobs-kpi-modal" role="dialog" aria-modal="true" aria-labelledby="contract-modal-{{ item.id }}-title">
+                            <button type="button" class="jobs-kpi-modal-close" data-contract-modal-close aria-label="Fechar confirmação">&times;</button>
+                            <div class="jobs-kpi-modal-header">
+                                <div>
+                                    <span class="meeting-popup-badge">Contrato</span>
+                                    <h3 id="contract-modal-{{ item.id }}-title">Confirmar dados da marca</h3>
+                                    <p class="muted">Confira os dados da contratante antes de gerar o contrato de {{ item.company }}.</p>
+                                </div>
+                            </div>
+                            <form method="post" action="{% url 'legal_contract_pdf' item.id %}" class="auth-form-stack" target="_blank" data-contract-submit="{{ item.id }}">
+                                {% csrf_token %}
+                                <div class="form-field">
+                                    <label for="company_legal_name_{{ item.id }}">Razão social</label>
+                                    <input id="company_legal_name_{{ item.id }}" type="text" name="company_legal_name" value="{{ item.company_legal_name }}" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="company_cnpj_{{ item.id }}">CNPJ</label>
+                                    <input id="company_cnpj_{{ item.id }}" type="text" name="company_cnpj" value="{{ item.company_cnpj }}" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="company_address_{{ item.id }}">Endereço</label>
+                                    <input id="company_address_{{ item.id }}" type="text" name="company_address" value="{{ item.company_address }}" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="company_phone_{{ item.id }}">Telefone</label>
+                                    <input id="company_phone_{{ item.id }}" type="text" name="company_phone" value="{{ item.company_phone }}" required>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="primary-button">Confirmar e gerar contrato</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 {% endfor %}
             </div>
         {% else %}
@@ -107,4 +141,54 @@
         {% endif %}
     </article>
 </section>
+
+<script>
+(() => {
+    const closeAllContractModals = () => {
+        document.querySelectorAll("[data-contract-modal]").forEach((modal) => {
+            modal.hidden = true;
+        });
+        document.body.classList.remove("has-popup-open");
+    };
+
+    document.querySelectorAll("[data-contract-modal-open]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const modal = document.querySelector(`[data-contract-modal="${button.dataset.contractModalOpen}"]`);
+            if (!modal) return;
+            closeAllContractModals();
+            modal.hidden = false;
+            document.body.classList.add("has-popup-open");
+        });
+    });
+
+    document.querySelectorAll("[data-contract-modal-close]").forEach((button) => {
+        button.addEventListener("click", closeAllContractModals);
+    });
+
+    document.querySelectorAll("[data-contract-modal]").forEach((modal) => {
+        modal.addEventListener("click", (event) => {
+            if (event.target === modal) {
+                closeAllContractModals();
+            }
+        });
+    });
+
+    document.querySelectorAll("[data-contract-submit]").forEach((form) => {
+        form.addEventListener("submit", () => {
+            const projectId = form.dataset.contractSubmit;
+            const statusChip = document.querySelector(`[data-contract-status-chip="${projectId}"]`);
+            if (statusChip) {
+                statusChip.textContent = "Contrato gerado";
+            }
+            closeAllContractModals();
+        });
+    });
+
+    window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeAllContractModals();
+        }
+    });
+})();
+</script>
 {% endblock %}

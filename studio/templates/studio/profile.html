@@ -41,6 +41,11 @@
         <form method="post" class="form-grid profile-business-form" data-business-form data-zip-lookup-url="{% url 'business_zip_lookup' %}">
             {% csrf_token %}
             <input type="hidden" name="profile_action" value="business">
+            <div class="form-field form-field--full">
+                <label for="{{ business_form.business_full_name.id_for_label }}">{{ business_form.business_full_name.label }}</label>
+                {{ business_form.business_full_name }}
+                {{ business_form.business_full_name.errors }}
+            </div>
             <div class="form-field profile-business-field--zip">
                 <label for="{{ business_form.business_zip_code.id_for_label }}">{{ business_form.business_zip_code.label }}</label>
                 <div class="profile-zip-input">

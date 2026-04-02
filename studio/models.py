@@ -33,6 +33,7 @@ class TimestampedModel(models.Model):
 class Workspace(TimestampedModel):
     name = models.CharField(max_length=160)
     slug = models.SlugField(max_length=180, unique=True, blank=True)
+    business_full_name = models.CharField(max_length=160, blank=True, default="")
     business_address = models.CharField(max_length=255, blank=True, default="")
     business_zip_code = models.CharField(max_length=9, blank=True, default="")
     business_street = models.CharField(max_length=180, blank=True, default="")
@@ -227,6 +228,10 @@ class Project(WorkspaceOwnedModel):
     ]
 
     company = models.CharField(max_length=160)
+    company_legal_name = models.CharField(max_length=180, blank=True, default="")
+    company_cnpj = models.CharField(max_length=18, blank=True, default="")
+    company_address = models.CharField(max_length=255, blank=True, default="")
+    company_phone = models.CharField(max_length=40, blank=True, default="")
     project_name = models.CharField(max_length=180, blank=True, default="")
     content_type = models.CharField(max_length=120, blank=True, default="")
     closing_source = models.CharField(max_length=120, blank=True, default="")
