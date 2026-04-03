@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 NAV_ITEMS = [
-    {"key": "dashboard", "label": "Dashboard", "subtitle": "Visao executiva do negocio UGC.", "url_name": "dashboard"},
-    {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociacoes em aberto.", "url_name": "prospection"},
+    {"key": "dashboard", "label": "Dashboard", "subtitle": "Visão executiva do negócio UGC.", "url_name": "dashboard"},
+    {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociações em aberto.", "url_name": "prospection"},
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs"},
-    {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsoes de caixa.", "url_name": "finance"},
-    {"key": "distribution", "label": "Distribuicao", "subtitle": "Destino do material entregue entre organico e ads.", "url_name": "distribution"},
-    {"key": "legal", "label": "Juridico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal"},
-    {"key": "reports", "label": "Relatorios", "subtitle": "Indicadores estrategicos do negocio.", "url_name": "reports"},
+    {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance"},
+    {"key": "distribution", "label": "Distribuição", "subtitle": "Destino do material entregue entre orgânico e ads.", "url_name": "distribution"},
+    {"key": "legal", "label": "Jurídico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal"},
+    {"key": "reports", "label": "Relatórios", "subtitle": "Indicadores estratégicos do negócio.", "url_name": "reports"},
     {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile"},
-    {"key": "settings", "label": "Configuracoes", "subtitle": "Preferencias visuais e operacionais.", "url_name": "settings"},
+    {"key": "settings", "label": "Configurações", "subtitle": "Preferências visuais e operacionais.", "url_name": "settings"},
 ]
 
 NAV_GROUPS = [
@@ -24,16 +24,16 @@ PROJECT_STAGE_CHOICES = [
 PROJECT_STATUS_CHOICES = [
     ("Briefing", "Briefing"),
     ("Aguardando produto", "Aguardando produto"),
-    ("Em gravacao", "Em gravacao"),
-    ("Em edicao", "Em edicao"),
-    ("Aguardando cliente", "Aguardando aprovacao"),
+    ("Em gravacao", "Em gravação"),
+    ("Em edicao", "Em edição"),
+    ("Aguardando cliente", "Aguardando aprovação"),
     ("Aprovado", "Aprovado"),
     ("Entregue", "Entregue"),
 ]
 
 PROSPECT_STAGE_CHOICES = [
     ("Prospeccao", "Prospecção"),
-    ("Negociacao", "Negociacao"),
+    ("Negociacao", "Negociação"),
 ]
 
 DEFAULT_NICHE_NAMES = [
@@ -70,13 +70,13 @@ COMPANY_COLORS = {
 
 SETTINGS_GROUPS = [
     {
-        "title": "Experiencia visual",
-        "description": "Ajustes visuais para deixar o painel mais confortavel no seu dia a dia.",
+        "title": "Experiência visual",
+        "description": "Ajustes visuais para deixar o painel mais confortável no seu dia a dia.",
         "rows": [
             {
                 "id": "ui_dark_theme",
                 "label": "Tema escuro",
-                "detail": "Ativa uma versao escura do painel para trabalhar com menos claridade.",
+                "detail": "Ativa uma versão escura do painel para trabalhar com menos claridade.",
                 "type": "check",
                 "value": False,
             },
@@ -89,21 +89,21 @@ SETTINGS_GROUPS = [
             },
             {
                 "id": "ui_subtle_navigation_animation",
-                "label": "Animacao discreta na navegacao",
-                "detail": "Mantem a interface fluida sem exagero.",
+                "label": "Animação discreta na navegação",
+                "detail": "Mantém a interface fluida sem exagero.",
                 "type": "check",
                 "value": True,
             },
         ],
     },
     {
-        "title": "Operacao",
-        "description": "Preferencias basicas de trabalho e caixa.",
+        "title": "Operação",
+        "description": "Preferências básicas de trabalho e caixa.",
         "rows": [
             {
                 "id": "ops_default_entry_rate",
-                "label": "Entrada padrao sugerida",
-                "detail": "Percentual padrao ao fechar um job.",
+                "label": "Entrada padrão sugerida",
+                "detail": "Percentual padrão ao fechar um job.",
                 "type": "combo",
                 "options": ["50%", "40%", "30%"],
                 "value": "50%",
@@ -111,7 +111,7 @@ SETTINGS_GROUPS = [
             {
                 "id": "ops_primary_currency",
                 "label": "Moeda principal",
-                "detail": "Usada em metricas e relatorios.",
+                "detail": "Usada em métricas e relatórios.",
                 "type": "combo",
                 "options": ["BRL (R$)", "USD ($)", "EUR (EUR)"],
                 "value": "BRL (R$)",
@@ -141,14 +141,14 @@ SETTINGS_GROUPS = [
 ]
 
 REVENUE_RANGE_CHOICES = [
-    ("current_month", "Este mes"),
-    ("last_quarter", "Ultimo trimestre"),
-    ("last_6_months", "Ultimos 6 meses"),
+    ("current_month", "Este mês"),
+    ("last_quarter", "Último trimestre"),
+    ("last_6_months", "Últimos 6 meses"),
 ]
 
 PROJECT_DISTRIBUTION_CHOICES = [
     ("", "Selecione"),
-    ("Organico", "Organico"),
+    ("Organico", "Orgânico"),
     ("Ads", "Ads"),
     ("Nao se aplica", "Não se aplica"),
 ]

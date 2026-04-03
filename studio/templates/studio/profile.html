@@ -171,7 +171,7 @@
 
             const payload = await response.json();
             if (!response.ok || !payload.ok) {
-                setFeedback(payload.error || "Nao foi possivel buscar esse CEP.", true);
+                setFeedback(payload.error || "Não foi possível buscar esse CEP.", true);
                 return;
             }
 
@@ -181,7 +181,7 @@
             }
             setFeedback("CEP encontrado.");
         } catch (error) {
-            setFeedback("Nao foi possivel buscar esse CEP agora.", true);
+            setFeedback("Não foi possível buscar esse CEP agora.", true);
         } finally {
             submitButton.disabled = false;
         }

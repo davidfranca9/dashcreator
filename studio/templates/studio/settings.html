@@ -4,7 +4,7 @@
 <section class="stack-section">
     {% include "studio/includes/workspace_profile_nav.html" %}
 
-    <p class="muted note-box">As configuracoes abaixo sao salvas automaticamente no banco do workspace.</p>
+    <p class="muted note-box">As configurações abaixo são salvas automaticamente no banco do workspace.</p>
     <form method="post" class="stack-list">
         {% csrf_token %}
         <input type="hidden" name="settings_action" value="preferences">
@@ -18,7 +18,7 @@
             </article>
         {% endfor %}
         <div class="form-actions">
-            <button type="submit" class="primary-button">Salvar configuracoes</button>
+            <button type="submit" class="primary-button">Salvar configurações</button>
         </div>
     </form>
 
@@ -35,7 +35,7 @@
                         <strong>{{ item.name }}</strong>
                     </article>
                 {% empty %}
-                    <p class="muted">Nenhum nicho padronizado disponivel.</p>
+                    <p class="muted">Nenhum nicho padronizado disponível.</p>
                 {% endfor %}
             </div>
         </article>
@@ -43,7 +43,7 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Categorias de servico</h3>
+                    <h3>Categorias de serviço</h3>
                     <p>Cadastre aqui o que depois aparece no menu suspenso dos trabalhos.</p>
                 </div>
             </div>
@@ -68,13 +68,13 @@
                         <div class="metric-row-copy">
                             <strong>{{ item.name }}</strong>
                             {% if item.usage_count %}
-                                <small class="muted">Ja utilizada em {{ item.usage_count }} trabalho{{ item.usage_count|pluralize }}</small>
+                                <small class="muted">Já utilizada em {{ item.usage_count }} trabalho{{ item.usage_count|pluralize }}</small>
                             {% else %}
                                 <small class="muted">Pode ser removida se foi cadastrada por engano.</small>
                             {% endif %}
                         </div>
                         {% if item.usage_count %}
-                            <button type="button" class="icon-button icon-button--disabled" title="Essa categoria ja foi usada e nao pode ser excluida" aria-label="Categoria bloqueada para exclusao" disabled>&times;</button>
+                            <button type="button" class="icon-button icon-button--disabled" title="Essa categoria já foi usada e não pode ser excluída" aria-label="Categoria bloqueada para exclusão" disabled>&times;</button>
                         {% else %}
                             <form method="post" class="icon-button-form">
                                 {% csrf_token %}

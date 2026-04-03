@@ -14,14 +14,6 @@ from .services import default_niche_queryset, ensure_default_niches, ensure_defa
 
 
 UserModel = get_user_model()
-DEFAULT_CLOSING_SOURCE_CHOICES = [
-    ("Inbound", "Inbound"),
-    ("Prospeccao", "Prospecção"),
-    ("Plataforma", "Plataforma"),
-    ("Agencia", "Agencia"),
-    ("Indicacao", "Indicacao"),
-    ("Nao se aplica", "NÃ£o se aplica"),
-]
 STATUS_PROGRESS_MAP = {
     "Briefing": 0,
     "Aguardando produto": 10,
@@ -33,28 +25,28 @@ STATUS_PROGRESS_MAP = {
 }
 DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Inbound", "Inbound"),
-    ("Prospeccao", "Prospec\u00e7\u00e3o"),
+    ("Prospeccao", "Prospecção"),
     ("Follow-up", "Follow-up"),
     ("Plataforma", "Plataforma"),
-    ("Agencia", "Ag\u00eancia"),
-    ("Indicacao", "Indica\u00e7\u00e3o"),
-    ("Nao se aplica", "N\u00e3o se aplica"),
+    ("Agencia", "Agência"),
+    ("Indicacao", "Indicação"),
+    ("Nao se aplica", "Não se aplica"),
 ]
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
-    username = UsernameField(label="Usuario ou email", widget=forms.TextInput(attrs={"autofocus": True}))
+    username = UsernameField(label="Usuário ou email", widget=forms.TextInput(attrs={"autofocus": True}))
 
     error_messages = {
         **AuthenticationForm.error_messages,
-        "invalid_login": "Informe um usuario ou email e uma senha validos.",
+        "invalid_login": "Informe um usuário ou email e uma senha válidos.",
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["username"].widget.attrs.update(
             {
-                "placeholder": "Usuario",
+                "placeholder": "Usuário",
                 "autocomplete": "username",
                 "class": "login-input",
             }
@@ -116,10 +108,10 @@ class AppSetPasswordForm(SetPasswordForm):
 class SignUpForm(UserCreationForm):
     full_name = forms.CharField(label="Nome completo", max_length=160)
     email = forms.EmailField(label="Email")
-    workspace_name = forms.CharField(label="Nome do studio", max_length=160)
+    workspace_name = forms.CharField(label="Nome do estúdio", max_length=160)
     access_code = forms.CharField(
-        label="Insira seu codigo",
-        help_text="Use um codigo de acesso valido para definir se a conta sera pagante ou nao pagante.",
+        label="Insira seu código",
+        help_text="Use um código de acesso válido para definir se a conta será pagante ou não pagante.",
     )
     field_order = ["full_name", "username", "email", "workspace_name", "access_code", "password1", "password2"]
 
@@ -127,7 +119,7 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ("username", "email", "workspace_name", "password1", "password2")
         labels = {
-            "username": "Usuario",
+            "username": "Usuário",
             "password1": "Senha",
             "password2": "Confirme a senha",
         }
@@ -135,7 +127,7 @@ class SignUpForm(UserCreationForm):
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
         if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Ja existe uma conta com este email.")
+            raise forms.ValidationError("Já existe uma conta com este email.")
         return email
 
     def clean_full_name(self):
@@ -145,9 +137,9 @@ class SignUpForm(UserCreationForm):
         code = normalize_access_code(self.cleaned_data["access_code"])
         access_code = AccessCode.objects.filter(code=code, is_active=True).select_related("assigned_user").first()
         if access_code is None:
-            raise forms.ValidationError("Codigo de acesso invalido.")
+            raise forms.ValidationError("Código de acesso inválido.")
         if access_code.assigned_user_id:
-            raise forms.ValidationError("Este codigo ja foi utilizado.")
+            raise forms.ValidationError("Este código já foi utilizado.")
 
         self.access_code_instance = access_code
         return code
@@ -219,7 +211,7 @@ class ProspectForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data.get("meeting_scheduled") and not cleaned_data.get("meeting_date"):
-            self.add_error("meeting_date", "Informe a data da reuniao agendada.")
+            self.add_error("meeting_date", "Informe a data da reunião agendada.")
 
         if not cleaned_data.get("meeting_scheduled"):
             cleaned_data["meeting_date"] = None
@@ -259,9 +251,9 @@ class ProspectForm(forms.ModelForm):
             "email": "Email",
             "instagram": "Instagram",
             "whatsapp": "WhatsApp",
-            "meeting_scheduled": "Reuniao agendada",
-            "meeting_date": "Data da reuniao",
-            "note": "Observacoes",
+            "meeting_scheduled": "Reunião agendada",
+            "meeting_date": "Data da reunião",
+            "note": "Observações",
         }
         widgets = {"note": forms.Textarea(attrs={"rows": 5})}
 
@@ -321,18 +313,18 @@ class ProjectForm(forms.ModelForm):
 
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
-            "Voce pode ajustar manualmente se quiser."
+            "Você pode ajustar manualmente se quiser."
         )
         self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
         self.fields["payment_due_date"].help_text = "Use a data prevista para o recebimento desse trabalho."
-        self.fields["meeting_date"].help_text = "Defina a data da reuniao para gerar o atalho do Google Agenda."
-        self.fields["note"].help_text = "Campo livre para anotacoes extras desse job."
+        self.fields["meeting_date"].help_text = "Defina a data da reunião para gerar o atalho do Google Agenda."
+        self.fields["note"].help_text = "Campo livre para anotações extras desse job."
         self.fields["content_distribution"] = forms.ChoiceField(
-            label="Destino do conteudo",
+            label="Destino do conteúdo",
             choices=PROJECT_DISTRIBUTION_CHOICES,
             required=False,
         )
-        self.fields["content_distribution"].help_text = "Marque se o material sera usado de forma organica, em Ads ou se não se aplica."
+        self.fields["content_distribution"].help_text = "Marque se o material será usado de forma orgânica, em Ads ou se não se aplica."
         self.fields["image_license_term_days"] = forms.TypedChoiceField(
             label="Direito de uso de imagem",
             choices=[("", "Selecione")] + list(IMAGE_LICENSE_TERM_CHOICES),
@@ -355,7 +347,7 @@ class ProjectForm(forms.ModelForm):
             required=False,
         )
         self.fields["closing_source"].help_text = "Selecione por onde esse trabalho foi fechado."
-        self.fields["deliverables_count"].help_text = "Use a quantidade total de videos incluidos neste trabalho."
+        self.fields["deliverables_count"].help_text = "Use a quantidade total de vídeos incluídos neste trabalho."
         self.fields["total_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["received_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
@@ -366,7 +358,7 @@ class ProjectForm(forms.ModelForm):
         service_category = cleaned_data.get("service_category")
 
         if service_category is None:
-            self.add_error("service_category", "Selecione uma categoria de servico nas configuracoes do workspace.")
+            self.add_error("service_category", "Selecione uma categoria de serviço nas configurações do workspace.")
 
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0
@@ -375,15 +367,15 @@ class ProjectForm(forms.ModelForm):
         image_license_term_days = cleaned_data.get("image_license_term_days")
 
         if entry_value > total_value:
-            self.add_error("entry_value", "A entrada nao pode ser maior que o valor total.")
+            self.add_error("entry_value", "A entrada não pode ser maior que o valor total.")
         if received_value > total_value:
-            self.add_error("received_value", "O valor recebido nao pode ser maior que o total.")
+            self.add_error("received_value", "O valor recebido não pode ser maior que o total.")
         if content_distribution == "Ads" and not image_license_term_days:
             self.add_error("image_license_term_days", "Selecione o prazo do direito de uso de imagem para Ads.")
         if content_distribution != "Ads":
             cleaned_data["image_license_term_days"] = None
         if cleaned_data.get("meeting_scheduled") and not cleaned_data.get("meeting_date"):
-            self.add_error("meeting_date", "Informe a data da reuniao agendada.")
+            self.add_error("meeting_date", "Informe a data da reunião agendada.")
         if not cleaned_data.get("meeting_scheduled"):
             cleaned_data["meeting_date"] = None
         return cleaned_data
@@ -424,22 +416,22 @@ class ProjectForm(forms.ModelForm):
         labels = {
             "company": "Empresa",
             "closing_source": "Via de fechamento",
-            "content_distribution": "Destino do conteudo",
+            "content_distribution": "Destino do conteúdo",
             "image_license_term_days": "Direito de uso de imagem",
             "niche": "Nicho",
-            "service_category": "Categoria de servico",
+            "service_category": "Categoria de serviço",
             "stage": "Etapa",
             "status": "Status",
             "total_value": "Valor total",
             "entry_value": "Entrada",
             "received_value": "Recebido",
-            "deliverables_count": "Quantidade de videos",
+            "deliverables_count": "Quantidade de vídeos",
             "payment_due_date": "Data prevista de pagamento",
-            "meeting_scheduled": "Reuniao agendada",
-            "meeting_date": "Data da reuniao",
+            "meeting_scheduled": "Reunião agendada",
+            "meeting_date": "Data da reunião",
             "close_date": "Fechamento",
             "due_date": "Entrega",
-            "note": "Observacoes",
+            "note": "Observações",
         }
         widgets = {
             "payment_due_date": forms.DateInput(attrs={"type": "date"}),
@@ -456,7 +448,7 @@ class WorkspaceBusinessForm(forms.ModelForm):
         if not zip_code:
             return ""
         if len(zip_code) != 8:
-            raise forms.ValidationError("Informe um CEP com 8 digitos.")
+            raise forms.ValidationError("Informe um CEP com 8 dígitos.")
         return f"{zip_code[:5]}-{zip_code[5:]}"
 
     class Meta:
@@ -477,18 +469,18 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "business_full_name": "Nome completo",
             "business_zip_code": "CEP",
             "business_street": "Rua",
-            "business_number": "Numero",
+            "business_number": "Número",
             "business_complement": "Complemento",
             "business_cnpj": "CNPJ",
             "business_pis": "Chave PIX",
             "instagram_url": "Instagram",
             "tiktok_url": "TikTok",
-            "portfolio_url": "Portfolio",
+            "portfolio_url": "Portfólio",
         }
         widgets = {
             "business_full_name": forms.TextInput(attrs={"placeholder": "Nome completo"}),
             "business_zip_code": forms.TextInput(attrs={"inputmode": "numeric", "placeholder": "00000-000"}),
-            "business_number": forms.TextInput(attrs={"placeholder": "Numero"}),
+            "business_number": forms.TextInput(attrs={"placeholder": "Número"}),
             "business_complement": forms.TextInput(attrs={"placeholder": "Complemento"}),
             "business_pis": forms.TextInput(attrs={"placeholder": "Chave PIX"}),
         }
@@ -517,8 +509,8 @@ class ContractBrandForm(forms.Form):
 class WorkspaceSettingsForm(forms.Form):
     ui_dark_theme = forms.BooleanField(required=False, label="Tema escuro")
     ui_soft_card_shadows = forms.BooleanField(required=False, label="Sombras suaves nos cards")
-    ui_subtle_navigation_animation = forms.BooleanField(required=False, label="Animacao discreta na navegacao")
-    ops_default_entry_rate = forms.ChoiceField(label="Entrada padrao sugerida", choices=[("50%", "50%"), ("40%", "40%"), ("30%", "30%")])
+    ui_subtle_navigation_animation = forms.BooleanField(required=False, label="Animação discreta na navegação")
+    ops_default_entry_rate = forms.ChoiceField(label="Entrada padrão sugerida", choices=[("50%", "50%"), ("40%", "40%"), ("30%", "30%")])
     ops_primary_currency = forms.ChoiceField(label="Moeda principal", choices=[("BRL (R$)", "BRL (R$)"), ("USD ($)", "USD ($)"), ("EUR (EUR)", "EUR (EUR)")])
     ops_follow_up_reminders = forms.BooleanField(required=False, label="Lembretes de follow-up")
     legal_contract_signer_name = forms.CharField(required=False, label="Nome no contrato", max_length=160)
@@ -560,7 +552,7 @@ class ProfilePhotoForm(forms.Form):
         if content_type not in self.allowed_types:
             raise forms.ValidationError("Envie uma imagem em PNG, JPG, WEBP ou GIF.")
         if photo.size > self.max_size:
-            raise forms.ValidationError("A imagem precisa ter no maximo 2 MB.")
+            raise forms.ValidationError("A imagem precisa ter no máximo 2 MB.")
         return photo
 
 
@@ -571,7 +563,7 @@ class FinanceEntryForm(forms.ModelForm):
         labels = {
             "amount": "Valor",
             "occurred_on": "Data",
-            "description": "Descricao",
+            "description": "Descrição",
         }
         widgets = {
             "occurred_on": forms.DateInput(attrs={"type": "date"}),

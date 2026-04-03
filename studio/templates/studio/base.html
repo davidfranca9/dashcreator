@@ -89,7 +89,7 @@
         <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="legal-alert-{{ workspace.pk }}-{{ legal_alert_date }}">
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="legal-popup-title">
                 <button type="button" class="meeting-popup-close" data-meeting-popup-close aria-label="Fechar aviso">&times;</button>
-                <span class="meeting-popup-badge">Juridico</span>
+                <span class="meeting-popup-badge">Jurídico</span>
                 <h3 id="legal-popup-title">
                     {% if legal_alerts|length == 1 %}
                         O licenciamento de imagem vence hoje.
@@ -159,7 +159,7 @@
                                 {% endif %}
                             {% endfor %}
                             <label class="global-month-filter">
-                                <span>Mes</span>
+                                <span>Mês</span>
                                 <select name="month" onchange="this.form.submit()">
                                     {% for item in month_choices %}
                                         <option value="{{ item.value }}"{% if selected_month.value == item.value %} selected{% endif %}>{{ item.label }}</option>

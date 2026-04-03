@@ -1,9 +1,9 @@
 Seu cadastro no The Creators Club foi feito com sucesso.
 
-Usuario: {{ user.username }}
+Usuário: {{ user.username }}
 Email: {{ user.email }}
 
 Para acessar sua conta, use este link:
 {{ login_url }}
 
-Se voce nao reconhece este cadastro, responda este email.
+Se você não reconhece este cadastro, responda este email.

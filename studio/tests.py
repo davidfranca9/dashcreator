@@ -136,7 +136,7 @@ class DashboardSmokeTest(TestCase):
 
         self.assertRedirects(response, reverse("settings"))
         self.assertFalse(ServiceCategory.objects.filter(pk=category.pk).exists())
-        self.assertContains(response, "Categoria de servico removida.")
+        self.assertContains(response, "Categoria de serviço removida.")
 
     def test_settings_does_not_delete_used_service_category(self):
         self.client.force_login(self.user)
@@ -1081,7 +1081,7 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-approval"', html=False)
         self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-upcoming"', html=False)
         self.assertContains(response, 'data-jobs-kpi-modal="jobs-kpi-delivered"', html=False)
-        self.assertContains(response, "Entregas que ja passaram da data e ainda precisam de atencao.")
+        self.assertContains(response, "Entregas que já passaram da data e ainda precisam de atenção.")
 
     def test_jobs_source_mix_uses_fixed_closing_source_legend(self):
         Project.objects.create(
@@ -1297,7 +1297,7 @@ class DashboardSmokeTest(TestCase):
         )
         self.assertRedirects(outgoing_response, f"{reverse('finance')}?month={self.project.due_date.strftime('%Y-%m')}")
         self.assertEqual(FinanceEntry.objects.filter(workspace=self.workspace, kind=FinanceEntry.KIND_OUTGOING).count(), 1)
-        self.assertContains(outgoing_response, "Saida registrada.")
+        self.assertContains(outgoing_response, "Saída registrada.")
 
     def test_dashboard_snapshot_respects_selected_global_month(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)

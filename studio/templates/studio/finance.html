@@ -4,8 +4,8 @@
 <article class="card finance-month-card">
     <div class="card-header">
         <div>
-            <h3>Detalhamento do mes</h3>
-            <p class="muted">Mes selecionado: {{ selected_month.label }}</p>
+            <h3>Detalhamento do mês</h3>
+            <p class="muted">Mês selecionado: {{ selected_month.label }}</p>
         </div>
     </div>
     <section class="stats-grid finance-stats-grid">
@@ -25,8 +25,8 @@
     <article class="card">
         <div class="card-header">
             <div>
-                <h3>Registrar saida</h3>
-                <p class="muted">Use para custos de producao, ferramentas ou investimentos.</p>
+                <h3>Registrar saída</h3>
+                <p class="muted">Use para custos de produção, ferramentas ou investimentos.</p>
             </div>
         </div>
         <form method="post" class="form-grid">
@@ -41,7 +41,7 @@
                 </div>
             {% endfor %}
             <div class="form-actions form-field--full">
-                <button type="submit" class="danger-button">Salvar saida</button>
+                <button type="submit" class="danger-button">Salvar saída</button>
             </div>
         </form>
     </article>
@@ -67,7 +67,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p class="muted">Nenhuma entrada ou saida registrada em {{ selected_month.label|lower }}.</p>
+            <p class="muted">Nenhuma entrada ou saída registrada em {{ selected_month.label|lower }}.</p>
         {% endif %}
     </article>
 

@@ -42,8 +42,8 @@
                             </div>
                             {% if item.kind == "follow_up" %}
                                 <div class="follow-up-meta">
-                                    <small>Ultima entrega: {{ item.last_delivery_text }}</small>
-                                    <small>Sem novo trabalho ha {{ item.days_since_last_job }} dias</small>
+                                    <small>Última entrega: {{ item.last_delivery_text }}</small>
+                                    <small>Sem novo trabalho há {{ item.days_since_last_job }} dias</small>
                                 </div>
                                 <p class="muted follow-up-note">{{ item.note }}</p>
                                 <div class="card-actions">
@@ -66,8 +66,8 @@
                                 </div>
                                 {% if item.meeting_scheduled %}
                                     <div class="meta-line">
-                                        <small>Reuniao agendada</small>
-                                        {% if item.meeting_date %}<small>Reuniao: {{ item.meeting_date }}</small>{% endif %}
+                                        <small>Reunião agendada</small>
+                                        {% if item.meeting_date %}<small>Reunião: {{ item.meeting_date }}</small>{% endif %}
                                     </div>
                                 {% endif %}
                                 {% if item.channels %}
@@ -77,7 +77,7 @@
                                         {% endfor %}
                                     </div>
                                 {% endif %}
-                                <p class="muted">{{ item.note|default:"Sem observacoes ainda." }}</p>
+                                <p class="muted">{{ item.note|default:"Sem observações ainda." }}</p>
                                 <div class="card-actions">
                                     <div class="card-actions-group">
                                         <a class="ghost-button small" href="{% url 'prospect_convert' item.id %}">Converter</a>

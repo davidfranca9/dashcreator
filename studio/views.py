@@ -100,10 +100,10 @@ def serve_media_file(request: HttpRequest, path: str) -> FileResponse:
     try:
         absolute_path = Path(safe_join(str(media_root), path))
     except ValueError as exc:
-        raise Http404("Arquivo invalido.") from exc
+        raise Http404("Arquivo inválido.") from exc
 
     if not absolute_path.is_file():
-        raise Http404("Arquivo nao encontrado.")
+        raise Http404("Arquivo não encontrado.")
 
     content_type, _ = mimetypes.guess_type(absolute_path.name)
     response = FileResponse(absolute_path.open("rb"), content_type=content_type or "application/octet-stream")
@@ -156,10 +156,10 @@ def _compose_company_address(data: dict) -> str:
 def business_zip_lookup(request: HttpRequest) -> JsonResponse:
     zip_code = re.sub(r"\D", "", request.POST.get("cep", ""))
     if len(zip_code) != 8:
-        return JsonResponse({"ok": False, "error": "Informe um CEP valido com 8 digitos."}, status=400)
+        return JsonResponse({"ok": False, "error": "Informe um CEP válido com 8 dígitos."}, status=400)
 
     if not django_settings.APIBRASIL_CEP_URL:
-        return JsonResponse({"ok": False, "error": "Busca de CEP nao configurada no ambiente."}, status=503)
+        return JsonResponse({"ok": False, "error": "Busca de CEP não configurada no ambiente."}, status=503)
 
     headers = {"Accept": "application/json"}
     if django_settings.APIBRASIL_CEP_TOKEN:
@@ -173,7 +173,7 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
         with urlopen(request_object, timeout=django_settings.APIBRASIL_CEP_TIMEOUT) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except HTTPError:
-        return JsonResponse({"ok": False, "error": "Nao foi possivel consultar esse CEP agora."}, status=502)
+        return JsonResponse({"ok": False, "error": "Não foi possível consultar esse CEP agora."}, status=502)
     except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return JsonResponse({"ok": False, "error": "A busca de CEP falhou. Tente novamente."}, status=502)
 
@@ -195,7 +195,7 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
                 "error": _first_non_empty(
                     payload.get("message"),
                     data.get("message"),
-                    "CEP nao encontrado.",
+                    "CEP não encontrado.",
                 ),
             },
             status=404,
@@ -208,7 +208,7 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
         data.get("endereco"),
     )
     if not street:
-        return JsonResponse({"ok": False, "error": "Nao encontramos a rua desse CEP."}, status=404)
+        return JsonResponse({"ok": False, "error": "Não encontramos a rua desse CEP."}, status=404)
     normalized_zip_code = _first_non_empty(
         data.get("cep"),
         payload.get("cep") if isinstance(payload, dict) else "",
@@ -720,9 +720,9 @@ def signup(request: HttpRequest) -> HttpResponse:
         login(request, user)
         try:
             send_signup_confirmation_email(user, request)
-            messages.success(request, "Conta criada com sucesso. Enviamos um email de confirmacao para voce.")
+            messages.success(request, "Conta criada com sucesso. Enviamos um email de confirmação para você.")
         except Exception:
-            messages.warning(request, "Conta criada com sucesso, mas nao foi possivel enviar o email de confirmacao agora.")
+            messages.warning(request, "Conta criada com sucesso, mas não foi possível enviar o email de confirmação agora.")
         return redirect("dashboard")
 
     return render(request, "registration/signup.html", {"form": form})
@@ -745,7 +745,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "dashboard",
         workspace,
         "Dashboard",
-        "Visao executiva do negocio UGC.",
+        "Visão executiva do negócio UGC.",
         user=request.user,
         action_label="Novo trabalho",
         action_url="project_create",
@@ -758,7 +758,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @login_required
 def prospection(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("prospection", workspace, "Prospecção", "Leads, follow-ups e negociacoes em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
+    context = shell_context("prospection", workspace, "Prospecção", "Leads, follow-ups e negociações em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
     context.update(prospection_snapshot(workspace))
     return render(request, "studio/prospection.html", context)
 
@@ -840,7 +840,7 @@ def finance(request: HttpRequest) -> HttpResponse:
                 entry.workspace = workspace
                 entry.kind = "outgoing"
                 entry.save()
-                messages.success(request, "Saida registrada.")
+                messages.success(request, "Saída registrada.")
                 redirect_url = reverse("finance")
                 if month_filter:
                     redirect_url = f"{redirect_url}?month={month_filter}"
@@ -850,7 +850,7 @@ def finance(request: HttpRequest) -> HttpResponse:
         "finance",
         workspace,
         "Financeiro",
-        "Fluxo de caixa, despesas e saldo de recebiveis.",
+        "Fluxo de caixa, despesas e saldo de recebíveis.",
         user=request.user,
         month_filter=month_filter,
     )
@@ -869,8 +869,8 @@ def distribution(request: HttpRequest) -> HttpResponse:
     context = shell_context(
         "distribution",
         workspace,
-        "Distribuicao",
-        "Controle onde cada material vai rodar entre organico e ads.",
+        "Distribuição",
+        "Controle onde cada material vai rodar entre orgânico e ads.",
         user=request.user,
     )
     context.update(distribution_snapshot(workspace))
@@ -883,7 +883,7 @@ def legal(request: HttpRequest) -> HttpResponse:
     context = shell_context(
         "legal",
         workspace,
-        "Juridico",
+        "Jurídico",
         "Acompanhe o direito de uso de imagem e os vencimentos de licenciamento.",
         user=request.user,
     )
@@ -939,8 +939,8 @@ def reports(request: HttpRequest) -> HttpResponse:
     context = shell_context(
         "reports",
         workspace,
-        "Relatorios",
-        "Indicadores estrategicos do negocio.",
+        "Relatórios",
+        "Indicadores estratégicos do negócio.",
         user=request.user,
         month_filter=month_filter,
     )
@@ -957,8 +957,8 @@ def settings(request: HttpRequest) -> HttpResponse:
     )
     service_category_form = ManagedOptionForm(
         request.POST if request.method == "POST" and request.POST.get("settings_action") == "add_service_category" else None,
-        label="Nova categoria de servico",
-        help_text="Cadastre aqui as categorias de servico para selecionar nos trabalhos.",
+        label="Nova categoria de serviço",
+        help_text="Cadastre aqui as categorias de serviço para selecionar nos trabalhos.",
         prefix="service_category",
     )
 
@@ -966,23 +966,23 @@ def settings(request: HttpRequest) -> HttpResponse:
         action = request.POST.get("settings_action")
         if action == "preferences" and settings_form.is_valid():
             save_settings(workspace, settings_form.cleaned_data)
-            messages.success(request, "Configuracoes atualizadas.")
+            messages.success(request, "Configurações atualizadas.")
             return redirect("settings")
         if action == "add_service_category" and service_category_form.is_valid():
             name = service_category_form.cleaned_data["name"].strip()
             service_category, created = ServiceCategory.objects.get_or_create(workspace=workspace, name=name)
-            messages.success(request, "Categoria de servico cadastrada." if created else "Essa categoria ja existe.")
+            messages.success(request, "Categoria de serviço cadastrada." if created else "Essa categoria já existe.")
             return redirect("settings")
         if action == "delete_service_category":
             service_category = get_object_or_404(ServiceCategory, pk=request.POST.get("service_category_id"), workspace=workspace)
             if service_category.projects.exists():
-                messages.warning(request, "Essa categoria ja foi usada em trabalhos e nao pode mais ser excluida.")
+                messages.warning(request, "Essa categoria já foi usada em trabalhos e não pode mais ser excluída.")
             else:
                 service_category.delete()
-                messages.success(request, "Categoria de servico removida.")
+                messages.success(request, "Categoria de serviço removida.")
             return redirect("settings")
 
-    context = shell_context("settings", workspace, "Configuracoes", "Preferencias visuais e operacionais.", user=request.user)
+    context = shell_context("settings", workspace, "Configurações", "Preferências visuais e operacionais.", user=request.user)
     context.update(
         {
             "form": settings_form,
@@ -1027,10 +1027,10 @@ def profile(request: HttpRequest) -> HttpResponse:
                 {
                     "title": "Conta",
                     "items": [
-                        {"label": "Usuario", "value": request.user.username or "-"},
+                        {"label": "Usuário", "value": request.user.username or "-"},
                         {"label": "Email", "value": request.user.email or "-"},
                         {"label": "Data de cadastro", "value": request.user.date_joined.strftime("%d/%m/%Y")},
-                        {"label": "Ultimo acesso", "value": request.user.last_login.strftime("%d/%m/%Y %H:%M") if request.user.last_login else "Primeiro acesso"},
+                        {"label": "Último acesso", "value": request.user.last_login.strftime("%d/%m/%Y %H:%M") if request.user.last_login else "Primeiro acesso"},
                     ],
                 },
                 {
@@ -1092,7 +1092,7 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
     initial = {
         "company": prospect.company,
-        "closing_source": "Prospeccao",
+        "closing_source": "Prospecção",
         "niche": prospect.niche,
         "service_category": None,
         "stage": "Fechado",
@@ -1114,7 +1114,7 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         prospect.delete()
         messages.success(request, "Lead convertido em trabalho.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
-            messages.info(request, "Direito de uso de imagem ativado. O Juridico vai avisar no vencimento.")
+            messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em trabalho.", user=request.user)
@@ -1132,7 +1132,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
         project.save()
         messages.success(request, "Trabalho salvo com sucesso.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
-            messages.info(request, "Direito de uso de imagem ativado. O Juridico vai avisar no vencimento.")
+            messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("jobs", workspace, "Novo trabalho", "Cadastre um novo trabalho.", user=request.user)
@@ -1149,7 +1149,7 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
         project = form.save()
         messages.success(request, "Trabalho atualizado.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
-            messages.info(request, "Direito de uso de imagem ativado. O Juridico vai avisar no vencimento.")
+            messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("jobs", workspace, "Editar trabalho", "Ajuste valores, datas e status.", user=request.user)

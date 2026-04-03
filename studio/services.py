@@ -33,7 +33,7 @@ SHORT_MONTH_NAMES = {
 FULL_MONTH_NAMES = {
     1: "Janeiro",
     2: "Fevereiro",
-    3: "Marco",
+    3: "Março",
     4: "Abril",
     5: "Maio",
     6: "Junho",
@@ -229,7 +229,7 @@ def workspace_business_address_summary(workspace: Workspace) -> str:
 def distribution_label(project: Project) -> str:
     if project.content_distribution == "Nao se aplica":
         return "Não se aplica"
-    return project.content_distribution or "Nao definido"
+    return project.content_distribution or "Não definido"
 
 
 def month_options_for_workspace(workspace: Workspace) -> list[date]:
@@ -572,7 +572,7 @@ def follow_up_candidates(workspace: Workspace) -> list[dict]:
                 "service_category": project.service_category_name,
                 "last_delivery_text": short_date(project.due_date),
                 "days_since_last_job": days_since_last_job,
-                "note": f'Ja tem {days_since_last_job} dias desde o seu ultimo trabalho para a marca {project.company} que tal mandar um "oi sumido?"',
+                "note": f'Já tem {days_since_last_job} dias desde o seu último trabalho para a marca {project.company}, que tal mandar um "oi sumido?"',
                 "accent": accent,
                 "colors": (color_a, color_b),
             }
@@ -634,7 +634,7 @@ def legal_usage_items(workspace: Workspace) -> list[dict]:
                     if days_until_expiry == 0
                     else f"Vence em {days_until_expiry} dias"
                     if days_until_expiry > 0
-                    else f"Expirou ha {abs(days_until_expiry)} dias"
+                    else f"Expirou há {abs(days_until_expiry)} dias"
                 ),
                 "reminder_message": reminder_message,
                 "google_calendar_url": google_calendar_event_url(
@@ -836,7 +836,7 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
 
     pipeline = [
         {"stage": "Prospecção", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
-        {"stage": "Negociacao", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
+        {"stage": "Negociação", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
         {"stage": "Fechado", "count": len(active_projects), "amount_text": currency(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
         {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount_text": currency(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
     ]
@@ -892,6 +892,10 @@ def prospection_snapshot(workspace: Workspace) -> dict:
     follow_up_items = confirmed_follow_up_items(workspace)
 
     columns = []
+    stage_titles = {
+        "Prospeccao": "Prospecção",
+        "Negociacao": "Negociação",
+    }
     for stage in ("Prospeccao", "Negociacao"):
         items = []
         for item in [candidate for candidate in prospects if candidate.stage == stage]:
@@ -921,15 +925,15 @@ def prospection_snapshot(workspace: Workspace) -> dict:
                     "colors": (color_a, color_b),
                 }
             )
-        columns.append({"title": "Prospecção" if stage == "Prospeccao" else stage, "items": items})
+        columns.append({"title": stage_titles.get(stage, stage), "items": items})
     columns.append({"title": "Follow-up", "items": follow_up_items})
 
     return {
         "stats": [
             {"title": "Novos Leads", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "L"},
-            {"title": "Reunioes", "value": str(meetings), "icon_label": "R"},
+            {"title": "Reuniões", "value": str(meetings), "icon_label": "R"},
             {"title": "Taxa de resposta", "value": f"{round((negotiation_count / total) * 100)}%", "icon_label": "%"},
-            {"title": "Negociacao", "value": str(negotiation_count), "icon_label": "N"},
+            {"title": "Negociação", "value": str(negotiation_count), "icon_label": "N"},
         ],
         "columns": columns,
     }
@@ -969,9 +973,9 @@ def empresas_snapshot(
             "image_license_term_text": image_usage_term_label(item),
             "image_usage_expires_text": short_date(expires_on) if expires_on else "",
             "google_calendar_url": google_calendar_event_url(
-                f"Reuniao - {item.company}",
+                f"Reunião - {item.company}",
                 item.meeting_date,
-                f"Reuniao agendada do trabalho {item.service_category_name} com {item.company}.",
+                f"Reunião agendada do trabalho {item.service_category_name} com {item.company}.",
             )
             if item.meeting_scheduled and item.meeting_date
             else "",
@@ -1008,31 +1012,31 @@ def empresas_snapshot(
     return {
         "stats": [
             {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "modal_id": "jobs-kpi-overdue"},
-            {"title": "Aguardando aprovacao", "value": str(len(approval_cards)), "icon_label": "A", "modal_id": "jobs-kpi-approval"},
-            {"title": "Entregas proximas", "value": str(upcoming_deliveries), "icon_label": "P", "modal_id": "jobs-kpi-upcoming"},
+            {"title": "Aguardando aprovação", "value": str(len(approval_cards)), "icon_label": "A", "modal_id": "jobs-kpi-approval"},
+            {"title": "Entregas próximas", "value": str(upcoming_deliveries), "icon_label": "P", "modal_id": "jobs-kpi-upcoming"},
             {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "modal_id": "jobs-kpi-delivered"},
         ],
         "stat_lists": [
             {
                 "modal_id": "jobs-kpi-overdue",
                 "title": "Trabalhos atrasados",
-                "description": "Entregas que ja passaram da data e ainda precisam de atencao.",
+                "description": "Entregas que já passaram da data e ainda precisam de atenção.",
                 "items": sorted(overdue_cards, key=lambda item: item["due_date"]),
                 "empty_message": "Nenhum trabalho atrasado no momento.",
             },
             {
                 "modal_id": "jobs-kpi-approval",
-                "title": "Aguardando aprovacao",
+                "title": "Aguardando aprovação",
                 "description": "Jobs esperando retorno da marca para seguir.",
                 "items": approval_cards,
-                "empty_message": "Nenhum trabalho aguardando aprovacao.",
+                "empty_message": "Nenhum trabalho aguardando aprovação.",
             },
             {
                 "modal_id": "jobs-kpi-upcoming",
-                "title": "Entregas proximas",
-                "description": "Trabalhos com entrega prevista para os proximos dias.",
+                "title": "Entregas próximas",
+                "description": "Trabalhos com entrega prevista para os próximos dias.",
                 "items": sorted(upcoming_cards, key=lambda item: item["due_date"]),
-                "empty_message": "Nenhuma entrega proxima cadastrada.",
+                "empty_message": "Nenhuma entrega próxima cadastrada.",
             },
             {
                 "modal_id": "jobs-kpi-delivered",
@@ -1123,7 +1127,7 @@ def distribution_snapshot(workspace: Workspace) -> dict:
         .select_related("service_category", "niche")
         .order_by("-updated_at", "-due_date")
     )
-    grouped = {"Organico": [], "Ads": [], "Não se aplica": [], "Nao definido": []}
+    grouped = {"Orgânico": [], "Ads": [], "Não se aplica": [], "Não definido": []}
     for project in projects:
         color_a, color_b, accent = company_palette(project.company)
         expires_on = image_usage_expires_on(project)
@@ -1144,19 +1148,19 @@ def distribution_snapshot(workspace: Workspace) -> dict:
         )
 
     ads_count = len(grouped["Ads"])
-    organic_count = len(grouped["Organico"])
+    organic_count = len(grouped["Orgânico"])
     return {
         "stats": [
-            {"title": "Organico", "value": str(organic_count), "icon_label": "O"},
+            {"title": "Orgânico", "value": str(organic_count), "icon_label": "O"},
             {"title": "Ads", "value": str(ads_count), "icon_label": "A"},
             {"title": "Licenciamento ativo", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] >= 0)), "icon_label": "L"},
             {"title": "Vence hoje", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] == 0)), "icon_label": "!"},
         ],
         "columns": [
-            {"title": "Organico", "items": grouped["Organico"]},
+            {"title": "Orgânico", "items": grouped["Orgânico"]},
             {"title": "Ads", "items": grouped["Ads"]},
             {"title": "Não se aplica", "items": grouped["Não se aplica"]},
-            {"title": "Nao definido", "items": grouped["Nao definido"]},
+            {"title": "Não definido", "items": grouped["Não definido"]},
         ],
     }
 
@@ -1171,9 +1175,9 @@ def legal_snapshot(workspace: Workspace) -> dict:
     return {
         "stats": [
             {"title": "Contratos", "value": str(len(contract_items)), "icon_label": "C"},
-            {"title": "Licencas ativas", "value": str(len(active)), "icon_label": "L"},
+            {"title": "Licenças ativas", "value": str(len(active)), "icon_label": "L"},
             {"title": "Vencendo hoje", "value": str(len(expiring_today)), "icon_label": "!"},
-            {"title": "Proximos 30 dias", "value": str(len(expiring_soon)), "icon_label": "30"},
+            {"title": "Próximos 30 dias", "value": str(len(expiring_soon)), "icon_label": "30"},
             {"title": "Expirados", "value": str(len(expired)), "icon_label": "E"},
         ],
         "contracts": contract_items,
@@ -1264,17 +1268,17 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         "selected_month": selected_month_payload(selected_month),
         "stats": [
             {"title": "Entradas", "value": currency(incoming_total), "icon_label": "+"},
-            {"title": "Saidas", "value": currency(outgoing_total), "icon_label": "-"},
-            {"title": "Saldo de recebiveis", "value": currency(receivable_balance), "icon_label": "R"},
+            {"title": "Saídas", "value": currency(outgoing_total), "icon_label": "-"},
+            {"title": "Saldo de recebíveis", "value": currency(receivable_balance), "icon_label": "R"},
             {"title": "Saldo", "value": currency(cash_balance), "icon_label": "$"},
         ],
         "schedule": schedule,
         "ledger": ledger,
         "breakdown": [
             {"label": "Entradas dos trabalhos", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
-            {"label": "Saidas registradas", "amount_text": currency(outgoing_total), "progress": round((outgoing_total / incoming_total) * 100) if incoming_total else 0, "accent": "#c04d57"},
-            {"label": "Saldo de recebiveis", "amount_text": currency(receivable_balance), "progress": round((receivable_balance / (incoming_total + receivable_balance)) * 100) if (incoming_total + receivable_balance) else 0, "accent": "#7f6fff"},
-            {"label": "Saldo do periodo", "amount_text": currency(cash_balance), "progress": round((cash_balance / incoming_total) * 100) if incoming_total and cash_balance > 0 else 0, "accent": "#4d8cff"},
+            {"label": "Saídas registradas", "amount_text": currency(outgoing_total), "progress": round((outgoing_total / incoming_total) * 100) if incoming_total else 0, "accent": "#c04d57"},
+            {"label": "Saldo de recebíveis", "amount_text": currency(receivable_balance), "progress": round((receivable_balance / (incoming_total + receivable_balance)) * 100) if (incoming_total + receivable_balance) else 0, "accent": "#7f6fff"},
+            {"label": "Saldo do período", "amount_text": currency(cash_balance), "progress": round((cash_balance / incoming_total) * 100) if incoming_total and cash_balance > 0 else 0, "accent": "#4d8cff"},
         ],
     }
 
@@ -1298,7 +1302,7 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         source_label = normalize_closing_source(item.closing_source)
         if source_label:
             source_counts[source_label] = source_counts.get(source_label, 0) + 1
-        niche_label = item.niche.name if item.niche_id else "Nao informado"
+        niche_label = item.niche.name if item.niche_id else "Não informado"
         niche_counts[niche_label] = niche_counts.get(niche_label, 0) + 1
 
     source_palette = ["#4d8cff", "#20b7a7", "#7f6fff", "#f59a3d", "#61748e", "#c765c7"]
@@ -1329,7 +1333,7 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             {"title": "Volume de trabalhos", "value": str(volume), "icon_label": "V"},
             {"title": "Total fechado", "value": currency(total_closed), "icon_label": "$"},
             {"title": "Via principal", "value": top_source_label, "icon_label": "%"},
-            {"title": "Nicho lider", "value": top_niche_label, "icon_label": "N"},
+            {"title": "Nicho líder", "value": top_niche_label, "icon_label": "N"},
         ],
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
@@ -1347,17 +1351,17 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             {
                 "title": "Nicho que mais fechou",
                 "description": (
-                    f"{top_niche_label} liderou com {top_niche_count} trabalho{'s' if top_niche_count != 1 else ''} fechado{'s' if top_niche_count != 1 else ''} no mes."
+                    f"{top_niche_label} liderou com {top_niche_count} trabalho{'s' if top_niche_count != 1 else ''} fechado{'s' if top_niche_count != 1 else ''} no mês."
                     if volume
-                    else "Assim que voce cadastrar fechamentos, o nicho lider aparece aqui."
+                    else "Assim que você cadastrar fechamentos, o nicho líder aparece aqui."
                 ),
             },
             {
-                "title": "Resumo do mes",
+                "title": "Resumo do mês",
                 "description": (
                     f"{volume} trabalho{'s' if volume != 1 else ''} fechados somando {currency(total_closed)} em {selected_month_label.lower()}."
                     if volume
-                    else "Sem fechamentos no periodo selecionado."
+                    else "Sem fechamentos no período selecionado."
                 ),
             },
         ],
