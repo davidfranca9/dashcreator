@@ -19,7 +19,7 @@ from PIL import Image
 from .forms import ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
-from .views import _project_contract_payload
+from .views import _contract_clause_five_text, _project_contract_payload
 
 
 class DashboardSmokeTest(TestCase):
@@ -630,6 +630,8 @@ class DashboardSmokeTest(TestCase):
             workspace=self.workspace,
             company="Reserva",
             closing_source="Indicacao",
+            content_distribution="Ads",
+            image_license_term_days=180,
             niche=self.niche,
             service_category=self.category,
             project_name="Pacote extra",
@@ -666,6 +668,18 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.contract_status, Project.CONTRACT_STATUS_GENERATED)
         self.assertEqual(project.company_legal_name, "Reserva LTDA")
         self.assertEqual(project.company_cnpj, "12.345.678/0001-99")
+
+    def test_contract_clause_five_uses_dynamic_ads_license_term(self):
+        self.project.content_distribution = "Ads"
+        self.project.image_license_term_days = 180
+        self.project.save(update_fields=["content_distribution", "image_license_term_days", "updated_at"])
+
+        payload = _project_contract_payload(self.workspace, self.user, self.project)
+        clause = _contract_clause_five_text(payload)
+
+        self.assertIn("06 (seis) meses", clause)
+        self.assertIn("180 (cento e oitenta) dias", clause)
+        self.assertIn("tráfego pago (ads)", clause)
 
     def test_legal_page_can_dismiss_contract_item(self):
         project = Project.objects.create(
