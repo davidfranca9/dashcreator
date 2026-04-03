@@ -507,6 +507,12 @@ class ContractBrandForm(forms.Form):
         self.fields["company_address"].widget.attrs.update({"placeholder": "Endereço completo da marca"})
         self.fields["company_phone"].widget.attrs.update({"placeholder": "(00) 00000-0000"})
 
+    def clean_company_cnpj(self):
+        digits = re.sub(r"\D", "", self.cleaned_data.get("company_cnpj", ""))
+        if len(digits) != 14:
+            raise forms.ValidationError("Informe um CNPJ válido com 14 dígitos.")
+        return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}"
+
 
 class WorkspaceSettingsForm(forms.Form):
     ui_dark_theme = forms.BooleanField(required=False, label="Tema escuro")

@@ -16,7 +16,7 @@ from django.core.management.base import CommandError
 from django.urls import reverse
 from PIL import Image
 
-from .forms import ProjectForm, ProspectForm
+from .forms import ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
@@ -720,6 +720,44 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(payload["creator_name"], "Layfe Amorim")
         self.assertIn("CRIAÇÃO DE CONTEÚDO UGC", payload["contract_title"])
+
+    def test_contract_brand_form_formats_cnpj(self):
+        form = ContractBrandForm(
+            data={
+                "company_legal_name": "BRND DISTRIBUIDORA LTDA",
+                "company_cnpj": "50181021000129",
+                "company_address": "Rua David Pereira Coimbra, 1-82",
+                "company_phone": "(14) 99999-0000",
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["company_cnpj"], "50.181.021/0001-29")
+
+    @patch("studio.views.urlopen")
+    def test_business_cnpj_lookup_autofills_brand_data(self, mocked_urlopen):
+        self.client.force_login(self.user)
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = (
+            b'{"result":{"cnpj":"50181021000129","razao_social":"BRND DISTRIBUIDORA LTDA","logradouro":"Rua David Pereira Coimbra","numero":"1-82","bairro":"Jardim Rosas do Sul","municipio":"Bauru","uf":"SP","cep":"17030-690","telefone":"(14) 99123-4567"}}'
+        )
+
+        with self.settings(
+            APIBRASIL_CNPJ_URL="https://api.apibrasil.example/cnpj/{cnpj}",
+            APIBRASIL_CNPJ_TOKEN="token-teste",
+        ):
+            response = self.client.get(reverse("business_cnpj_lookup"), {"cnpj": "50181021000129"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "ok": True,
+                "company_legal_name": "BRND DISTRIBUIDORA LTDA",
+                "company_cnpj": "50.181.021/0001-29",
+                "company_address": "Rua David Pereira Coimbra, 1-82, Jardim Rosas do Sul, Bauru - SP, CEP 17030-690",
+                "company_phone": "(14) 99123-4567",
+            },
+        )
 
     def test_settings_page_shows_contract_signer_name_field(self):
         self.client.force_login(self.user)

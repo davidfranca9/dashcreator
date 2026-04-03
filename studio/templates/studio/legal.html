@@ -72,19 +72,19 @@
                                 {% csrf_token %}
                                 <div class="form-field">
                                     <label for="company_legal_name_{{ item.id }}">Razão social</label>
-                                    <input id="company_legal_name_{{ item.id }}" type="text" name="company_legal_name" value="{{ item.company_legal_name }}" required>
+                                    <input id="company_legal_name_{{ item.id }}" type="text" name="company_legal_name" value="{{ item.company_legal_name }}" required data-contract-company-legal-name>
                                 </div>
                                 <div class="form-field">
                                     <label for="company_cnpj_{{ item.id }}">CNPJ</label>
-                                    <input id="company_cnpj_{{ item.id }}" type="text" name="company_cnpj" value="{{ item.company_cnpj }}" required>
+                                    <input id="company_cnpj_{{ item.id }}" type="text" name="company_cnpj" value="{{ item.company_cnpj }}" required inputmode="numeric" autocomplete="off" data-contract-company-cnpj>
                                 </div>
                                 <div class="form-field">
                                     <label for="company_address_{{ item.id }}">Endereço</label>
-                                    <input id="company_address_{{ item.id }}" type="text" name="company_address" value="{{ item.company_address }}" required>
+                                    <input id="company_address_{{ item.id }}" type="text" name="company_address" value="{{ item.company_address }}" required data-contract-company-address>
                                 </div>
                                 <div class="form-field">
                                     <label for="company_phone_{{ item.id }}">Telefone</label>
-                                    <input id="company_phone_{{ item.id }}" type="text" name="company_phone" value="{{ item.company_phone }}" required>
+                                    <input id="company_phone_{{ item.id }}" type="text" name="company_phone" value="{{ item.company_phone }}" required data-contract-company-phone>
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="primary-button">Confirmar e gerar contrato</button>
@@ -144,6 +144,57 @@
 
 <script>
 (() => {
+    const cnpjLookupUrl = "{% url 'business_cnpj_lookup' %}";
+
+    const formatCnpj = (value) => {
+        const digits = (value || "").replace(/\D/g, "").slice(0, 14);
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+        if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+        if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+        return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+    };
+
+    const lookupCnpj = async (form, digits) => {
+        if (!digits || digits.length !== 14) return;
+        if (form.dataset.contractCnpjLookup === digits) return;
+
+        form.dataset.contractCnpjLookup = digits;
+        try {
+            const response = await fetch(`${cnpjLookupUrl}?cnpj=${digits}`, {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "same-origin",
+            });
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            if (!payload.ok) {
+                return;
+            }
+
+            const legalNameInput = form.querySelector("[data-contract-company-legal-name]");
+            const cnpjInput = form.querySelector("[data-contract-company-cnpj]");
+            const addressInput = form.querySelector("[data-contract-company-address]");
+            const phoneInput = form.querySelector("[data-contract-company-phone]");
+
+            if (legalNameInput && payload.company_legal_name) {
+                legalNameInput.value = payload.company_legal_name;
+            }
+            if (cnpjInput && payload.company_cnpj) {
+                cnpjInput.value = payload.company_cnpj;
+            }
+            if (addressInput && payload.company_address) {
+                addressInput.value = payload.company_address;
+            }
+            if (phoneInput && payload.company_phone) {
+                phoneInput.value = payload.company_phone;
+            }
+        } catch (error) {
+            console.warn("Falha ao consultar CNPJ automaticamente.", error);
+        }
+    };
+
     const closeAllContractModals = () => {
         document.querySelectorAll("[data-contract-modal]").forEach((modal) => {
             modal.hidden = true;
@@ -174,6 +225,20 @@
     });
 
     document.querySelectorAll("[data-contract-submit]").forEach((form) => {
+        const cnpjInput = form.querySelector("[data-contract-company-cnpj]");
+        if (cnpjInput) {
+            cnpjInput.addEventListener("input", () => {
+                cnpjInput.value = formatCnpj(cnpjInput.value);
+                const digits = cnpjInput.value.replace(/\D/g, "");
+                if (digits.length < 14) {
+                    delete form.dataset.contractCnpjLookup;
+                    return;
+                }
+                lookupCnpj(form, digits);
+            });
+            cnpjInput.value = formatCnpj(cnpjInput.value);
+        }
+
         form.addEventListener("submit", () => {
             const projectId = form.dataset.contractSubmit;
             const statusChip = document.querySelector(`[data-contract-status-chip="${projectId}"]`);

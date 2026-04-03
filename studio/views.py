@@ -119,6 +119,38 @@ def _first_non_empty(*values):
     return ""
 
 
+def _format_cnpj(value: str) -> str:
+    digits = re.sub(r"\D", "", value or "")
+    if len(digits) != 14:
+        return (value or "").strip()
+    return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}"
+
+
+def _compose_company_address(data: dict) -> str:
+    street = _first_non_empty(
+        data.get("street"),
+        data.get("logradouro"),
+        data.get("address"),
+        data.get("endereco"),
+    )
+    number = _first_non_empty(data.get("number"), data.get("numero"))
+    complement = _first_non_empty(data.get("complement"), data.get("complemento"))
+    district = _first_non_empty(data.get("district"), data.get("bairro"))
+    city = _first_non_empty(data.get("city"), data.get("municipio"), data.get("cidade"))
+    state = _first_non_empty(data.get("state"), data.get("uf"))
+    zip_code = _first_non_empty(data.get("zip_code"), data.get("cep"))
+
+    line_one = ", ".join(part for part in [street, number] if part)
+    if complement:
+        line_one = ", ".join(part for part in [line_one, complement] if part)
+    city_state = " - ".join(part for part in [city, state] if part)
+    line_two = ", ".join(part for part in [district, city_state] if part)
+    address = ", ".join(part for part in [line_one, line_two] if part)
+    if zip_code:
+        address = ", ".join(part for part in [address, f"CEP {zip_code}"] if part)
+    return address
+
+
 @login_required
 @require_POST
 def business_zip_lookup(request: HttpRequest) -> JsonResponse:
@@ -187,6 +219,84 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
             "ok": True,
             "zip_code": normalized_zip_code,
             "street": street,
+        }
+    )
+
+
+@login_required
+def business_cnpj_lookup(request: HttpRequest) -> JsonResponse:
+    cnpj = re.sub(r"\D", "", request.GET.get("cnpj", ""))
+    if len(cnpj) != 14:
+        return JsonResponse({"ok": False, "error": "Informe um CNPJ válido com 14 dígitos."}, status=400)
+
+    if not django_settings.APIBRASIL_CNPJ_URL:
+        return JsonResponse({"ok": False, "error": "Busca de CNPJ não configurada no ambiente."}, status=503)
+
+    headers = {"Accept": "application/json"}
+    if django_settings.APIBRASIL_CNPJ_TOKEN:
+        headers["Authorization"] = f"Bearer {django_settings.APIBRASIL_CNPJ_TOKEN}"
+        headers["X-API-KEY"] = django_settings.APIBRASIL_CNPJ_TOKEN
+
+    request_url = django_settings.APIBRASIL_CNPJ_URL.format(cnpj=cnpj)
+    request_object = Request(request_url, headers=headers)
+
+    try:
+        with urlopen(request_object, timeout=django_settings.APIBRASIL_CNPJ_TIMEOUT) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError:
+        return JsonResponse({"ok": False, "error": "Não foi possível consultar esse CNPJ agora."}, status=502)
+    except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        return JsonResponse({"ok": False, "error": "A busca de CNPJ falhou. Tente novamente."}, status=502)
+
+    data = payload
+    if isinstance(payload, dict):
+        for key in ("result", "data", "response"):
+            nested = payload.get(key)
+            if isinstance(nested, dict):
+                data = nested
+                break
+
+    if not isinstance(data, dict):
+        data = {}
+
+    if isinstance(payload, dict) and (payload.get("error") or payload.get("status") in {"ERROR", "error"}):
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": _first_non_empty(
+                    payload.get("message"),
+                    data.get("message"),
+                    "CNPJ não encontrado.",
+                ),
+            },
+            status=404,
+        )
+
+    legal_name = _first_non_empty(
+        data.get("razao_social"),
+        data.get("social_reason"),
+        data.get("corporate_name"),
+        data.get("company_name"),
+        data.get("nome"),
+        data.get("name"),
+    )
+    if not legal_name:
+        return JsonResponse({"ok": False, "error": "Não encontramos a razão social desse CNPJ."}, status=404)
+
+    phone = _first_non_empty(
+        data.get("telefone"),
+        data.get("phone"),
+        data.get("telefone_1"),
+        data.get("ddd_telefone_1"),
+    )
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "company_legal_name": legal_name,
+            "company_cnpj": _format_cnpj(_first_non_empty(data.get("cnpj"), cnpj) or cnpj),
+            "company_address": _compose_company_address(data),
+            "company_phone": phone,
         }
     )
 
