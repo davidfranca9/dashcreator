@@ -954,8 +954,8 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, f'{reverse("finance")}?month={self.project.close_date.strftime("%Y-%m")}')
 
     def test_jobs_upcoming_deliveries_respect_delivery_month(self):
-        march_date = date(2026, 3, 20)
-        april_delivery = date(2026, 4, 3)
+        current_month = date.today().replace(day=1)
+        previous_month = (current_month - timedelta(days=1)).replace(day=1)
         Project.objects.create(
             workspace=self.workspace,
             company="Insider",
@@ -971,14 +971,16 @@ class DashboardSmokeTest(TestCase):
             received_value=0,
             deliverables_count=2,
             progress=0,
-            close_date=march_date,
-            due_date=april_delivery,
+            close_date=previous_month + timedelta(days=5),
+            due_date=date.today(),
         )
 
-        snapshot = jobs_snapshot_filtered(self.workspace, month_filter="2026-03")
+        previous_snapshot = jobs_snapshot_filtered(self.workspace, month_filter=previous_month.strftime("%Y-%m"))
+        current_snapshot = jobs_snapshot_filtered(self.workspace, month_filter=current_month.strftime("%Y-%m"))
 
-        self.assertEqual(snapshot["stats"][2]["value"], "0")
-        self.assertEqual(len(snapshot["stat_lists"][2]["items"]), 0)
+        self.assertEqual(len(previous_snapshot["stat_lists"][2]["items"]), 0)
+        current_companies = [item["company"] for item in current_snapshot["stat_lists"][2]["items"]]
+        self.assertIn("Insider", current_companies)
 
     def test_jobs_page_all_months_keeps_latest_deliveries(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)

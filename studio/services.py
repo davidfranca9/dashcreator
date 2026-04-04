@@ -943,6 +943,7 @@ def empresas_snapshot(
     workspace: Workspace,
     projects: list[Project] | None = None,
     overdue_projects: list[Project] | None = None,
+    upcoming_projects: list[Project] | None = None,
     selected_month: date | None = None,
 ) -> dict:
     if projects is None:
@@ -993,15 +994,18 @@ def empresas_snapshot(
 
     active_cards = [item for item in cards if item["stage"] == "Fechado"]
     approval_cards = [item for item in active_cards if item["status"] == "Aguardando cliente"]
-    upcoming_cards = [
-        item for item in active_cards
-        if today <= item["due_date"] <= upcoming_limit
-    ]
-    if selected_month is not None:
+    if upcoming_projects is not None:
+        upcoming_cards = [serialize_job_card(item) for item in upcoming_projects]
+    else:
         upcoming_cards = [
-            item for item in upcoming_cards
-            if item["due_date"].year == selected_month.year and item["due_date"].month == selected_month.month
+            item for item in active_cards
+            if today <= item["due_date"] <= upcoming_limit
         ]
+        if selected_month is not None:
+            upcoming_cards = [
+                item for item in upcoming_cards
+                if item["due_date"].year == selected_month.year and item["due_date"].month == selected_month.month
+            ]
     delivered_cards = sorted(
         [item for item in cards if item["stage"] == "Entregue"],
         key=lambda item: (item["due_date"], item["close_date"]),
@@ -1092,15 +1096,30 @@ def jobs_snapshot_filtered(
         )
 
     overdue_projects_query = projects_query if progress_filter != "entregue" else projects_query.none()
+    upcoming_projects_query = projects_query if progress_filter != "entregue" else projects_query.none()
     if selected_month is not None:
         projects_query = projects_query.filter(
             close_date__year=selected_month.year,
             close_date__month=selected_month.month,
         )
+        upcoming_projects_query = upcoming_projects_query.filter(
+            due_date__year=selected_month.year,
+            due_date__month=selected_month.month,
+        )
 
     filtered_projects = list(projects_query.order_by("due_date"))
     overdue_projects = list(overdue_projects_query.filter(stage="Fechado", due_date__lt=date.today()).order_by("due_date"))
-    snapshot = empresas_snapshot(workspace, filtered_projects, overdue_projects=overdue_projects, selected_month=selected_month)
+    upcoming_limit = date.today() + timedelta(days=21)
+    upcoming_projects = list(
+        upcoming_projects_query.filter(stage="Fechado", due_date__gte=date.today(), due_date__lte=upcoming_limit).order_by("due_date")
+    )
+    snapshot = empresas_snapshot(
+        workspace,
+        filtered_projects,
+        overdue_projects=overdue_projects,
+        upcoming_projects=upcoming_projects,
+        selected_month=selected_month,
+    )
     snapshot["source_mix"] = closing_source_mix(filtered_projects)
     snapshot["month_choices"] = month_choice_payload(month_options)
     snapshot["selected_month"] = selected_month_payload(selected_month)
