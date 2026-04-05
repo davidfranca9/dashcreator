@@ -36,6 +36,7 @@ PROSPECT_STAGE_CHOICES = [
     ("Prospeccao", "Prospecção"),
     ("Aguardando retorno", "Aguardando retorno"),
     ("Negociacao", "Negociação"),
+    ("Follow-up", "Follow-up"),
 ]
 
 DEFAULT_NICHE_NAMES = [

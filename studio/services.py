@@ -1045,38 +1045,42 @@ def prospection_snapshot(workspace: Workspace, month_filter: str | None = None) 
         "Prospeccao": "Prospecção",
         "Aguardando retorno": "Aguardando retorno",
         "Negociacao": "Negociação",
+        "Follow-up": "Follow-up",
     }
+
+    def serialize_prospect_item(item: Prospect) -> dict:
+        color_a, color_b, accent = company_palette(item.company)
+        channels = []
+        if item.email:
+            channels.append({"label": "Email", "value": item.email})
+        if item.instagram:
+            channels.append({"label": "Instagram", "value": item.instagram})
+        if item.whatsapp:
+            channels.append({"label": "WhatsApp", "value": item.whatsapp})
+
+        return {
+            "kind": "prospect",
+            "id": item.id,
+            "company": item.company,
+            "contact": item.contact,
+            "contact_type": item.contact_type,
+            "contact_date": short_date(item.contact_date) if item.contact_date else "",
+            "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
+            "niche": item.niche.name if item.niche_id else "",
+            "note": item.note,
+            "meeting_scheduled": item.meeting_scheduled,
+            "channels": channels,
+            "accent": accent,
+            "colors": (color_a, color_b),
+        }
+
     for stage in ("Rascunho", "Prospeccao", "Aguardando retorno", "Negociacao"):
         items = []
         for item in [candidate for candidate in prospects if candidate.stage == stage]:
-            color_a, color_b, accent = company_palette(item.company)
-            channels = []
-            if item.email:
-                channels.append({"label": "Email", "value": item.email})
-            if item.instagram:
-                channels.append({"label": "Instagram", "value": item.instagram})
-            if item.whatsapp:
-                channels.append({"label": "WhatsApp", "value": item.whatsapp})
-
-            items.append(
-                {
-                    "kind": "prospect",
-                    "id": item.id,
-                    "company": item.company,
-                    "contact": item.contact,
-                    "contact_type": item.contact_type,
-                    "contact_date": short_date(item.contact_date) if item.contact_date else "",
-                    "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
-                    "niche": item.niche.name if item.niche_id else "",
-                    "note": item.note,
-                    "meeting_scheduled": item.meeting_scheduled,
-                    "channels": channels,
-                    "accent": accent,
-                    "colors": (color_a, color_b),
-                }
-            )
+            items.append(serialize_prospect_item(item))
         columns.append({"title": stage_titles.get(stage, stage), "items": items})
-    columns.append({"title": "Follow-up", "items": follow_up_items})
+    manual_follow_up_items = [serialize_prospect_item(item) for item in prospects if item.stage == "Follow-up"]
+    columns.append({"title": "Follow-up", "items": manual_follow_up_items + follow_up_items})
 
     return {
         "stats": [
