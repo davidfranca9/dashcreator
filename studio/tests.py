@@ -254,6 +254,31 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "Follow-up")
         self.assertEqual(response.context["columns"][-1]["items"], [])
 
+    def test_prospection_page_filters_leads_by_selected_month(self):
+        previous_month = (date.today().replace(day=1) - timedelta(days=1)).replace(day=1)
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            contact="Julia",
+            contact_type="Email",
+            stage="Aguardando retorno",
+            contact_date=previous_month + timedelta(days=5),
+            niche=self.niche,
+            email="julia@insider.com",
+            instagram="@insider",
+            whatsapp="71911111111",
+            note="Contato do mês anterior",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"), {"month": date.today().strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_month"]["value"], date.today().strftime("%Y-%m"))
+        self.assertContains(response, f'{reverse("prospection")}?month={date.today().strftime("%Y-%m")}')
+        self.assertContains(response, "Nike")
+        self.assertNotContains(response, "Insider")
+
     def test_prospection_shows_follow_up_popup_for_old_delivered_brand(self):
         Project.objects.create(
             workspace=self.workspace,
