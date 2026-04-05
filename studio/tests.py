@@ -174,6 +174,10 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(list(form.fields.keys())[:4], ["company", "contact_type", "contact", "stage"])
         self.assertTrue(form.fields["contact_type"].required)
         self.assertFalse(form.fields["contact"].required)
+        self.assertEqual(form.fields["contact_type"].widget.__class__.__name__, "Select")
+        self.assertIn(("Instagram DM", "Instagram DM"), form.fields["contact_type"].choices)
+        self.assertIn(("Email", "Email"), form.fields["contact_type"].choices)
+        self.assertIn(("Follow-up", "Follow-up"), form.fields["stage"].choices)
 
     def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
         form = ProspectForm(
@@ -278,6 +282,30 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, f'{reverse("prospection")}?month={date.today().strftime("%Y-%m")}')
         self.assertContains(response, "Nike")
         self.assertNotContains(response, "Insider")
+
+    def test_prospection_manual_follow_up_stage_appears_in_follow_up_column(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Amaro",
+            contact="Julia",
+            contact_type="Email",
+            stage="Follow-up",
+            contact_date=date.today(),
+            niche=self.niche,
+            email="julia@amaro.com",
+            instagram="@amaro",
+            whatsapp="71911111111",
+            note="Retomada manual",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"))
+
+        self.assertEqual(response.status_code, 200)
+        follow_up_column = response.context["columns"][-1]
+        self.assertEqual(follow_up_column["title"], "Follow-up")
+        follow_up_companies = [item["company"] for item in follow_up_column["items"]]
+        self.assertIn("Amaro", follow_up_companies)
 
     def test_prospection_shows_follow_up_popup_for_old_delivered_brand(self):
         Project.objects.create(

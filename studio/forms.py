@@ -23,6 +23,18 @@ STATUS_PROGRESS_MAP = {
     "Aprovado": 95,
     "Entregue": 100,
 }
+DEFAULT_CONTACT_TYPE_CHOICES = [
+    ("", "Selecione"),
+    ("Instagram DM", "Instagram DM"),
+    ("WhatsApp", "WhatsApp"),
+    ("Email", "Email"),
+    ("Ligação", "Ligação"),
+    ("Reunião", "Reunião"),
+    ("Social media", "Social media"),
+    ("Marketing", "Marketing"),
+    ("Follow-up", "Follow-up"),
+    ("Outro", "Outro"),
+]
 DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Inbound", "Inbound"),
     ("Prospeccao", "Prospecção"),
@@ -188,6 +200,22 @@ class ProspectForm(forms.ModelForm):
         )
         self.fields["contact_type"].required = True
         self.fields["contact"].required = False
+        contact_type_choices = list(DEFAULT_CONTACT_TYPE_CHOICES)
+        existing_contact_types = []
+        if workspace is not None:
+            existing_contact_types = [
+                item
+                for item in Prospect.objects.filter(workspace=workspace)
+                .exclude(contact_type__exact="")
+                .values_list("contact_type", flat=True)
+                .distinct()
+            ]
+        current_contact_type = self.instance.contact_type if getattr(self.instance, "pk", None) else ""
+        for value in existing_contact_types + ([current_contact_type] if current_contact_type else []):
+            if value and value not in {choice_value for choice_value, _ in contact_type_choices}:
+                contact_type_choices.append((value, value))
+        self.fields["contact_type"].choices = contact_type_choices
+        self.fields["contact_type"].widget = forms.Select(choices=contact_type_choices)
         self.fields["contact_date"].widget = forms.DateInput(
             attrs={"type": "date"},
             format="%Y-%m-%d",
