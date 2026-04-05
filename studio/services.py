@@ -834,8 +834,9 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
     monthly_revenue = sum_money(item.total_value for item in active_projects + delivered_projects)
     total_closed = sum_money(item.total_value for item in active_projects)
 
+    open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
     pipeline = [
-        {"stage": "Prospecção", "count": sum(1 for item in prospects if item.stage == "Prospeccao"), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
+        {"stage": "Prospecção", "count": sum(1 for item in prospects if item.stage in open_prospection_stages), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
         {"stage": "Negociação", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
         {"stage": "Fechado", "count": len(active_projects), "amount_text": currency(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
         {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount_text": currency(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
@@ -886,17 +887,17 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
 
 def prospection_snapshot(workspace: Workspace) -> dict:
     prospects = list(Prospect.objects.filter(workspace=workspace))
-    total = len(prospects) or 1
-    meetings = sum(1 for item in prospects if item.meeting_scheduled)
     negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
     follow_up_items = confirmed_follow_up_items(workspace)
 
     columns = []
     stage_titles = {
+        "Rascunho": "Rascunho",
         "Prospeccao": "Prospecção",
+        "Aguardando retorno": "Aguardando retorno",
         "Negociacao": "Negociação",
     }
-    for stage in ("Prospeccao", "Negociacao"):
+    for stage in ("Rascunho", "Prospeccao", "Aguardando retorno", "Negociacao"):
         items = []
         for item in [candidate for candidate in prospects if candidate.stage == stage]:
             color_a, color_b, accent = company_palette(item.company)
@@ -930,9 +931,9 @@ def prospection_snapshot(workspace: Workspace) -> dict:
 
     return {
         "stats": [
-            {"title": "Novos Leads", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "L"},
-            {"title": "Reuniões", "value": str(meetings), "icon_label": "R"},
-            {"title": "Taxa de resposta", "value": f"{round((negotiation_count / total) * 100)}%", "icon_label": "%"},
+            {"title": "Rascunho", "value": str(sum(1 for item in prospects if item.stage == "Rascunho")), "icon_label": "R"},
+            {"title": "Prospecção", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "P"},
+            {"title": "Aguardando retorno", "value": str(sum(1 for item in prospects if item.stage == "Aguardando retorno")), "icon_label": "A"},
             {"title": "Negociação", "value": str(negotiation_count), "icon_label": "N"},
         ],
         "columns": columns,

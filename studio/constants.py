@@ -32,7 +32,9 @@ PROJECT_STATUS_CHOICES = [
 ]
 
 PROSPECT_STAGE_CHOICES = [
+    ("Rascunho", "Rascunho"),
     ("Prospeccao", "Prospecção"),
+    ("Aguardando retorno", "Aguardando retorno"),
     ("Negociacao", "Negociação"),
 ]
 

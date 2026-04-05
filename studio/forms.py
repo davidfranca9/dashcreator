@@ -196,6 +196,8 @@ class ProspectForm(forms.ModelForm):
             format="%Y-%m-%d",
         )
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
+        if not getattr(self.instance, "pk", None) and not self.initial.get("stage"):
+            self.fields["stage"].initial = "Rascunho"
         self.fields["niche"].queryset = Niche.objects.none()
         if workspace is not None:
             ensure_default_niches(workspace)

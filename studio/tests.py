@@ -168,6 +168,9 @@ class DashboardSmokeTest(TestCase):
 
         self.assertNotIn("proposal_value", form.fields)
         self.assertNotIn("new_niche", form.fields)
+        self.assertEqual(form.fields["stage"].initial, "Rascunho")
+        self.assertIn(("Rascunho", "Rascunho"), form.fields["stage"].choices)
+        self.assertIn(("Aguardando retorno", "Aguardando retorno"), form.fields["stage"].choices)
 
     def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
         form = ProspectForm(
@@ -241,6 +244,10 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("prospection"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [column["title"] for column in response.context["columns"]],
+            ["Rascunho", "Prospecção", "Aguardando retorno", "Negociação", "Follow-up"],
+        )
         self.assertContains(response, "Follow-up")
         self.assertEqual(response.context["columns"][-1]["items"], [])
 
@@ -365,13 +372,14 @@ class DashboardSmokeTest(TestCase):
         )
 
         self.assertRedirects(response, reverse("prospection"))
-        self.assertContains(response, "Reserva voltou para ProspecÃ§Ã£o.")
+        self.assertContains(response, "Reserva voltou para Prospecção.")
         lead = Prospect.objects.get(workspace=self.workspace, company="Reserva")
         self.assertEqual(lead.stage, "Prospeccao")
         self.assertEqual(lead.contact, "Contato principal")
         self.assertEqual(lead.contact_type, "Follow-up")
         self.assertEqual(response.context["columns"][-1]["items"], [])
-        prospection_companies = [item["company"] for item in response.context["columns"][0]["items"]]
+        prospection_column = next(column for column in response.context["columns"] if column["title"] == "Prospecção")
+        prospection_companies = [item["company"] for item in prospection_column["items"]]
         self.assertIn("Reserva", prospection_companies)
 
     def test_dashboard_does_not_show_follow_up_popup(self):
