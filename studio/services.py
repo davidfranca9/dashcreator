@@ -52,7 +52,7 @@ SOURCE_MIX_COLORS = {
     "Agência": "#61748e",
 }
 SOURCE_MIX_ORDER = ["Inbound", "Prospecção", "Indicação", "Plataforma", "Agência"]
-MONTH_FILTER_PAGE_KEYS = {"dashboard", "jobs", "finance", "reports"}
+MONTH_FILTER_PAGE_KEYS = {"dashboard", "jobs", "finance", "reports", "prospection"}
 ALL_MONTH_VALUE = "all"
 SOURCE_MIX_COLORS = {
     "Inbound": "#4d8cff",
@@ -251,6 +251,17 @@ def month_options_for_workspace(workspace: Workspace) -> list[date]:
     for occurred_on in FinanceEntry.objects.filter(workspace=workspace).exclude(occurred_on__isnull=True).values_list("occurred_on", flat=True):
         if occurred_on:
             months.add(occurred_on.replace(day=1))
+    for contact_date, meeting_date, created_at in Prospect.objects.filter(workspace=workspace).values_list(
+        "contact_date",
+        "meeting_date",
+        "created_at",
+    ):
+        if contact_date:
+            months.add(contact_date.replace(day=1))
+        if meeting_date:
+            months.add(meeting_date.replace(day=1))
+        if created_at:
+            months.add(created_at.date().replace(day=1))
     return sorted(months)
 
 
@@ -502,6 +513,133 @@ def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: 
         "path": line_path,
         "chart_width": chart_width,
         "chart_height": chart_height,
+    }
+
+
+def prospect_activity_date(item: Prospect) -> date:
+    return item.contact_date or item.created_at.date()
+
+
+def add_months(month_start: date, step: int = 1) -> date:
+    total_month = (month_start.year * 12) + month_start.month - 1 + step
+    year = total_month // 12
+    month = (total_month % 12) + 1
+    return date(year, month, 1)
+
+
+def prospection_evolution_context(workspace: Workspace, selected_month: date | None = None) -> dict:
+    prospects = list(Prospect.objects.filter(workspace=workspace).order_by("contact_date", "created_at"))
+    if not prospects:
+        return {
+            "points": [],
+            "steps": [{"label": "3"}, {"label": "2"}, {"label": "1"}, {"label": "0"}],
+            "path": "",
+            "chart_width": 960,
+            "chart_height": 260,
+            "summary": [],
+            "empty_message": "Ainda não há prospecções registradas para montar a evolução.",
+        }
+
+    filtered_dates = [
+        prospect_activity_date(item)
+        for item in prospects
+        if selected_month is None
+        or (
+            prospect_activity_date(item).year == selected_month.year
+            and prospect_activity_date(item).month == selected_month.month
+        )
+    ]
+    if not filtered_dates:
+        return {
+            "points": [],
+            "steps": [{"label": "3"}, {"label": "2"}, {"label": "1"}, {"label": "0"}],
+            "path": "",
+            "chart_width": 960,
+            "chart_height": 260,
+            "summary": [],
+            "empty_message": "Sem prospecções no período selecionado.",
+        }
+
+    chart_width = 960
+    chart_height = 260
+    chart_top = 12
+    chart_bottom = 22
+    chart_side_padding = 18
+
+    totals: dict[date, int] = {}
+    if selected_month is None:
+        first_month = min(filtered_dates).replace(day=1)
+        last_month = max(filtered_dates).replace(day=1)
+        month_cursor = first_month
+        while month_cursor <= last_month:
+            totals[month_cursor] = 0
+            month_cursor = add_months(month_cursor)
+        for item_date in filtered_dates:
+            month_start = item_date.replace(day=1)
+            totals[month_start] = totals.get(month_start, 0) + 1
+        labels = {item: month_label(item) for item in totals}
+    else:
+        for item_date in sorted(set(filtered_dates)):
+            totals[item_date] = 0
+        for item_date in filtered_dates:
+            totals[item_date] = totals.get(item_date, 0) + 1
+        labels = {item: short_date(item) for item in totals}
+
+    timeline = list(totals.keys())
+    max_value = max(list(totals.values()) + [3])
+    usable_height = chart_height - chart_top - chart_bottom
+    usable_width = chart_width - (chart_side_padding * 2)
+
+    points = []
+    for index, point_date in enumerate(timeline):
+        amount = totals[point_date]
+        progress_ratio = (amount / max_value) if max_value else 0
+        x_position = chart_side_padding if len(timeline) == 1 else round(chart_side_padding + ((usable_width / (len(timeline) - 1)) * index), 2)
+        y_position = round(chart_height - chart_bottom - (progress_ratio * usable_height), 2)
+        points.append(
+            {
+                "label": labels[point_date],
+                "amount": amount,
+                "x": x_position,
+                "y": y_position,
+            }
+        )
+
+    line_path = " ".join(
+        f"{'M' if index == 0 else 'L'} {point['x']} {point['y']}"
+        for index, point in enumerate(points)
+    )
+    steps = [{"label": str(int(max_value * step / 3))} for step in range(3, -1, -1)]
+
+    unique_dates = sorted(set(filtered_dates))
+    largest_gap_days = max(
+        [(later - earlier).days for earlier, later in zip(unique_dates, unique_dates[1:])],
+        default=0,
+    )
+    latest_activity = max(filtered_dates)
+    peak_date, peak_count = max(totals.items(), key=lambda item: (item[1], item[0]))
+
+    return {
+        "points": points,
+        "steps": steps,
+        "path": line_path,
+        "chart_width": chart_width,
+        "chart_height": chart_height,
+        "summary": [
+            {"title": "Última prospecção", "value": short_date(latest_activity), "detail": f"{latest_activity.year}"},
+            {"title": "Dias com atividade", "value": str(len(unique_dates)), "detail": "dias diferentes com prospecção"},
+            {
+                "title": "Maior intervalo",
+                "value": f"{largest_gap_days} dias",
+                "detail": "entre uma prospecção e outra" if len(unique_dates) > 1 else "ainda sem intervalo suficiente",
+            },
+            {
+                "title": "Pico de volume",
+                "value": f"{peak_count} lead{'s' if peak_count != 1 else ''}",
+                "detail": f"em {labels[peak_date]}",
+            },
+        ],
+        "empty_message": "",
     }
 
 
@@ -885,8 +1023,19 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
     }
 
 
-def prospection_snapshot(workspace: Workspace) -> dict:
-    prospects = list(Prospect.objects.filter(workspace=workspace))
+def prospection_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
+    month_options = month_options_for_workspace(workspace)
+    selected_month = resolve_selected_month(month_filter, month_options)
+    all_prospects = list(Prospect.objects.filter(workspace=workspace))
+    prospects = [
+        item
+        for item in all_prospects
+        if selected_month is None
+        or (
+            prospect_activity_date(item).year == selected_month.year
+            and prospect_activity_date(item).month == selected_month.month
+        )
+    ]
     negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
     follow_up_items = confirmed_follow_up_items(workspace)
 
@@ -936,6 +1085,8 @@ def prospection_snapshot(workspace: Workspace) -> dict:
             {"title": "Aguardando retorno", "value": str(sum(1 for item in prospects if item.stage == "Aguardando retorno")), "icon_label": "A"},
             {"title": "Negociação", "value": str(negotiation_count), "icon_label": "N"},
         ],
+        "month_choices": month_choice_payload(month_options),
+        "selected_month": selected_month_payload(selected_month),
         "columns": columns,
     }
 
@@ -1347,6 +1498,7 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         if niche_counts
         else ("Sem dados", 0)
     )
+    prospection_flow = prospection_evolution_context(workspace, selected_month)
 
     return {
         "stats": [
@@ -1357,6 +1509,7 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         ],
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
+        "prospection_flow": prospection_flow,
         "source_mix": closing_source_mix(month_projects),
         "via_breakdown": via_breakdown,
         "highlights": [
