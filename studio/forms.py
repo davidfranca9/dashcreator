@@ -173,8 +173,8 @@ class ProspectForm(forms.ModelForm):
         self.order_fields(
             [
                 "company",
-                "contact",
                 "contact_type",
+                "contact",
                 "stage",
                 "contact_date",
                 "niche",
@@ -186,6 +186,8 @@ class ProspectForm(forms.ModelForm):
                 "note",
             ]
         )
+        self.fields["contact_type"].required = True
+        self.fields["contact"].required = False
         self.fields["contact_date"].widget = forms.DateInput(
             attrs={"type": "date"},
             format="%Y-%m-%d",
@@ -231,8 +233,8 @@ class ProspectForm(forms.ModelForm):
         model = Prospect
         fields = [
             "company",
-            "contact",
             "contact_type",
+            "contact",
             "stage",
             "contact_date",
             "niche",

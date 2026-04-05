@@ -171,6 +171,9 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(form.fields["stage"].initial, "Rascunho")
         self.assertIn(("Rascunho", "Rascunho"), form.fields["stage"].choices)
         self.assertIn(("Aguardando retorno", "Aguardando retorno"), form.fields["stage"].choices)
+        self.assertEqual(list(form.fields.keys())[:4], ["company", "contact_type", "contact", "stage"])
+        self.assertTrue(form.fields["contact_type"].required)
+        self.assertFalse(form.fields["contact"].required)
 
     def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
         form = ProspectForm(
@@ -1402,6 +1405,32 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["via_breakdown"][0]["amount_text"], "50%")
         self.assertEqual(response.context["source_mix"]["total"], 2)
         self.assertContains(response, "Via de fechamento")
+
+    def test_reports_page_shows_prospection_evolution_flow(self):
+        previous_prospect_date = date.today() - timedelta(days=11)
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            contact="Marina",
+            contact_type="Instagram DM",
+            stage="Aguardando retorno",
+            contact_date=previous_prospect_date,
+            niche=self.niche,
+            email="marina@reserva.com",
+            instagram="@reserva",
+            whatsapp="71988887777",
+            note="Primeira tentativa",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("reports"), {"month": "all"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Evolução da prospecção")
+        self.assertContains(response, "Maior intervalo")
+        self.assertContains(response, "11 dias")
+        self.assertTrue(response.context["prospection_flow"]["points"])
+        self.assertEqual(response.context["prospection_flow"]["summary"][2]["value"], "11 dias")
 
     def test_prospect_conversion_prefills_closing_source_and_niche(self):
         prospect = Prospect.objects.create(
