@@ -8,6 +8,7 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, Set
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+from .contact_types import DEFAULT_CONTACT_TYPE_CHOICES, infer_contact_type, normalize_contact_type
 from .constants import IMAGE_LICENSE_TERM_CHOICES, PROJECT_DISTRIBUTION_CHOICES, SETTINGS_GROUPS
 from .models import AccessCode, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
@@ -23,18 +24,6 @@ STATUS_PROGRESS_MAP = {
     "Aprovado": 95,
     "Entregue": 100,
 }
-DEFAULT_CONTACT_TYPE_CHOICES = [
-    ("", "Selecione"),
-    ("Instagram DM", "Instagram DM"),
-    ("WhatsApp", "WhatsApp"),
-    ("Email", "Email"),
-    ("Ligação", "Ligação"),
-    ("Reunião", "Reunião"),
-    ("Social media", "Social media"),
-    ("Marketing", "Marketing"),
-    ("Follow-up", "Follow-up"),
-    ("Outro", "Outro"),
-]
 DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Inbound", "Inbound"),
     ("Prospeccao", "Prospecção"),
@@ -200,22 +189,17 @@ class ProspectForm(forms.ModelForm):
         )
         self.fields["contact_type"].required = True
         self.fields["contact"].required = False
-        contact_type_choices = list(DEFAULT_CONTACT_TYPE_CHOICES)
-        existing_contact_types = []
-        if workspace is not None:
-            existing_contact_types = [
-                item
-                for item in Prospect.objects.filter(workspace=workspace)
-                .exclude(contact_type__exact="")
-                .values_list("contact_type", flat=True)
-                .distinct()
-            ]
-        current_contact_type = self.instance.contact_type if getattr(self.instance, "pk", None) else ""
-        for value in existing_contact_types + ([current_contact_type] if current_contact_type else []):
-            if value and value not in {choice_value for choice_value, _ in contact_type_choices}:
-                contact_type_choices.append((value, value))
-        self.fields["contact_type"].choices = contact_type_choices
-        self.fields["contact_type"].widget = forms.Select(choices=contact_type_choices)
+        self.fields["contact_type"].choices = DEFAULT_CONTACT_TYPE_CHOICES
+        self.fields["contact_type"].widget = forms.Select(choices=DEFAULT_CONTACT_TYPE_CHOICES)
+        if not self.is_bound and getattr(self.instance, "pk", None):
+            inferred_contact_type = infer_contact_type(
+                self.instance.contact_type,
+                email=self.instance.email,
+                instagram=self.instance.instagram,
+                whatsapp=self.instance.whatsapp,
+            )
+            if inferred_contact_type:
+                self.initial["contact_type"] = inferred_contact_type
         self.fields["contact_date"].widget = forms.DateInput(
             attrs={"type": "date"},
             format="%Y-%m-%d",
@@ -250,8 +234,15 @@ class ProspectForm(forms.ModelForm):
 
         return cleaned_data
 
+    def clean_contact_type(self):
+        normalized_contact_type = normalize_contact_type(self.cleaned_data.get("contact_type", ""))
+        if not normalized_contact_type:
+            raise forms.ValidationError("Selecione um tipo de contato válido.")
+        return normalized_contact_type
+
     def save(self, commit=True):
         prospect = super().save(commit=False)
+        prospect.contact_type = self.cleaned_data.get("contact_type", "")
         if commit:
             prospect.save()
             self.save_m2m()

@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q, QuerySet
 from django.urls import reverse
 
+from .contact_types import infer_contact_type
 from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
 from .models import FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
@@ -441,7 +442,12 @@ def shell_context(
                 "id": item.id,
                 "company": item.company,
                 "contact": item.contact,
-                "contact_type": item.contact_type,
+                "contact_type": infer_contact_type(
+                    item.contact_type,
+                    email=item.email,
+                    instagram=item.instagram,
+                    whatsapp=item.whatsapp,
+                ),
             }
             for item in today_meetings
         ],
@@ -1063,7 +1069,12 @@ def prospection_snapshot(workspace: Workspace, month_filter: str | None = None) 
             "id": item.id,
             "company": item.company,
             "contact": item.contact,
-            "contact_type": item.contact_type,
+            "contact_type": infer_contact_type(
+                item.contact_type,
+                email=item.email,
+                instagram=item.instagram,
+                whatsapp=item.whatsapp,
+            ),
             "contact_date": short_date(item.contact_date) if item.contact_date else "",
             "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
             "niche": item.niche.name if item.niche_id else "",

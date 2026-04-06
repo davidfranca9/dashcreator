@@ -179,6 +179,67 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(("Email", "Email"), form.fields["contact_type"].choices)
         self.assertIn(("Follow-up", "Follow-up"), form.fields["stage"].choices)
 
+    def test_prospect_form_ignores_invalid_saved_contact_type_choices(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Coza",
+            contact="Time comercial",
+            contact_type="marketing.coza@coza.com.br",
+            stage="Rascunho",
+            email="marketing.coza@coza.com.br",
+        )
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Vittal",
+            contact="Instagram",
+            contact_type="Instagram",
+            stage="Rascunho",
+            instagram="@vittalcalcados",
+        )
+
+        form = ProspectForm(workspace=self.workspace)
+        choice_values = [value for value, _ in form.fields["contact_type"].choices]
+
+        self.assertNotIn("marketing.coza@coza.com.br", choice_values)
+        self.assertNotIn("Instagram", choice_values)
+        self.assertIn("Instagram DM", choice_values)
+
+    def test_prospect_form_normalizes_legacy_contact_type_on_edit(self):
+        prospect = Prospect.objects.create(
+            workspace=self.workspace,
+            company="Vizzela",
+            contact="Time de marketing",
+            contact_type="mkt_influencia@vizzela.com.br",
+            stage="Rascunho",
+            email="mkt_influencia@vizzela.com.br",
+        )
+
+        form = ProspectForm(instance=prospect, workspace=self.workspace)
+
+        self.assertEqual(form["contact_type"].value(), "Email")
+
+    def test_prospection_snapshot_normalizes_legacy_contact_type_labels(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            contact="Instagram",
+            contact_type="Instagram",
+            stage="Rascunho",
+            instagram="@usereserva",
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("prospection"))
+
+        self.assertEqual(response.status_code, 200)
+        reserve_item = next(
+            item
+            for column in response.context["columns"]
+            for item in column["items"]
+            if item.get("company") == "Reserva"
+        )
+        self.assertEqual(reserve_item["contact_type"], "Instagram DM")
+
     def test_prospect_form_requires_meeting_date_when_meeting_is_scheduled(self):
         form = ProspectForm(
             data={
