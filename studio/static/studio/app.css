@@ -2,6 +2,8 @@
     --bg: #eef3fb;
     --sidebar-top: #102642;
     --sidebar-bottom: #0d2039;
+    --sidebar-width-collapsed: 104px;
+    --sidebar-width-expanded: 296px;
     --card: #ffffff;
     --card-soft: #f8fbff;
     --border: #dce6f4;
@@ -99,7 +101,7 @@ textarea {
 .app-shell {
     min-height: 100vh;
     min-height: 100dvh;
-    padding-left: 296px;
+    padding-left: calc(var(--sidebar-width-collapsed) + 10px);
     overflow-x: hidden;
 }
 
@@ -114,7 +116,7 @@ textarea {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 296px;
+    width: var(--sidebar-width-expanded);
     min-height: 100vh;
     min-height: 100dvh;
     height: 100vh;
@@ -123,6 +125,8 @@ textarea {
     overflow-x: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    z-index: 30;
+    transition: width 0.24s ease, padding 0.24s ease, box-shadow 0.24s ease;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -271,6 +275,7 @@ textarea {
 .content-area {
     min-height: 100vh;
     min-height: 100dvh;
+    min-width: 0;
     padding: 28px 34px;
 }
 
@@ -368,6 +373,7 @@ textarea {
 .job-card,
 .pipeline-card,
 .note-box {
+    min-width: 0;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 24px;
@@ -553,7 +559,7 @@ body.theme-dark .message {
 }
 
 .stats-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     margin-bottom: 18px;
 }
 
@@ -994,6 +1000,20 @@ body.theme-dark .icon-button:disabled {
     gap: 10px;
 }
 
+.prospect-top,
+.meta-line {
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.prospect-card strong,
+.prospect-card p,
+.prospect-card small,
+.prospect-card span {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .prospect-card--follow-up {
     gap: 12px;
     padding: 16px;
@@ -1004,6 +1024,7 @@ body.theme-dark .icon-button:disabled {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1 1 220px;
 }
 
 .follow-up-brand-copy {
@@ -1297,7 +1318,8 @@ body.theme-dark .status-pill {
 }
 
 .board-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    align-items: start;
 }
 
 .highlight-grid {
@@ -1315,6 +1337,95 @@ body.theme-dark .status-pill {
 .profile-business-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: end;
+}
+
+@media (min-width: 1101px) {
+    .sidebar {
+        width: var(--sidebar-width-collapsed);
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .sidebar:hover,
+    .sidebar:focus-within {
+        width: var(--sidebar-width-expanded);
+        padding-left: 20px;
+        padding-right: 20px;
+        box-shadow: 16px 0 36px rgba(8, 18, 34, 0.18);
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .brand-block {
+        min-height: 78px;
+        padding: 0;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .brand-logo {
+        width: 56px;
+        max-width: 56px;
+        transform: none;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .nav-groups,
+    .sidebar:not(:hover):not(:focus-within) .nav-group,
+    .sidebar:not(:hover):not(:focus-within) .nav-list {
+        align-items: center;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .nav-group-label {
+        max-height: 0;
+        padding: 0;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .nav-link {
+        position: relative;
+        width: 56px;
+        min-height: 56px;
+        padding: 0;
+        margin: 0 auto;
+        border-radius: 18px;
+        font-size: 0;
+        color: transparent;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .nav-link::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.4);
+        transform: translate(-50%, -50%);
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .nav-link.active::before {
+        width: 14px;
+        height: 14px;
+        background: #ffffff;
+        box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .workspace-chip {
+        width: 72px;
+        min-height: 72px;
+        padding: 14px;
+        display: grid;
+        place-items: center;
+        margin-inline: auto;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .workspace-chip-copy {
+        display: none;
+    }
+
+    .sidebar:not(:hover):not(:focus-within) .workspace-chip-avatar-image,
+    .sidebar:not(:hover):not(:focus-within) .workspace-chip-avatar-fallback {
+        position: static;
+        margin: 0 auto;
+    }
 }
 
 .profile-business-field--zip {
