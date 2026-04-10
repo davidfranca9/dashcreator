@@ -1,6 +1,18 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
+<article class="card jobs-filter-bar">
+    <form method="get" class="jobs-filter-form" data-prospection-filter-form style="grid-template-columns: minmax(280px, 420px);">
+        {% if selected_month %}
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+        {% endif %}
+        <label class="jobs-filter-search" aria-label="Pesquisar pela marca">
+            <span>⌕</span>
+            <input type="search" name="search" value="{{ filters.search }}" placeholder="Pesquise pelo nome da marca">
+        </label>
+    </form>
+</article>
+
 <section class="stats-grid">
     {% for item in stats %}
         <article class="stat-card">
@@ -98,4 +110,24 @@
         </article>
     {% endfor %}
 </section>
+
+<script>
+    (() => {
+        const form = document.querySelector("[data-prospection-filter-form]");
+        if (!form) {
+            return;
+        }
+
+        const searchField = form.querySelector('input[name="search"]');
+        if (!searchField) {
+            return;
+        }
+
+        let timerId = null;
+        searchField.addEventListener("input", () => {
+            window.clearTimeout(timerId);
+            timerId = window.setTimeout(() => form.requestSubmit(), 300);
+        });
+    })();
+</script>
 {% endblock %}

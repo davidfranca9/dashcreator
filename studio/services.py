@@ -1029,7 +1029,7 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
     }
 
 
-def prospection_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
+def prospection_snapshot(workspace: Workspace, month_filter: str | None = None, search: str | None = None) -> dict:
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
     all_prospects = list(Prospect.objects.filter(workspace=workspace))
@@ -1042,8 +1042,23 @@ def prospection_snapshot(workspace: Workspace, month_filter: str | None = None) 
             and prospect_activity_date(item).month == selected_month.month
         )
     ]
+    search_term = (search or "").strip()
+    if search_term:
+        normalized_search_term = search_term.casefold()
+        prospects = [
+            item
+            for item in prospects
+            if normalized_search_term in (item.company or "").casefold()
+        ]
     negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
     follow_up_items = confirmed_follow_up_items(workspace)
+    if search_term:
+        normalized_search_term = search_term.casefold()
+        follow_up_items = [
+            item
+            for item in follow_up_items
+            if normalized_search_term in item["company"].casefold()
+        ]
 
     columns = []
     stage_titles = {
@@ -1100,6 +1115,9 @@ def prospection_snapshot(workspace: Workspace, month_filter: str | None = None) 
             {"title": "Aguardando retorno", "value": str(sum(1 for item in prospects if item.stage == "Aguardando retorno")), "icon_label": "A"},
             {"title": "Negociação", "value": str(negotiation_count), "icon_label": "N"},
         ],
+        "filters": {
+            "search": search_term,
+        },
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
         "columns": columns,

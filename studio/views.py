@@ -758,8 +758,19 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @login_required
 def prospection(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
-    context = shell_context("prospection", workspace, "Prospecção", "Leads, follow-ups e negociações em aberto.", user=request.user, action_label="Novo lead", action_url="prospect_create")
-    context.update(prospection_snapshot(workspace))
+    month_filter = request.GET.get("month")
+    search = request.GET.get("search")
+    context = shell_context(
+        "prospection",
+        workspace,
+        "Prospecção",
+        "Leads, follow-ups e negociações em aberto.",
+        user=request.user,
+        action_label="Novo lead",
+        action_url="prospect_create",
+        month_filter=month_filter,
+    )
+    context.update(prospection_snapshot(workspace, month_filter, search=search))
     return render(request, "studio/prospection.html", context)
 
 

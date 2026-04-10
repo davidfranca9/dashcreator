@@ -344,6 +344,29 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "Nike")
         self.assertNotContains(response, "Insider")
 
+    def test_prospection_page_filters_leads_by_brand_name(self):
+        Prospect.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            contact="Julia",
+            contact_type="Email",
+            stage="Aguardando retorno",
+            contact_date=date.today(),
+            niche=self.niche,
+            email="julia@insider.com",
+            instagram="@insider",
+            whatsapp="71911111111",
+            note="Busca por marca",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"), {"search": "nik"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["filters"]["search"], "nik")
+        self.assertContains(response, "Nike")
+        self.assertNotContains(response, "Insider")
+
     def test_prospection_manual_follow_up_stage_appears_in_follow_up_column(self):
         Prospect.objects.create(
             workspace=self.workspace,
