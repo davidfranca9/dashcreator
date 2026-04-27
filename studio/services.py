@@ -1470,6 +1470,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "amount_text": currency(item.received_value),
             "accent": "#20b7a7",
             "kind": "incoming",
+            "entry_id": None,
+            "can_edit": False,
             "sort_date": payment_reference_date(item),
         }
         for item in confirmed_incoming_projects
@@ -1482,6 +1484,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "amount_text": currency(item.amount),
             "accent": "#c04d57",
             "kind": item.kind,
+            "entry_id": item.pk,
+            "can_edit": True,
             "sort_date": item.occurred_on,
         }
         for item in month_entries

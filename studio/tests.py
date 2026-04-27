@@ -5,6 +5,7 @@ from unittest.mock import patch
 from io import StringIO
 from io import BytesIO
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.contrib.sessions.models import Session
 from django.core import mail
@@ -1449,6 +1450,48 @@ class DashboardSmokeTest(TestCase):
         self.assertRedirects(outgoing_response, f"{reverse('finance')}?month={self.project.due_date.strftime('%Y-%m')}")
         self.assertEqual(FinanceEntry.objects.filter(workspace=self.workspace, kind=FinanceEntry.KIND_OUTGOING).count(), 1)
         self.assertContains(outgoing_response, "Saída registrada.")
+
+    def test_finance_page_allows_editing_outgoing_entries(self):
+        entry = FinanceEntry.objects.create(
+            workspace=self.workspace,
+            kind=FinanceEntry.KIND_OUTGOING,
+            amount=250,
+            occurred_on=self.project.due_date,
+            description="Locacao de estudio",
+        )
+        self.client.force_login(self.user)
+
+        edit_response = self.client.get(
+            reverse("finance"),
+            {"month": self.project.due_date.strftime("%Y-%m"), "edit": str(entry.pk)},
+        )
+
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertContains(edit_response, "Editar saída")
+        self.assertContains(
+            edit_response,
+            f'?month={self.project.due_date.strftime("%Y-%m")}&edit={entry.pk}',
+        )
+        self.assertEqual(edit_response.context["outgoing_form"].instance.pk, entry.pk)
+
+        update_response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "outgoing",
+                "month": self.project.due_date.strftime("%Y-%m"),
+                "outgoing_entry_id": str(entry.pk),
+                "outgoing-amount": "175.50",
+                "outgoing-occurred_on": self.project.due_date.isoformat(),
+                "outgoing-description": "Editor freelancer",
+            },
+            follow=True,
+        )
+
+        entry.refresh_from_db()
+        self.assertRedirects(update_response, f"{reverse('finance')}?month={self.project.due_date.strftime('%Y-%m')}")
+        self.assertEqual(entry.amount, Decimal("175.50"))
+        self.assertEqual(entry.description, "Editor freelancer")
+        self.assertContains(update_response, "Saída atualizada.")
 
     def test_dashboard_snapshot_respects_selected_global_month(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)

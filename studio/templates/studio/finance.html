@@ -25,14 +25,17 @@
     <article class="card">
         <div class="card-header">
             <div>
-                <h3>Registrar saída</h3>
-                <p class="muted">Use para custos de produção, ferramentas ou investimentos.</p>
+                <h3>{{ outgoing_form_title }}</h3>
+                <p class="muted">{{ outgoing_form_description }}</p>
             </div>
         </div>
         <form method="post" class="form-grid">
             {% csrf_token %}
             <input type="hidden" name="finance_action" value="outgoing">
             <input type="hidden" name="month" value="{{ selected_month.value }}">
+            {% if editing_entry %}
+                <input type="hidden" name="outgoing_entry_id" value="{{ editing_entry.id }}">
+            {% endif %}
             {% for field in outgoing_form %}
                 <div class="form-field{% if field.name == 'description' %} form-field--full{% endif %}">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -41,7 +44,10 @@
                 </div>
             {% endfor %}
             <div class="form-actions form-field--full">
-                <button type="submit" class="danger-button">Salvar saída</button>
+                <button type="submit" class="danger-button">{{ outgoing_form_submit_label }}</button>
+                {% if editing_entry %}
+                    <a class="ghost-button" href="{{ finance_cancel_url }}">Cancelar</a>
+                {% endif %}
             </div>
         </form>
     </article>
@@ -62,6 +68,9 @@
                         <div class="activity-meta">
                             <strong>{{ item.amount_text }}</strong>
                             <small>{{ item.date_text }}</small>
+                            {% if item.can_edit %}
+                                <a class="ghost-button small" href="{% url 'finance' %}?month={{ selected_month.value }}&edit={{ item.entry_id }}">Editar</a>
+                            {% endif %}
                         </div>
                     </article>
                 {% endfor %}

@@ -38,7 +38,7 @@ from .forms import (
     WorkspaceBusinessForm,
     WorkspaceSettingsForm,
 )
-from .models import Project, Prospect, ServiceCategory
+from .models import FinanceEntry, Project, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
@@ -833,6 +833,15 @@ def jobs(request: HttpRequest) -> HttpResponse:
 def finance(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     month_filter = request.GET.get("month") or request.POST.get("month")
+    editing_entry_id = request.POST.get("outgoing_entry_id") if request.method == "POST" else request.GET.get("edit")
+    editing_entry = None
+    if editing_entry_id:
+        if not editing_entry_id.isdigit():
+            raise Http404("Saida nao encontrada.")
+        editing_entry = get_object_or_404(
+            FinanceEntry.objects.filter(workspace=workspace, kind=FinanceEntry.KIND_OUTGOING),
+            pk=int(editing_entry_id),
+        )
     selected_month = parse_month_value(month_filter) if month_filter and month_filter != "all" else None
     today = date.today()
     initial_date = (
@@ -840,18 +849,23 @@ def finance(request: HttpRequest) -> HttpResponse:
         if selected_month is None or (selected_month.year == today.year and selected_month.month == today.month)
         else selected_month
     )
-    outgoing_form = FinanceEntryForm(prefix="outgoing", initial={"occurred_on": initial_date})
+    outgoing_form_kwargs = {"prefix": "outgoing"}
+    if editing_entry is not None:
+        outgoing_form_kwargs["instance"] = editing_entry
+    else:
+        outgoing_form_kwargs["initial"] = {"occurred_on": initial_date}
+    outgoing_form = FinanceEntryForm(**outgoing_form_kwargs)
 
     if request.method == "POST":
         action = request.POST.get("finance_action")
         if action == "outgoing":
-            outgoing_form = FinanceEntryForm(request.POST, prefix="outgoing")
+            outgoing_form = FinanceEntryForm(request.POST, **outgoing_form_kwargs)
             if outgoing_form.is_valid():
                 entry = outgoing_form.save(commit=False)
                 entry.workspace = workspace
-                entry.kind = "outgoing"
+                entry.kind = FinanceEntry.KIND_OUTGOING
                 entry.save()
-                messages.success(request, "Saída registrada.")
+                messages.success(request, "Saída atualizada." if editing_entry is not None else "Saída registrada.")
                 redirect_url = reverse("finance")
                 if month_filter:
                     redirect_url = f"{redirect_url}?month={month_filter}"
@@ -869,6 +883,15 @@ def finance(request: HttpRequest) -> HttpResponse:
     context.update(
         {
             "outgoing_form": outgoing_form,
+            "outgoing_form_title": "Editar saída" if editing_entry is not None else "Registrar saída",
+            "outgoing_form_submit_label": "Salvar alteração" if editing_entry is not None else "Salvar saída",
+            "outgoing_form_description": (
+                "Corrija valor, data ou descrição desta saída."
+                if editing_entry is not None
+                else "Use para custos de produção, ferramentas ou investimentos."
+            ),
+            "editing_entry": editing_entry,
+            "finance_cancel_url": f"{reverse('finance')}?month={month_filter}" if month_filter else reverse("finance"),
         }
     )
     return render(request, "studio/finance.html", context)
