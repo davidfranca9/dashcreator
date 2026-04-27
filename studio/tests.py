@@ -1646,6 +1646,7 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pacote premium")
+        self.assertContains(response, "Haircare")
         self.assertContains(response, "Tecnologia e Eletr\u00f4nicos")
         self.assertContains(response, "Viagens e Turismo")
         self.assertNotContains(response, "Adicionar nicho")
@@ -1657,6 +1658,7 @@ class DashboardSmokeTest(TestCase):
             list(form.fields["niche"].queryset.values_list("name", flat=True)[:5]),
             DEFAULT_NICHE_NAMES[:5],
         )
+        self.assertIn("Haircare", list(form.fields["niche"].queryset.values_list("name", flat=True)))
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)

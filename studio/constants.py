@@ -64,6 +64,7 @@ DEFAULT_NICHE_NAMES = [
     "Casa",
     "Casamento e Eventos",
     "Beleza e Maquiagem",
+    "Haircare",
     "Decora\u00e7\u00e3o e Design de Interiores",
     "Educa\u00e7\u00e3o e Aprendizagem",
     "Filmes e S\u00e9ries",
