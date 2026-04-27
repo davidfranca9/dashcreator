@@ -8,11 +8,11 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.db.models import Q, QuerySet
+from django.db.models import Case, IntegerField, Q, QuerySet, Value, When
 from django.urls import reverse
 
 from .contact_types import infer_contact_type
-from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
+from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, LEGACY_DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
 from .models import FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
@@ -315,12 +315,35 @@ def ensure_default_settings(workspace: Workspace) -> None:
             )
 
 
+def _ordered_niche_queryset(queryset: QuerySet[Niche]) -> QuerySet[Niche]:
+    custom_order = [
+        When(name=name, then=Value(index))
+        for index, name in enumerate(DEFAULT_NICHE_NAMES)
+    ]
+    return queryset.annotate(
+        _default_order=Case(
+            *custom_order,
+            default=Value(len(DEFAULT_NICHE_NAMES)),
+            output_field=IntegerField(),
+        )
+    ).order_by("_default_order", "name")
+
+
 def ensure_default_niches(workspace: Workspace) -> None:
     for name in DEFAULT_NICHE_NAMES:
         Niche.objects.get_or_create(
             workspace=workspace,
             name=name,
         )
+    Niche.objects.filter(
+        workspace=workspace,
+        name__in=LEGACY_DEFAULT_NICHE_NAMES,
+    ).exclude(
+        name__in=DEFAULT_NICHE_NAMES,
+    ).filter(
+        prospects__isnull=True,
+        projects__isnull=True,
+    ).delete()
 
 
 def default_niche_queryset(workspace: Workspace, current_niche: Niche | None = None) -> QuerySet[Niche]:
@@ -328,7 +351,7 @@ def default_niche_queryset(workspace: Workspace, current_niche: Niche | None = N
     base_filter = Q(name__in=DEFAULT_NICHE_NAMES)
     if current_niche and current_niche.pk:
         base_filter |= Q(pk=current_niche.pk)
-    return Niche.objects.filter(workspace=workspace).filter(base_filter).order_by("name")
+    return _ordered_niche_queryset(Niche.objects.filter(workspace=workspace).filter(base_filter))
 
 
 def default_niche_list(workspace: Workspace) -> list[Niche]:

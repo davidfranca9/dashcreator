@@ -16,6 +16,7 @@ from django.core.management.base import CommandError
 from django.urls import reverse
 from PIL import Image
 
+from .constants import DEFAULT_NICHE_NAMES
 from .forms import ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
@@ -26,7 +27,7 @@ class DashboardSmokeTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="tester", password="segura123")
         self.workspace = get_or_create_workspace_for_user(self.user)
-        self.niche = Niche.objects.get(workspace=self.workspace, name="Beleza")
+        self.niche = Niche.objects.get(workspace=self.workspace, name="Beleza e Maquiagem")
         self.category = ServiceCategory.objects.create(workspace=self.workspace, name="Pacote de videos")
         Prospect.objects.create(
             workspace=self.workspace,
@@ -1028,7 +1029,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["value"], "1")
 
     def test_jobs_page_filters_by_type_progress_niche_and_search(self):
-        tech_niche = Niche.objects.get(workspace=self.workspace, name="Tech")
+        tech_niche = Niche.objects.get(workspace=self.workspace, name="Tecnologia e Eletr\u00f4nicos")
         second_category = ServiceCategory.objects.create(workspace=self.workspace, name="Stories")
         Project.objects.create(
             workspace=self.workspace,
@@ -1538,7 +1539,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["stats"][0]["value"], "2")
         self.assertEqual(response.context["stats"][1]["value"], "R$7.400")
         self.assertEqual(response.context["stats"][2]["value"], "Inbound")
-        self.assertEqual(response.context["stats"][3]["value"], "Beleza")
+        self.assertEqual(response.context["stats"][3]["value"], "Beleza e Maquiagem")
         self.assertEqual(response.context["via_breakdown"][0]["amount_text"], "50%")
         self.assertEqual(response.context["source_mix"]["total"], 2)
         self.assertContains(response, "Via de fechamento")
@@ -1602,9 +1603,17 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pacote premium")
-        self.assertContains(response, "Tech")
-        self.assertContains(response, "Viagem")
+        self.assertContains(response, "Tecnologia e Eletr\u00f4nicos")
+        self.assertContains(response, "Viagens e Turismo")
         self.assertNotContains(response, "Adicionar nicho")
+
+    def test_prospect_form_preserves_default_niche_order(self):
+        form = ProspectForm(workspace=self.workspace)
+
+        self.assertEqual(
+            list(form.fields["niche"].queryset.values_list("name", flat=True)[:5]),
+            DEFAULT_NICHE_NAMES[:5],
+        )
 
     def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)

@@ -39,7 +39,7 @@ PROSPECT_STAGE_CHOICES = [
     ("Follow-up", "Follow-up"),
 ]
 
-DEFAULT_NICHE_NAMES = [
+LEGACY_DEFAULT_NICHE_NAMES = [
     "Tech",
     "Haircare",
     "Beleza",
@@ -53,6 +53,40 @@ DEFAULT_NICHE_NAMES = [
     "Casa e Decora\u00e7\u00e3o",
     "Relacionamento",
     "Viagem",
+]
+
+DEFAULT_NICHE_NAMES = [
+    "Alimenta\u00e7\u00e3o Saud\u00e1vel e Nutri\u00e7\u00e3o",
+    "Arte e Cultura",
+    "Culin\u00e1ria e Receitas",
+    "Autom\u00f3veis e Carros",
+    "DIY e Fa\u00e7a Voc\u00ea Mesmo",
+    "Casa",
+    "Casamento e Eventos",
+    "Beleza e Maquiagem",
+    "Decora\u00e7\u00e3o e Design de Interiores",
+    "Educa\u00e7\u00e3o e Aprendizagem",
+    "Filmes e S\u00e9ries",
+    "Empreendedorismo e Neg\u00f3cios",
+    "Fitness e Bem-Estar",
+    "Fotografia e Edi\u00e7\u00e3o de Imagens",
+    "Esportes e Atletismo",
+    "Finan\u00e7as e Investimentos",
+    "Gaming e Jogos Eletr\u00f4nicos",
+    "Hobbies e Passatempos",
+    "Gastronomia",
+    "LGBTQ+ e Diversidade",
+    "Tecnologia e Eletr\u00f4nicos",
+    "Sa\u00fade Mental e Bem-Estar emocional",
+    "Pet Lovers (Amantes de animais de estima\u00e7\u00e3o)",
+    "Livros e Literatura",
+    "Moda Masculina",
+    "Moda Feminina",
+    "Marcas Sustent\u00e1veis e \u00c9ticas",
+    "M\u00fasica e Entretenimento",
+    "Sustentabilidade e Meio Ambiente",
+    "Maternidade e Paternidade",
+    "Viagens e Turismo",
 ]
 
 COMPANY_COLORS = {
