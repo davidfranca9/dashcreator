@@ -33,6 +33,7 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Indicacao", "Indicação"),
     ("Nao se aplica", "Não se aplica"),
 ]
+ADD_SERVICE_CATEGORY_VALUE = "__add_service_category__"
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
@@ -288,30 +289,10 @@ class ProjectForm(forms.ModelForm):
         settings_values = settings_map(workspace) if workspace is not None else {}
         default_entry_rate = settings_values.get("ops_default_entry_rate", "50%").replace("%", "").strip()
         self.default_entry_rate = int(default_entry_rate or 50)
-        self.order_fields(
-            [
-                "company",
-                "closing_source",
-                "content_distribution",
-                "image_license_term_days",
-                "niche",
-                "service_category",
-                "stage",
-                "status",
-                "total_value",
-                "entry_value",
-                "received_value",
-                "deliverables_count",
-                "payment_due_date",
-                "meeting_scheduled",
-                "meeting_date",
-                "close_date",
-                "due_date",
-                "note",
-            ]
-        )
+        self.show_new_service_category = False
         self.fields["niche"].queryset = Niche.objects.none()
         self.fields["service_category"].queryset = ServiceCategory.objects.none()
+        current_service_category = self.instance.service_category if getattr(self.instance, "pk", None) and self.instance.service_category_id else None
         if workspace is not None:
             ensure_default_niches(workspace)
             current_niche = self.instance.niche if getattr(self.instance, "pk", None) and self.instance.niche_id else None
@@ -323,6 +304,12 @@ class ProjectForm(forms.ModelForm):
                     current_niche = Niche.objects.filter(workspace=workspace, pk=initial_niche).first()
             self.fields["niche"].queryset = default_niche_queryset(workspace, current_niche)
             self.fields["service_category"].queryset = ServiceCategory.objects.filter(workspace=workspace)
+            if current_service_category is None:
+                initial_service_category = self.initial.get("service_category")
+                if isinstance(initial_service_category, ServiceCategory):
+                    current_service_category = initial_service_category
+                elif initial_service_category:
+                    current_service_category = ServiceCategory.objects.filter(workspace=workspace, pk=initial_service_category).first()
         if not self.is_bound and not getattr(self.instance, "pk", None) and not self.initial.get("close_date"):
             self.fields["close_date"].initial = timezone.localdate()
         self.fields["close_date"].widget.format = "%Y-%m-%d"
@@ -333,6 +320,30 @@ class ProjectForm(forms.ModelForm):
         self.fields["payment_due_date"].input_formats = ["%Y-%m-%d"]
         self.fields["meeting_date"].widget.format = "%Y-%m-%d"
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
+        service_category_choices = [("", "---------")]
+        if workspace is not None:
+            service_category_choices.extend(
+                (str(item.pk), item.name)
+                for item in ServiceCategory.objects.filter(workspace=workspace).order_by("name")
+            )
+        service_category_choices.append((ADD_SERVICE_CATEGORY_VALUE, "Adicionar categoria"))
+        self.fields["service_category"] = forms.ChoiceField(
+            label="Categoria de serviço",
+            choices=service_category_choices,
+            required=False,
+        )
+        self.fields["service_category"].widget.attrs["data-new-option-value"] = ADD_SERVICE_CATEGORY_VALUE
+        self.fields["service_category"].help_text = "Selecione uma categoria existente ou use a opção Adicionar categoria."
+        if current_service_category is not None:
+            self.initial["service_category"] = str(current_service_category.pk)
+        self.fields["new_service_category"] = forms.CharField(
+            label="Nova categoria",
+            required=False,
+            help_text="Digite o nome da nova categoria para salvar e reutilizar depois.",
+            widget=forms.TextInput(attrs={"placeholder": "Ex.: Estratégia UGC"}),
+        )
+        if self.is_bound:
+            self.show_new_service_category = self.data.get(self.add_prefix("service_category")) == ADD_SERVICE_CATEGORY_VALUE
 
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
@@ -375,13 +386,58 @@ class ProjectForm(forms.ModelForm):
         self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["received_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["deliverables_count"].widget.attrs.update({"min": "1"})
+        self.order_fields(
+            [
+                "company",
+                "closing_source",
+                "content_distribution",
+                "image_license_term_days",
+                "niche",
+                "service_category",
+                "new_service_category",
+                "stage",
+                "status",
+                "total_value",
+                "entry_value",
+                "received_value",
+                "deliverables_count",
+                "payment_due_date",
+                "meeting_scheduled",
+                "meeting_date",
+                "close_date",
+                "due_date",
+                "note",
+            ]
+        )
 
     def clean(self):
         cleaned_data = super().clean()
-        service_category = cleaned_data.get("service_category")
+        service_category_value = cleaned_data.get("service_category")
+        new_service_category = (cleaned_data.get("new_service_category") or "").strip()
 
-        if service_category is None:
-            self.add_error("service_category", "Selecione uma categoria de serviço nas configurações do workspace.")
+        if service_category_value == ADD_SERVICE_CATEGORY_VALUE:
+            cleaned_data["service_category"] = None
+            if not new_service_category:
+                self.add_error("new_service_category", "Digite o nome da nova categoria.")
+            elif self.workspace is None:
+                self.add_error("service_category", "Não foi possível carregar as categorias do workspace.")
+            else:
+                cleaned_data["service_category"], _ = ServiceCategory.objects.get_or_create(
+                    workspace=self.workspace,
+                    name=new_service_category,
+                )
+        elif service_category_value:
+            cleaned_data["service_category"] = None
+            service_category = None
+            if self.workspace is not None:
+                service_category = ServiceCategory.objects.filter(workspace=self.workspace, pk=service_category_value).first()
+            if service_category is None:
+                self.add_error("service_category", "Selecione uma categoria de serviço válida.")
+            else:
+                cleaned_data["service_category"] = service_category
+        else:
+            cleaned_data["service_category"] = None
+            self.add_error("service_category", "Selecione uma categoria de serviço.")
 
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0

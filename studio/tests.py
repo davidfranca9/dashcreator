@@ -18,7 +18,7 @@ from django.urls import reverse
 from PIL import Image
 
 from .constants import DEFAULT_NICHE_NAMES
-from .forms import ContractBrandForm, ProjectForm, ProspectForm
+from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
@@ -579,6 +579,8 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("meeting_date", form.fields)
         self.assertIn("note", form.fields)
         self.assertIn("image_license_term_days", form.fields)
+        self.assertIn("new_service_category", form.fields)
+        self.assertEqual(form.fields["service_category"].choices[-1], (ADD_SERVICE_CATEGORY_VALUE, "Adicionar categoria"))
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
@@ -707,6 +709,44 @@ class DashboardSmokeTest(TestCase):
 
         self.assertFalse(ads_without_term_form.is_valid())
         self.assertIn("image_license_term_days", ads_without_term_form.errors)
+
+    def test_project_form_can_create_new_service_category_from_dropdown(self):
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "service_category": ADD_SERVICE_CATEGORY_VALUE,
+                "new_service_category": "Conteudo Performance",
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "4000",
+                "entry_value": "2000",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+        project.workspace = self.workspace
+        project.save()
+
+        self.assertEqual(project.service_category.name, "Conteudo Performance")
+        self.assertTrue(ServiceCategory.objects.filter(workspace=self.workspace, name="Conteudo Performance").exists())
+
+    def test_project_create_page_shows_add_service_category_option(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("project_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Adicionar categoria")
+        self.assertContains(response, 'id="id_new_service_category"', html=False)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):
         project = Project.objects.create(
