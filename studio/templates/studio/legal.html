@@ -45,7 +45,7 @@
                             <span class="chip" data-contract-status-chip="{{ item.id }}">{{ item.contract_status_text }}</span>
                             <span class="chip">{{ item.distribution }}</span>
                             <span class="chip">Fechamento {{ item.close_text }}</span>
-                            <span class="chip">Entrega {{ item.delivery_text }}</span>
+                            <span class="chip">Data prevista para entrega {{ item.delivery_text }}</span>
                             <span class="chip">{{ item.deliverables_text }}</span>
                         </div>
                         {% if item.note %}
@@ -68,7 +68,7 @@
                                     <p class="muted">Confira os dados da contratante antes de gerar o contrato de {{ item.company }}.</p>
                                 </div>
                             </div>
-                            <form method="post" action="{% url 'legal_contract_pdf' item.id %}" class="auth-form-stack" target="_blank" data-contract-submit="{{ item.id }}">
+                            <form method="post" action="{% url 'legal_contract_preview' item.id %}" class="auth-form-stack" data-contract-submit="{{ item.id }}">
                                 {% csrf_token %}
                                 <div class="form-field">
                                     <label for="company_legal_name_{{ item.id }}">Razão social</label>
@@ -87,7 +87,7 @@
                                     <input id="company_phone_{{ item.id }}" type="text" name="company_phone" value="{{ item.company_phone }}" required data-contract-company-phone>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="primary-button">Confirmar e gerar contrato</button>
+                                    <button type="submit" class="primary-button">Pré-visualizar contrato</button>
                                 </div>
                             </form>
                         </div>
@@ -122,7 +122,7 @@
                         </div>
                         <div class="job-meta-list">
                             <span class="chip">{{ item.distribution }}</span>
-                            <span class="chip">Entrega {{ item.delivery_text }}</span>
+                            <span class="chip">Data prevista para entrega {{ item.delivery_text }}</span>
                             <span class="chip">Uso {{ item.term_text }}</span>
                             <span class="chip">Vence {{ item.expires_text }}</span>
                         </div>
@@ -240,11 +240,6 @@
         }
 
         form.addEventListener("submit", () => {
-            const projectId = form.dataset.contractSubmit;
-            const statusChip = document.querySelector(`[data-contract-status-chip="${projectId}"]`);
-            if (statusChip) {
-                statusChip.textContent = "Contrato gerado";
-            }
             closeAllContractModals();
         });
     });

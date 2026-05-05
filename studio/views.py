@@ -4,6 +4,7 @@ import json
 import mimetypes
 import re
 from datetime import date
+from html import escape, unescape
 from pathlib import Path
 from io import BytesIO
 from urllib.error import HTTPError, URLError
@@ -452,6 +453,321 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
         "license_expires_on_text": _long_date_label(license_expires_on),
         "project_note": (project.note or "").strip(),
     }
+
+
+def _contract_intro_paragraphs(payload: dict) -> list[str]:
+    return [
+        (
+            f"<b>CONTRATADA:</b><br/>"
+            f"{payload['creator_name']}, brasileira, solteira, Criadora de Conteúdo UGC, inscrita no CNPJ sob o nº "
+            f"{payload['creator_cnpj']}, residente e domiciliada em {payload['creator_address']}, e-mail "
+            f"{payload['creator_email']}.<br/><br/>"
+            f"<b>CONTRATANTE:</b><br/>"
+            f"{payload['company_name']}, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº "
+            f"{payload['company_cnpj']}, com sede em {payload['company_address']}, telefone {payload['company_phone']} "
+            f"e e-mail {payload['company_email']}."
+        ),
+        (
+            "As partes acima identificadas têm entre si justo e contratado o presente Contrato de Prestação de "
+            "Serviços de Criação de Conteúdo UGC, que se regerá pelas cláusulas e condições a seguir."
+        ),
+    ]
+
+
+def _contract_clauses(payload: dict) -> list[dict[str, str]]:
+    return [
+        {
+            "key": "1",
+            "title": "CLÁUSULA 1 - DO OBJETO",
+            "body": (
+                "1.1. O presente contrato tem por objeto a prestação de serviços de criação de conteúdo do tipo UGC "
+                f"(User Generated Content) pela CONTRATADA, com a finalidade de promover os produtos ou serviços da "
+                f"CONTRATANTE, para utilização em <b>{payload['mixed_distribution_label']}</b>.<br/>"
+                "1.2. A CONTRATADA compromete-se a personalizar os entregáveis de acordo com as necessidades específicas "
+                f"da CONTRATANTE, dentro do escopo dos serviços previamente alinhados para o trabalho "
+                f"<b>{payload['service_name']}</b>.<br/>"
+                "1.3. Os conteúdos criados poderão incluir, sem limitação: vídeos, imagens, textos e outros formatos, "
+                "conforme ajuste prévio entre as partes."
+            ),
+        },
+        {
+            "key": "2",
+            "title": "CLÁUSULA 2 - DAS OBRIGAÇÕES DA CONTRATADA",
+            "body": (
+                "2.1. São obrigações da CONTRATADA:<br/>"
+                "a) Criar os conteúdos de acordo com o briefing e cronograma fornecidos pela CONTRATANTE.<br/>"
+                "b) Garantir que os conteúdos sejam originais e atendam aos padrões de qualidade solicitados pela CONTRATANTE.<br/>"
+                "c) Realizar eventuais ajustes no conteúdo criado, caso solicitados pela CONTRATANTE, respeitando o prazo de até "
+                "7 (sete) dias corridos após a entrega inicial.<br/>"
+                "d) Respeitar as políticas de privacidade, direitos autorais e regulamentações aplicáveis.<br/>"
+                "e) Garantir a entrega do material dentro do prazo previamente acordado entre as partes."
+            ),
+        },
+        {
+            "key": "3",
+            "title": "CLÁUSULA 3 - DAS OBRIGAÇÕES DA CONTRATANTE",
+            "body": (
+                "3.1. São obrigações da CONTRATANTE:<br/>"
+                "a) Fornecer as informações, briefings e materiais necessários para o desenvolvimento do conteúdo.<br/>"
+                "b) Efetuar os pagamentos nos prazos e condições estabelecidos neste contrato.<br/>"
+                "c) Utilizar os conteúdos criados exclusivamente nos termos acordados neste instrumento.<br/>"
+                "d) Garantir que os dados e informações fornecidos à CONTRATADA estejam em conformidade com a Lei Geral de "
+                "Proteção de Dados (Lei nº 13.709/2018 - LGPD)."
+            ),
+        },
+        {
+            "key": "4",
+            "title": "CLÁUSULA 4 - DOS ENTREGÁVEIS",
+            "body": (
+                f"4.1. As partes acordam que os serviços consistirão em criação de conteúdo UGC, compreendendo a gravação de "
+                f"<b>{payload['deliverables_count_label']}</b> roteiros desenvolvidos pela CONTRATADA, edição e entrega do material "
+                f"por meio do Google Drive, até <b>{payload['due_date_text']}</b>, conforme cronograma alinhado entre as partes.<br/>"
+                f"4.2. A CONTRATADA produzirá <b>{payload['deliverables_count_label']}</b> vídeos, com duração mínima de 15 segundos "
+                "e máxima de 90 segundos cada.<br/>"
+                "4.3. Antes da gravação, a CONTRATADA submeterá à CONTRATANTE a ideia e o roteiro do conteúdo para aprovação.<br/>"
+                "4.4. A CONTRATANTE compromete-se a revisar o material e encaminhar eventuais solicitações de edição em até 07 "
+                "(sete) dias após a entrega do conteúdo.<br/>"
+                "4.5. A CONTRATANTE compromete-se a enviar o(s) produto(s) necessário(s) para a execução do trabalho no endereço "
+                "informado no cabeçalho deste contrato.<br/>"
+                "4.6. A CONTRATADA realizará até 03 (três) reedições gratuitas por vídeo, limitadas a ajustes básicos de edição, "
+                "como vídeo, música, narração, texto em tela e recortes. Tais reedições não incluem regravações.<br/>"
+                "4.7. Regravações somente serão permitidas caso a CONTRATADA se afaste substancialmente do briefing e do conceito "
+                "previamente aprovados pela CONTRATANTE.<br/>"
+                "4.8. Caso sejam necessárias mais de 03 (três) reedições, regravações ou qualquer outro serviço adicional, será "
+                "cobrada taxa extra, a ser negociada entre as partes.<br/>"
+                "4.9. A CONTRATANTE deverá aprovar o conteúdo em até 07 (sete) dias úteis após a entrega via Google Drive.<br/>"
+                f"4.10. Observações adicionais do job: "
+                f"{payload['project_note'] or 'seguir o briefing e os alinhamentos previamente aprovados entre as partes.'}"
+            ),
+        },
+        {
+            "key": "5",
+            "title": "CLÁUSULA 5 - DA VIGÊNCIA E DO PRAZO DE VEICULAÇÃO DO CONTEÚDO",
+            "body": _contract_clause_five_text(payload),
+        },
+        {
+            "key": "6",
+            "title": "CLÁUSULA 6 - DO PAGAMENTO",
+            "body": (
+                f"6.1. Pelos serviços de criação de conteúdo UGC, a CONTRATANTE pagará à CONTRATADA o valor total de "
+                f"<b>{payload['total_value']}</b>, correspondente à produção de <b>{payload['deliverables_count_label']}</b> vídeos "
+                f"para uso em <b>{payload['mixed_distribution_label']}</b>.<br/>"
+                "6.2. O pagamento será realizado da seguinte forma:<br/>"
+                f"a) Entrada de <b>{payload['entry_value']}</b> na data da assinatura deste contrato.<br/>"
+                f"b) Saldo remanescente de <b>{payload['balance_value']}</b> na entrega e aprovação final do conteúdo, observado o "
+                f"vencimento previsto para <b>{payload['payment_due_date_text']}</b>.<br/>"
+                "6.3. A CONTRATADA removerá quaisquer marcas d’água dos vídeos após a quitação integral do valor contratado.<br/>"
+                "6.4. A CONTRATANTE será responsável por todas as despesas de envio e entrega dos produtos necessários à execução dos serviços.<br/>"
+                "6.5. A CONTRATADA aceita pagamento por meio de PIX e/ou transferência bancária, conforme ajustado entre as partes.<br/>"
+                "6.6. Os pagamentos deverão ser realizados na conta indicada pela CONTRATADA, conforme os dados abaixo:<br/>"
+                f"Chave PIX: <b>{payload['creator_pix_key']}</b>"
+            ),
+        },
+        {
+            "key": "7",
+            "title": "CLÁUSULA 7 - DOS DIREITOS AUTORAIS E DO USO DE IMAGEM",
+            "body": (
+                "7.1. A CONTRATADA permanece titular de todos os direitos autorais sobre os conteúdos produzidos, incluindo vídeos, "
+                "fotografias, roteiros e demais materiais criados no âmbito deste contrato.<br/>"
+                f"7.2. O conteúdo fornecido à CONTRATANTE destina-se exclusivamente ao uso em <b>{payload['mixed_distribution_label']}</b>, "
+                "nos limites e prazos previstos neste contrato.<br/>"
+                "7.3. Nenhuma licença para venda, sublicenciamento, redistribuição ou cessão a terceiros será presumida ou concedida, "
+                "salvo autorização expressa e por escrito da CONTRATADA.<br/>"
+                "7.4. A cessão de uso do conteúdo fica restrita ao objeto deste contrato, sendo vedado à CONTRATANTE sublicenciar, "
+                "vender ou redistribuir os conteúdos a terceiros sem autorização expressa da CONTRATADA.<br/>"
+                "7.5. A CONTRATANTE será responsável por quaisquer perdas, danos, custos ou despesas decorrentes de uso não autorizado "
+                "do conteúdo, obrigando-se a indenizar e isentar a CONTRATADA por eventuais prejuízos decorrentes desse uso indevido.<br/>"
+                "7.6. A CONTRATADA poderá repostar o conteúdo em suas próprias redes sociais para uso orgânico, incluindo TikTok, "
+                "Instagram e outras plataformas, sendo vedada sua utilização em tráfego pago por parte da CONTRATADA, salvo ajuste diverso entre as partes.<br/>"
+                "7.7. Caso a CONTRATANTE deseje reutilizar ou renovar a licença de uso de imagem do conteúdo para anúncios pagos, site "
+                "ou outras plataformas, após o período inicialmente estipulado, deverá formalizar a solicitação por escrito à CONTRATADA, "
+                "por meio de novo contrato ou termo aditivo.<br/>"
+                "7.8. A renovação da licença será negociada entre as partes mediante pagamento equivalente a 30% do valor unitário do conteúdo, "
+                "por período mínimo de 03 (três) meses, limitado a 12 (doze) meses por renovação.<br/>"
+                "7.9. A utilização da imagem, voz ou identidade da CONTRATADA em campanhas ficará restrita ao período de veiculação e "
+                "às plataformas previstas neste contrato."
+            ),
+        },
+        {
+            "key": "8",
+            "title": "CLÁUSULA 8 - DA EXCLUSIVIDADE E CONFIDENCIALIDADE",
+            "body": (
+                "8.1. O presente contrato não gera vínculo empregatício, societário, de representação, parceria ou subordinação entre as partes.<br/>"
+                "8.2. Salvo disposição expressa em sentido contrário, não haverá exclusividade entre as partes, podendo ambas contratar "
+                "ou prestar serviços a terceiros, inclusive em atividades similares.<br/>"
+                "8.3. As partes comprometem-se a manter confidenciais todas as informações trocadas no âmbito deste contrato, incluindo "
+                "estratégias, conteúdos, briefings, dados e demais materiais compartilhados."
+            ),
+        },
+        {
+            "key": "9",
+            "title": "CLÁUSULA 9 - DA RESPONSABILIDADE DAS PARTES",
+            "body": (
+                "9.1. Na medida permitida por lei, a CONTRATADA não se responsabiliza por danos ou prejuízos sofridos pela CONTRATANTE "
+                "ou por terceiros em decorrência de uso indevido do conteúdo ou de utilização fora dos limites contratados.<br/>"
+                "9.2. As partes obrigam-se a defender, indenizar e isentar uma à outra de quaisquer responsabilidades, despesas, reclamações, "
+                "danos, condenações, acordos, custos e honorários advocatícios decorrentes do descumprimento deste contrato, ressalvadas as "
+                "hipóteses de negligência exclusiva ou conduta dolosa da parte prejudicada."
+            ),
+        },
+        {
+            "key": "10",
+            "title": "CLÁUSULA 10 - DA LGPD",
+            "body": (
+                "10.1. Ambas as partes comprometem-se a respeitar a privacidade e os dados pessoais coletados e tratados no âmbito deste "
+                "contrato, em conformidade com a Lei Geral de Proteção de Dados - LGPD (Lei nº 13.709/2018).<br/>"
+                "10.2. A CONTRATADA autoriza a CONTRATANTE a utilizar seus dados pessoais apenas quando necessário e exclusivamente para "
+                "fins de envio de produtos e comunicação relacionada ao objeto deste contrato.<br/>"
+                "10.3. A CONTRATANTE declara que utilizará os conteúdos criados exclusivamente para os fins contratados, abstendo-se de "
+                "qualquer uso ilícito ou que viole os direitos da CONTRATADA."
+            ),
+        },
+        {
+            "key": "11",
+            "title": "CLÁUSULA 11 - DAS DISPOSIÇÕES GERAIS E DO FORO",
+            "body": (
+                "11.1. Qualquer alteração neste contrato somente terá validade se realizada por meio de termo aditivo por escrito, "
+                "assinado por ambas as partes.<br/>"
+                "11.2. Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem o foro da Comarca de Salvador, "
+                "Estado da Bahia, com renúncia de qualquer outro, por mais privilegiado que seja."
+            ),
+        },
+    ]
+
+
+def _contract_html_to_editor_text(value: str) -> str:
+    text = re.sub(r"<br\s*/?>", "\n", value or "", flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return unescape(text).strip()
+
+
+def _contract_editor_text_to_html(value: str) -> str:
+    normalized = "\n".join(line.rstrip() for line in (value or "").splitlines()).strip()
+    return escape(normalized or " ").replace("\n", "<br/>")
+
+
+def _contract_clauses_for_editor(payload: dict) -> list[dict[str, str]]:
+    return [
+        {**clause, "body_text": _contract_html_to_editor_text(clause["body"])}
+        for clause in _contract_clauses(payload)
+    ]
+
+
+def _contract_clauses_from_post(payload: dict, post_data) -> list[dict[str, str]]:
+    clauses = []
+    for clause in _contract_clauses(payload):
+        field_name = f"clause_body_{clause['key']}"
+        raw_body = post_data.get(field_name)
+        if raw_body is None:
+            clauses.append(clause)
+            continue
+        if raw_body.strip() == _contract_html_to_editor_text(clause["body"]).strip():
+            clauses.append(clause)
+        else:
+            clauses.append({**clause, "body": _contract_editor_text_to_html(raw_body)})
+    return clauses
+
+
+def _save_contract_brand_data(project: Project, post_data) -> bool:
+    form = ContractBrandForm(post_data)
+    if not form.is_valid():
+        return False
+    for field_name, value in form.cleaned_data.items():
+        setattr(project, field_name, value)
+    project.save(
+        update_fields=[
+            "company_legal_name",
+            "company_cnpj",
+            "company_address",
+            "company_phone",
+            "updated_at",
+        ]
+    )
+    return True
+
+
+def _build_contract_pdf_from_clauses(workspace, user, project: Project, clauses: list[dict[str, str]] | None = None) -> bytes:
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+
+    payload = _project_contract_payload(workspace, user, project)
+    buffer = BytesIO()
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=2 * cm,
+        leftMargin=2 * cm,
+        topMargin=1.8 * cm,
+        bottomMargin=1.8 * cm,
+        title=f"Contrato - {payload['company_name']}",
+        pageCompression=0,
+    )
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "ContractTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=15,
+        leading=19,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#1a2649"),
+        spaceAfter=14,
+    )
+    section_style = ParagraphStyle(
+        "ContractSection",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        leading=14,
+        textColor=colors.HexColor("#1a2649"),
+        spaceBefore=12,
+        spaceAfter=6,
+    )
+    body_style = ParagraphStyle(
+        "ContractBody",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9.6,
+        leading=14,
+        alignment=TA_JUSTIFY,
+        textColor=colors.HexColor("#24334d"),
+        spaceAfter=6,
+    )
+    signature_style = ParagraphStyle(
+        "ContractSignature",
+        parent=body_style,
+        alignment=TA_CENTER,
+        spaceBefore=10,
+    )
+
+    story = [Paragraph(payload["contract_title"], title_style)]
+    story.extend(Paragraph(paragraph, body_style) for paragraph in _contract_intro_paragraphs(payload))
+    for clause in clauses or _contract_clauses(payload):
+        story.append(Paragraph(clause["title"], section_style))
+        story.append(Paragraph(clause["body"], body_style))
+    story.extend(
+        [
+            Spacer(1, 20),
+            Paragraph(
+                "E, por estarem justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor e forma, para que produza seus efeitos legais.",
+                body_style,
+            ),
+            Paragraph(f"Salvador/BA, {payload['close_date_text']}.", body_style),
+            Spacer(1, 26),
+            Paragraph("__________________________________", signature_style),
+            Paragraph(f"{payload['creator_name']}<br/>CNPJ nº {payload['creator_cnpj']}", signature_style),
+            Spacer(1, 12),
+            Paragraph("__________________________________", signature_style),
+            Paragraph(f"{payload['company_name']}<br/>CNPJ nº {payload['company_cnpj']}", signature_style),
+        ]
+    )
+
+    document.build(story)
+    return buffer.getvalue()
 
 
 def _build_contract_pdf(workspace, user, project: Project) -> bytes:
@@ -921,8 +1237,36 @@ def legal(request: HttpRequest) -> HttpResponse:
         "Acompanhe o direito de uso de imagem e os vencimentos de licenciamento.",
         user=request.user,
     )
-    context.update(legal_snapshot(workspace))
+    context.update(legal_snapshot(workspace, request.user))
     return render(request, "studio/legal.html", context)
+
+
+@login_required
+def legal_contract_preview(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace = _workspace(request)
+    project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
+    if request.method == "POST" and not _save_contract_brand_data(project, request.POST):
+        messages.error(request, "Preencha os dados da marca para visualizar o contrato.")
+        return redirect("legal")
+
+    payload = _project_contract_payload(workspace, request.user, project)
+    context = shell_context(
+        "legal",
+        workspace,
+        "Pré-visualizar contrato",
+        "Revise os dados e ajuste cláusulas antes de baixar o PDF.",
+        user=request.user,
+    )
+    context.update(
+        {
+            "project": project,
+            "payload": payload,
+            "intro_paragraphs": [_contract_html_to_editor_text(item) for item in _contract_intro_paragraphs(payload)],
+            "clauses": _contract_clauses_for_editor(payload),
+            "cancel_url": reverse("legal"),
+        }
+    )
+    return render(request, "studio/legal_contract_preview.html", context)
 
 
 @login_required
@@ -930,25 +1274,15 @@ def legal_contract_pdf(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
     if request.method == "POST":
-        form = ContractBrandForm(request.POST)
-        if not form.is_valid():
+        if not _save_contract_brand_data(project, request.POST):
             messages.error(request, "Preencha os dados da marca para gerar o contrato.")
             return redirect("legal")
-        for field_name, value in form.cleaned_data.items():
-            setattr(project, field_name, value)
-        project.save(
-            update_fields=[
-                "company_legal_name",
-                "company_cnpj",
-                "company_address",
-                "company_phone",
-                "updated_at",
-            ]
-        )
+    payload = _project_contract_payload(workspace, request.user, project)
+    clauses = _contract_clauses_from_post(payload, request.POST) if request.method == "POST" else _contract_clauses(payload)
     if project.contract_status != Project.CONTRACT_STATUS_GENERATED:
         project.contract_status = Project.CONTRACT_STATUS_GENERATED
         project.save(update_fields=["contract_status", "updated_at"])
-    pdf_content = _build_contract_pdf(workspace, request.user, project)
+    pdf_content = _build_contract_pdf_from_clauses(workspace, request.user, project, clauses)
     filename = slugify(f"contrato-{project.company}-{project.service_category_name}") or f"contrato-{project.pk}"
     response = HttpResponse(pdf_content, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{filename}.pdf"'

@@ -1,0 +1,71 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="contract-preview-shell">
+    <div class="card-header">
+        <div>
+            <h3>Visualização do contrato</h3>
+            <p>Revise o contrato de {{ project.company }} antes de baixar o PDF.</p>
+        </div>
+        <a class="ghost-button small" href="{{ cancel_url }}">Voltar</a>
+    </div>
+
+    <form method="post" action="{% url 'legal_contract_pdf' project.pk %}" target="_blank" class="contract-preview-form">
+        {% csrf_token %}
+        <input type="hidden" name="company_legal_name" value="{{ project.company_legal_name }}">
+        <input type="hidden" name="company_cnpj" value="{{ project.company_cnpj }}">
+        <input type="hidden" name="company_address" value="{{ project.company_address }}">
+        <input type="hidden" name="company_phone" value="{{ project.company_phone }}">
+
+        <div class="contract-preview-actions">
+            <div>
+                <span class="chip">{{ payload.company_name }}</span>
+                <span class="chip">{{ payload.total_value }}</span>
+                <span class="chip">{{ payload.deliverables_text }}</span>
+            </div>
+            <button type="submit" class="primary-button">Baixar PDF</button>
+        </div>
+
+        <article class="contract-preview-paper">
+            <header class="contract-preview-title">
+                <h2>{{ payload.contract_title }}</h2>
+            </header>
+
+            <div class="contract-preview-intro">
+                {% for paragraph in intro_paragraphs %}
+                    <p>{{ paragraph|linebreaksbr }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="contract-clause-list">
+                {% for clause in clauses %}
+                    <div class="contract-clause-editor">
+                        <label for="clause_body_{{ clause.key }}">{{ clause.title }}</label>
+                        <textarea id="clause_body_{{ clause.key }}" name="clause_body_{{ clause.key }}" class="contract-clause-input" rows="8">{{ clause.body_text }}</textarea>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <footer class="contract-preview-signatures">
+                <p>E, por estarem justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor e forma, para que produza seus efeitos legais.</p>
+                <p>Salvador/BA, {{ payload.close_date_text }}.</p>
+                <div>
+                    <span>__________________________________</span>
+                    <strong>{{ payload.creator_name }}</strong>
+                    <small>CNPJ nº {{ payload.creator_cnpj }}</small>
+                </div>
+                <div>
+                    <span>__________________________________</span>
+                    <strong>{{ payload.company_name }}</strong>
+                    <small>CNPJ nº {{ payload.company_cnpj }}</small>
+                </div>
+            </footer>
+        </article>
+
+        <div class="form-actions">
+            <button type="submit" class="primary-button">Baixar PDF</button>
+            <a class="ghost-button" href="{{ cancel_url }}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -197,6 +197,13 @@ def user_display_name(user: User | None) -> str:
     return (user.first_name or user.get_full_name() or user.username or user.email or "criadora").split()[0]
 
 
+def profile_display_name(workspace: Workspace, user: User | None = None) -> str:
+    profile_name = (workspace.business_full_name or "").strip()
+    if profile_name:
+        return profile_name.split()[0]
+    return user_display_name(user)
+
+
 def image_usage_expires_on(project: Project) -> date | None:
     if project.content_distribution != "Ads" or not project.image_license_term_days:
         return None
@@ -767,8 +774,9 @@ def confirmed_follow_up_items(workspace: Workspace) -> list[dict]:
     ]
 
 
-def legal_usage_items(workspace: Workspace) -> list[dict]:
+def legal_usage_items(workspace: Workspace, user: User | None = None) -> list[dict]:
     today = date.today()
+    display_name = profile_display_name(workspace, user)
     projects = list(
         Project.objects.filter(workspace=workspace, content_distribution="Ads")
         .select_related("service_category", "niche")
@@ -782,7 +790,7 @@ def legal_usage_items(workspace: Workspace) -> list[dict]:
         days_until_expiry = (expires_on - today).days
         color_a, color_b, accent = company_palette(project.company)
         reminder_message = (
-            f'Oi, {{NOME}} O DIREITO DE USO DE IMAGEM DA MARCA {project.company} ESTÁ VENCENDO HOJE, '
+            f'Oi, {display_name} O DIREITO DE USO DE IMAGEM DA MARCA {project.company} ESTÁ VENCENDO HOJE, '
             'QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?'
         )
         items.append(
@@ -807,7 +815,7 @@ def legal_usage_items(workspace: Workspace) -> list[dict]:
                 "google_calendar_url": google_calendar_event_url(
                     f"Vencimento de licenciamento - {project.company}",
                     expires_on,
-                    reminder_message.replace("{NOME}", project.company),
+                    reminder_message,
                 ),
                 "colors": (color_a, color_b),
                 "accent": accent,
@@ -851,15 +859,14 @@ def legal_contract_items(workspace: Workspace) -> list[dict]:
 
 
 def legal_usage_alerts(workspace: Workspace, user: User | None = None) -> list[dict]:
-    display_name = user_display_name(user)
     alerts = []
-    for item in legal_usage_items(workspace):
+    for item in legal_usage_items(workspace, user):
         if item["days_until_expiry"] != 0:
             continue
         alerts.append(
             {
                 **item,
-                "popup_message": item["reminder_message"].replace("{NOME}", display_name),
+                "popup_message": item["reminder_message"],
             }
         )
     return alerts
@@ -1392,8 +1399,8 @@ def distribution_snapshot(workspace: Workspace) -> dict:
     }
 
 
-def legal_snapshot(workspace: Workspace) -> dict:
-    items = legal_usage_items(workspace)
+def legal_snapshot(workspace: Workspace, user: User | None = None) -> dict:
+    items = legal_usage_items(workspace, user)
     contract_items = legal_contract_items(workspace)
     expiring_today = [item for item in items if item["days_until_expiry"] == 0]
     expiring_soon = [item for item in items if 0 < item["days_until_expiry"] <= 30]

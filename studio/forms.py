@@ -34,6 +34,8 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Nao se aplica", "Não se aplica"),
 ]
 ADD_SERVICE_CATEGORY_VALUE = "__add_service_category__"
+HAS_ENTRY_YES = "yes"
+HAS_ENTRY_NO = "no"
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
@@ -110,7 +112,15 @@ class AppSetPasswordForm(SetPasswordForm):
 class SignUpForm(UserCreationForm):
     full_name = forms.CharField(label="Nome completo", max_length=160)
     email = forms.EmailField(label="Email")
-    workspace_name = forms.CharField(label="Nome do estúdio", max_length=160)
+    workspace_name = forms.CharField(
+        label="Nome profissional ou nome da marca",
+        max_length=160,
+        help_text=(
+            "Use o nome pelo qual você quer aparecer na plataforma. Pode ser seu nome pessoal, "
+            "nome da sua marca, nome da sua empresa ou seu @ do Instagram/TikTok."
+        ),
+        widget=forms.TextInput(attrs={"placeholder": "Ex: Ana Souza, Ana UGC Creator ou @anasouzaugc"}),
+    )
     access_code = forms.CharField(
         label="Insira seu código",
         help_text="Use um código de acesso válido para definir se a conta será pagante ou não pagante.",
@@ -283,6 +293,14 @@ class ProspectForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
+    has_entry = forms.ChoiceField(
+        label="Tem entrada?",
+        choices=[(HAS_ENTRY_YES, "Sim"), (HAS_ENTRY_NO, "Não")],
+        initial=HAS_ENTRY_YES,
+        required=False,
+        widget=forms.RadioSelect,
+    )
+
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace = workspace
@@ -344,7 +362,10 @@ class ProjectForm(forms.ModelForm):
         )
         if self.is_bound:
             self.show_new_service_category = self.data.get(self.add_prefix("service_category")) == ADD_SERVICE_CATEGORY_VALUE
+        elif getattr(self.instance, "pk", None) and self.instance.total_value and self.instance.entry_value == self.instance.total_value:
+            self.initial["has_entry"] = HAS_ENTRY_NO
 
+        self.fields["has_entry"].help_text = "Marque Não quando o cliente pagar o valor total de uma vez."
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Você pode ajustar manualmente se quiser."
@@ -398,6 +419,7 @@ class ProjectForm(forms.ModelForm):
                 "stage",
                 "status",
                 "total_value",
+                "has_entry",
                 "entry_value",
                 "received_value",
                 "deliverables_count",
@@ -442,9 +464,13 @@ class ProjectForm(forms.ModelForm):
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0
         received_value = cleaned_data.get("received_value") or 0
+        has_entry = cleaned_data.get("has_entry") or HAS_ENTRY_YES
         content_distribution = cleaned_data.get("content_distribution")
         image_license_term_days = cleaned_data.get("image_license_term_days")
 
+        if has_entry == HAS_ENTRY_NO:
+            entry_value = total_value
+            cleaned_data["entry_value"] = total_value
         if entry_value > total_value:
             self.add_error("entry_value", "A entrada não pode ser maior que o valor total.")
         if received_value > total_value:
@@ -509,7 +535,7 @@ class ProjectForm(forms.ModelForm):
             "meeting_scheduled": "Reunião agendada",
             "meeting_date": "Data da reunião",
             "close_date": "Fechamento",
-            "due_date": "Entrega",
+            "due_date": "Data prevista para entrega",
             "note": "Observações",
         }
         widgets = {

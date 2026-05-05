@@ -579,8 +579,35 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("meeting_date", form.fields)
         self.assertIn("note", form.fields)
         self.assertIn("image_license_term_days", form.fields)
+        self.assertIn("has_entry", form.fields)
         self.assertIn("new_service_category", form.fields)
         self.assertEqual(form.fields["service_category"].choices[-1], (ADD_SERVICE_CATEGORY_VALUE, "Adicionar categoria"))
+
+    def test_project_form_without_entry_sets_entry_to_total_value(self):
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "4000",
+                "has_entry": "no",
+                "entry_value": "0",
+                "received_value": "0",
+                "deliverables_count": "2",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertEqual(project.entry_value, Decimal("4000"))
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
@@ -749,6 +776,8 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, 'id="id_new_service_category"', html=False)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):
+        self.workspace.business_full_name = "Layfe Amorim"
+        self.workspace.save(update_fields=["business_full_name", "updated_at"])
         project = Project.objects.create(
             workspace=self.workspace,
             company="Reserva",
@@ -781,11 +810,13 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(legal_response, "Gerar contrato")
         self.assertContains(legal_response, "Direito de uso de imagem")
         self.assertContains(legal_response, "90 dias")
+        self.assertContains(legal_response, "Pré-visualizar contrato")
         self.assertContains(
             legal_response,
-            "Oi, tester O DIREITO DE USO DE IMAGEM DA MARCA Reserva ESTÁ VENCENDO HOJE, QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?",
+            "Oi, Layfe O DIREITO DE USO DE IMAGEM DA MARCA Reserva ESTÁ VENCENDO HOJE, QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?",
         )
-        self.assertContains(legal_response, reverse("legal_contract_pdf", args=[project.pk]))
+        self.assertNotContains(legal_response, "{NOME}")
+        self.assertContains(legal_response, reverse("legal_contract_preview", args=[project.pk]))
 
     def test_distribution_page_groups_nao_se_aplica(self):
         Project.objects.create(
@@ -858,6 +889,63 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.contract_status, Project.CONTRACT_STATUS_GENERATED)
         self.assertEqual(project.company_legal_name, "Reserva LTDA")
         self.assertEqual(project.company_cnpj, "12.345.678/0001-99")
+
+    def test_legal_contract_preview_allows_clause_edit_before_download(self):
+        project = Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Indicacao",
+            content_distribution="Ads",
+            image_license_term_days=180,
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Pacote extra",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1800,
+            entry_value=900,
+            received_value=0,
+            deliverables_count=2,
+            progress=0,
+            close_date=date.today() - timedelta(days=5),
+            due_date=date.today() + timedelta(days=5),
+        )
+        self.client.force_login(self.user)
+
+        preview_response = self.client.post(
+            reverse("legal_contract_preview", args=[project.pk]),
+            {
+                "company_legal_name": "Reserva LTDA",
+                "company_cnpj": "12.345.678/0001-99",
+                "company_address": "Rua das Flores, 123",
+                "company_phone": "(71) 99999-0000",
+            },
+        )
+
+        self.assertEqual(preview_response.status_code, 200)
+        self.assertContains(preview_response, "Visualização do contrato")
+        self.assertContains(preview_response, 'name="clause_body_5"', html=False)
+        self.assertContains(preview_response, "Baixar PDF")
+        project.refresh_from_db()
+        self.assertEqual(project.company_legal_name, "Reserva LTDA")
+        self.assertNotEqual(project.contract_status, Project.CONTRACT_STATUS_GENERATED)
+
+        download_response = self.client.post(
+            reverse("legal_contract_pdf", args=[project.pk]),
+            {
+                "company_legal_name": "Reserva LTDA",
+                "company_cnpj": "12.345.678/0001-99",
+                "company_address": "Rua das Flores, 123",
+                "company_phone": "(71) 99999-0000",
+                "clause_body_5": "5.1. Cláusula revisada pela visualização.",
+            },
+        )
+
+        self.assertEqual(download_response.status_code, 200)
+        self.assertEqual(download_response["Content-Type"], "application/pdf")
+        project.refresh_from_db()
+        self.assertEqual(project.contract_status, Project.CONTRACT_STATUS_GENERATED)
 
     def test_contract_clause_five_uses_dynamic_ads_license_term(self):
         self.project.content_distribution = "Ads"
@@ -1896,6 +1984,14 @@ class AuthenticationFlowsTest(TestCase):
 
     def test_signup_requires_unused_access_code_and_binds_it_to_new_user(self):
         signup_code = AccessCode.objects.create(code="TCC-P-SIGN001", audience=AccessCode.AUDIENCE_PAID)
+
+        signup_page = self.client.get(reverse("signup"))
+        self.assertContains(signup_page, "Nome profissional ou nome da marca")
+        self.assertContains(
+            signup_page,
+            "Use o nome pelo qual você quer aparecer na plataforma. Pode ser seu nome pessoal, nome da sua marca, nome da sua empresa ou seu @ do Instagram/TikTok.",
+        )
+        self.assertContains(signup_page, "Ex: Ana Souza, Ana UGC Creator ou @anasouzaugc")
 
         response = self.client.post(
             reverse("signup"),
