@@ -609,6 +609,16 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(project.entry_value, Decimal("4000"))
 
+    def test_project_edit_hides_entry_field_when_there_is_no_entry(self):
+        self.project.entry_value = self.project.total_value
+        self.project.save(update_fields=["entry_value", "updated_at"])
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("project_edit", args=[self.project.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="form-field entry-value-field" hidden', html=False)
+
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
             data={
