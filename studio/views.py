@@ -19,6 +19,7 @@ from django.db.models import Count
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils._os import safe_join
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
@@ -1397,8 +1398,11 @@ def profile(request: HttpRequest) -> HttpResponse:
                     "items": [
                         {"label": "Usuário", "value": request.user.username or "-"},
                         {"label": "Email", "value": request.user.email or "-"},
-                        {"label": "Data de cadastro", "value": request.user.date_joined.strftime("%d/%m/%Y")},
-                        {"label": "Último acesso", "value": request.user.last_login.strftime("%d/%m/%Y %H:%M") if request.user.last_login else "Primeiro acesso"},
+                        {"label": "Data de cadastro", "value": timezone.localtime(request.user.date_joined).strftime("%d/%m/%Y")},
+                        {
+                            "label": "Último acesso",
+                            "value": timezone.localtime(request.user.last_login).strftime("%d/%m/%Y %H:%M") if request.user.last_login else "Primeiro acesso",
+                        },
                     ],
                 },
                 {

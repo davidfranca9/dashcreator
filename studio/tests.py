@@ -4,7 +4,7 @@ import tempfile
 from unittest.mock import patch
 from io import StringIO
 from io import BytesIO
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
 
 from django.contrib.sessions.models import Session
@@ -1822,6 +1822,18 @@ class DashboardSmokeTest(TestCase):
 
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
+
+    def test_profile_page_shows_last_login_in_local_timezone(self):
+        self.client.force_login(self.user)
+        User.objects.filter(pk=self.user.pk).update(
+            last_login=datetime(2026, 5, 6, 12, 30, tzinfo=datetime_timezone.utc)
+        )
+
+        response = self.client.get(reverse("profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "06/05/2026 09:30")
+        self.assertNotContains(response, "06/05/2026 12:30")
 
     def test_profile_page_updates_business_data(self):
         self.client.force_login(self.user)
