@@ -1537,3 +1537,16 @@ def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
     project.delete()
     messages.success(request, "Trabalho removido.")
     return redirect("jobs")
+
+
+@login_required
+@require_POST
+def project_mark_delivered(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace = _workspace(request)
+    project = get_object_or_404(Project, pk=pk, workspace=workspace)
+    project.stage = "Entregue"
+    project.status = "Entregue"
+    project.progress = 100
+    project.save(update_fields=["stage", "status", "progress", "updated_at"])
+    messages.success(request, f"{project.company} marcado como entregue.")
+    return redirect("jobs")

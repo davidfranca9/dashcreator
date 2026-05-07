@@ -1,6 +1,29 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
+{% if follow_up_alerts %}
+    <article
+        class="banner banner--info follow-up-banner"
+        data-follow-up-banner
+        data-follow-up-banner-key="follow-up-banner-{{ workspace.pk }}-{{ follow_up_alert_date }}"
+    >
+        <div>
+            <strong>Hora de retomar contato com {{ follow_up_alerts|length }} marca{{ follow_up_alerts|length|pluralize }}.</strong>
+            <p class="muted">
+                {% for item in follow_up_alerts|slice:":3" %}
+                    {{ item.company }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if follow_up_alerts|length > 3 %}
+                    e mais {{ follow_up_alerts|length|add:"-3" }}.
+                {% endif %}
+            </p>
+        </div>
+        <div class="follow-up-banner-actions">
+            <a class="primary-button small" href="#follow-up-column">Ver follow-ups</a>
+            <button type="button" class="icon-button" data-follow-up-banner-dismiss aria-label="Dispensar nesta sessão">&times;</button>
+        </div>
+    </article>
+{% endif %}
 <article class="card jobs-filter-bar">
     <form method="get" class="jobs-filter-form" data-prospection-filter-form style="grid-template-columns: minmax(280px, 420px);">
         {% if selected_month %}
@@ -128,6 +151,33 @@
             window.clearTimeout(timerId);
             timerId = window.setTimeout(() => form.requestSubmit(), 300);
         });
+    })();
+
+    (() => {
+        const banner = document.querySelector("[data-follow-up-banner]");
+        if (!banner) {
+            return;
+        }
+        const key = banner.dataset.followUpBannerKey || "";
+        try {
+            if (key && sessionStorage.getItem(key) === "dismissed") {
+                banner.hidden = true;
+                return;
+            }
+        } catch (error) {
+        }
+        const dismissButton = banner.querySelector("[data-follow-up-banner-dismiss]");
+        if (dismissButton) {
+            dismissButton.addEventListener("click", () => {
+                banner.hidden = true;
+                if (key) {
+                    try {
+                        sessionStorage.setItem(key, "dismissed");
+                    } catch (error) {
+                    }
+                }
+            });
+        }
     })();
 </script>
 {% endblock %}

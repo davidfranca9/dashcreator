@@ -1,4 +1,5 @@
 {% extends "studio/base.html" %}
+{% load studio_extras %}
 
 {% block content %}
 <article class="card finance-month-card">
@@ -10,19 +11,114 @@
     </div>
 </article>
 
-<section class="stats-grid">
-    {% for item in stats %}
-        <article class="stat-card">
-            <span class="stat-icon">{{ item.icon_label }}</span>
+{% if empty_state.case == "no_data_at_all" %}
+    <article class="card empty-state-card">
+        <div class="empty-state-header">
+            <h3>{{ empty_state.title }}</h3>
+            <p class="muted">{{ empty_state.subtitle }}</p>
+        </div>
+        <ol class="empty-state-checklist">
+            {% for step in empty_state.steps %}
+                <li class="empty-state-step{% if step.done %} empty-state-step--done{% endif %}{% if step.locked %} empty-state-step--locked{% endif %}">
+                    <span class="empty-state-step-marker">{{ forloop.counter }}</span>
+                    <div class="empty-state-step-copy">
+                        <strong>{{ step.label }}</strong>
+                        {% if step.cta_label and not step.locked %}
+                            <a class="primary-button small" href="{{ step.cta_url }}">{{ step.cta_label }}</a>
+                        {% elif step.locked %}
+                            <span class="muted">Disponível após registrar um fechamento.</span>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ol>
+        <div class="empty-state-previews">
+            <span class="muted">Quando houver dados, você verá:</span>
+            <ul>
+                {% for preview in empty_state.previews %}
+                    <li>{{ preview }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </article>
+{% else %}
+    {% if empty_state.case == "no_closings_this_month" %}
+        <article class="banner banner--info">
             <div>
-                <p>{{ item.title }}</p>
-                <strong>{{ item.value }}</strong>
+                <strong>{{ empty_state.banner_message }}</strong>
+                <p class="muted">Você tem trabalhos ativos esperando virar fechamento no mês selecionado.</p>
             </div>
+            <a class="primary-button small" href="{{ empty_state.cta_url }}">{{ empty_state.cta_label }}</a>
         </article>
-    {% endfor %}
-</section>
+    {% endif %}
+
+    <section class="stats-grid">
+        {% for item in stats %}
+            <article class="stat-card">
+                <span class="stat-icon">{{ item.icon_label }}</span>
+                <div>
+                    <p>{{ item.title }}</p>
+                    <strong>{{ item.value }}</strong>
+                    {% if item.subtitle %}
+                        <span class="stat-subtitle">{{ item.subtitle }}</span>
+                    {% endif %}
+                    {% if item.comparison %}
+                        <span class="stat-comparison stat-comparison--{{ item.comparison.direction }}">{{ item.comparison.label }}</span>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </section>
+{% endif %}
 
 <section class="stack-section">
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <h3>Evolução da prospecção</h3>
+                <p class="muted">Veja quando você teve mais e menos volume de prospecção.</p>
+            </div>
+        </div>
+        {% if prospection_flow.points %}
+            <div class="chart-grid">
+                <div class="chart-axis">
+                    {% for step in prospection_flow.steps %}
+                        <span>{{ step.label }}</span>
+                    {% endfor %}
+                </div>
+                <div class="chart-visual">
+                    <svg class="chart-svg" viewBox="0 0 {{ prospection_flow.chart_width }} {{ prospection_flow.chart_height }}" preserveAspectRatio="none" aria-label="Gráfico de evolução da prospecção">
+                        {% for step in prospection_flow.steps %}
+                            {% if not forloop.last %}
+                                <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 prospection_flow.chart_height %}" x2="{{ prospection_flow.chart_width }}" y2="{% widthratio forloop.counter0 3 prospection_flow.chart_height %}"></line>
+                            {% endif %}
+                        {% endfor %}
+                        <path class="chart-line" d="{{ prospection_flow.path }}"></path>
+                    </svg>
+                    <div class="chart-labels chart-labels--adaptive" style="grid-template-columns: repeat({{ prospection_flow.points|length }}, minmax(0, 1fr));">
+                        {% for point in prospection_flow.points %}
+                            <div class="chart-label">
+                                <strong>{{ point.amount }}</strong>
+                                <span>{{ point.label }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="highlight-grid reports-insight-grid">
+                {% for item in prospection_flow.summary %}
+                    <article class="soft-card reports-insight-card">
+                        <strong>{{ item.title }}</strong>
+                        <span class="reports-insight-value">{{ item.value }}</span>
+                        <p>{{ item.detail }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">{{ prospection_flow.empty_message }}</p>
+        {% endif %}
+    </article>
+
     <article class="card">
         <div class="card-header"><div><h3>Via de fechamento</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         {% if source_mix.total %}
@@ -39,11 +135,11 @@
                     <div class="source-mix-summary-head">
                         <span>Canal</span>
                         <span>Trabalhos</span>
-                        <span>Participacao</span>
+                        <span>Participação</span>
                     </div>
                     <div class="source-mix-summary-body">
                         {% for item in source_mix.items %}
-                            <div class="source-mix-summary-row">
+                            <div class="source-mix-summary-row{% if item.is_zero %} source-mix-summary-row--muted{% endif %}">
                                 <div class="source-mix-summary-label">
                                     <span class="source-mix-dot" style="background: {{ item.color }};"></span>
                                     <strong>{{ item.label }}</strong>
@@ -66,7 +162,7 @@
     </article>
 
     <article class="card">
-        <div class="card-header"><div><h3>Leituras estrategicas</h3><p class="muted">{{ selected_month.label }}</p></div></div>
+        <div class="card-header"><div><h3>Leituras estratégicas</h3><p class="muted">{{ selected_month.label }}</p></div></div>
         <div class="highlight-grid">
             {% for item in highlights %}
                 <article class="soft-card highlight-card">

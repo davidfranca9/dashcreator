@@ -179,6 +179,17 @@ def payment_reference_date(project: Project) -> date:
     return project.payment_due_date or project.due_date
 
 
+def whatsapp_contact_url(raw_phone: str | None) -> str:
+    if not raw_phone:
+        return ""
+    digits = re.sub(r"\D", "", raw_phone)
+    if not digits:
+        return ""
+    if not digits.startswith("55") and len(digits) <= 11:
+        digits = f"55{digits}"
+    return f"https://wa.me/{digits}"
+
+
 def google_calendar_event_url(title: str, event_date: date, details: str = "") -> str:
     next_day = event_date + timedelta(days=1)
     return "https://calendar.google.com/calendar/render?" + urlencode(
@@ -412,24 +423,42 @@ def save_settings(workspace: Workspace, cleaned_data: dict) -> None:
         )
 
 
-def navigation(page_key: str, month_filter: str | None = None) -> list[dict]:
+def navigation(page_key: str, month_filter: str | None = None, badges: dict | None = None) -> list[dict]:
+    badges = badges or {}
     items = []
     for item in NAV_ITEMS:
         url = reverse(item["url_name"])
         if month_filter and item["key"] in MONTH_FILTER_PAGE_KEYS:
             url = f"{url}?{urlencode({'month': month_filter})}"
-        items.append({**item, "url": url, "active": item["key"] == page_key})
+        badge = badges.get(item["key"])
+        items.append({**item, "url": url, "active": item["key"] == page_key, "badge": badge})
     return items
 
 
-def navigation_groups(page_key: str, month_filter: str | None = None) -> list[dict]:
-    nav_items = {item["key"]: item for item in navigation(page_key, month_filter)}
+def navigation_groups(page_key: str, month_filter: str | None = None, badges: dict | None = None) -> list[dict]:
+    nav_items = {item["key"]: item for item in navigation(page_key, month_filter, badges=badges)}
     groups = []
     for group in NAV_GROUPS:
         items = [nav_items[key] for key in group["keys"] if key in nav_items]
         if items:
             groups.append({"label": group["label"], "items": items})
     return groups
+
+
+def overdue_projects_count(workspace: Workspace) -> int:
+    return Project.objects.filter(
+        workspace=workspace,
+        stage="Fechado",
+        due_date__lt=date.today(),
+    ).count()
+
+
+def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:
+    overdue = overdue_projects_count(workspace)
+    return {
+        "jobs": {"count": overdue, "tone": "danger"} if overdue else None,
+        "prospection": {"count": follow_up_count, "tone": "info"} if follow_up_count else None,
+    }
 
 
 def shell_context(
@@ -457,9 +486,14 @@ def shell_context(
     )
     follow_up_alerts = follow_up_popup_alerts(workspace) if str(workspace_settings.get("ops_follow_up_reminders", "")).lower() in {"1", "true", "yes", "on"} else []
     legal_alerts = legal_usage_alerts(workspace, user) if page_key == "legal" else []
+    nav_badges = navigation_badges(workspace, follow_up_count=len(follow_up_alerts))
+    user_display_name = ""
+    if user and getattr(user, "is_authenticated", False):
+        user_display_name = (user.get_full_name() or user.username or user.email or "").strip()
     return {
-        "nav_items": navigation(page_key, month_filter),
-        "nav_groups": navigation_groups(page_key, month_filter),
+        "nav_items": navigation(page_key, month_filter, badges=nav_badges),
+        "nav_groups": navigation_groups(page_key, month_filter, badges=nav_badges),
+        "user_display_name": user_display_name,
         "page_key": page_key,
         "page_title": title,
         "page_subtitle": subtitle,
@@ -700,6 +734,7 @@ def closing_source_mix(projects: list[Project]) -> dict:
                 "count": count,
                 "percentage": percentage,
                 "color": color,
+                "is_zero": count == 0,
             }
         )
         if total and count:
@@ -1174,6 +1209,8 @@ def empresas_snapshot(
     def serialize_job_card(item: Project) -> dict:
         color_a, color_b, accent = company_palette(item.company)
         expires_on = image_usage_expires_on(item)
+        contact_url = whatsapp_contact_url(item.company_phone)
+        days_overdue = (today - item.due_date).days if item.due_date < today and item.stage == "Fechado" else 0
         return {
             "id": item.id,
             "company": item.company,
@@ -1195,6 +1232,8 @@ def empresas_snapshot(
             )
             if item.meeting_scheduled and item.meeting_date
             else "",
+            "contact_url": contact_url,
+            "days_overdue": days_overdue,
             "note": item.note,
             "colors": (color_a, color_b),
             "accent": accent,
@@ -1521,18 +1560,64 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     }
 
 
+def _format_currency_delta(current: Decimal, previous: Decimal) -> dict | None:
+    if not previous:
+        return None
+    delta = current - previous
+    if delta == 0:
+        return {"direction": "flat", "label": "estável vs mês anterior"}
+    sign = "↑" if delta > 0 else "↓"
+    return {
+        "direction": "up" if delta > 0 else "down",
+        "label": f"{sign} {currency(abs(delta))} vs mês anterior",
+    }
+
+
+def _format_count_delta(current: int, previous: int, noun: str = "trabalhos") -> dict | None:
+    if not previous and not current:
+        return None
+    delta = current - previous
+    if delta == 0:
+        return {"direction": "flat", "label": "estável vs mês anterior"}
+    sign = "↑" if delta > 0 else "↓"
+    return {
+        "direction": "up" if delta > 0 else "down",
+        "label": f"{sign} {abs(delta)} {noun} vs mês anterior",
+    }
+
+
 def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     projects = list(Project.objects.filter(workspace=workspace))
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
-    month_projects = (
-        projects
-        if selected_month is None
-        else [item for item in projects if item.close_date.year == selected_month.year and item.close_date.month == selected_month.month]
-    )
+
+    def filter_by_month(items: list[Project], month: date | None, attr: str) -> list[Project]:
+        if month is None:
+            return items
+        result = []
+        for item in items:
+            value = getattr(item, attr, None)
+            if value is None:
+                continue
+            ref = value.date() if hasattr(value, "date") else value
+            if ref.year == month.year and ref.month == month.month:
+                result.append(item)
+        return result
+
+    month_projects = filter_by_month(projects, selected_month, "close_date")
+    cadastrados_in_month = len(filter_by_month(projects, selected_month, "created_at"))
     volume = len(month_projects)
     total_closed = sum_money(item.total_value for item in month_projects)
+    paid_closures = [item for item in month_projects if item.total_value]
+    ticket_medio = total_closed / len(paid_closures) if paid_closures else ZERO
     selected_month_label = "todos os meses" if selected_month is None else long_month_label(selected_month)
+
+    previous_month = _shift_month(selected_month, -1) if selected_month else None
+    prev_month_projects = filter_by_month(projects, previous_month, "close_date") if previous_month else []
+    prev_volume = len(prev_month_projects)
+    prev_total = sum_money(item.total_value for item in prev_month_projects)
+    prev_paid = [item for item in prev_month_projects if item.total_value]
+    prev_ticket = prev_total / len(prev_paid) if prev_paid else ZERO
 
     source_counts: dict[str, int] = {}
     niche_counts: dict[str, int] = {}
@@ -1548,6 +1633,8 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     via_breakdown = []
     for index, (label, count) in enumerate(sorted_sources):
         percentage = round((count / volume) * 100) if volume else 0
+        if percentage == 0:
+            continue
         via_breakdown.append(
             {
                 "label": label,
@@ -1567,12 +1654,59 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     )
     prospection_flow = prospection_evolution_context(workspace, selected_month)
 
+    has_any_project = bool(projects)
+    has_active_in_month = any(item.stage == "Fechado" for item in (month_projects or projects))
+    if not has_any_project:
+        empty_state = {
+            "case": "no_data_at_all",
+            "title": "Comece a montar seu painel",
+            "subtitle": "Cadastre seu primeiro trabalho para que os indicadores aqui ganhem vida.",
+            "steps": [
+                {"label": "Cadastrar um trabalho", "done": False, "cta_label": "Cadastrar agora", "cta_url": reverse("project_create")},
+                {"label": "Registrar um fechamento", "done": False, "cta_label": "Ir para Trabalhos", "cta_url": reverse("jobs")},
+                {"label": "Ver seus indicadores", "done": False, "locked": True},
+            ],
+            "previews": [
+                "Volume de trabalhos · mostra quantos negócios fecharam no mês.",
+                "Total fechado · soma o quanto entrou em receita confirmada.",
+                "Ticket médio · ajuda a comparar volume com receita por trabalho.",
+            ],
+        }
+    elif volume == 0 and has_active_in_month:
+        empty_state = {
+            "case": "no_closings_this_month",
+            "banner_message": f"Nenhum fechamento registrado em {selected_month_label.lower()} ainda.",
+            "cta_label": "Ir para Trabalhos",
+            "cta_url": reverse("jobs"),
+        }
+    else:
+        empty_state = {"case": "none"}
+
     return {
+        "empty_state": empty_state,
         "stats": [
-            {"title": "Volume de trabalhos", "value": str(volume), "icon_label": "V"},
-            {"title": "Total fechado", "value": currency(total_closed), "icon_label": "$"},
+            {
+                "title": "Volume de trabalhos",
+                "value": str(volume),
+                "subtitle": f"{cadastrados_in_month} cadastrado{'s' if cadastrados_in_month != 1 else ''} · {volume} com fechamento",
+                "comparison": _format_count_delta(volume, prev_volume),
+                "icon_label": "V",
+            },
+            {
+                "title": "Total fechado",
+                "value": currency(total_closed),
+                "comparison": _format_currency_delta(total_closed, prev_total),
+                "icon_label": "$",
+            },
             {"title": "Via principal", "value": top_source_label, "icon_label": "%"},
             {"title": "Nicho líder", "value": top_niche_label, "icon_label": "N"},
+            {
+                "title": "Ticket médio",
+                "value": currency(ticket_medio),
+                "subtitle": f"sobre {len(paid_closures)} fechamento{'s' if len(paid_closures) != 1 else ''}" if paid_closures else "sem fechamentos no mês",
+                "comparison": _format_currency_delta(ticket_medio, prev_ticket),
+                "icon_label": "M",
+            },
         ],
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),

@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 NAV_ITEMS = [
-    {"key": "dashboard", "label": "Dashboard", "subtitle": "Visão executiva do negócio UGC.", "url_name": "dashboard"},
-    {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociações em aberto.", "url_name": "prospection"},
-    {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs"},
-    {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance"},
-    {"key": "distribution", "label": "Distribuição", "subtitle": "Destino do material entregue entre orgânico e ads.", "url_name": "distribution"},
-    {"key": "legal", "label": "Jurídico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal"},
-    {"key": "reports", "label": "Relatórios", "subtitle": "Indicadores estratégicos do negócio.", "url_name": "reports"},
-    {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile"},
-    {"key": "settings", "label": "Configurações", "subtitle": "Preferências visuais e operacionais.", "url_name": "settings"},
+    {"key": "dashboard", "label": "Dashboard", "subtitle": "Visão executiva do negócio UGC.", "url_name": "dashboard", "icon": "dashboard"},
+    {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs", "icon": "briefcase"},
+    {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociações em aberto.", "url_name": "prospection", "icon": "target"},
+    {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance", "icon": "cash"},
+    {"key": "distribution", "label": "Distribuição", "subtitle": "Destino do material entregue entre orgânico e ads.", "url_name": "distribution", "icon": "share"},
+    {"key": "legal", "label": "Jurídico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal", "icon": "file-text"},
+    {"key": "reports", "label": "Relatórios", "subtitle": "Indicadores estratégicos do negócio.", "url_name": "reports", "icon": "chart-bar"},
+    {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile", "icon": "user"},
+    {"key": "settings", "label": "Configurações", "subtitle": "Preferências visuais e operacionais.", "url_name": "settings", "icon": "settings"},
 ]
 
 NAV_GROUPS = [
-    {"label": "ERP", "keys": ["dashboard", "jobs", "prospection", "finance", "distribution", "legal", "reports"]},
+    {"label": "Principal", "keys": ["dashboard", "jobs", "prospection"]},
+    {"label": "Gestão", "keys": ["finance", "distribution", "legal", "reports"]},
+    {"label": "Conta", "keys": ["profile", "settings"]},
 ]
 
 PROJECT_STAGE_CHOICES = [

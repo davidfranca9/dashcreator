@@ -419,9 +419,8 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Hora de retomar contato")
         self.assertContains(response, "Reserva")
-        self.assertContains(response, reverse("follow_up_confirm"))
-        self.assertContains(response, reverse("follow_up_dismiss"))
-        self.assertContains(response, "Nunca mais lembrar da marca Reserva")
+        self.assertContains(response, "follow-up-banner")
+        self.assertContains(response, "#follow-up-column")
 
     def test_follow_up_confirm_moves_popup_brands_to_follow_up_column(self):
         Project.objects.create(

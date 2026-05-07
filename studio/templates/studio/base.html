@@ -37,54 +37,7 @@
             </div>
         </div>
     {% endif %}
-    {% if page_key == "prospection" and follow_up_alerts %}
-        <div
-            class="meeting-popup-backdrop"
-            data-meeting-popup
-            data-meeting-popup-key="follow-up-alert-{{ workspace.pk }}-{{ follow_up_alert_date }}"
-            data-follow-up-popup
-        >
-            <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="follow-up-popup-title">
-                <button type="button" class="meeting-popup-close" data-follow-up-close-temporary aria-label="Fechar aviso">&times;</button>
-                <span class="meeting-popup-badge">Follow-up</span>
-                <h3 id="follow-up-popup-title" data-follow-up-title>
-                    Hora de retomar contato com {{ follow_up_alerts|length }} marca{% if follow_up_alerts|length != 1 %}s{% endif %}.
-                </h3>
-                <div class="meeting-popup-list">
-                    {% for item in follow_up_alerts %}
-                        <article
-                            class="meeting-popup-item meeting-popup-item--follow-up"
-                            data-follow-up-item
-                            data-follow-up-company="{{ item.company }}"
-                            data-follow-up-company-key="{{ item.dismiss_key }}"
-                        >
-                            <form method="post" action="{% url 'follow_up_dismiss' %}" class="meeting-popup-item-dismiss-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="company_key" value="{{ item.dismiss_key }}">
-                                <button
-                                    type="submit"
-                                    class="meeting-popup-item-dismiss"
-                                    aria-label="Nunca mais lembrar da marca {{ item.company }}"
-                                >&times;</button>
-                            </form>
-                            <strong>{{ item.company }}</strong>
-                            <p>{{ item.note }}</p>
-                        </article>
-                    {% endfor %}
-                </div>
-                <div class="meeting-popup-actions">
-                    <form method="post" action="{% url 'follow_up_confirm' %}" class="meeting-popup-action-form">
-                        {% csrf_token %}
-                        {% for item in follow_up_alerts %}
-                            <input type="hidden" name="company_keys" value="{{ item.dismiss_key }}">
-                        {% endfor %}
-                        <button type="submit" class="primary-button">Ver follow-up</button>
-                    </form>
-                    <button type="button" class="ghost-button" data-follow-up-close-temporary>Fechar</button>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+    {# Popup bloqueante de follow-up substituído pelo banner inline em prospection.html #}
     {% if page_key == "legal" and legal_alerts %}
         <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="legal-alert-{{ workspace.pk }}-{{ legal_alert_date }}">
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="legal-popup-title">
@@ -124,7 +77,13 @@
                         <span class="nav-group-label">{{ group.label }}</span>
                         <div class="nav-list">
                             {% for item in group.items %}
-                                <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}">{{ item.label }}</a>
+                                <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}">
+                                    {% include "studio/includes/nav_icon.html" with icon=item.icon %}
+                                    <span class="nav-link-label">{{ item.label }}</span>
+                                    {% if item.badge %}
+                                        <span class="nav-link-badge nav-link-badge--{{ item.badge.tone }}" aria-label="{{ item.badge.count }} pendentes">{{ item.badge.count }}</span>
+                                    {% endif %}
+                                </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -132,15 +91,15 @@
             </nav>
 
             <a class="workspace-chip" href="{% url 'profile' %}">
-                <div class="workspace-chip-copy">
-                    <span class="workspace-label">Workspace ativo</span>
-                    <strong>{{ workspace.name }}</strong>
-                </div>
                 {% if workspace_membership and workspace_membership.avatar %}
                     <img class="workspace-chip-avatar-image" src="{{ workspace_membership.avatar.url }}" alt="Foto de perfil">
                 {% else %}
                     <span class="workspace-chip-avatar-fallback">{{ workspace_membership.initials|default:"P" }}</span>
                 {% endif %}
+                <div class="workspace-chip-copy">
+                    <strong class="workspace-chip-name">{{ user_display_name|default:workspace.name }}</strong>
+                    <span class="workspace-label">Workspace · {{ workspace.name }}</span>
+                </div>
             </a>
         </aside>
 
