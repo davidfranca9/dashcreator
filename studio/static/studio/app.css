@@ -1139,6 +1139,62 @@ body.theme-dark .stat-card p {
     grid-column: 1 / -1;
 }
 
+.reports-tabs {
+    margin-bottom: 18px;
+}
+
+.reports-tabs .subtab {
+    text-decoration: none;
+}
+
+.distribution-table-wrap {
+    overflow-x: auto;
+}
+
+.distribution-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.distribution-table th,
+.distribution-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.distribution-table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.distribution-table tbody tr:hover {
+    background: rgba(77, 140, 255, 0.05);
+}
+
+.distribution-table tfoot td {
+    border-top: 2px solid var(--border);
+    border-bottom: 0;
+    background: rgba(77, 140, 255, 0.04);
+}
+
+.distribution-table td:nth-child(2),
+.distribution-table th:nth-child(2),
+.distribution-table td:nth-child(4),
+.distribution-table th:nth-child(4) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.distribution-table td:nth-child(3),
+.distribution-table th:nth-child(3) {
+    text-align: center;
+}
+
 .jobs-kpi-backdrop {
     position: fixed;
     inset: 0;

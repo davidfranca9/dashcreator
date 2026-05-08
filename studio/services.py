@@ -12,7 +12,15 @@ from django.db.models import Case, IntegerField, Q, QuerySet, Value, When
 from django.urls import reverse
 
 from .contact_types import infer_contact_type
-from .constants import COMPANY_COLORS, DEFAULT_NICHE_NAMES, LEGACY_DEFAULT_NICHE_NAMES, NAV_GROUPS, NAV_ITEMS, SETTINGS_GROUPS
+from .constants import (
+    COMPANY_COLORS,
+    DEFAULT_NICHE_NAMES,
+    LEGACY_DEFAULT_NICHE_NAMES,
+    NAV_GROUPS,
+    NAV_ITEMS,
+    SERVICE_TYPE_CHOICES,
+    SETTINGS_GROUPS,
+)
 from .models import FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
@@ -1577,7 +1585,11 @@ def _format_count_delta(current: int, previous: int, noun: str = "trabalhos") ->
     }
 
 
-def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
+def reports_snapshot(
+    workspace: Workspace,
+    month_filter: str | None = None,
+    service_type_filter: str | None = None,
+) -> dict:
     projects = list(Project.objects.filter(workspace=workspace))
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
@@ -1595,8 +1607,60 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                 result.append(item)
         return result
 
-    month_projects = filter_by_month(projects, selected_month, "close_date")
+    all_month_projects = filter_by_month(projects, selected_month, "close_date")
     cadastrados_in_month = len(filter_by_month(projects, selected_month, "created_at"))
+
+    # Distribuição por tipo de serviço (brief 5.2): tabela calculada SEMPRE
+    # sobre o conjunto completo do mês, independente do filtro de sub-tab.
+    type_label_lookup = dict(SERVICE_TYPE_CHOICES)
+    type_buckets: dict[str, dict] = {}
+    for item in all_month_projects:
+        key = item.service_type or "outros"
+        bucket = type_buckets.setdefault(key, {"count": 0, "revenue": ZERO})
+        bucket["count"] += 1
+        bucket["revenue"] += Decimal(item.total_value or 0)
+
+    distribution_total_count = sum(b["count"] for b in type_buckets.values())
+    distribution_total_revenue = sum_money(b["revenue"] for b in type_buckets.values())
+    distribution_table = []
+    for key in sorted(type_buckets, key=lambda k: -type_buckets[k]["revenue"]):
+        bucket = type_buckets[key]
+        ticket = bucket["revenue"] / bucket["count"] if bucket["count"] else ZERO
+        distribution_table.append({
+            "key": key,
+            "label": type_label_lookup.get(key, key),
+            "revenue": currency(bucket["revenue"]),
+            "count": bucket["count"],
+            "ticket_medio": currency(ticket),
+        })
+    distribution_table_total = {
+        "count": distribution_total_count,
+        "revenue": currency(distribution_total_revenue),
+        "ticket_medio": currency(distribution_total_revenue / distribution_total_count) if distribution_total_count else currency(ZERO),
+    }
+
+    # Filtro de sub-tab (Geral mostra tudo; outros tipos restringem stats).
+    active_type = service_type_filter if service_type_filter and service_type_filter != "geral" else None
+    if active_type:
+        month_projects = [item for item in all_month_projects if (item.service_type or "outros") == active_type]
+    else:
+        month_projects = all_month_projects
+
+    # Sub-tabs disponíveis: Geral + cada tipo com pelo menos 1 trabalho no mês.
+    service_type_tabs = [{
+        "key": "geral",
+        "label": "Geral",
+        "count": distribution_total_count,
+        "active": active_type is None,
+    }]
+    for entry in distribution_table:
+        service_type_tabs.append({
+            "key": entry["key"],
+            "label": entry["label"],
+            "count": entry["count"],
+            "active": active_type == entry["key"],
+        })
+
     volume = len(month_projects)
     total_closed = sum_money(item.total_value for item in month_projects)
     paid_closures = [item for item in month_projects if item.total_value]
@@ -1604,7 +1668,11 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     selected_month_label = "todos os meses" if selected_month is None else long_month_label(selected_month)
 
     previous_month = _shift_month(selected_month, -1) if selected_month else None
-    prev_month_projects = filter_by_month(projects, previous_month, "close_date") if previous_month else []
+    prev_all_month_projects = filter_by_month(projects, previous_month, "close_date") if previous_month else []
+    if active_type:
+        prev_month_projects = [item for item in prev_all_month_projects if (item.service_type or "outros") == active_type]
+    else:
+        prev_month_projects = prev_all_month_projects
     prev_volume = len(prev_month_projects)
     prev_total = sum_money(item.total_value for item in prev_month_projects)
     prev_paid = [item for item in prev_month_projects if item.total_value]
@@ -1704,6 +1772,10 @@ def reports_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         "prospection_flow": prospection_flow,
         "source_mix": closing_source_mix(month_projects),
         "via_breakdown": via_breakdown,
+        "service_type_tabs": service_type_tabs,
+        "active_service_type": active_type,
+        "distribution_table": distribution_table,
+        "distribution_table_total": distribution_table_total,
         "highlights": [
             {
                 "title": "Via com mais fechamentos",

@@ -11,6 +11,24 @@
     </div>
 </article>
 
+{% if service_type_tabs|length > 1 %}
+    <nav class="subtabs reports-tabs" aria-label="Tipos de serviço">
+        {% for tab in service_type_tabs %}
+            {% if tab.key == "geral" %}
+                <a href="?{% if selected_month.value %}month={{ selected_month.value }}{% endif %}" class="subtab{% if tab.active %} subtab--active{% endif %}">
+                    <span>{{ tab.label }}</span>
+                    {% if tab.count %}<span class="subtab-badge subtab-badge--muted">{{ tab.count }}</span>{% endif %}
+                </a>
+            {% else %}
+                <a href="?{% if selected_month.value %}month={{ selected_month.value }}&{% endif %}type={{ tab.key }}" class="subtab{% if tab.active %} subtab--active{% endif %}">
+                    <span>{{ tab.label }}</span>
+                    <span class="subtab-badge subtab-badge--muted">{{ tab.count }}</span>
+                </a>
+            {% endif %}
+        {% endfor %}
+    </nav>
+{% endif %}
+
 {% if empty_state.case == "no_data_at_all" %}
     <article class="card empty-state-card">
         <div class="empty-state-header">
@@ -160,6 +178,47 @@
             <p class="muted">Nenhum trabalho fechado em {{ selected_month.label|lower }}.</p>
         {% endif %}
     </article>
+
+    {% if not active_service_type and distribution_table %}
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Distribuição por tipo de serviço</h3>
+                    <p class="muted">Receita, volume e ticket médio por tipo no período selecionado.</p>
+                </div>
+            </div>
+            <div class="distribution-table-wrap">
+                <table class="distribution-table">
+                    <thead>
+                        <tr>
+                            <th>Tipo de serviço</th>
+                            <th>Receita</th>
+                            <th>Qtd. trabalhos</th>
+                            <th>Ticket médio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in distribution_table %}
+                            <tr>
+                                <td><strong>{{ row.label }}</strong></td>
+                                <td>{{ row.revenue }}</td>
+                                <td>{{ row.count }}</td>
+                                <td>{{ row.ticket_medio }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td><strong>{{ distribution_table_total.revenue }}</strong></td>
+                            <td><strong>{{ distribution_table_total.count }}</strong></td>
+                            <td><strong>{{ distribution_table_total.ticket_medio }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </article>
+    {% endif %}
 
     <article class="card">
         <div class="card-header"><div><h3>Leituras estratégicas</h3><p class="muted">{{ selected_month.label }}</p></div></div>

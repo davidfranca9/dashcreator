@@ -1306,6 +1306,7 @@ def legal_contract_dismiss(request: HttpRequest, pk: int) -> HttpResponse:
 def reports(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
+    service_type_filter = request.GET.get("type") or None
     context = shell_context(
         "reports",
         workspace,
@@ -1314,7 +1315,7 @@ def reports(request: HttpRequest) -> HttpResponse:
         user=request.user,
         month_filter=month_filter,
     )
-    context.update(reports_snapshot(workspace, month_filter))
+    context.update(reports_snapshot(workspace, month_filter, service_type_filter=service_type_filter))
     return render(request, "studio/reports.html", context)
 
 
