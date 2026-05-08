@@ -2,11 +2,11 @@
 {% load studio_extras %}
 
 {% block content %}
-<section class="card">
+<section class="card project-form-card">
     <div class="card-header">
         <div>
             <h3>{{ form_title }}</h3>
-            <p>Cadastre ou ajuste valores, distribuição, licenciamento, status e datas do trabalho.</p>
+            <p class="muted">Os campos se adaptam conforme o tipo de serviço selecionado.</p>
         </div>
     </div>
 
@@ -18,33 +18,94 @@
         data-installments-types="{{ form.installments_types|join:',' }}"
     >
         {% csrf_token %}
-        {% for field in form %}
-            <div class="form-field{% if field.name == 'note' or field.name == 'new_service_category' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'new_service_category' %} service-category-create-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}"{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'new_service_category' and not form.show_new_service_category %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}>
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {% if field.name == "has_entry" %}
-                    <div class="segmented-control" data-entry-mode>
-                        {% for choice in field %}
-                            <label class="segmented-control-option" for="{{ choice.id_for_label }}">
-                                {{ choice.tag }}
-                                <span>{{ choice.choice_label }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ field }}
-                {% endif %}
-                {% if field.help_text %}
-                    <small class="field-help">{{ field.help_text }}</small>
-                {% endif %}
-                {% if field.name == "deliverables_count" %}
-                    <small class="field-help value-per-video-help" data-value-per-video>Valor por vídeo: R$0,00</small>
-                {% endif %}
-                {{ field.errors }}
+
+        {# Etapa 1: Cliente / Marca #}
+        <div class="form-field form-field--full">
+            <label for="{{ form.company.id_for_label }}">Cliente / Marca</label>
+            {{ form.company }}
+            {% if form.company.errors %}{{ form.company.errors }}{% endif %}
+        </div>
+
+        {# Etapa 2: Categoria (grid 3 colunas com icones) #}
+        <div class="form-field form-field--full project-wizard-row" data-wizard-row="category">
+            <label>Categoria</label>
+            <div class="category-grid" data-category-grid>
+                <button type="button" class="category-card" data-category="producao">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    <span>Produção de Conteúdo</span>
+                </button>
+                <button type="button" class="category-card" data-category="gestao">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <span>Gestão & Estratégia</span>
+                </button>
+                <button type="button" class="category-card" data-category="publicidade">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <span>Publicidade & Parcerias</span>
+                </button>
             </div>
-        {% endfor %}
+        </div>
+
+        {# Etapa 3: Tipo de servico (pills filtradas pela categoria) #}
+        <div class="form-field form-field--full project-wizard-row" data-wizard-row="service-type" hidden>
+            <label>Tipo de serviço</label>
+            <div class="service-type-pills" data-service-pills>
+                {% for tp_value, tp_label in form.fields.service_type.choices %}
+                    {% if tp_value and tp_value != "outros" %}
+                        <button type="button" class="service-pill"
+                                data-service-pill="{{ tp_value }}"
+                                data-service-category="{{ form.service_type_to_category|get_item:tp_value }}"
+                                hidden>{{ tp_label }}</button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Divisor visivel apenas apos selecionar tipo #}
+        <hr class="project-form-divider form-field--full" data-form-divider hidden>
+
+        {# Bloco com todos os campos do form (renderizados pelo Django).
+         * Fica oculto ate o usuario escolher um tipo de servico. Hidden
+         * fields (stage, progress, service_category, etc.) ainda viajam
+         * no POST mesmo com o wrapper escondido. #}
+        <div class="project-form-fields form-field--full" data-form-fields hidden>
+            <div class="form-grid project-form-fields-grid">
+                {% for field in form %}
+                    {% if field.name == "company" %}{# Ja rendido na etapa 1 #}
+                    {% elif field.name == "service_type" %}
+                        {# service_type fica hidden; pills controlam o valor #}
+                        <div class="form-field" hidden data-service-type-wrapper>
+                            {{ field }}
+                        </div>
+                    {% else %}
+                        <div class="form-field{% if field.name == 'note' or field.name == 'new_service_category' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'new_service_category' %} service-category-create-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}"{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'new_service_category' and not form.show_new_service_category %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}>
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {% if field.name == "has_entry" %}
+                                <div class="segmented-control" data-entry-mode>
+                                    {% for choice in field %}
+                                        <label class="segmented-control-option" for="{{ choice.id_for_label }}">
+                                            {{ choice.tag }}
+                                            <span>{{ choice.choice_label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+                            {% if field.help_text %}
+                                <small class="field-help">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% if field.name == "deliverables_count" %}
+                                <small class="field-help value-per-video-help" data-value-per-video>Valor por vídeo: R$0,00</small>
+                            {% endif %}
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
 
         {% if installments_formset %}
-            <div class="form-field--full installments-block" data-installments-block>
+            <div class="form-field--full installments-block" data-installments-block hidden>
                 <div class="installments-block-header">
                     <h4>Parcelas de pagamento</h4>
                     <p class="muted">Adicione cada parcela com data e valor; o total é calculado em tempo real.</p>
@@ -107,7 +168,7 @@
             </div>
         {% endif %}
 
-        <div class="form-actions form-field--full project-form-actions">
+        <div class="form-actions form-field--full project-form-actions" data-form-actions hidden>
             <button type="submit" class="primary-button">Salvar trabalho</button>
             <a class="ghost-button" href="{% url cancel_url %}">Cancelar</a>
         </div>
@@ -206,7 +267,7 @@
             if (!stageField || !statusField) {
                 return;
             }
-            stageField.value = statusField.value === "Entregue" ? "Entregue" : "Fechado";
+            stageField.value = statusField.value === "Concluído" ? "Entregue" : "Fechado";
         };
 
         const syncMeetingDateVisibility = () => {
@@ -308,81 +369,147 @@
             serviceCategoryField.addEventListener("change", syncNewServiceCategoryVisibility);
         }
 
-        // Visibilidade adaptativa por tipo de serviço (brief Dash Creator 4).
+        // ========================================================
+        // Wizard: Cliente -> Categoria -> Tipo -> campos + acoes
+        // ========================================================
         const serviceTypeField = form.querySelector('[data-service-type]');
-        if (serviceTypeField) {
-            const csv = (raw) => String(raw || "").split(",").map((item) => item.trim()).filter(Boolean);
-            const simplifiedTypes = csv(form.dataset.simplifiedPaymentTypes);
-            const commissionTypes = csv(form.dataset.commissionPaymentTypes);
-            const noDeliveryTypes = csv(form.dataset.noDeliveryTypes);
-            const installmentsTypes = csv(form.dataset.installmentsTypes);
-            const installmentsBlock = form.querySelector('[data-installments-block]');
-            const conditionalWrappers = Array.from(form.querySelectorAll('[data-show-for-type]'));
+        const wizardCategoryGrid = form.querySelector('[data-category-grid]');
+        const wizardCategoryButtons = Array.from(form.querySelectorAll('[data-category]'));
+        const wizardPillsRow = form.querySelector('[data-wizard-row="service-type"]');
+        const wizardPills = Array.from(form.querySelectorAll('[data-service-pill]'));
+        const wizardDivider = form.querySelector('[data-form-divider]');
+        const wizardFieldsBlock = form.querySelector('[data-form-fields]');
+        const wizardActionsBlock = form.querySelector('[data-form-actions]');
+        const installmentsBlock = form.querySelector('[data-installments-block]');
 
-            const wrappersByName = {};
-            ["payment_due_date", "total_value", "received_value", "due_date", "meeting_scheduled", "meeting_date"].forEach((name) => {
-                const wrapper = form.querySelector(`.${name.replace(/_/g, "-")}-field`);
-                if (wrapper) {
-                    wrappersByName[name] = wrapper;
+        const csv = (raw) => String(raw || "").split(",").map((item) => item.trim()).filter(Boolean);
+        const simplifiedTypes = csv(form.dataset.simplifiedPaymentTypes);
+        const commissionTypes = csv(form.dataset.commissionPaymentTypes);
+        const noDeliveryTypes = csv(form.dataset.noDeliveryTypes);
+        const installmentsTypes = csv(form.dataset.installmentsTypes);
+        const conditionalWrappers = Array.from(form.querySelectorAll('[data-show-for-type]'));
+
+        const wrappersByName = {};
+        ["payment_due_date", "total_value", "received_value", "due_date", "meeting_scheduled", "meeting_date"].forEach((name) => {
+            const wrapper = form.querySelector(`.${name.replace(/_/g, "-")}-field`);
+            if (wrapper) {
+                wrappersByName[name] = wrapper;
+            }
+        });
+        const hasEntryWrapper = form.querySelector(".has-entry-field");
+        const entryValueWrapper = form.querySelector(".entry-value-field");
+
+        const applyServiceTypeVisibility = () => {
+            const selected = serviceTypeField ? serviceTypeField.value || "" : "";
+
+            conditionalWrappers.forEach((wrapper) => {
+                const allowed = csv(wrapper.dataset.showForType);
+                const shouldShow = !selected || allowed.includes(selected);
+                wrapper.hidden = !shouldShow;
+            });
+
+            const isCommission = commissionTypes.includes(selected);
+            const isSimplifiedPayment = simplifiedTypes.includes(selected);
+            const isNoDelivery = noDeliveryTypes.includes(selected);
+
+            if (hasEntryWrapper) {
+                hasEntryWrapper.hidden = isSimplifiedPayment || isCommission;
+            }
+            if ((isSimplifiedPayment || isCommission) && entryValueWrapper) {
+                entryValueWrapper.hidden = true;
+            }
+            if (isCommission && wrappersByName.total_value) {
+                wrappersByName.total_value.hidden = true;
+            }
+            if (isCommission && wrappersByName.received_value) {
+                wrappersByName.received_value.hidden = true;
+            }
+            if (isCommission && wrappersByName.payment_due_date) {
+                wrappersByName.payment_due_date.hidden = true;
+            }
+            if (isNoDelivery && wrappersByName.due_date) {
+                wrappersByName.due_date.hidden = true;
+            }
+            if (isNoDelivery && wrappersByName.meeting_scheduled) {
+                wrappersByName.meeting_scheduled.hidden = true;
+            }
+            if (isNoDelivery && wrappersByName.meeting_date) {
+                wrappersByName.meeting_date.hidden = true;
+            }
+
+            if (installmentsBlock) {
+                installmentsBlock.hidden = !installmentsTypes.includes(selected);
+            }
+        };
+
+        const wizardCategoryFor = (serviceType) => {
+            const pill = wizardPills.find((p) => p.dataset.servicePill === serviceType);
+            return pill ? pill.dataset.serviceCategory : null;
+        };
+
+        const activateCategory = (categoryKey, options = {}) => {
+            const { keepType = false } = options;
+            wizardCategoryButtons.forEach((btn) => {
+                btn.classList.toggle("category-card--active", btn.dataset.category === categoryKey);
+            });
+            wizardPills.forEach((pill) => {
+                const matches = pill.dataset.serviceCategory === categoryKey;
+                pill.hidden = !matches;
+                if (!matches) {
+                    pill.classList.remove("service-pill--active");
                 }
             });
-            const hasEntryWrapper = form.querySelector(".has-entry-field");
-            const entryValueWrapper = form.querySelector(".entry-value-field");
+            if (wizardPillsRow) {
+                wizardPillsRow.hidden = false;
+            }
+            if (!keepType && serviceTypeField) {
+                // limpa qualquer tipo selecionado anteriormente
+                serviceTypeField.value = "";
+                applyServiceTypeVisibility();
+                if (wizardFieldsBlock) wizardFieldsBlock.hidden = true;
+                if (wizardActionsBlock) wizardActionsBlock.hidden = true;
+                if (wizardDivider) wizardDivider.hidden = true;
+            }
+        };
 
-            const applyServiceTypeVisibility = () => {
-                const selected = serviceTypeField.value || "";
-
-                conditionalWrappers.forEach((wrapper) => {
-                    const allowed = csv(wrapper.dataset.showForType);
-                    const shouldShow = !selected || allowed.includes(selected);
-                    wrapper.hidden = !shouldShow;
-                });
-
-                const isCommission = commissionTypes.includes(selected);
-                const isSimplifiedPayment = simplifiedTypes.includes(selected);
-                const isNoDelivery = noDeliveryTypes.includes(selected);
-
-                if (hasEntryWrapper) {
-                    hasEntryWrapper.hidden = isSimplifiedPayment || isCommission;
-                }
-                if (isSimplifiedPayment || isCommission) {
-                    if (entryValueWrapper) {
-                        entryValueWrapper.hidden = true;
-                    }
-                }
-                if (isCommission && wrappersByName.total_value) {
-                    wrappersByName.total_value.hidden = true;
-                }
-                if (isCommission && wrappersByName.received_value) {
-                    wrappersByName.received_value.hidden = true;
-                }
-                if (isCommission && wrappersByName.payment_due_date) {
-                    wrappersByName.payment_due_date.hidden = true;
-                }
-                if (isNoDelivery && wrappersByName.due_date) {
-                    wrappersByName.due_date.hidden = true;
-                }
-                if (isNoDelivery && wrappersByName.meeting_scheduled) {
-                    wrappersByName.meeting_scheduled.hidden = true;
-                }
-                if (isNoDelivery && wrappersByName.meeting_date) {
-                    wrappersByName.meeting_date.hidden = true;
-                }
-
-                // Bloco de parcelas: aparece apenas para tipos com contrato
-                // longo / recorrente (Social Media, UGC Manager, Consultoria).
-                // Tipos como UGC Creator usam apenas entry_value + saldo.
-                if (installmentsBlock) {
-                    const showInstallments = installmentsTypes.includes(selected);
-                    installmentsBlock.hidden = !showInstallments;
-                }
-            };
-
+        const activateType = (serviceTypeValue) => {
+            if (!serviceTypeField) return;
+            serviceTypeField.value = serviceTypeValue;
+            wizardPills.forEach((pill) => {
+                pill.classList.toggle("service-pill--active", pill.dataset.servicePill === serviceTypeValue);
+            });
+            if (wizardFieldsBlock) wizardFieldsBlock.hidden = false;
+            if (wizardActionsBlock) wizardActionsBlock.hidden = false;
+            if (wizardDivider) wizardDivider.hidden = false;
             applyServiceTypeVisibility();
-            serviceTypeField.addEventListener("change", applyServiceTypeVisibility);
+        };
+
+        wizardCategoryButtons.forEach((btn) => {
+            btn.addEventListener("click", () => activateCategory(btn.dataset.category));
+        });
+
+        wizardPills.forEach((pill) => {
+            pill.addEventListener("click", () => activateType(pill.dataset.servicePill));
+        });
+
+        // Pre-ativacao quando o form ja vem com um service_type definido
+        // (por exemplo, ao editar um trabalho existente).
+        const initialServiceType = serviceTypeField ? serviceTypeField.value : "";
+        if (initialServiceType && initialServiceType !== "outros") {
+            const initialCategory = wizardCategoryFor(initialServiceType);
+            if (initialCategory) {
+                activateCategory(initialCategory, { keepType: true });
+            }
+            activateType(initialServiceType);
+        } else {
+            // Sem tipo: aplica visibilidade default mesmo assim para ocultar
+            // campos especificos (que comecam com display normal).
+            applyServiceTypeVisibility();
         }
 
-        // Parcelas dinâmicas (brief Dash Creator 4.1).
+        // ============================
+        // Parcelas dinamicas (formset)
+        // ============================
         const installmentsList = form.querySelector("[data-installments-list]");
         const installmentsTemplate = form.querySelector("[data-installment-template]");
         const installmentsAddButton = form.querySelector("[data-installment-add]");

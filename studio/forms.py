@@ -590,6 +590,9 @@ class ProjectForm(forms.ModelForm):
         service_category_value = cleaned_data.get("service_category")
         new_service_category = (cleaned_data.get("new_service_category") or "").strip()
 
+        service_type_value = cleaned_data.get("service_type") or "outros"
+        service_type_label = dict(SERVICE_TYPE_CHOICES).get(service_type_value, "")
+
         if service_category_value == ADD_SERVICE_CATEGORY_VALUE:
             cleaned_data["service_category"] = None
             if not new_service_category:
@@ -611,8 +614,15 @@ class ProjectForm(forms.ModelForm):
             else:
                 cleaned_data["service_category"] = service_category
         else:
+            # Service category nao informada: auto-cria (ou reusa) uma com o
+            # mesmo nome do service_type. Mantem a coluna preenchida pra
+            # service_category_name() e relatorios legados.
             cleaned_data["service_category"] = None
-            self.add_error("service_category", "Selecione uma categoria de serviço.")
+            if self.workspace is not None and service_type_label:
+                cleaned_data["service_category"], _ = ServiceCategory.objects.get_or_create(
+                    workspace=self.workspace,
+                    name=service_type_label,
+                )
 
         total_value = cleaned_data.get("total_value") or 0
         entry_value = cleaned_data.get("entry_value") or 0
