@@ -3006,6 +3006,61 @@ body.theme-dark .danger-button {
     .global-month-form {
         width: 100%;
     }
+
+    /* Finance / Distribution / Legal: linhas com icone + copy + meta ficavam
+     * grid empilhado no breakpoint 860 (.schedule-row vira column). No phone
+     * deixamos a meta como flex linha pra valor + data + botao caberem. */
+    .schedule-row .activity-meta,
+    .activity-row .activity-meta {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        width: 100%;
+    }
+
+    .schedule-row .activity-meta strong {
+        font-size: 16px;
+    }
+
+    .schedule-row .activity-meta .ghost-button {
+        margin-left: auto;
+    }
+
+    /* Legal: prospect-top com brand + actions wrap melhor em telas estreitas. */
+    .prospect-top {
+        gap: 10px;
+    }
+
+    .prospect-top .card-actions-group {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    /* Legal: modal de contrato full-screen ja garantido no breakpoint global,
+     * mas o form interno precisa de espaço pra parent submit ficar acessivel. */
+    .jobs-kpi-modal .auth-form-stack {
+        gap: 14px;
+    }
+
+    .jobs-kpi-modal .auth-form-stack .form-actions {
+        position: sticky;
+        bottom: 0;
+        background: var(--card);
+        padding-top: 12px;
+        margin-top: 4px;
+    }
+
+    .jobs-kpi-modal .primary-button {
+        width: 100%;
+    }
+
+    /* Distribution: manter cards do tabuleiro com aspecto consistente
+     * dentro do scroll-snap horizontal. */
+    .board-grid > .card .stack-list {
+        gap: 10px;
+    }
 }
 
 /* Prospecção board: kanban em scroll-snap horizontal no phone (em vez de stack
