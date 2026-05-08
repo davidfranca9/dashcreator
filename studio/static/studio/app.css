@@ -2958,6 +2958,58 @@ body.theme-dark .danger-button {
     }
 }
 
+/* Form de Trabalho mobile – sticky bottom actions e parcelas em coluna. */
+@media (max-width: 640px) {
+    .project-form .form-grid {
+        gap: 14px;
+    }
+
+    .project-form-actions {
+        position: sticky;
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 8px);
+        z-index: 10;
+        margin-top: 8px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 -8px 24px rgba(13, 32, 57, 0.08);
+        display: flex;
+        gap: 10px;
+    }
+
+    body.theme-dark .project-form-actions {
+        background: rgba(15, 27, 45, 0.96);
+    }
+
+    .project-form-actions .primary-button {
+        flex: 1 1 auto;
+    }
+
+    .installment-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .installment-field--paid,
+    .installment-delete {
+        grid-column: span 1;
+        margin-top: 0;
+    }
+
+    .installments-summary {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .installments-summary .ghost-button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
 /* Small phone (320–360px) – ajustes finos pra não cortar conteúdo. */
 @media (max-width: 380px) {
     .bottom-nav-label {
