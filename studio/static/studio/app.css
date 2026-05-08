@@ -2802,4 +2802,173 @@ body.theme-dark .danger-button {
     .meeting-popup h3 {
         font-size: 24px;
     }
+
+    /* Garantir tap target ≥44px em campos de input no mobile (acessibilidade). */
+    input,
+    select,
+    textarea {
+        min-height: 44px;
+        font-size: 16px; /* evita zoom automatico do iOS no focus */
+    }
+
+    .ghost-button,
+    .primary-button,
+    .danger-button {
+        min-height: 44px;
+    }
+
+    .ghost-button.small,
+    .primary-button.small,
+    .danger-button.small {
+        min-height: 38px;
+    }
+}
+
+/* Phone breakpoint – 1 coluna em todos os grids principais e header compacto. */
+@media (max-width: 640px) {
+    .content-area {
+        padding: 18px 14px;
+    }
+
+    .page-header h2 {
+        font-size: 24px;
+    }
+
+    .page-header p,
+    .page-subtitle {
+        font-size: 13px;
+    }
+
+    .stats-grid,
+    .dashboard-grid,
+    .board-grid,
+    .split-grid,
+    .form-grid,
+    .profile-hero,
+    .jobs-grid,
+    .infoprodutos-preview-grid,
+    .highlight-grid,
+    .reports-insight-grid,
+    .dashboard-lower-grid,
+    .settings-managed-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .jobs-filter-form {
+        grid-template-columns: 1fr !important;
+    }
+
+    .card,
+    .job-card {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-card strong {
+        font-size: 22px;
+    }
+
+    /* Sub-tabs e tab-bars com scroll-x quando excedem viewport. */
+    .subtabs,
+    .reports-tabs,
+    .source-mix-summary-head {
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        flex-wrap: nowrap;
+    }
+
+    .subtabs::-webkit-scrollbar,
+    .reports-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .subtab {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Tabelas e KPI modals em phone se transformam em scroll-x ou full-screen. */
+    .distribution-table {
+        font-size: 13px;
+    }
+
+    .distribution-table th,
+    .distribution-table td {
+        padding: 10px 8px;
+    }
+
+    .jobs-kpi-modal {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        padding: 18px 14px;
+    }
+
+    .jobs-kpi-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .jobs-kpi-row-meta {
+        align-items: flex-start;
+    }
+
+    .meeting-popup {
+        max-width: 94vw;
+        padding: 18px 14px;
+    }
+
+    /* Banner de follow-up vira coluna pra caber bem em 320–414px. */
+    .banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .follow-up-banner-actions {
+        justify-content: space-between;
+    }
+
+    /* Empty states de Reports compactos. */
+    .empty-state-card {
+        padding: 18px;
+    }
+
+    .empty-state-step {
+        flex-wrap: wrap;
+        padding: 14px;
+    }
+
+    .empty-state-step-copy strong {
+        font-size: 14px;
+    }
+
+    /* Sticky bottom para a barra de aviso de mês quando ela existir. */
+    .global-month-form {
+        width: 100%;
+    }
+}
+
+/* Small phone (320–360px) – ajustes finos pra não cortar conteúdo. */
+@media (max-width: 380px) {
+    .bottom-nav-label {
+        font-size: 10px;
+    }
+
+    .page-header h2 {
+        font-size: 21px;
+    }
+
+    .stat-card strong {
+        font-size: 19px;
+    }
 }
