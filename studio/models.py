@@ -312,6 +312,20 @@ class Project(WorkspaceOwnedModel):
         return self.due_date + timedelta(days=self.image_license_term_days)
 
 
+class ProjectInstallment(WorkspaceOwnedModel):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="installments")
+    due_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    paid = models.BooleanField(default=False)
+    paid_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["due_date", "pk"]
+
+    def __str__(self) -> str:
+        return f"Parcela {self.amount} em {self.due_date}"
+
+
 class FinanceEntry(WorkspaceOwnedModel):
     KIND_INCOMING = "incoming"
     KIND_OUTGOING = "outgoing"
