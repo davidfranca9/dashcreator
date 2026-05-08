@@ -1095,10 +1095,13 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][1]["title"], "Carteira Ativa")
         self.assertEqual(snapshot["stats"][2]["title"], "Trabalhos Ativos")
         self.assertEqual(snapshot["stats"][3]["title"], "Faturamento Mensal")
-        self.assertEqual(snapshot["stats"][0]["value"], "2")
+        # Brief 6.3: Carteira só conta empresas com trabalho cadastrado
+        # (sem prospects), Trabalhos Ativos é count de projects (não soma de
+        # deliverables) e Faturamento usa received_value.
+        self.assertEqual(snapshot["stats"][0]["value"], "1")
         self.assertEqual(snapshot["stats"][1]["value"], "1")
-        self.assertEqual(snapshot["stats"][2]["value"], "3")
-        self.assertEqual(snapshot["stats"][3]["value"], "R$2.400")
+        self.assertEqual(snapshot["stats"][2]["value"], "1")
+        self.assertEqual(snapshot["stats"][3]["value"], "R$800")
         self.assertEqual(len(snapshot["revenue"]["points"]), 12)
 
     def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
@@ -1137,7 +1140,9 @@ class DashboardSmokeTest(TestCase):
         snapshot = dashboard_snapshot(self.workspace)
         jobs = jobs_snapshot(self.workspace)
 
-        self.assertEqual(snapshot["stats"][0]["value"], "3")
+        # Brief 6.3: Carteira agora considera apenas projetos (sem prospects);
+        # com 2 projetos no mesmo cliente normalizado + setUp(Shein) = 2 unicos.
+        self.assertEqual(snapshot["stats"][0]["value"], "2")
         self.assertEqual(jobs["stats"][0]["value"], "2")
 
     def test_jobs_snapshot_shows_delivered_total_as_finalizado(self):
@@ -1657,7 +1662,8 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][0]["value"], "1")
         self.assertEqual(snapshot["stats"][1]["value"], "1")
         self.assertEqual(snapshot["stats"][2]["value"], "1")
-        self.assertEqual(snapshot["stats"][3]["value"], "R$1.500")
+        # Brief 6.3: Faturamento Mensal usa received_value (0 nesse cenario).
+        self.assertEqual(snapshot["stats"][3]["value"], "R$0")
 
     def test_global_month_choices_include_all_and_are_sorted_ascending(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)
@@ -1689,7 +1695,8 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(month_values, sorted(month_values))
         self.assertIn(previous_month.strftime("%Y-%m"), month_values)
         self.assertIn(self.project.close_date.strftime("%Y-%m"), month_values)
-        self.assertEqual(snapshot["stats"][0]["value"], "3")
+        # Brief 6.3: Carteira só conta empresas com trabalho (sem prospects).
+        self.assertEqual(snapshot["stats"][0]["value"], "2")
 
     def test_reports_page_shows_month_overview_with_via_and_top_niche(self):
         Project.objects.create(

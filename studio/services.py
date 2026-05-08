@@ -1014,23 +1014,14 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
             )
         )
 
-    active_jobs = sum(item.deliverables_count for item in active_projects)
+    # Brief Dash Creator 6.3: Trabalhos Ativos conta projetos (não soma
+    # deliverables_count), Carteira só considera quem tem trabalho cadastrado
+    # (não inclui prospects), e Faturamento Mensal usa valor recebido
+    # (received_value), não o total contratado.
+    active_jobs = len(active_projects)
     company_names = set()
     for item in active_projects + delivered_projects:
         normalized_name = normalize_company_name(item.company)
-        if normalized_name:
-            company_names.add(normalized_name)
-    month_prospect_names = (
-        Prospect.objects.filter(workspace=workspace)
-        if selected_month is None
-        else Prospect.objects.filter(
-            workspace=workspace,
-            contact_date__year=selected_month.year,
-            contact_date__month=selected_month.month,
-        )
-    )
-    for raw_name in month_prospect_names.exclude(company__exact="").values_list("company", flat=True):
-        normalized_name = normalize_company_name(raw_name)
         if normalized_name:
             company_names.add(normalized_name)
     clients_portfolio = len(company_names)
@@ -1040,7 +1031,7 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         if normalized_name:
             active_company_names.add(normalized_name)
     active_companies = len(active_company_names)
-    monthly_revenue = sum_money(item.total_value for item in active_projects + delivered_projects)
+    monthly_revenue = sum_money(item.received_value for item in active_projects + delivered_projects)
     total_closed = sum_money(item.total_value for item in active_projects)
 
     open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
