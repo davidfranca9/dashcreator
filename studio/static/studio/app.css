@@ -2943,6 +2943,59 @@ body.theme-dark .danger-button {
         scrollbar-width: thin;
     }
 
+    /* Charts (Faturamento anual, Evolução da prospecção): em phone, deixa o
+     * eixo Y fixo à esquerda e scroll horizontal só na área do gráfico+labels.
+     * Sem isso, as 12 labels mensais e seus valores se sobrepõem. */
+    .chart-grid {
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .chart-axis {
+        font-size: 11px;
+        gap: 18px;
+    }
+
+    .chart-visual {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+    }
+
+    .chart-visual::-webkit-scrollbar {
+        display: none;
+    }
+
+    .chart-svg {
+        min-width: 640px;
+        height: 220px;
+    }
+
+    .chart-labels {
+        min-width: 640px;
+        gap: 4px;
+        font-size: 11px;
+    }
+
+    .chart-label {
+        gap: 4px;
+        scroll-snap-align: start;
+    }
+
+    .chart-label strong {
+        font-size: 12px;
+    }
+
+    .chart-label span {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .chart-labels--adaptive {
+        grid-template-columns: repeat(12, minmax(50px, 1fr)) !important;
+    }
+
     .distribution-table {
         font-size: 13px;
         min-width: 520px;
