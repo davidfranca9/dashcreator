@@ -63,10 +63,12 @@
         {# Divisor visivel apenas apos selecionar tipo #}
         <hr class="project-form-divider form-field--full" data-form-divider hidden>
 
-        {# Bloco com todos os campos do form (renderizados pelo Django).
-         * Fica oculto ate o usuario escolher um tipo de servico. Hidden
-         * fields (stage, progress, service_category, etc.) ainda viajam
-         * no POST mesmo com o wrapper escondido. #}
+        {% comment %}
+        Bloco com todos os campos do form (renderizados pelo Django).
+        Fica oculto ate o usuario escolher um tipo de servico. Hidden
+        fields (stage, progress, service_category, etc.) ainda viajam
+        no POST mesmo com o wrapper escondido.
+        {% endcomment %}
         <div class="project-form-fields form-field--full" data-form-fields hidden>
             <div class="form-grid project-form-fields-grid">
                 {% for field in form %}
