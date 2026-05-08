@@ -2839,6 +2839,46 @@ body.theme-dark .danger-button {
         font-size: 13px;
     }
 
+    /* Header tools compactos: esconde o "Sair" (já está na bottom nav popover)
+     * e transforma o seletor de mês em pill discreto com chevron. */
+    .page-header-tools .header-actions a[href*="logout"] {
+        display: none;
+    }
+
+    .global-month-filter {
+        position: relative;
+        min-width: 0;
+        gap: 0;
+    }
+
+    .global-month-filter > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    .global-month-filter select {
+        appearance: none;
+        -webkit-appearance: none;
+        min-width: 0;
+        padding: 8px 32px 8px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+        background-color: var(--card);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23245fbe' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+    }
+
+    body.theme-dark .global-month-filter select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238cb9ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    }
+
     .stats-grid,
     .dashboard-grid,
     .board-grid,
@@ -2894,8 +2934,18 @@ body.theme-dark .danger-button {
     }
 
     /* Tabelas e KPI modals em phone se transformam em scroll-x ou full-screen. */
+    .distribution-table-wrap {
+        margin-left: -14px;
+        margin-right: -14px;
+        padding: 0 14px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
     .distribution-table {
         font-size: 13px;
+        min-width: 520px;
     }
 
     .distribution-table th,
