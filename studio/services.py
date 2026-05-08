@@ -1247,7 +1247,7 @@ def empresas_snapshot(
     overdue_cards = [serialize_job_card(item) for item in overdue_source]
 
     active_cards = [item for item in cards if item["stage"] == "Fechado"]
-    approval_cards = [item for item in active_cards if item["status"] == "Aguardando cliente"]
+    approval_cards = [item for item in active_cards if item["status"] == "Aguardando aprovação"]
     if upcoming_projects is not None:
         upcoming_cards = [serialize_job_card(item) for item in upcoming_projects]
     else:

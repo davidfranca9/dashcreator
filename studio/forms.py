@@ -17,12 +17,10 @@ from .services import default_niche_queryset, ensure_default_niches, ensure_defa
 UserModel = get_user_model()
 STATUS_PROGRESS_MAP = {
     "Briefing": 0,
-    "Aguardando produto": 10,
-    "Em gravacao": 25,
-    "Em edicao": 55,
-    "Aguardando cliente": 80,
-    "Aprovado": 95,
-    "Entregue": 100,
+    "Em produção": 40,
+    "Aguardando aprovação": 80,
+    "Concluído": 100,
+    "Cancelado": 0,
 }
 DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Inbound", "Inbound"),
@@ -489,7 +487,7 @@ class ProjectForm(forms.ModelForm):
         project = super().save(commit=False)
         project.project_name = project.service_category_name
         project.content_type = ""
-        project.stage = "Entregue" if project.status == "Entregue" else "Fechado"
+        project.stage = "Entregue" if project.status == "Concluído" else "Fechado"
         project.progress = STATUS_PROGRESS_MAP.get(project.status, project.progress)
         if commit:
             project.save()

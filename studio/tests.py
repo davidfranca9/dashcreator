@@ -300,7 +300,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -403,7 +403,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -432,7 +432,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -465,7 +465,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -494,7 +494,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -533,7 +533,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -569,7 +569,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(("Indicacao", "Indicação"), form.fields["closing_source"].choices)
         self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["closing_source"].choices)
         self.assertNotIn("progress", form.fields)
-        self.assertIn(("Aguardando produto", "Aguardando produto"), form.fields["status"].choices)
+        self.assertIn(("Em produção", "Em produção"), form.fields["status"].choices)
         self.assertIn(("Organico", "Organico"), form.fields["content_distribution"].choices)
         self.assertIn(("Ads", "Ads"), form.fields["content_distribution"].choices)
         self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["content_distribution"].choices)
@@ -627,7 +627,7 @@ class DashboardSmokeTest(TestCase):
                 "niche": self.niche.pk,
                 "service_category": self.category.pk,
                 "stage": "Fechado",
-                "status": "Entregue",
+                "status": "Concluído",
                 "total_value": "4000",
                 "entry_value": "2000",
                 "received_value": "4000",
@@ -706,7 +706,7 @@ class DashboardSmokeTest(TestCase):
                 "niche": self.niche.pk,
                 "service_category": self.category.pk,
                 "stage": "Fechado",
-                "status": "Aguardando produto",
+                "status": "Em produção",
                 "total_value": "4000",
                 "entry_value": "2000",
                 "received_value": "0",
@@ -722,7 +722,7 @@ class DashboardSmokeTest(TestCase):
         waiting_product_project.workspace = self.workspace
         waiting_product_project.save()
         self.assertEqual(waiting_product_project.stage, "Fechado")
-        self.assertEqual(waiting_product_project.progress, 10)
+        self.assertEqual(waiting_product_project.progress, 40)
 
         ads_without_term_form = ProjectForm(
             data={
@@ -1079,7 +1079,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -1150,7 +1150,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -1178,7 +1178,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Pacote extra",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -1280,7 +1280,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Entrega anterior",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=1800,
             entry_value=900,
             received_value=1800,
@@ -1298,7 +1298,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Entrega recente",
             content_type="",
             stage="Entregue",
-            status="Entregue",
+            status="Concluído",
             total_value=2200,
             entry_value=1100,
             received_value=2200,
@@ -1327,7 +1327,7 @@ class DashboardSmokeTest(TestCase):
             project_name="Entrega atrasada",
             content_type="",
             stage="Fechado",
-            status="Aguardando produto",
+            status="Em produção",
             total_value=2200,
             entry_value=1100,
             received_value=0,

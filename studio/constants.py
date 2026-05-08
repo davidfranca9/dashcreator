@@ -25,13 +25,28 @@ PROJECT_STAGE_CHOICES = [
 
 PROJECT_STATUS_CHOICES = [
     ("Briefing", "Briefing"),
-    ("Aguardando produto", "Aguardando produto"),
-    ("Em gravacao", "Em gravação"),
-    ("Em edicao", "Em edição"),
-    ("Aguardando cliente", "Aguardando aprovação"),
-    ("Aprovado", "Aprovado"),
-    ("Entregue", "Entregue"),
+    ("Em produção", "Em produção"),
+    ("Aguardando aprovação", "Aguardando aprovação"),
+    ("Concluído", "Concluído"),
+    ("Cancelado", "Cancelado"),
 ]
+
+PROJECT_STATUS_TONES = {
+    "Briefing": "info",
+    "Em produção": "warning",
+    "Aguardando aprovação": "purple",
+    "Concluído": "success",
+    "Cancelado": "danger",
+}
+
+LEGACY_PROJECT_STATUS_MAP = {
+    "Aguardando produto": "Em produção",
+    "Em gravacao": "Em produção",
+    "Em edicao": "Em produção",
+    "Aguardando cliente": "Aguardando aprovação",
+    "Aprovado": "Concluído",
+    "Entregue": "Concluído",
+}
 
 PROSPECT_STAGE_CHOICES = [
     ("Rascunho", "Rascunho"),
