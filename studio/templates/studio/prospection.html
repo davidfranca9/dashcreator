@@ -19,7 +19,13 @@
             </p>
         </div>
         <div class="follow-up-banner-actions">
-            <a class="primary-button small" href="#follow-up-column" data-follow-up-banner-jump>Ver follow-ups</a>
+            <form method="post" action="{% url 'follow_up_confirm' %}" class="follow-up-banner-confirm-form">
+                {% csrf_token %}
+                {% for item in follow_up_alerts %}
+                    <input type="hidden" name="company_keys" value="{{ item.dismiss_key }}">
+                {% endfor %}
+                <button type="submit" class="primary-button small">Ver follow-ups</button>
+            </form>
             <button type="button" class="icon-button" data-follow-up-banner-dismiss aria-label="Dispensar nesta sessão">&times;</button>
         </div>
     </article>
@@ -179,31 +185,29 @@
             });
         }
 
-        // "Ver follow-ups": no mobile o board-grid vira scroll horizontal,
-        // entao anchor link href="#follow-up-column" so faz scroll vertical
-        // e a coluna fica fora da viewport. Usamos scrollIntoView com
-        // inline:start para tambem rolar o container horizontal.
-        const jumpButton = banner.querySelector("[data-follow-up-banner-jump]");
-        if (jumpButton) {
-            jumpButton.addEventListener("click", (event) => {
-                const target = document.getElementById("follow-up-column");
-                if (!target) {
-                    return;
-                }
-                event.preventDefault();
-                target.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
-                // Flash visual: no desktop a coluna ja pode estar na viewport,
-                // entao adicionamos um highlight rapido pra dar feedback claro
-                // de que algo aconteceu apos o clique.
-                target.classList.remove("follow-up-column--highlighted");
-                requestAnimationFrame(() => {
-                    target.classList.add("follow-up-column--highlighted");
-                });
-                window.setTimeout(() => {
-                    target.classList.remove("follow-up-column--highlighted");
-                }, 1600);
-            });
+    })();
+
+    // Apos o POST de "Ver follow-ups", o backend redireciona para
+    // /prospeccao/#follow-up-column. Detectamos a hash no load para dar
+    // flash visual + scrollIntoView (cobre desktop, mobile e o carrossel
+    // horizontal do kanban). Tambem usado em qualquer navegacao manual
+    // pra essa hash.
+    (() => {
+        if (window.location.hash !== "#follow-up-column") {
+            return;
         }
+        const target = document.getElementById("follow-up-column");
+        if (!target) {
+            return;
+        }
+        // RAF garante que o layout esta pronto antes do scroll.
+        requestAnimationFrame(() => {
+            target.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
+            target.classList.add("follow-up-column--highlighted");
+            window.setTimeout(() => {
+                target.classList.remove("follow-up-column--highlighted");
+            }, 1600);
+        });
     })();
 </script>
 {% endblock %}

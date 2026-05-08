@@ -1055,6 +1055,10 @@ body.theme-dark .stat-card p {
     gap: 6px;
 }
 
+.follow-up-banner-confirm-form {
+    margin: 0;
+}
+
 .follow-up-banner .icon-button {
     width: 32px;
     height: 32px;
