@@ -2958,6 +2958,39 @@ body.theme-dark .danger-button {
     }
 }
 
+/* Prospecção board: kanban em scroll-snap horizontal no phone (em vez de stack
+ * vertical infinito). Cada coluna ocupa ~85vw para sinalizar a próxima. */
+@media (max-width: 640px) {
+    .board-grid {
+        display: flex !important;
+        grid-template-columns: none !important;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 12px;
+        padding-bottom: 6px;
+        margin-left: -14px;
+        margin-right: -14px;
+        padding-left: 14px;
+        padding-right: 14px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .board-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .board-grid > .card {
+        flex: 0 0 85vw;
+        max-width: 85vw;
+        scroll-snap-align: start;
+    }
+
+    .board-grid > .card .stack-list {
+        max-height: none;
+    }
+}
+
 /* Form de Trabalho mobile – sticky bottom actions e parcelas em coluna. */
 @media (max-width: 640px) {
     .project-form .form-grid {
