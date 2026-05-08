@@ -19,7 +19,7 @@ from .constants import (
     SERVICE_TYPE_TO_CATEGORY,
     SETTINGS_GROUPS,
 )
-from .models import AccessCode, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
+from .models import AccessCode, FinanceEntry, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
@@ -86,6 +86,32 @@ CONTRACT_DURATION_CHOICES = [
     (6, "6 meses"),
     (12, "12 meses"),
 ]
+
+
+class ProjectInstallmentForm(forms.ModelForm):
+    class Meta:
+        model = ProjectInstallment
+        fields = ["due_date", "amount", "paid"]
+        widgets = {
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "amount": forms.NumberInput(attrs={"step": "0.01", "min": "0", "inputmode": "decimal"}),
+        }
+        labels = {
+            "due_date": "Data da parcela",
+            "amount": "Valor",
+            "paid": "Pago",
+        }
+
+
+ProjectInstallmentFormSet = forms.inlineformset_factory(
+    Project,
+    ProjectInstallment,
+    form=ProjectInstallmentForm,
+    extra=0,
+    can_delete=True,
+    min_num=0,
+    validate_min=False,
+)
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):

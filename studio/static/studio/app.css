@@ -1047,6 +1047,98 @@ body.theme-dark .stat-card p {
     background: rgba(255, 255, 255, 0.9);
 }
 
+.installments-block {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--card-soft);
+}
+
+.installments-block-header h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+}
+
+.installments-block-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.installments-list {
+    display: grid;
+    gap: 10px;
+}
+
+.installment-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 1.2fr) minmax(140px, 1fr) auto auto;
+    align-items: end;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+}
+
+.installment-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.installment-field span {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.installment-field--paid,
+.installment-delete {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    margin-top: 22px;
+}
+
+.installment-field--paid input[type="checkbox"],
+.installment-delete input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+.installment-delete {
+    color: #c0303d;
+}
+
+.installments-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 6px;
+}
+
+.installments-total {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.installments-total strong {
+    color: #1f7a51;
+    margin-left: 6px;
+}
+
+.installment-errors {
+    grid-column: 1 / -1;
+}
+
 .jobs-kpi-backdrop {
     position: fixed;
     inset: 0;

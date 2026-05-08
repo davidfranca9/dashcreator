@@ -35,6 +35,7 @@ from .forms import (
     ManagedOptionForm,
     ProfilePhotoForm,
     ProjectForm,
+    ProjectInstallmentFormSet,
     ProspectForm,
     SignUpForm,
     WorkspaceBusinessForm,
@@ -1494,21 +1495,54 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "studio/project_form.html", context)
 
 
+def _save_installments_formset(formset, project, workspace) -> None:
+    """Persiste as parcelas vindas do formset, garantindo workspace correto."""
+    instances = formset.save(commit=False)
+    for instance in instances:
+        instance.project = project
+        instance.workspace = workspace
+        instance.save()
+    for obj in formset.deleted_objects:
+        obj.delete()
+
+
+def _installments_payload_present(request: HttpRequest) -> bool:
+    """Detecta se o POST veio com o management form do formset de parcelas.
+    Permite que callers (ex.: testes legados, prospect_convert) postem o
+    form sem o bloco de parcelas sem quebrar a validação."""
+    return "installments-TOTAL_FORMS" in request.POST
+
+
 @login_required
 def project_create(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     form = ProjectForm(request.POST or None, workspace=workspace)
-    if request.method == "POST" and form.is_valid():
+    has_installments_post = request.method == "POST" and _installments_payload_present(request)
+    installments_formset = ProjectInstallmentFormSet(
+        request.POST if has_installments_post else None,
+        instance=Project(),
+        prefix="installments",
+    )
+    formset_ok = installments_formset.is_valid() if has_installments_post else True
+    if request.method == "POST" and form.is_valid() and formset_ok:
         project = form.save(commit=False)
         project.workspace = workspace
         project.save()
+        if has_installments_post:
+            installments_formset.instance = project
+            _save_installments_formset(installments_formset, project, workspace)
         messages.success(request, "Trabalho salvo com sucesso.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("jobs", workspace, "Novo trabalho", "Cadastre um novo trabalho.", user=request.user)
-    context.update({"form": form, "form_title": "Trabalho", "cancel_url": "jobs"})
+    context.update({
+        "form": form,
+        "form_title": "Trabalho",
+        "cancel_url": "jobs",
+        "installments_formset": installments_formset,
+    })
     return render(request, "studio/project_form.html", context)
 
 
@@ -1517,15 +1551,29 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project, pk=pk, workspace=workspace)
     form = ProjectForm(request.POST or None, instance=project, workspace=workspace)
-    if request.method == "POST" and form.is_valid():
+    has_installments_post = request.method == "POST" and _installments_payload_present(request)
+    installments_formset = ProjectInstallmentFormSet(
+        request.POST if has_installments_post else None,
+        instance=project,
+        prefix="installments",
+    )
+    formset_ok = installments_formset.is_valid() if has_installments_post else True
+    if request.method == "POST" and form.is_valid() and formset_ok:
         project = form.save()
+        if has_installments_post:
+            _save_installments_formset(installments_formset, project, workspace)
         messages.success(request, "Trabalho atualizado.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
         return redirect("jobs")
 
     context = shell_context("jobs", workspace, "Editar trabalho", "Ajuste valores, datas e status.", user=request.user)
-    context.update({"form": form, "form_title": "Trabalho", "cancel_url": "jobs"})
+    context.update({
+        "form": form,
+        "form_title": "Trabalho",
+        "cancel_url": "jobs",
+        "installments_formset": installments_formset,
+    })
     return render(request, "studio/project_form.html", context)
 
 
@@ -1545,7 +1593,7 @@ def project_mark_delivered(request: HttpRequest, pk: int) -> HttpResponse:
     workspace = _workspace(request)
     project = get_object_or_404(Project, pk=pk, workspace=workspace)
     project.stage = "Entregue"
-    project.status = "Entregue"
+    project.status = "Concluído"
     project.progress = 100
     project.save(update_fields=["stage", "status", "progress", "updated_at"])
     messages.success(request, f"{project.company} marcado como entregue.")
