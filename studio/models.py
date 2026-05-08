@@ -15,6 +15,7 @@ from .constants import (
     PROJECT_STAGE_CHOICES,
     PROJECT_STATUS_CHOICES,
     PROSPECT_STAGE_CHOICES,
+    SERVICE_TYPE_CHOICES,
 )
 
 
@@ -244,6 +245,12 @@ class Project(WorkspaceOwnedModel):
         null=True,
         blank=True,
         related_name="projects",
+    )
+    service_type = models.CharField(
+        max_length=40,
+        choices=SERVICE_TYPE_CHOICES,
+        default="outros",
+        blank=True,
     )
     stage = models.CharField(max_length=30, choices=PROJECT_STAGE_CHOICES, default="Fechado")
     status = models.CharField(max_length=40, choices=PROJECT_STATUS_CHOICES, default="Briefing")

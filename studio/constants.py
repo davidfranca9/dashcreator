@@ -56,6 +56,60 @@ PROSPECT_STAGE_CHOICES = [
     ("Follow-up", "Follow-up"),
 ]
 
+# 11 tipos padrão de serviço do brief Dash Creator + 'outros' como fallback
+# pra dados legacy. A creator pode usar o ServiceCategory livre como rótulo
+# adicional (ex: "UGC Creator – campanhas grandes"); o tipo é o que dirige
+# o comportamento do form e os relatórios por tipo.
+SERVICE_TYPE_CHOICES = [
+    ("ugc_creator", "UGC Creator"),
+    ("freelancer", "Freelancer"),
+    ("editora_video", "Editora de Vídeo"),
+    ("videomaker", "Videomaker"),
+    ("storymaker", "Storymaker"),
+    ("social_media", "Social Media"),
+    ("ugc_manager", "UGC Manager"),
+    ("consultoria_marketing", "Consultoria de Marketing"),
+    ("publicidade", "Publicidade"),
+    ("shop_creator", "Shop Creator"),
+    ("afiliacao", "Afiliação / Comissão"),
+    ("outros", "Outros"),
+]
+
+SERVICE_TYPE_CATEGORIES = [
+    {
+        "key": "producao",
+        "label": "Produção de Conteúdo",
+        "types": ["ugc_creator", "freelancer", "editora_video", "videomaker", "storymaker"],
+    },
+    {
+        "key": "gestao",
+        "label": "Gestão & Estratégia",
+        "types": ["social_media", "ugc_manager", "consultoria_marketing"],
+    },
+    {
+        "key": "publicidade",
+        "label": "Publicidade & Parcerias",
+        "types": ["publicidade", "shop_creator", "afiliacao"],
+    },
+    {
+        "key": "outros",
+        "label": "Outros",
+        "types": ["outros"],
+    },
+]
+
+SERVICE_TYPE_TO_CATEGORY = {
+    service_type: category["key"]
+    for category in SERVICE_TYPE_CATEGORIES
+    for service_type in category["types"]
+}
+
+# Tipos cuja regra de pagamento é "valor único pós-produção" (sem entrada,
+# sem parcelas múltiplas). Reflete o brief seções 4.1 e 4 (Publicidade,
+# Shop Creator). Afiliação tem regra própria (% sobre vendas).
+POST_PRODUCTION_PAYMENT_TYPES = {"publicidade", "shop_creator"}
+COMMISSION_PAYMENT_TYPES = {"afiliacao"}
+
 LEGACY_DEFAULT_NICHE_NAMES = [
     "Tech",
     "Haircare",
