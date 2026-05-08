@@ -9,7 +9,16 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .contact_types import DEFAULT_CONTACT_TYPE_CHOICES, infer_contact_type, normalize_contact_type
-from .constants import IMAGE_LICENSE_TERM_CHOICES, PROJECT_DISTRIBUTION_CHOICES, SETTINGS_GROUPS
+from .constants import (
+    COMMISSION_PAYMENT_TYPES,
+    IMAGE_LICENSE_TERM_CHOICES,
+    POST_PRODUCTION_PAYMENT_TYPES,
+    PROJECT_DISTRIBUTION_CHOICES,
+    SERVICE_TYPE_CATEGORIES,
+    SERVICE_TYPE_CHOICES,
+    SERVICE_TYPE_TO_CATEGORY,
+    SETTINGS_GROUPS,
+)
 from .models import AccessCode, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
@@ -34,6 +43,49 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
 ADD_SERVICE_CATEGORY_VALUE = "__add_service_category__"
 HAS_ENTRY_YES = "yes"
 HAS_ENTRY_NO = "no"
+
+# Mapeia cada campo type-specific aos service_type que devem exibi-lo no
+# form. Lido pelo template para gerar atributos data-show-for-type, e pelo
+# JS para mostrar/esconder conforme o tipo de serviço selecionado.
+FIELD_VISIBILITY_BY_SERVICE_TYPE = {
+    "videos_count": ["ugc_creator", "editora_video", "videomaker", "shop_creator"],
+    "stories_count": ["storymaker"],
+    "story_coverage_date": ["storymaker"],
+    "posts_per_month": ["social_media"],
+    "videos_per_month": ["social_media"],
+    "profile_managed": ["social_media"],
+    "contract_duration_months": ["social_media", "consultoria_marketing"],
+    "monthly_value": ["consultoria_marketing"],
+    "managed_creators_count": ["ugc_manager"],
+    "publication_date": ["publicidade"],
+    "affiliate_program": ["afiliacao"],
+    "sold_amount": ["afiliacao"],
+    "commission_percentage": ["afiliacao"],
+    "extra_value": ["afiliacao"],
+    "withdrawal_date": ["afiliacao"],
+    "briefing": ["consultoria_marketing", "freelancer"],
+    # Campos universais com regra de exibição condicional ao tipo:
+    "deliverables_count": [
+        "ugc_creator", "freelancer", "editora_video", "videomaker",
+        "social_media", "ugc_manager",
+    ],
+    "content_distribution": ["ugc_creator"],
+    "image_license_term_days": ["ugc_creator"],
+}
+
+# Tipos cujo bloco de pagamento é "valor único pós-produção": esconde
+# has_entry / entry_value e mantém apenas total_value + payment_due_date.
+SIMPLIFIED_PAYMENT_TYPES = POST_PRODUCTION_PAYMENT_TYPES | COMMISSION_PAYMENT_TYPES
+
+# Tipos sem reunião nem data de entrega (brief: Afiliação).
+NO_DELIVERY_TYPES = COMMISSION_PAYMENT_TYPES
+
+CONTRACT_DURATION_CHOICES = [
+    (1, "1 mês"),
+    (3, "3 meses"),
+    (6, "6 meses"),
+    (12, "12 meses"),
+]
 
 
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
@@ -405,33 +457,103 @@ class ProjectForm(forms.ModelForm):
         self.fields["entry_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["received_value"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["deliverables_count"].widget.attrs.update({"min": "1"})
+
+        # Service type - aparece no topo do form e dirige a visibilidade
+        # dos blocos type-specific via JS no template.
+        self.fields["service_type"] = forms.ChoiceField(
+            label="Tipo de serviço",
+            choices=SERVICE_TYPE_CHOICES,
+            required=False,
+            help_text="Define quais campos extras aparecem no formulário.",
+        )
+        self.fields["service_type"].widget.attrs["data-service-type"] = "true"
+        if not self.is_bound and not self.initial.get("service_type") and not getattr(self.instance, "service_type", ""):
+            self.initial["service_type"] = "outros"
+
+        # Money fields type-specific já têm default=0 no model; tornar
+        # not required no form pra não exigir preenchimento explícito.
+        for optional_money in ("monthly_value", "sold_amount", "commission_percentage", "extra_value"):
+            self.fields[optional_money].required = False
+
+        # Configurações dos campos type-specific.
+        self.fields["contract_duration_months"] = forms.TypedChoiceField(
+            label="Duração do contrato",
+            choices=[("", "Selecione")] + CONTRACT_DURATION_CHOICES,
+            coerce=int,
+            empty_value=None,
+            required=False,
+        )
+        for money_field in ("monthly_value", "sold_amount", "extra_value"):
+            self.fields[money_field].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
+        self.fields["commission_percentage"].widget.attrs.update({"step": "0.01", "min": "0", "max": "100", "inputmode": "decimal"})
+        for count_field in ("videos_count", "stories_count", "posts_per_month", "videos_per_month", "managed_creators_count"):
+            self.fields[count_field].widget.attrs.update({"min": "0"})
+
+        self.fields["briefing"].help_text = "Descreva o serviço para freelancer ou o briefing da consultoria."
+        self.fields["affiliate_program"].help_text = "Nome do programa de afiliação ou marca."
+        self.fields["story_coverage_date"].help_text = "Dia em que você fará a cobertura."
+        self.fields["publication_date"].help_text = "Data prevista para a publicação."
+        self.fields["withdrawal_date"].help_text = "Data prevista para o saque da comissão."
+
+        # Mapa exposto ao template para gerar data-show-for-type por campo.
+        self.field_visibility_by_type = FIELD_VISIBILITY_BY_SERVICE_TYPE
+        self.service_type_categories = SERVICE_TYPE_CATEGORIES
+        self.service_type_to_category = SERVICE_TYPE_TO_CATEGORY
+        self.simplified_payment_types = list(SIMPLIFIED_PAYMENT_TYPES)
+        self.commission_payment_types = list(COMMISSION_PAYMENT_TYPES)
+        self.no_delivery_types = list(NO_DELIVERY_TYPES)
         self.order_fields(
             [
                 "company",
-                "closing_source",
-                "content_distribution",
-                "image_license_term_days",
-                "niche",
+                "service_type",
                 "service_category",
                 "new_service_category",
+                "niche",
+                "closing_source",
                 "stage",
                 "status",
+                "close_date",
+                "due_date",
+                "meeting_scheduled",
+                "meeting_date",
                 "total_value",
                 "has_entry",
                 "entry_value",
                 "received_value",
-                "deliverables_count",
                 "payment_due_date",
-                "meeting_scheduled",
-                "meeting_date",
-                "close_date",
-                "due_date",
+                "monthly_value",
+                "contract_duration_months",
+                "deliverables_count",
+                "videos_count",
+                "stories_count",
+                "story_coverage_date",
+                "posts_per_month",
+                "videos_per_month",
+                "profile_managed",
+                "managed_creators_count",
+                "publication_date",
+                "content_distribution",
+                "image_license_term_days",
+                "affiliate_program",
+                "sold_amount",
+                "commission_percentage",
+                "extra_value",
+                "withdrawal_date",
+                "briefing",
                 "note",
             ]
         )
 
+    def clean_service_type(self):
+        return self.cleaned_data.get("service_type") or "outros"
+
     def clean(self):
         cleaned_data = super().clean()
+        # Money type-specific fields que vieram vazios contam como zero
+        # (model usa default=0).
+        for optional_money in ("monthly_value", "sold_amount", "commission_percentage", "extra_value"):
+            if cleaned_data.get(optional_money) in (None, ""):
+                cleaned_data[optional_money] = 0
         service_category_value = cleaned_data.get("service_category")
         new_service_category = (cleaned_data.get("new_service_category") or "").strip()
 
@@ -498,11 +620,12 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = [
             "company",
+            "service_type",
+            "service_category",
             "closing_source",
             "content_distribution",
             "image_license_term_days",
             "niche",
-            "service_category",
             "stage",
             "status",
             "total_value",
@@ -514,10 +637,27 @@ class ProjectForm(forms.ModelForm):
             "meeting_date",
             "close_date",
             "due_date",
+            "videos_count",
+            "stories_count",
+            "story_coverage_date",
+            "posts_per_month",
+            "videos_per_month",
+            "profile_managed",
+            "contract_duration_months",
+            "monthly_value",
+            "managed_creators_count",
+            "publication_date",
+            "affiliate_program",
+            "sold_amount",
+            "commission_percentage",
+            "extra_value",
+            "withdrawal_date",
+            "briefing",
             "note",
         ]
         labels = {
-            "company": "Empresa",
+            "company": "Cliente / Marca",
+            "service_type": "Tipo de serviço",
             "closing_source": "Via de fechamento",
             "content_distribution": "Destino do conteúdo",
             "image_license_term_days": "Direito de uso de imagem",
@@ -534,6 +674,22 @@ class ProjectForm(forms.ModelForm):
             "meeting_date": "Data da reunião",
             "close_date": "Fechamento",
             "due_date": "Data prevista para entrega",
+            "videos_count": "Quantidade de vídeos",
+            "stories_count": "Quantidade de stories",
+            "story_coverage_date": "Data de cobertura",
+            "posts_per_month": "Posts por mês",
+            "videos_per_month": "Vídeos por mês",
+            "profile_managed": "Perfil gerenciado",
+            "contract_duration_months": "Duração do contrato",
+            "monthly_value": "Valor por mês",
+            "managed_creators_count": "Quantidade de creators gerenciados",
+            "publication_date": "Data de publicação",
+            "affiliate_program": "Programa de afiliação",
+            "sold_amount": "Valor total vendido",
+            "commission_percentage": "% de comissão",
+            "extra_value": "Valor extra fixo",
+            "withdrawal_date": "Data de saque",
+            "briefing": "Briefing do contrato",
             "note": "Observações",
         }
         widgets = {
@@ -541,7 +697,11 @@ class ProjectForm(forms.ModelForm):
             "meeting_date": forms.DateInput(attrs={"type": "date"}),
             "close_date": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
+            "story_coverage_date": forms.DateInput(attrs={"type": "date"}),
+            "publication_date": forms.DateInput(attrs={"type": "date"}),
+            "withdrawal_date": forms.DateInput(attrs={"type": "date"}),
             "note": forms.Textarea(attrs={"rows": 5}),
+            "briefing": forms.Textarea(attrs={"rows": 4}),
         }
 
 
