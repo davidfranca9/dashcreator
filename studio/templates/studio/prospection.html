@@ -192,6 +192,16 @@
                 }
                 event.preventDefault();
                 target.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
+                // Flash visual: no desktop a coluna ja pode estar na viewport,
+                // entao adicionamos um highlight rapido pra dar feedback claro
+                // de que algo aconteceu apos o clique.
+                target.classList.remove("follow-up-column--highlighted");
+                requestAnimationFrame(() => {
+                    target.classList.add("follow-up-column--highlighted");
+                });
+                window.setTimeout(() => {
+                    target.classList.remove("follow-up-column--highlighted");
+                }, 1600);
             });
         }
     })();
