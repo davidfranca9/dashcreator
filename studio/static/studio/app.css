@@ -1390,6 +1390,10 @@ body.theme-dark .stat-card p {
         text-decoration: none;
     }
 
+    .bottom-nav-popover-link .nav-link-icon {
+        color: currentColor;
+    }
+
     .bottom-nav-popover-link:active {
         background: rgba(77, 140, 255, 0.08);
     }
