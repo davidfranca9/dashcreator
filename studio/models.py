@@ -271,6 +271,26 @@ class Project(WorkspaceOwnedModel):
     close_date = models.DateField()
     due_date = models.DateField()
 
+    # Campos específicos por tipo de serviço (brief Dash Creator seção 4).
+    # Cada um aparece no form apenas para os tipos que listam o campo;
+    # os demais ficam null/0/"" e não são exibidos nem cobrados pela UI.
+    videos_count = models.PositiveIntegerField(null=True, blank=True)
+    stories_count = models.PositiveIntegerField(null=True, blank=True)
+    story_coverage_date = models.DateField(null=True, blank=True)
+    posts_per_month = models.PositiveIntegerField(null=True, blank=True)
+    videos_per_month = models.PositiveIntegerField(null=True, blank=True)
+    contract_duration_months = models.PositiveSmallIntegerField(null=True, blank=True)
+    monthly_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    managed_creators_count = models.PositiveIntegerField(null=True, blank=True)
+    affiliate_program = models.CharField(max_length=160, blank=True, default="")
+    sold_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    commission_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    extra_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    withdrawal_date = models.DateField(null=True, blank=True)
+    publication_date = models.DateField(null=True, blank=True)
+    profile_managed = models.CharField(max_length=160, blank=True, default="")
+    briefing = models.TextField(blank=True, default="")
+
     class Meta:
         ordering = ["stage", "due_date", "-updated_at"]
 
