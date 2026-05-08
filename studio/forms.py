@@ -47,8 +47,9 @@ HAS_ENTRY_NO = "no"
 # Mapeia cada campo type-specific aos service_type que devem exibi-lo no
 # form. Lido pelo template para gerar atributos data-show-for-type, e pelo
 # JS para mostrar/esconder conforme o tipo de serviço selecionado.
+# Nota: videos_count NÃO entra aqui porque deliverables_count já cobre o
+# papel de "Quantidade de vídeos" pros tipos UGC/Freelancer/Editora/etc.
 FIELD_VISIBILITY_BY_SERVICE_TYPE = {
-    "videos_count": ["ugc_creator", "editora_video", "videomaker", "shop_creator"],
     "stories_count": ["storymaker"],
     "story_coverage_date": ["storymaker"],
     "posts_per_month": ["social_media"],
@@ -67,7 +68,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     # Campos universais com regra de exibição condicional ao tipo:
     "deliverables_count": [
         "ugc_creator", "freelancer", "editora_video", "videomaker",
-        "social_media", "ugc_manager",
+        "shop_creator", "social_media", "ugc_manager",
     ],
     "content_distribution": ["ugc_creator"],
     "image_license_term_days": ["ugc_creator"],
@@ -79,6 +80,12 @@ SIMPLIFIED_PAYMENT_TYPES = POST_PRODUCTION_PAYMENT_TYPES | COMMISSION_PAYMENT_TY
 
 # Tipos sem reunião nem data de entrega (brief: Afiliação).
 NO_DELIVERY_TYPES = COMMISSION_PAYMENT_TYPES
+
+# Tipos cujo bloco "Parcelas de pagamento" faz sentido: contratos longos /
+# recorrentes onde o cliente paga em parcelas previsiveis. UGC e similares
+# (job unico com entrada + saldo) usam apenas has_entry / entry_value /
+# payment_due_date e nao mostram a lista de parcelas.
+INSTALLMENTS_TYPES = ["social_media", "ugc_manager", "consultoria_marketing"]
 
 CONTRACT_DURATION_CHOICES = [
     (1, "1 mês"),
@@ -512,7 +519,7 @@ class ProjectForm(forms.ModelForm):
         for money_field in ("monthly_value", "sold_amount", "extra_value"):
             self.fields[money_field].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["commission_percentage"].widget.attrs.update({"step": "0.01", "min": "0", "max": "100", "inputmode": "decimal"})
-        for count_field in ("videos_count", "stories_count", "posts_per_month", "videos_per_month", "managed_creators_count"):
+        for count_field in ("stories_count", "posts_per_month", "videos_per_month", "managed_creators_count"):
             self.fields[count_field].widget.attrs.update({"min": "0"})
 
         self.fields["briefing"].help_text = "Descreva o serviço para freelancer ou o briefing da consultoria."
@@ -528,6 +535,7 @@ class ProjectForm(forms.ModelForm):
         self.simplified_payment_types = list(SIMPLIFIED_PAYMENT_TYPES)
         self.commission_payment_types = list(COMMISSION_PAYMENT_TYPES)
         self.no_delivery_types = list(NO_DELIVERY_TYPES)
+        self.installments_types = list(INSTALLMENTS_TYPES)
         self.order_fields(
             [
                 "company",
@@ -550,7 +558,6 @@ class ProjectForm(forms.ModelForm):
                 "monthly_value",
                 "contract_duration_months",
                 "deliverables_count",
-                "videos_count",
                 "stories_count",
                 "story_coverage_date",
                 "posts_per_month",
@@ -663,7 +670,6 @@ class ProjectForm(forms.ModelForm):
             "meeting_date",
             "close_date",
             "due_date",
-            "videos_count",
             "stories_count",
             "story_coverage_date",
             "posts_per_month",
@@ -700,7 +706,6 @@ class ProjectForm(forms.ModelForm):
             "meeting_date": "Data da reunião",
             "close_date": "Fechamento",
             "due_date": "Data prevista para entrega",
-            "videos_count": "Quantidade de vídeos",
             "stories_count": "Quantidade de stories",
             "story_coverage_date": "Data de cobertura",
             "posts_per_month": "Posts por mês",

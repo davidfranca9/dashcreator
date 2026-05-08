@@ -15,6 +15,7 @@
         data-simplified-payment-types="{{ form.simplified_payment_types|join:',' }}"
         data-commission-payment-types="{{ form.commission_payment_types|join:',' }}"
         data-no-delivery-types="{{ form.no_delivery_types|join:',' }}"
+        data-installments-types="{{ form.installments_types|join:',' }}"
     >
         {% csrf_token %}
         {% for field in form %}
@@ -43,7 +44,7 @@
         {% endfor %}
 
         {% if installments_formset %}
-            <div class="form-field--full installments-block">
+            <div class="form-field--full installments-block" data-installments-block>
                 <div class="installments-block-header">
                     <h4>Parcelas de pagamento</h4>
                     <p class="muted">Adicione cada parcela com data e valor; o total é calculado em tempo real.</p>
@@ -314,6 +315,8 @@
             const simplifiedTypes = csv(form.dataset.simplifiedPaymentTypes);
             const commissionTypes = csv(form.dataset.commissionPaymentTypes);
             const noDeliveryTypes = csv(form.dataset.noDeliveryTypes);
+            const installmentsTypes = csv(form.dataset.installmentsTypes);
+            const installmentsBlock = form.querySelector('[data-installments-block]');
             const conditionalWrappers = Array.from(form.querySelectorAll('[data-show-for-type]'));
 
             const wrappersByName = {};
@@ -364,6 +367,14 @@
                 }
                 if (isNoDelivery && wrappersByName.meeting_date) {
                     wrappersByName.meeting_date.hidden = true;
+                }
+
+                // Bloco de parcelas: aparece apenas para tipos com contrato
+                // longo / recorrente (Social Media, UGC Manager, Consultoria).
+                // Tipos como UGC Creator usam apenas entry_value + saldo.
+                if (installmentsBlock) {
+                    const showInstallments = installmentsTypes.includes(selected);
+                    installmentsBlock.hidden = !showInstallments;
                 }
             };
 
