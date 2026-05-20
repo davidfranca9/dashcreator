@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, timedelta
 import re
 
 from django import forms
@@ -43,6 +44,26 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
 ADD_SERVICE_CATEGORY_VALUE = "__add_service_category__"
 HAS_ENTRY_YES = "yes"
 HAS_ENTRY_NO = "no"
+SOCIAL_MEDIA_SERVICE_TYPE = "social_media"
+SOCIAL_MEDIA_HIDDEN_FIELDS = [
+    "stage",
+    "status",
+    "due_date",
+    "has_entry",
+    "entry_value",
+    "received_value",
+    "deliverables_count",
+]
+
+
+def _contract_due_date_from_start(start_date: date | None, duration_months: int | None) -> date | None:
+    if start_date is None:
+        return None
+    duration = max(1, int(duration_months or 1))
+    month_index = (start_date.year * 12) + (start_date.month - 1) + duration
+    year = month_index // 12
+    month = (month_index % 12) + 1
+    return date(year, month, 1) - timedelta(days=1)
 
 # Mapeia cada campo type-specific aos service_type que devem exibi-lo no
 # form. Lido pelo template para gerar atributos data-show-for-type, e pelo
@@ -68,7 +89,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     # Campos universais com regra de exibição condicional ao tipo:
     "deliverables_count": [
         "ugc_creator", "freelancer", "editora_video", "videomaker",
-        "shop_creator", "social_media", "ugc_manager",
+        "shop_creator", "ugc_manager",
     ],
     "content_distribution": ["ugc_creator"],
     "image_license_term_days": ["ugc_creator"],
@@ -508,6 +529,11 @@ class ProjectForm(forms.ModelForm):
         for optional_money in ("monthly_value", "sold_amount", "commission_percentage", "extra_value"):
             self.fields[optional_money].required = False
 
+        # Alguns campos são escondidos pela UI para Social Média, mas o form
+        # ainda precisa aceitar o POST sem exigir valores invisíveis.
+        for hidden_for_social_media in ("due_date", "entry_value", "received_value", "deliverables_count"):
+            self.fields[hidden_for_social_media].required = False
+
         # Configurações dos campos type-specific.
         self.fields["contract_duration_months"] = forms.TypedChoiceField(
             label="Duração do contrato",
@@ -536,6 +562,7 @@ class ProjectForm(forms.ModelForm):
         self.commission_payment_types = list(COMMISSION_PAYMENT_TYPES)
         self.no_delivery_types = list(NO_DELIVERY_TYPES)
         self.installments_types = list(INSTALLMENTS_TYPES)
+        self.social_media_hidden_fields = SOCIAL_MEDIA_HIDDEN_FIELDS
         self.order_fields(
             [
                 "company",
@@ -630,8 +657,43 @@ class ProjectForm(forms.ModelForm):
         has_entry = cleaned_data.get("has_entry") or HAS_ENTRY_YES
         content_distribution = cleaned_data.get("content_distribution")
         image_license_term_days = cleaned_data.get("image_license_term_days")
+        is_social_media = service_type_value == SOCIAL_MEDIA_SERVICE_TYPE
+        is_existing_social_media = (
+            bool(getattr(self.instance, "pk", None))
+            and getattr(self.instance, "service_type", "") == SOCIAL_MEDIA_SERVICE_TYPE
+        )
 
-        if has_entry == HAS_ENTRY_NO:
+        if is_social_media:
+            cleaned_data["due_date"] = (
+                _contract_due_date_from_start(
+                    cleaned_data.get("close_date"),
+                    cleaned_data.get("contract_duration_months"),
+                )
+                or cleaned_data.get("due_date")
+            )
+            if is_existing_social_media:
+                entry_value = self.instance.entry_value or 0
+                received_value = self.instance.received_value or 0
+                deliverables_count = self.instance.deliverables_count or 1
+            else:
+                entry_value = 0
+                received_value = 0
+                deliverables_count = 1
+            cleaned_data["entry_value"] = entry_value
+            cleaned_data["received_value"] = received_value
+            cleaned_data["deliverables_count"] = deliverables_count
+        elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
+            cleaned_data["due_date"] = cleaned_data.get("close_date")
+        else:
+            if not cleaned_data.get("due_date"):
+                self.add_error("due_date", "Informe a data prevista para entrega.")
+            if (
+                service_type_value in FIELD_VISIBILITY_BY_SERVICE_TYPE["deliverables_count"]
+                and not cleaned_data.get("deliverables_count")
+            ):
+                self.add_error("deliverables_count", "Informe a quantidade de vídeos.")
+
+        if not is_social_media and has_entry == HAS_ENTRY_NO:
             entry_value = total_value
             cleaned_data["entry_value"] = total_value
         if entry_value > total_value:
@@ -707,14 +769,14 @@ class ProjectForm(forms.ModelForm):
             "service_category": "Categoria de serviço",
             "stage": "Etapa",
             "status": "Status",
-            "total_value": "Valor total",
+            "total_value": "Valor de contrato",
             "entry_value": "Entrada",
             "received_value": "Recebido",
             "deliverables_count": "Quantidade de vídeos",
             "payment_due_date": "Data prevista de pagamento",
             "meeting_scheduled": "Reunião agendada",
             "meeting_date": "Data da reunião",
-            "close_date": "Fechamento",
+            "close_date": "Início do contrato",
             "due_date": "Data prevista para entrega",
             "stories_count": "Quantidade de stories",
             "story_coverage_date": "Data de cobertura",

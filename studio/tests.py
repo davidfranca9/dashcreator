@@ -559,8 +559,10 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(form.default_entry_rate, 40)
         self.assertEqual(form.fields["close_date"].initial, date.today())
-        self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de videos")
-        self.assertIn("quantidade total de videos", form.fields["deliverables_count"].help_text)
+        self.assertEqual(form.fields["total_value"].label, "Valor de contrato")
+        self.assertEqual(form.fields["close_date"].label, "Início do contrato")
+        self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de vídeos")
+        self.assertIn("quantidade total de vídeos", form.fields["deliverables_count"].help_text)
         self.assertIn(("Inbound", "Inbound"), form.fields["closing_source"].choices)
         self.assertIn(("Prospeccao", "Prospecção"), form.fields["closing_source"].choices)
         self.assertIn(("Follow-up", "Follow-up"), form.fields["closing_source"].choices)
@@ -570,7 +572,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["closing_source"].choices)
         self.assertNotIn("progress", form.fields)
         self.assertIn(("Em produção", "Em produção"), form.fields["status"].choices)
-        self.assertIn(("Organico", "Organico"), form.fields["content_distribution"].choices)
+        self.assertIn(("Organico", "Orgânico"), form.fields["content_distribution"].choices)
         self.assertIn(("Ads", "Ads"), form.fields["content_distribution"].choices)
         self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["content_distribution"].choices)
         self.assertIn("payment_due_date", form.fields)
@@ -581,6 +583,42 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("has_entry", form.fields)
         self.assertIn("new_service_category", form.fields)
         self.assertEqual(form.fields["service_category"].choices[-1], (ADD_SERVICE_CATEGORY_VALUE, "Adicionar categoria"))
+
+    def test_social_media_form_hides_removed_fields_and_fills_required_defaults(self):
+        start_date = date(2026, 5, 20)
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "service_type": "social_media",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "service_category": self.category.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "3000",
+                "has_entry": "yes",
+                "entry_value": "1500",
+                "received_value": "700",
+                "deliverables_count": "9",
+                "close_date": start_date.isoformat(),
+                "due_date": "",
+                "contract_duration_months": "3",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@insider",
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertNotIn("social_media", form.field_visibility_by_type["deliverables_count"])
+        self.assertEqual(project.due_date, date(2026, 7, 31))
+        self.assertEqual(project.entry_value, Decimal("0"))
+        self.assertEqual(project.received_value, Decimal("0"))
+        self.assertEqual(project.deliverables_count, 1)
 
     def test_project_form_without_entry_sets_entry_to_total_value(self):
         form = ProjectForm(
@@ -616,7 +654,7 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("project_edit", args=[self.project.pk]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="form-field entry-value-field" hidden', html=False)
+        self.assertContains(response, 'class="form-field entry-value-field" data-hide-for-social-media hidden', html=False)
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
@@ -783,6 +821,9 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Adicionar categoria")
         self.assertContains(response, 'id="id_new_service_category"', html=False)
+        self.assertContains(response, 'data-hide-for-social-media', html=False)
+        self.assertContains(response, 'for="id_total_value">Valor de contrato</label>', html=False)
+        self.assertContains(response, 'for="id_close_date">Início do contrato</label>', html=False)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):
         self.workspace.business_full_name = "Layfe Amorim"
