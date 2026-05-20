@@ -20,7 +20,7 @@ from PIL import Image
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
-from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, shell_context
+from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 
 
@@ -1104,6 +1104,68 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["value"], "R$800")
         self.assertEqual(len(snapshot["revenue"]["points"]), 12)
 
+    def test_dashboard_counts_recurring_contract_in_each_duration_month(self):
+        start_month = date.today().replace(day=1)
+        next_month_index = (start_month.year * 12) + start_month.month
+        next_month = date(next_month_index // 12, (next_month_index % 12) + 1, 1)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="social_media",
+            project_name="Social media mensal",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=1500,
+            contract_duration_months=3,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=1,
+            progress=20,
+            close_date=start_month,
+            due_date=start_month + timedelta(days=20),
+        )
+
+        snapshot = dashboard_snapshot(self.workspace, month_filter=next_month.strftime("%Y-%m"))
+
+        self.assertEqual(snapshot["selected_month"]["value"], next_month.strftime("%Y-%m"))
+        self.assertEqual(snapshot["stats"][2]["value"], "1")
+        self.assertEqual(snapshot["stats"][3]["value"], "R$1.500")
+
+    def test_revenue_chart_spreads_recurring_contract_across_duration_months(self):
+        start_month = date(date.today().year, 1, 1)
+        recurring = Project(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="consultoria_marketing",
+            project_name="Consultoria mensal",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=3600,
+            monthly_value=1200,
+            contract_duration_months=3,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=1,
+            progress=20,
+            close_date=start_month,
+            due_date=start_month + timedelta(days=20),
+        )
+
+        context = revenue_context([recurring], selected_year=start_month.year)
+
+        self.assertEqual(context["points"][0]["amount"], 1200)
+        self.assertEqual(context["points"][1]["amount"], 1200)
+        self.assertEqual(context["points"][2]["amount"], 1200)
+        self.assertEqual(context["points"][3]["amount"], 0)
+
     def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
         Prospect.objects.create(
             workspace=self.workspace,
@@ -2133,5 +2195,3 @@ class AuthenticationFlowsTest(TestCase):
         second_dashboard = second_client.get(reverse("dashboard"))
         self.assertEqual(first_dashboard.status_code, 200)
         self.assertEqual(second_dashboard.status_code, 200)
-
-

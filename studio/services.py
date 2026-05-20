@@ -261,14 +261,17 @@ def distribution_label(project: Project) -> str:
 
 def month_options_for_workspace(workspace: Workspace) -> list[date]:
     months = {date.today().replace(day=1)}
-    for close_date, due_date, payment_due_date, meeting_date in Project.objects.filter(workspace=workspace).values_list(
+    for close_date, due_date, payment_due_date, meeting_date, contract_duration_months in Project.objects.filter(workspace=workspace).values_list(
         "close_date",
         "due_date",
         "payment_due_date",
         "meeting_date",
+        "contract_duration_months",
     ):
         if close_date:
             months.add(close_date.replace(day=1))
+            for month_index in range(1, max(1, int(contract_duration_months or 1))):
+                months.add(_shift_month(close_date.replace(day=1), month_index))
         if due_date:
             months.add(due_date.replace(day=1))
         if payment_due_date:
@@ -539,6 +542,45 @@ def _shift_month(base_date: date, months: int) -> date:
     return date(year, month, 1)
 
 
+def _project_contract_month_count(project: Project) -> int:
+    return max(1, int(project.contract_duration_months or 1))
+
+
+def _project_contract_start_month(project: Project) -> date:
+    return project.close_date.replace(day=1)
+
+
+def _project_recurring_months(project: Project) -> list[date]:
+    start_month = _project_contract_start_month(project)
+    return [_shift_month(start_month, index) for index in range(_project_contract_month_count(project))]
+
+
+def _project_matches_contract_month(project: Project, month_start: date) -> bool:
+    duration = _project_contract_month_count(project)
+    start_month = _project_contract_start_month(project)
+    end_month = _shift_month(start_month, duration - 1)
+    return start_month <= month_start <= end_month
+
+
+def _project_monthly_contract_value(project: Project) -> Decimal:
+    monthly_value = Decimal(project.monthly_value or 0)
+    if monthly_value > ZERO:
+        return monthly_value
+    return Decimal(project.total_value or 0)
+
+
+def _project_dashboard_revenue_for_month(project: Project, selected_month: date | None) -> Decimal:
+    if selected_month is None:
+        if _project_contract_month_count(project) > 1:
+            return _project_monthly_contract_value(project) * _project_contract_month_count(project)
+        return Decimal(project.received_value or 0)
+    if _project_contract_month_count(project) > 1:
+        return _project_monthly_contract_value(project) if _project_matches_contract_month(project, selected_month) else ZERO
+    if project.close_date.year == selected_month.year and project.close_date.month == selected_month.month:
+        return Decimal(project.received_value or 0)
+    return ZERO
+
+
 def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: int | None = None) -> dict:
     current_year = selected_year or date.today().year
     current_month = date.today().replace(day=1)
@@ -551,6 +593,12 @@ def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: 
     chart_side_padding = 18
 
     for project in projects:
+        if _project_contract_month_count(project) > 1:
+            amount = _project_monthly_contract_value(project)
+            for month_start in _project_recurring_months(project):
+                if month_start in totals:
+                    totals[month_start] += amount
+            continue
         month_start = project.close_date.replace(day=1)
         if month_start in totals:
             totals[month_start] += Decimal(project.total_value or 0)
@@ -1007,12 +1055,12 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         active_projects = [
             item
             for item in projects
-            if item.stage == "Fechado" and item.close_date.year == selected_month.year and item.close_date.month == selected_month.month
+            if item.stage == "Fechado" and _project_matches_contract_month(item, selected_month)
         ]
         delivered_projects = [
             item
             for item in projects
-            if item.stage == "Entregue" and item.close_date.year == selected_month.year and item.close_date.month == selected_month.month
+            if item.stage == "Entregue" and _project_matches_contract_month(item, selected_month)
         ]
         prospects = list(
             Prospect.objects.filter(
@@ -1023,9 +1071,9 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         )
 
     # Brief Dash Creator 6.3: Trabalhos Ativos conta projetos (não soma
-    # deliverables_count), Carteira só considera quem tem trabalho cadastrado
-    # (não inclui prospects), e Faturamento Mensal usa valor recebido
-    # (received_value), não o total contratado.
+    # deliverables_count) e Carteira só considera quem tem trabalho cadastrado
+    # (não inclui prospects). Contratos recorrentes contam em cada mes da
+    # duracao configurada.
     active_jobs = len(active_projects)
     company_names = set()
     for item in active_projects + delivered_projects:
@@ -1039,7 +1087,7 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         if normalized_name:
             active_company_names.add(normalized_name)
     active_companies = len(active_company_names)
-    monthly_revenue = sum_money(item.received_value for item in active_projects + delivered_projects)
+    monthly_revenue = sum_money(_project_dashboard_revenue_for_month(item, selected_month) for item in active_projects + delivered_projects)
     total_closed = sum_money(item.total_value for item in active_projects)
 
     open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
