@@ -1609,10 +1609,19 @@ def _project_finance_events(project: Project) -> list[dict]:
         monthly_amount = _project_monthly_contract_value(project)
         if monthly_amount <= ZERO:
             return events
+        today = date.today()
         remaining_received = Decimal(project.received_value or 0)
         for index, payment_date in enumerate(_project_recurring_payment_dates(project), start=1):
-            paid_amount = min(remaining_received, monthly_amount)
-            outstanding_amount = monthly_amount - paid_amount
+            # Sem parcelas cadastradas, presume-se que mensalidades já
+            # vencidas foram recebidas — assim a receita do mês entra
+            # automaticamente para contratos recorrentes em andamento.
+            is_past_due = payment_date <= today
+            if is_past_due:
+                paid_amount = monthly_amount
+                outstanding_amount = ZERO
+            else:
+                paid_amount = min(remaining_received, monthly_amount)
+                outstanding_amount = monthly_amount - paid_amount
             if paid_amount > ZERO:
                 events.append(
                     {
@@ -1635,7 +1644,8 @@ def _project_finance_events(project: Project) -> list[dict]:
                         "paid_on": None,
                     }
                 )
-            remaining_received = max(remaining_received - monthly_amount, ZERO)
+            if not is_past_due:
+                remaining_received = max(remaining_received - monthly_amount, ZERO)
         return events
 
     payment_date = payment_reference_date(project)

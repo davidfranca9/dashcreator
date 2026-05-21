@@ -1723,6 +1723,54 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(sixth_installment["due"].startswith("15 "))
         self.assertEqual(sixth_installment["amount"], "R$1.500")
 
+    def test_recurring_contract_counts_past_monthlies_as_received(self):
+        # Contrato Consultoria de 6 meses, fechado em 15/jan, R$3.500/mês,
+        # pagamento todo dia 15. Em 21/mai, as mensalidades de jan a mai já
+        # passaram → todas devem entrar como recebidas mesmo sem parcelas
+        # cadastradas manualmente.
+        with patch("studio.services.date") as mock_date:
+            mock_date.today.return_value = date(2026, 5, 21)
+            mock_date.side_effect = lambda *args, **kwargs: date(*args, **kwargs)
+            Project.objects.create(
+                workspace=self.workspace,
+                company="Insider",
+                closing_source="Networking",
+                niche=self.niche,
+                service_category=self.category,
+                service_type="consultoria_marketing",
+                project_name="Consultoria mensal",
+                content_type="",
+                stage="Fechado",
+                status="Briefing",
+                total_value=Decimal("3500"),
+                contract_duration_months=6,
+                entry_value=0,
+                received_value=0,
+                deliverables_count=1,
+                progress=20,
+                payment_due_date=date(2026, 5, 15),
+                close_date=date(2026, 1, 15),
+                due_date=date(2026, 6, 30),
+            )
+
+            snapshot = finance_snapshot(self.workspace, "2026-05")
+
+        # incoming_total agora inclui Mensalidade 5 (maio, R$3.500) +
+        # qualquer recebido já existente. Verifica que o evento da
+        # Insider entrou no ledger como recebido em maio.
+        insider_paid_in_may = [
+            item for item in snapshot["ledger"]
+            if "Insider" in item["description"] and item["accent"] == "#20b7a7"
+        ]
+        self.assertGreaterEqual(len(insider_paid_in_may), 1)
+        # "A receber" agora tem apenas a parcela futura (jun) da Insider.
+        insider_receivable = [
+            item for item in snapshot["schedule"] if item["company"] == "Insider"
+        ]
+        self.assertEqual(len(insider_receivable), 1)
+        self.assertEqual(insider_receivable[0]["amount"], "R$3.500")
+        self.assertEqual(insider_receivable[0]["kind"], "Mensalidade 6")
+
     def test_receivable_balance_covers_all_future_months_of_recurring_contract(self):
         # Contrato Social Media de 12 meses começando no futuro — todas as
         # 12 mensalidades estão pendentes; "A receber" precisa somar tudo,
