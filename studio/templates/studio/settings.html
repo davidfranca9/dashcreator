@@ -26,23 +26,6 @@
         <article class="card">
             <div class="card-header">
                 <div>
-                    <h3>Nichos padronizados</h3>
-                </div>
-            </div>
-            <div class="stack-list">
-                {% for item in managed_niches %}
-                    <article class="soft-card metric-row">
-                        <strong>{{ item.name }}</strong>
-                    </article>
-                {% empty %}
-                    <p class="muted">Nenhum nicho padronizado disponível.</p>
-                {% endfor %}
-            </div>
-        </article>
-
-        <article class="card">
-            <div class="card-header">
-                <div>
                     <h3>Categorias de serviço</h3>
                     <p>Cadastre aqui o que depois aparece no menu suspenso dos trabalhos.</p>
                 </div>

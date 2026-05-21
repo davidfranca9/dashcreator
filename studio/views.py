@@ -45,7 +45,6 @@ from .models import FinanceEntry, Project, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
-    default_niche_list,
     distribution_snapshot,
     dismiss_follow_up_company,
     finance_snapshot,
@@ -1358,7 +1357,6 @@ def settings(request: HttpRequest) -> HttpResponse:
         {
             "form": settings_form,
             "service_category_form": service_category_form,
-            "managed_niches": default_niche_list(workspace),
             "managed_service_categories": ServiceCategory.objects.filter(workspace=workspace).annotate(usage_count=Count("projects")).order_by("name"),
         }
     )

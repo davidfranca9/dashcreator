@@ -1939,9 +1939,10 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pacote premium")
-        self.assertContains(response, "Haircare")
-        self.assertContains(response, "Tecnologia e Eletr\u00f4nicos")
-        self.assertContains(response, "Viagens e Turismo")
+        self.assertNotContains(response, "Nichos padronizados")
+        self.assertNotContains(response, "Haircare")
+        self.assertNotContains(response, "Tecnologia e Eletr\u00f4nicos")
+        self.assertNotContains(response, "Viagens e Turismo")
         self.assertNotContains(response, "Adicionar nicho")
 
     def test_prospect_form_preserves_default_niche_order(self):
