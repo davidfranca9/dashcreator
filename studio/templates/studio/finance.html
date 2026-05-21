@@ -46,8 +46,8 @@
                 <article class="fd-metric-card">
                     <div class="fd-metric-label"><i class="ti ti-home"></i> Pró-labore</div>
                     <div class="fd-metric-value">{{ finance_desktop.pro_labore }}</div>
-                    <div class="fd-metric-detail fd-text-green">
-                        {% if finance_desktop.pro_labore_covered %}✓ coberto este mês{% else %}aguardando cobertura{% endif %}
+                    <div class="fd-metric-detail {% if finance_desktop.pro_labore_covered %}fd-text-green{% else %}fd-text-warn{% endif %}">
+                        {% if finance_desktop.pro_labore_covered %}✓ coberto este mês{% else %}faltam {{ finance_desktop.pro_labore_remaining }}{% endif %}
                     </div>
                 </article>
                 <article class="fd-metric-card">
@@ -70,7 +70,11 @@
                             <div class="fd-prolabore-value">{{ finance_desktop.pro_labore }}</div>
                             <div class="fd-prolabore-sub">retirado primeiro · todo mês · independente do faturamento</div>
                         </div>
-                        <span class="fd-pill fd-pill-ok"><i class="ti ti-check"></i> Coberto</span>
+                        {% if finance_desktop.pro_labore_covered %}
+                            <span class="fd-pill fd-pill-ok"><i class="ti ti-check"></i> Coberto</span>
+                        {% else %}
+                            <span class="fd-pill fd-pill-warn"><i class="ti ti-clock"></i> {{ finance_desktop.pro_labore_status_text }}</span>
+                        {% endif %}
                     </article>
 
                     <article class="fd-card">
@@ -153,11 +157,16 @@
         </div>
 
         <div class="fd-view" id="fd-view-1">
-            <div class="fd-alert-ok">
-                <i class="ti ti-check"></i>
+            <div class="{% if finance_desktop.distribution_complete %}fd-alert-ok{% else %}fd-alert-warn{% endif %}">
+                <i class="ti {% if finance_desktop.distribution_complete %}ti-check{% else %}ti-alert-circle{% endif %}"></i>
                 <div>
-                    <p>Todas as caixinhas abastecidas em {{ selected_month.label }}</p>
-                    <span>{{ finance_desktop.revenue_total }} distribuídos automaticamente · distribuição concluída</span>
+                    {% if finance_desktop.distribution_complete %}
+                        <p>Todas as caixinhas abastecidas em {{ selected_month.label }}</p>
+                        <span>{{ finance_desktop.revenue_total }} distribuídos automaticamente · distribuição concluída</span>
+                    {% else %}
+                        <p>Distribuição ainda não fechou em {{ selected_month.label }}</p>
+                        <span>Receita de {{ finance_desktop.revenue_total }} · faltam {{ finance_desktop.pro_labore_remaining }} para cobrir o pró-labore</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="fd-three-col">
@@ -166,7 +175,14 @@
                         <span class="fd-box-name fd-brand"><i class="ti ti-home"></i> Pró-labore</span>
                         <strong>{{ finance_desktop.pro_labore }}</strong>
                     </div>
-                    <div class="fd-box-meta"><span>valor fixo · sai primeiro</span><span class="fd-tag fd-tag-ok">✓ Coberto</span></div>
+                    <div class="fd-box-meta">
+                        <span>valor fixo · sai primeiro</span>
+                        {% if finance_desktop.pro_labore_covered %}
+                            <span class="fd-tag fd-tag-ok">✓ Coberto</span>
+                        {% else %}
+                            <span class="fd-tag fd-tag-warn">{{ finance_desktop.pro_labore_status_text }}</span>
+                        {% endif %}
+                    </div>
                     <p>Seu salário mensal fixo, independente do faturamento.</p>
                 </article>
                 <article class="fd-box">
@@ -428,7 +444,7 @@
                 <input type="hidden" name="fixed_cost_id" value="{{ editing_fixed_cost.id }}">
             {% endif %}
             {% for field in fixed_cost_form %}
-                <label class="fd-form-field{% if field.name == 'due_month' %} fd-form-field-due-month{% endif %}" data-fixed-cost-field="{{ field.name }}">
+                <label class="fd-form-field{% if field.name == 'due_month' %} fd-form-field-due-month{% endif %}" data-fixed-cost-field="{{ field.name }}"{% if field.name == 'due_month' and fixed_cost_form.recurrence.value != 'annual' %} hidden{% endif %}>
                     <span>{{ field.label }}</span>
                     {{ field }}
                     {{ field.errors }}

@@ -1194,9 +1194,19 @@ def finance(request: HttpRequest) -> HttpResponse:
     if editing_fixed_cost is not None:
         fixed_cost_form_kwargs["instance"] = editing_fixed_cost
     elif add_fixed_cost_kind is not None:
-        fixed_cost_form_kwargs["initial"] = {"kind": add_fixed_cost_kind, "due_day": 1}
+        fixed_cost_form_kwargs["initial"] = {
+            "kind": add_fixed_cost_kind,
+            "recurrence": FixedCost.RECURRENCE_MONTHLY,
+            "due_day": 1,
+            "due_month": 1,
+        }
     else:
-        fixed_cost_form_kwargs["initial"] = {"kind": FixedCost.KIND_TOOL, "due_day": 1}
+        fixed_cost_form_kwargs["initial"] = {
+            "kind": FixedCost.KIND_TOOL,
+            "recurrence": FixedCost.RECURRENCE_MONTHLY,
+            "due_day": 1,
+            "due_month": 1,
+        }
     fixed_cost_form = FixedCostForm(**fixed_cost_form_kwargs)
     fixed_cost_modal_open = editing_fixed_cost is not None or add_fixed_cost_kind is not None
 
