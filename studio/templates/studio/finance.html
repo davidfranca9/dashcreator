@@ -428,7 +428,7 @@
                 <input type="hidden" name="fixed_cost_id" value="{{ editing_fixed_cost.id }}">
             {% endif %}
             {% for field in fixed_cost_form %}
-                <label class="fd-form-field">
+                <label class="fd-form-field{% if field.name == 'due_month' %} fd-form-field-due-month{% endif %}" data-fixed-cost-field="{{ field.name }}">
                     <span>{{ field.label }}</span>
                     {{ field }}
                     {{ field.errors }}
@@ -507,6 +507,17 @@
                 }
             });
         });
+
+        const recurrenceField = document.querySelector('select[name="fixed_cost-recurrence"]');
+        const dueMonthWrapper = document.querySelector(".fd-form-field-due-month");
+        const syncFixedCostDueMonth = () => {
+            if (!recurrenceField || !dueMonthWrapper) return;
+            dueMonthWrapper.hidden = recurrenceField.value !== "annual";
+        };
+        if (recurrenceField) {
+            syncFixedCostDueMonth();
+            recurrenceField.addEventListener("change", syncFixedCostDueMonth);
+        }
     })();
 </script>
 {% endblock %}

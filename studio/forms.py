@@ -1088,13 +1088,14 @@ class FinanceEntryForm(forms.ModelForm):
 class FixedCostForm(forms.ModelForm):
     class Meta:
         model = FixedCost
-        fields = ["kind", "recurrence", "name", "amount", "due_day"]
+        fields = ["kind", "recurrence", "name", "amount", "due_day", "due_month"]
         labels = {
             "kind": "Tipo",
             "recurrence": "Tipo de custo",
             "name": "Nome",
             "amount": "Valor",
             "due_day": "Dia do vencimento",
+            "due_month": "Mês do vencimento",
         }
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "Ex.: Notion Pro, Editor fixo"}),
@@ -1105,6 +1106,7 @@ class FixedCostForm(forms.ModelForm):
         self.fields["amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["due_day"].widget.attrs.update({"min": "1", "max": "31", "inputmode": "numeric"})
         self.fields["amount"].help_text = "Para custos anuais, informe o valor total do ano — o sistema converte para o equivalente mensal no total reservado."
+        self.fields["due_month"].help_text = "Usado apenas para custos anuais."
 
     def clean_due_day(self):
         value = self.cleaned_data.get("due_day")

@@ -2411,6 +2411,7 @@ class DashboardSmokeTest(TestCase):
                 "finance_action": "fixed_cost",
                 "fixed_cost-kind": FixedCost.KIND_TOOL,
                 "fixed_cost-recurrence": FixedCost.RECURRENCE_MONTHLY,
+                "fixed_cost-due_month": "1",
                 "fixed_cost-name": "CapCut Pro",
                 "fixed_cost-amount": "40",
                 "fixed_cost-due_day": "10",
@@ -2444,6 +2445,7 @@ class DashboardSmokeTest(TestCase):
                 "fixed_cost_id": str(cost.pk),
                 "fixed_cost-kind": FixedCost.KIND_TOOL,
                 "fixed_cost-recurrence": FixedCost.RECURRENCE_MONTHLY,
+                "fixed_cost-due_month": "1",
                 "fixed_cost-name": "Notion Plus",
                 "fixed_cost-amount": "75.50",
                 "fixed_cost-due_day": "3",
@@ -2489,6 +2491,7 @@ class DashboardSmokeTest(TestCase):
                 "finance_action": "fixed_cost",
                 "fixed_cost-kind": FixedCost.KIND_TOOL,
                 "fixed_cost-recurrence": FixedCost.RECURRENCE_MONTHLY,
+                "fixed_cost-due_month": "1",
                 "fixed_cost-name": "Test",
                 "fixed_cost-amount": "10",
                 "fixed_cost-due_day": "32",
@@ -2506,6 +2509,7 @@ class DashboardSmokeTest(TestCase):
             name="Adobe Creative",
             amount=Decimal("1200"),
             due_day=12,
+            due_month=5,
         )
         FixedCost.objects.create(
             workspace=self.workspace,
@@ -2529,6 +2533,8 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(adobe_row["amount"], "R$1.200")
         self.assertEqual(adobe_row["recurrence_label"], "Anual")
         self.assertIn("todo ano", adobe_row["due"])
+        # Mês de vencimento aparece no texto pra contratos anuais
+        self.assertIn("Maio", adobe_row["due"])
 
     def test_finance_page_allows_creating_annual_fixed_cost(self):
         self.client.force_login(self.user)
@@ -2542,12 +2548,14 @@ class DashboardSmokeTest(TestCase):
                 "fixed_cost-name": "Adobe Creative",
                 "fixed_cost-amount": "1200",
                 "fixed_cost-due_day": "12",
+                "fixed_cost-due_month": "5",
             },
             follow=True,
         )
         self.assertRedirects(response, reverse("finance"))
         cost = FixedCost.objects.get(workspace=self.workspace, name="Adobe Creative")
         self.assertEqual(cost.recurrence, FixedCost.RECURRENCE_ANNUAL)
+        self.assertEqual(cost.due_month, 5)
         self.assertEqual(cost.monthly_equivalent(), Decimal("100.00"))
 
     def test_dashboard_snapshot_respects_selected_global_month(self):

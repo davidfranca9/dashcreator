@@ -359,12 +359,27 @@ class FixedCost(WorkspaceOwnedModel):
         (RECURRENCE_MONTHLY, "Mensal"),
         (RECURRENCE_ANNUAL, "Anual"),
     ]
+    MONTH_CHOICES = [
+        (1, "Janeiro"),
+        (2, "Fevereiro"),
+        (3, "Março"),
+        (4, "Abril"),
+        (5, "Maio"),
+        (6, "Junho"),
+        (7, "Julho"),
+        (8, "Agosto"),
+        (9, "Setembro"),
+        (10, "Outubro"),
+        (11, "Novembro"),
+        (12, "Dezembro"),
+    ]
 
     kind = models.CharField(max_length=20, choices=KIND_CHOICES)
     name = models.CharField(max_length=120)
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     recurrence = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default=RECURRENCE_MONTHLY)
     due_day = models.PositiveSmallIntegerField(default=1)
+    due_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, default=1)
     icon = models.CharField(max_length=60, blank=True, default="")
 
     class Meta:

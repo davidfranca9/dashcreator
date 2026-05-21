@@ -1674,7 +1674,8 @@ def _finance_event_reference_date(event: dict) -> date:
 def _fixed_cost_due_text(item: FixedCost) -> str:
     day = f"{item.due_day:02d}"
     if item.recurrence == FixedCost.RECURRENCE_ANNUAL:
-        return f"Vence dia {day} todo ano"
+        month_label = item.get_due_month_display()
+        return f"Vence dia {day} de {month_label}, todo ano"
     return f"Vence dia {day} todo mês"
 
 
