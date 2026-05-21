@@ -4019,6 +4019,20 @@ body.page-finance .message {
     color: var(--fd-accent);
     font-size: 11px;
     font-weight: 500;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.fd-edit-link-danger {
+    color: #c04d57;
+}
+
+.fd-inline-form {
+    display: inline;
+    margin: 0;
 }
 
 .fd-dot-green {

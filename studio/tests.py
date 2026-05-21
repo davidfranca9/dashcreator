@@ -2339,6 +2339,31 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(entry.description, "Editor freelancer")
         self.assertContains(update_response, "Saída atualizada.")
 
+    def test_finance_page_allows_deleting_outgoing_entry(self):
+        entry = FinanceEntry.objects.create(
+            workspace=self.workspace,
+            kind=FinanceEntry.KIND_OUTGOING,
+            amount=250,
+            occurred_on=self.project.due_date,
+            description="Locacao de estudio",
+        )
+        self.client.force_login(self.user)
+
+        month = self.project.due_date.strftime("%Y-%m")
+        response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "outgoing_delete",
+                "month": month,
+                "outgoing_entry_id": str(entry.pk),
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, f"{reverse('finance')}?month={month}")
+        self.assertFalse(FinanceEntry.objects.filter(pk=entry.pk).exists())
+        self.assertContains(response, "Saída removida.")
+
     def test_finance_page_lists_fixed_costs_and_does_not_show_hubla(self):
         FixedCost.objects.create(
             workspace=self.workspace,

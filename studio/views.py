@@ -1214,6 +1214,21 @@ def finance(request: HttpRequest) -> HttpResponse:
                 if month_filter:
                     redirect_url = f"{redirect_url}?month={month_filter}"
                 return redirect(redirect_url)
+        elif action == "outgoing_delete":
+            delete_entry_id = request.POST.get("outgoing_entry_id")
+            if delete_entry_id and delete_entry_id.isdigit():
+                entry_to_delete = FinanceEntry.objects.filter(
+                    workspace=workspace,
+                    kind=FinanceEntry.KIND_OUTGOING,
+                    pk=int(delete_entry_id),
+                ).first()
+                if entry_to_delete is not None:
+                    entry_to_delete.delete()
+                    messages.success(request, "Saída removida.")
+            redirect_url = reverse("finance")
+            if month_filter:
+                redirect_url = f"{redirect_url}?month={month_filter}"
+            return redirect(redirect_url)
         elif action == "fixed_cost":
             fixed_cost_form = FixedCostForm(request.POST, **fixed_cost_form_kwargs)
             if fixed_cost_form.is_valid():

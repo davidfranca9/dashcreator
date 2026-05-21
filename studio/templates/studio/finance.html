@@ -294,6 +294,13 @@
                         <div class="fd-row-actions">
                             <span class="fd-row-value fd-value-down">{{ item.amount_text }}</span>
                             <a class="fd-edit-link" href="{% url 'finance' %}?month={{ selected_month.value }}&edit={{ item.id }}">Editar</a>
+                            <form method="post" class="fd-inline-form" onsubmit="return confirm('Excluir esta saída?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="finance_action" value="outgoing_delete">
+                                <input type="hidden" name="month" value="{{ selected_month.value }}">
+                                <input type="hidden" name="outgoing_entry_id" value="{{ item.id }}">
+                                <button type="submit" class="fd-edit-link fd-edit-link-danger">Excluir</button>
+                            </form>
                         </div>
                     </div>
                 {% empty %}
