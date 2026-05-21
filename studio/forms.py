@@ -52,6 +52,8 @@ MARKETING_CONSULTING_SERVICE_TYPE = "consultoria_marketing"
 UGC_CREATOR_SERVICE_TYPE = "ugc_creator"
 FREELANCER_SERVICE_TYPE = "freelancer"
 VIDEO_EDITOR_SERVICE_TYPE = "editora_video"
+VIDEOMAKER_SERVICE_TYPE = "videomaker"
+STORYMAKER_SERVICE_TYPE = "storymaker"
 RECURRING_CONTRACT_TYPES = [SOCIAL_MEDIA_SERVICE_TYPE, MARKETING_CONSULTING_SERVICE_TYPE]
 RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "stage",
@@ -64,9 +66,15 @@ RECURRING_CONTRACT_HIDDEN_FIELDS = [
 SOCIAL_MEDIA_HIDDEN_FIELDS = [
     "deliverables_count",
 ]
-# UGC/Freelancer/Editora: entrada cobre o papel de recebido, e a etapa é
+# UGC/Freelancer/Editora/Captação: entrada cobre o papel de recebido, e a etapa é
 # derivada do status no save(). Por isso esses campos ficam ocultos.
-ENTRY_RECEIPT_SERVICE_TYPES = [UGC_CREATOR_SERVICE_TYPE, FREELANCER_SERVICE_TYPE, VIDEO_EDITOR_SERVICE_TYPE]
+ENTRY_RECEIPT_SERVICE_TYPES = [
+    UGC_CREATOR_SERVICE_TYPE,
+    FREELANCER_SERVICE_TYPE,
+    VIDEO_EDITOR_SERVICE_TYPE,
+    VIDEOMAKER_SERVICE_TYPE,
+    STORYMAKER_SERVICE_TYPE,
+]
 ENTRY_RECEIPT_HIDDEN_FIELDS = [
     "stage",
     "received_value",
@@ -89,7 +97,7 @@ def _contract_due_date_from_start(start_date: date | None, duration_months: int 
 # papel de "Quantidade de vídeos" pros tipos UGC/Freelancer/Editora/etc.
 FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     "stories_count": ["storymaker"],
-    "story_coverage_date": ["storymaker"],
+    "story_coverage_date": ["storymaker", "videomaker"],
     "posts_per_month": ["social_media"],
     "videos_per_month": ["social_media"],
     "profile_managed": ["social_media"],
@@ -578,7 +586,7 @@ class ProjectForm(forms.ModelForm):
 
         self.fields["briefing"].help_text = "Descreva o serviço para freelancer ou o briefing da consultoria."
         self.fields["affiliate_program"].help_text = "Nome do programa de afiliação ou marca."
-        self.fields["story_coverage_date"].help_text = "Dia em que você fará a cobertura."
+        self.fields["story_coverage_date"].help_text = "Dia marcado para a captação."
         self.fields["publication_date"].help_text = "Data prevista para a publicação."
         self.fields["withdrawal_date"].help_text = "Data prevista para o saque da comissão."
 
@@ -825,7 +833,7 @@ class ProjectForm(forms.ModelForm):
             "close_date": "Data de fechamento",
             "due_date": "Data prevista para entrega",
             "stories_count": "Quantidade de stories",
-            "story_coverage_date": "Data de cobertura",
+            "story_coverage_date": "Data de captação",
             "posts_per_month": "Posts por mês",
             "videos_per_month": "Vídeos por mês",
             "profile_managed": "Perfil gerenciado",

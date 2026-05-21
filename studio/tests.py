@@ -754,10 +754,12 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(project.entry_value, Decimal("4000"))
 
-    def test_freelancer_and_video_editor_use_entry_as_received_value(self):
+    def test_production_capture_forms_use_entry_as_received_value(self):
         for service_type, expected_category in (
             ("freelancer", "Freelancer"),
             ("editora_video", "Editora de Vídeo"),
+            ("videomaker", "Videomaker"),
+            ("storymaker", "Storymaker"),
         ):
             with self.subTest(service_type=service_type):
                 form = ProjectForm(
@@ -774,6 +776,7 @@ class DashboardSmokeTest(TestCase):
                         "entry_value": "1600",
                         "received_value": "0",
                         "deliverables_count": "2",
+                        "story_coverage_date": date.today().isoformat(),
                         "close_date": date.today().isoformat(),
                         "due_date": (date.today() + timedelta(days=7)).isoformat(),
                     },
@@ -786,6 +789,8 @@ class DashboardSmokeTest(TestCase):
                 self.assertEqual(project.service_category.name, expected_category)
                 self.assertEqual(project.entry_value, Decimal("1600"))
                 self.assertEqual(project.received_value, Decimal("1600"))
+
+        self.assertEqual(ProjectForm.base_fields["story_coverage_date"].label, "Data de captação")
 
     def test_project_edit_hides_entry_field_when_there_is_no_entry(self):
         self.project.entry_value = self.project.total_value
@@ -965,7 +970,8 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, 'data-hide-for-social-media', html=False)
         self.assertContains(response, 'data-hide-for-recurring-contract', html=False)
         self.assertContains(response, 'data-hide-for-entry-receipt', html=False)
-        self.assertContains(response, 'data-entry-receipt-service-types="ugc_creator,freelancer,editora_video"', html=False)
+        self.assertContains(response, 'data-entry-receipt-service-types="ugc_creator,freelancer,editora_video,videomaker,storymaker"', html=False)
+        self.assertContains(response, 'data-show-for-type="storymaker,videomaker"', html=False)
         self.assertContains(response, 'data-recurring-label="Valor mensal do contrato"', html=False)
         self.assertContains(response, 'data-recurring-label="Data de finalização do contrato"', html=False)
         self.assertContains(response, 'Tem parcela?', html=False)
