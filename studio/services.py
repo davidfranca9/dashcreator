@@ -26,6 +26,7 @@ from .models import FinanceEntry, Membership, Niche, Project, ProjectInstallment
 
 
 ZERO = Decimal("0")
+UGC_MANAGER_SERVICE_TYPE = "ugc_manager"
 SHORT_MONTH_NAMES = {
     1: "Jan",
     2: "Fev",
@@ -621,15 +622,29 @@ def _project_monthly_contract_value(project: Project) -> Decimal:
     return Decimal(project.total_value or 0)
 
 
+def _project_cash_value(project: Project) -> Decimal:
+    if project.service_type == UGC_MANAGER_SERVICE_TYPE:
+        management_value = Decimal(project.monthly_value or 0)
+        if management_value > ZERO:
+            return management_value
+    return Decimal(project.total_value or 0)
+
+
+def _project_dashboard_single_revenue(project: Project) -> Decimal:
+    if project.service_type == UGC_MANAGER_SERVICE_TYPE:
+        return _project_cash_value(project)
+    return Decimal(project.received_value or 0)
+
+
 def _project_dashboard_revenue_for_month(project: Project, selected_month: date | None) -> Decimal:
     if selected_month is None:
         if _project_contract_month_count(project) > 1:
             return _project_monthly_contract_value(project) * _project_contract_month_count(project)
-        return Decimal(project.received_value or 0)
+        return _project_dashboard_single_revenue(project)
     if _project_contract_month_count(project) > 1:
         return _project_monthly_contract_value(project) if _project_matches_recurring_payment_month(project, selected_month) else ZERO
     if project.close_date.year == selected_month.year and project.close_date.month == selected_month.month:
-        return Decimal(project.received_value or 0)
+        return _project_dashboard_single_revenue(project)
     return ZERO
 
 
@@ -654,7 +669,7 @@ def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: 
             continue
         month_start = project.close_date.replace(day=1)
         if month_start in totals:
-            totals[month_start] += Decimal(project.total_value or 0)
+            totals[month_start] += _project_cash_value(project)
 
     max_value = max([int(totals[item]) for item in month_starts] + [30000])
     usable_height = chart_height - chart_top - chart_bottom
@@ -1145,14 +1160,14 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         for item in projects
         if item.stage in {"Fechado", "Entregue"}
     )
-    total_closed = sum_money(item.total_value for item in active_projects)
+    total_closed = sum_money(_project_cash_value(item) for item in active_projects)
 
     open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
     pipeline = [
         {"stage": "Prospecção", "count": sum(1 for item in prospects if item.stage in open_prospection_stages), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
         {"stage": "Negociação", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
         {"stage": "Fechado", "count": len(active_projects), "amount_text": currency(total_closed), "icon_label": "F", "accent": "#2fb9ac", "progress": 72 if total_closed else 0},
-        {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount_text": currency(sum_money(item.total_value for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
+        {"stage": "Entregue", "count": sum(item.deliverables_count for item in delivered_projects[:4]), "amount_text": currency(sum_money(_project_cash_value(item) for item in delivered_projects[:4])), "icon_label": "E", "accent": "#aeb9c9", "progress": 59 if delivered_projects else 0},
     ]
 
     activities = []
@@ -1620,8 +1635,8 @@ def _project_finance_events(project: Project) -> list[dict]:
         return events
 
     payment_date = payment_reference_date(project)
-    total_amount = Decimal(project.total_value or 0)
-    received_amount = Decimal(project.received_value or 0)
+    total_amount = _project_cash_value(project)
+    received_amount = min(Decimal(project.received_value or 0), total_amount)
     outstanding_amount = max(total_amount - received_amount, ZERO)
     if received_amount > ZERO:
         events.append(
