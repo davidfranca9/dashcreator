@@ -15,8 +15,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'studio/pwa-icon-180.png' %}">
     <link rel="manifest" href="{% static 'studio/manifest.webmanifest' %}">
     <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="{{ theme_class }}">
+<body class="{{ theme_class }} page-{{ page_key }}">
     {% if meeting_alerts %}
         <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="meeting-alert-{{ workspace.pk }}-{{ meeting_alert_date }}">
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="meeting-popup-title">

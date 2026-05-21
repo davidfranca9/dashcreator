@@ -1,35 +1,386 @@
 {% extends "studio/base.html" %}
 
-{% block content %}
-<article class="card finance-month-card">
-    <div class="card-header">
-        <div>
-            <h3>Detalhamento do mês</h3>
-            <p class="muted">Mês selecionado: {{ selected_month.label }}</p>
-        </div>
-    </div>
-    <section class="stats-grid finance-stats-grid">
-        {% for item in stats %}
-            <article class="stat-card">
-                <span class="stat-icon">{{ item.icon_label }}</span>
-                <div>
-                    <p>{{ item.title }}</p>
-                    <strong>{{ item.value }}</strong>
-                </div>
-            </article>
-        {% endfor %}
-    </section>
-</article>
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+{% endblock %}
 
-<section class="split-grid">
-    <article class="card">
-        <div class="card-header">
+{% block content %}
+<section class="finance-desktop">
+    <div class="fd-topbar">
+        <div class="fd-top-row">
             <div>
-                <h3>{{ outgoing_form_title }}</h3>
-                <p class="muted">{{ outgoing_form_description }}</p>
+                <p class="fd-title">Financeiro</p>
+                <p class="fd-subtitle">Negócio e vida financeira</p>
+            </div>
+            <div class="fd-actions">
+                <form method="get" class="fd-month-form">
+                    <label class="fd-month-select">
+                        <i class="ti ti-calendar"></i>
+                        <select name="month" onchange="this.form.submit()">
+                            {% for item in month_choices %}
+                                <option value="{{ item.value }}"{% if selected_month.value == item.value %} selected{% endif %}>{{ item.label }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="ti ti-chevron-down"></i>
+                    </label>
+                </form>
+                <button type="button" class="fd-register-button" data-finance-modal-open>
+                    <i class="ti ti-plus"></i>
+                    Registrar saída
+                </button>
             </div>
         </div>
-        <form method="post" class="form-grid">
+        <div class="fd-tabs" role="tablist" aria-label="Financeiro">
+            <button type="button" class="fd-tab is-active" data-fd-tab="0">Visão geral</button>
+            <button type="button" class="fd-tab" data-fd-tab="1">Caixinhas</button>
+            <button type="button" class="fd-tab" data-fd-tab="2">Entradas</button>
+            <button type="button" class="fd-tab" data-fd-tab="3">Saídas</button>
+            <button type="button" class="fd-tab" data-fd-tab="4">Custo fixo</button>
+        </div>
+    </div>
+
+    <div class="fd-content">
+        <div class="fd-view is-active" id="fd-view-0">
+            <div class="fd-metrics">
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-trending-up"></i> Receita total</div>
+                    <div class="fd-metric-value fd-text-green">{{ finance_desktop.revenue_total }}</div>
+                    <div class="fd-metric-detail fd-text-green">recebido em {{ selected_month.label|lower }}</div>
+                </article>
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-home"></i> Pró-labore</div>
+                    <div class="fd-metric-value">{{ finance_desktop.pro_labore }}</div>
+                    <div class="fd-metric-detail fd-text-green">
+                        {% if finance_desktop.pro_labore_covered %}✓ coberto este mês{% else %}aguardando cobertura{% endif %}
+                    </div>
+                </article>
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-wallet"></i> Fluxo livre</div>
+                    <div class="fd-metric-value">{{ finance_desktop.free_flow }}</div>
+                    <div class="fd-metric-detail">após todas as deduções</div>
+                </article>
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-receipt"></i> A receber</div>
+                    <div class="fd-metric-value">{{ finance_desktop.receivable_total }}</div>
+                    <div class="fd-metric-detail">recebíveis futuros</div>
+                </article>
+            </div>
+
+            <div class="fd-two-col">
+                <div class="fd-col">
+                    <article class="fd-prolabore-box">
+                        <div class="fd-prolabore-copy">
+                            <div class="fd-prolabore-label"><i class="ti ti-home"></i> Pró-labore fixo</div>
+                            <div class="fd-prolabore-value">{{ finance_desktop.pro_labore }}</div>
+                            <div class="fd-prolabore-sub">retirado primeiro · todo mês · independente do faturamento</div>
+                        </div>
+                        <span class="fd-pill fd-pill-ok"><i class="ti ti-check"></i> Coberto</span>
+                    </article>
+
+                    <article class="fd-card">
+                        <div class="fd-card-header">
+                            <span class="fd-card-title">Distribuição do mês</span>
+                            <button type="button" class="fd-card-link" data-fd-jump="1">Ver caixinhas →</button>
+                        </div>
+                        <div class="fd-dist-row">
+                            <span class="fd-dist-dot" style="background:#1a2340"></span>
+                            <span class="fd-dist-label">Pró-labore</span>
+                            <span class="fd-dist-mode">fixo</span>
+                            <span class="fd-dist-value">{{ finance_desktop.pro_labore }}</span>
+                        </div>
+                        <div class="fd-dist-row">
+                            <span class="fd-dist-dot" style="background:#3b82f6"></span>
+                            <span class="fd-dist-label">Custo fixo</span>
+                            <span class="fd-dist-mode">fixo</span>
+                            <span class="fd-dist-value">{{ finance_desktop.fixed_cost }}</span>
+                        </div>
+                        <div class="fd-dist-row">
+                            <span class="fd-dist-dot" style="background:#f59e0b"></span>
+                            <span class="fd-dist-label">Reserva de emergência (30%)</span>
+                            <span class="fd-dist-mode">% de {{ finance_desktop.distribution_base }}</span>
+                            <span class="fd-dist-value">{{ finance_desktop.reserve }}</span>
+                        </div>
+                        <div class="fd-dist-row">
+                            <span class="fd-dist-dot" style="background:#7c3aed"></span>
+                            <span class="fd-dist-label">Investimento no negócio (20%)</span>
+                            <span class="fd-dist-mode">% de {{ finance_desktop.distribution_base }}</span>
+                            <span class="fd-dist-value">{{ finance_desktop.investment }}</span>
+                        </div>
+                        <div class="fd-dist-row fd-dist-total">
+                            <span class="fd-dist-total-label">Fluxo livre</span>
+                            <span class="fd-dist-total-value">{{ finance_desktop.free_flow }}</span>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="fd-col">
+                    <article class="fd-card">
+                        <div class="fd-card-header">
+                            <span class="fd-card-title">Últimas movimentações</span>
+                            <button type="button" class="fd-card-link" data-fd-jump="2">Ver tudo</button>
+                        </div>
+                        {% for item in finance_desktop.latest_movements %}
+                            <div class="fd-row">
+                                <div class="fd-row-left">
+                                    <span class="fd-row-dot {% if item.tone == 'up' %}fd-dot-green{% else %}fd-dot-red{% endif %}"></span>
+                                    <span class="fd-row-info">
+                                        <strong>{{ item.name }}</strong>
+                                        <small>{{ item.detail }}</small>
+                                    </span>
+                                </div>
+                                <span class="fd-row-value {% if item.tone == 'up' %}fd-value-up{% else %}fd-value-down{% endif %}">{{ item.amount_text }}</span>
+                            </div>
+                        {% empty %}
+                            <p class="fd-empty">Nenhuma movimentação em {{ selected_month.label|lower }}.</p>
+                        {% endfor %}
+                    </article>
+
+                    <article class="fd-card">
+                        <div class="fd-card-header"><span class="fd-card-title">A receber</span></div>
+                        {% for item in schedule|slice:":3" %}
+                            <div class="fd-row">
+                                <div class="fd-row-left">
+                                    <span class="fd-row-dot fd-dot-blue"></span>
+                                    <span class="fd-row-info">
+                                        <strong>{{ item.company }}</strong>
+                                        <small>Vence {{ item.due }} · {{ item.kind }}</small>
+                                    </span>
+                                </div>
+                                <span class="fd-row-value fd-value-blue">{{ item.amount }}</span>
+                            </div>
+                        {% empty %}
+                            <p class="fd-empty">Nenhum recebimento pendente em {{ selected_month.label|lower }}.</p>
+                        {% endfor %}
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <div class="fd-view" id="fd-view-1">
+            <div class="fd-alert-ok">
+                <i class="ti ti-check"></i>
+                <div>
+                    <p>Todas as caixinhas abastecidas em {{ selected_month.label }}</p>
+                    <span>{{ finance_desktop.revenue_total }} distribuídos automaticamente · distribuição concluída</span>
+                </div>
+            </div>
+            <div class="fd-three-col">
+                <article class="fd-box">
+                    <div class="fd-box-head">
+                        <span class="fd-box-name fd-brand"><i class="ti ti-home"></i> Pró-labore</span>
+                        <strong>{{ finance_desktop.pro_labore }}</strong>
+                    </div>
+                    <div class="fd-box-meta"><span>valor fixo · sai primeiro</span><span class="fd-tag fd-tag-ok">✓ Coberto</span></div>
+                    <p>Seu salário mensal fixo, independente do faturamento.</p>
+                </article>
+                <article class="fd-box">
+                    <div class="fd-box-head">
+                        <span class="fd-box-name fd-warn"><i class="ti ti-shield"></i> Reserva</span>
+                        <strong>{{ finance_desktop.reserve }}</strong>
+                    </div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-warn" style="width: {{ finance_desktop.reserve_progress }}%"></span></div>
+                    <div class="fd-box-meta"><span>30% do restante</span><strong class="fd-warn">{{ finance_desktop.reserve_progress }}% da meta</strong></div>
+                    <p>Meta: R$30.000 (6× pró-labore). Só usar em emergência real.</p>
+                </article>
+                <article class="fd-box">
+                    <div class="fd-box-head">
+                        <span class="fd-box-name fd-purple"><i class="ti ti-rocket"></i> Investimento</span>
+                        <strong>{{ finance_desktop.investment }}</strong>
+                    </div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-purple" style="width: 100%"></span></div>
+                    <div class="fd-box-meta"><span>20% do restante</span><strong class="fd-purple">Aporte feito ✓</strong></div>
+                    <p>Equipamentos, cursos, mentorias, eventos de networking.</p>
+                </article>
+            </div>
+            <div class="fd-two-col">
+                <article class="fd-box">
+                    <div class="fd-box-head">
+                        <span class="fd-box-name fd-blue"><i class="ti ti-tool"></i> Custo fixo</span>
+                        <strong>{{ finance_desktop.fixed_cost }}</strong>
+                    </div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-blue" style="width: 100%"></span></div>
+                    <div class="fd-box-meta"><span>valor fixo · 4 itens</span><strong class="fd-text-green">Quitado ✓</strong></div>
+                    <p>Ferramentas e colaboradores fixos do negócio.</p>
+                </article>
+                <article class="fd-box fd-box-free">
+                    <div class="fd-box-head">
+                        <span class="fd-box-name fd-text-green"><i class="ti ti-wallet"></i> Fluxo livre</span>
+                        <strong class="fd-text-green">{{ finance_desktop.free_flow }}</strong>
+                    </div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-green" style="width: 100%"></span></div>
+                    <div class="fd-box-meta"><span>o que sobrou</span><strong class="fd-text-green">Acumulando</strong></div>
+                    <p>Disponível. Crie caixinhas extras para objetivos específicos.</p>
+                </article>
+            </div>
+        </div>
+
+        <div class="fd-view" id="fd-view-2">
+            <div class="fd-metrics fd-metrics-two">
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-trending-up"></i> Total recebido</div>
+                    <div class="fd-metric-value fd-text-green">{{ finance_desktop.revenue_total }}</div>
+                </article>
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-clock"></i> A receber</div>
+                    <div class="fd-metric-value">{{ finance_desktop.receivable_total }}</div>
+                </article>
+            </div>
+            <div class="fd-two-col">
+                <article class="fd-card">
+                    <div class="fd-card-header"><span class="fd-card-title">Recebido em {{ selected_month.label }}</span></div>
+                    {% for item in finance_desktop.incoming_items %}
+                        <div class="fd-row">
+                            <div class="fd-row-left">
+                                <span class="fd-row-dot fd-dot-green"></span>
+                                <span class="fd-row-info">
+                                    <strong>{{ item.company }}</strong>
+                                    <small>{{ item.detail }}</small>
+                                </span>
+                            </div>
+                            <div class="fd-row-actions">
+                                <span class="fd-row-value fd-value-up">{{ item.amount_text }}</span>
+                                <span class="fd-tag fd-tag-ok">Recebido</span>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="fd-empty">Nenhuma entrada recebida em {{ selected_month.label|lower }}.</p>
+                    {% endfor %}
+                </article>
+                <article class="fd-card">
+                    <div class="fd-card-header"><span class="fd-card-title">A receber</span></div>
+                    {% for item in schedule %}
+                        <div class="fd-row">
+                            <div class="fd-row-left">
+                                <span class="fd-row-dot fd-dot-blue"></span>
+                                <span class="fd-row-info">
+                                    <strong>{{ item.company }}</strong>
+                                    <small>Vence {{ item.due }} · {{ item.kind }} · {{ item.amount }}</small>
+                                </span>
+                            </div>
+                            <span class="fd-tag fd-tag-blue">Pendente</span>
+                        </div>
+                    {% empty %}
+                        <p class="fd-empty">Nenhum recebimento pendente em {{ selected_month.label|lower }}.</p>
+                    {% endfor %}
+                </article>
+            </div>
+        </div>
+
+        <div class="fd-view" id="fd-view-3">
+            <div class="fd-metrics fd-metrics-two">
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-trending-down"></i> Total saídas</div>
+                    <div class="fd-metric-value fd-text-red">{{ finance_desktop.outgoing_total }}</div>
+                </article>
+                <article class="fd-metric-card">
+                    <div class="fd-metric-label"><i class="ti ti-calendar"></i> Vs mês anterior</div>
+                    <div class="fd-metric-value">= igual</div>
+                </article>
+            </div>
+            <article class="fd-card">
+                <div class="fd-card-header">
+                    <span class="fd-card-title">Saídas registradas em {{ selected_month.label }}</span>
+                    <button type="button" class="fd-card-button" data-finance-modal-open><i class="ti ti-plus"></i> Registrar saída avulsa</button>
+                </div>
+                {% for item in finance_desktop.outgoing_items %}
+                    <div class="fd-row">
+                        <div class="fd-row-left">
+                            <span class="fd-row-dot fd-dot-red"></span>
+                            <span class="fd-row-info">
+                                <strong>{{ item.description }}</strong>
+                                <small>{{ item.detail }}</small>
+                            </span>
+                        </div>
+                        <div class="fd-row-actions">
+                            <span class="fd-row-value fd-value-down">{{ item.amount_text }}</span>
+                            <a class="fd-edit-link" href="{% url 'finance' %}?month={{ selected_month.value }}&edit={{ item.id }}">Editar</a>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="fd-empty">Nenhuma saída registrada em {{ selected_month.label|lower }}.</p>
+                {% endfor %}
+                <div class="fd-total-line">
+                    <span>Total</span>
+                    <strong>−{{ finance_desktop.outgoing_total }}</strong>
+                </div>
+            </article>
+        </div>
+
+        <div class="fd-view" id="fd-view-4">
+            <div class="fd-alert-ok">
+                <i class="ti ti-check"></i>
+                <div>
+                    <p>{{ finance_desktop.fixed_cost }} reservados automaticamente todo mês</p>
+                    <span>Deduzido junto com o pró-labore antes da distribuição nas caixinhas</span>
+                </div>
+            </div>
+            <div class="fd-two-col">
+                <div class="fd-col">
+                    <article class="fd-card">
+                        <div class="fd-card-header"><span class="fd-card-title">Ferramentas</span><button type="button" class="fd-add-round"><i class="ti ti-plus"></i></button></div>
+                        {% for item in finance_desktop.fixed_tools %}
+                            <div class="fd-cost-row">
+                                <span class="fd-cost-icon"><i class="ti {{ item.icon }}"></i></span>
+                                <span class="fd-row-info">
+                                    <strong>{{ item.name }}</strong>
+                                    <small>{{ item.due }}</small>
+                                </span>
+                                <strong class="fd-cost-value">{{ item.amount }}</strong>
+                            </div>
+                        {% endfor %}
+                        <div class="fd-total-line"><span>Subtotal ferramentas</span><strong class="fd-cost-value">{{ finance_desktop.fixed_tools_total }}</strong></div>
+                    </article>
+                </div>
+                <div class="fd-col">
+                    <article class="fd-card">
+                        <div class="fd-card-header"><span class="fd-card-title">Colaboradores</span><button type="button" class="fd-add-round"><i class="ti ti-plus"></i></button></div>
+                        {% for item in finance_desktop.fixed_collaborators %}
+                            <div class="fd-cost-row">
+                                <span class="fd-cost-icon"><i class="ti {{ item.icon }}"></i></span>
+                                <span class="fd-row-info">
+                                    <strong>{{ item.name }}</strong>
+                                    <small>{{ item.due }}</small>
+                                </span>
+                                <strong class="fd-cost-value">{{ item.amount }}</strong>
+                            </div>
+                        {% endfor %}
+                        <div class="fd-total-line"><span>Subtotal colaboradores</span><strong class="fd-cost-value">{{ finance_desktop.fixed_collaborators_total }}</strong></div>
+                    </article>
+                    <article class="fd-card fd-card-soft">
+                        <div class="fd-card-header"><span class="fd-card-title">Taxas variáveis de plataforma</span></div>
+                        <div class="fd-row">
+                            <div class="fd-row-left"><span class="fd-row-dot fd-dot-blue"></span><span>Hubla — 15% sobre vendas de infoprodutos</span></div>
+                            <span class="fd-row-value fd-value-blue">{{ finance_desktop.platform_fee }}</span>
+                        </div>
+                        <p class="fd-note">Calculado automaticamente. Já descontado da receita bruta — não é deduzido das caixinhas.</p>
+                    </article>
+                    <article class="fd-fixed-total">
+                        <div>
+                            <span>Total custo fixo mensal</span>
+                            <strong>{{ finance_desktop.fixed_cost }}</strong>
+                        </div>
+                        <span class="fd-tag fd-tag-ok">Reservado ✓</span>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="fd-modal-backdrop" data-finance-modal{% if not editing_entry %} hidden{% endif %}>
+    <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="finance-expense-title">
+        <div class="fd-modal-header">
+            <div>
+                <h3 id="finance-expense-title">{{ outgoing_form_title }}</h3>
+                <p>{{ outgoing_form_description }}</p>
+            </div>
+            {% if editing_entry %}
+                <a class="fd-modal-close" href="{{ finance_cancel_url }}" aria-label="Fechar">&times;</a>
+            {% else %}
+                <button type="button" class="fd-modal-close" data-finance-modal-close aria-label="Fechar">&times;</button>
+            {% endif %}
+        </div>
+        <form method="post" class="fd-expense-form">
             {% csrf_token %}
             <input type="hidden" name="finance_action" value="outgoing">
             <input type="hidden" name="month" value="{{ selected_month.value }}">
@@ -37,108 +388,63 @@
                 <input type="hidden" name="outgoing_entry_id" value="{{ editing_entry.id }}">
             {% endif %}
             {% for field in outgoing_form %}
-                <div class="form-field{% if field.name == 'description' %} form-field--full{% endif %}">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <label class="fd-form-field{% if field.name == 'description' %} fd-form-field-full{% endif %}">
+                    <span>{{ field.label }}</span>
                     {{ field }}
                     {{ field.errors }}
-                </div>
+                </label>
             {% endfor %}
-            <div class="form-actions form-field--full">
-                <button type="submit" class="danger-button">{{ outgoing_form_submit_label }}</button>
+            <div class="fd-modal-actions">
                 {% if editing_entry %}
-                    <a class="ghost-button" href="{{ finance_cancel_url }}">Cancelar</a>
+                    <a class="fd-cancel-button" href="{{ finance_cancel_url }}">Cancelar</a>
+                {% else %}
+                    <button type="button" class="fd-cancel-button" data-finance-modal-close>Cancelar</button>
                 {% endif %}
+                <button type="submit" class="fd-submit-button">{{ outgoing_form_submit_label }}</button>
             </div>
         </form>
-    </article>
-</section>
+    </div>
+</div>
 
-<section class="split-grid">
-    <article class="card">
-        <div class="card-header"><div><h3>Fluxo de caixa</h3><p class="muted">{{ selected_month.label }}</p></div></div>
-        {% if ledger %}
-            <div class="stack-list">
-                {% for item in ledger %}
-                    <article class="soft-card schedule-row">
-                        <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">{% if item.kind == "incoming" %}+{% else %}-{% endif %}</span>
-                        <div class="activity-copy">
-                            <strong>{{ item.label }}</strong>
-                            <p>{{ item.description }}</p>
-                        </div>
-                        <div class="activity-meta">
-                            <strong>{{ item.amount_text }}</strong>
-                            <small>{{ item.date_text }}</small>
-                            {% if item.can_edit %}
-                                <a class="ghost-button small" href="{% url 'finance' %}?month={{ selected_month.value }}&edit={{ item.entry_id }}">Editar</a>
-                            {% endif %}
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="muted">Nenhuma entrada ou saída registrada em {{ selected_month.label|lower }}.</p>
-        {% endif %}
-    </article>
-
-    <article class="card">
-        <div class="card-header"><div><h3>Agenda de recebimentos</h3><p class="muted">{{ selected_month.label }}</p></div></div>
-        {% if schedule %}
-            <div class="stack-list">
-                {% for item in schedule %}
-                    <article class="soft-card schedule-row">
-                        <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">$</span>
-                        <div class="activity-copy">
-                            <strong>{{ item.company }}</strong>
-                            <p>{{ item.kind }} | previsto para {{ item.due }}</p>
-                        </div>
-                        <div class="activity-meta">
-                            <strong>{{ item.amount }}</strong>
-                            <small>{{ item.status }}</small>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="muted">Nenhum recebimento pendente em {{ selected_month.label|lower }}.</p>
-        {% endif %}
-    </article>
-
-    <article class="card">
-        <div class="card-header"><div><h3>Resumo do fluxo</h3><p class="muted">{{ selected_month.label }}</p></div></div>
-        <div class="stack-list">
-            {% for row in breakdown %}
-                <div class="metric-row">
-                    <div class="meta-line">
-                        <strong>{{ row.label }}</strong>
-                        <strong>{{ row.amount_text }}</strong>
-                    </div>
-                    <div class="progress-track"><span style="width: {{ row.progress }}%; background: {{ row.accent }};"></span></div>
-                </div>
-            {% endfor %}
-        </div>
-    </article>
-</section>
 <script>
     (() => {
-        const moneyFields = document.querySelectorAll('input[name$="-amount"]');
-        if (!moneyFields.length) {
-            return;
+        const tabs = Array.from(document.querySelectorAll("[data-fd-tab]"));
+        const views = Array.from(document.querySelectorAll(".fd-view"));
+        const activate = (index) => {
+            tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.fdTab === String(index)));
+            views.forEach((view, viewIndex) => view.classList.toggle("is-active", viewIndex === Number(index)));
+        };
+        tabs.forEach((tab) => tab.addEventListener("click", () => activate(tab.dataset.fdTab)));
+        document.querySelectorAll("[data-fd-jump]").forEach((button) => {
+            button.addEventListener("click", () => activate(button.dataset.fdJump));
+        });
+
+        const modal = document.querySelector("[data-finance-modal]");
+        const openers = document.querySelectorAll("[data-finance-modal-open]");
+        const closers = document.querySelectorAll("[data-finance-modal-close]");
+        const setModal = (isOpen) => {
+            if (!modal) return;
+            modal.hidden = !isOpen;
+            document.body.classList.toggle("has-popup-open", isOpen);
+        };
+        openers.forEach((button) => button.addEventListener("click", () => setModal(true)));
+        closers.forEach((button) => button.addEventListener("click", () => setModal(false)));
+        if (modal) {
+            modal.addEventListener("click", (event) => {
+                if (event.target === modal) {
+                    setModal(false);
+                }
+            });
         }
 
-        const parseNumber = (value) => {
-            const rawValue = String(value || "").replace(",", ".").trim();
-            const parsed = Number.parseFloat(rawValue);
-            return Number.isFinite(parsed) ? parsed : 0;
-        };
-
-        const formatMoney = (value) => Number(value || 0).toFixed(2);
-
-        moneyFields.forEach((field) => {
+        document.querySelectorAll('.fd-expense-form input[name$="-amount"]').forEach((field) => {
             field.addEventListener("blur", () => {
-                if (!field.value.trim()) {
-                    return;
+                const value = String(field.value || "").replace(",", ".").trim();
+                if (!value) return;
+                const parsed = Number.parseFloat(value);
+                if (Number.isFinite(parsed)) {
+                    field.value = parsed.toFixed(2);
                 }
-                field.value = formatMoney(parseNumber(field.value));
             });
         });
     })();

@@ -1717,6 +1717,54 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     for item in ledger:
         item.pop("sort_date", None)
 
+    pro_labore_amount = Decimal("5000")
+    fixed_cost_amount = Decimal("1200")
+    distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
+    reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
+    investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
+    free_flow_amount = max(distribution_base - reserve_amount - investment_amount, ZERO)
+    reserve_goal = Decimal("30000")
+    reserve_progress = min(100, round((reserve_amount / reserve_goal) * 100)) if reserve_goal and reserve_amount else 0
+
+    incoming_items = [
+        {
+            "company": item["project"].company,
+            "detail": f"{short_date(_finance_event_reference_date(item))} · {item['project'].service_category_name}",
+            "amount_text": f"+{currency(item['amount'])}",
+            "status": "Recebido",
+        }
+        for item in confirmed_incoming_events
+    ]
+    outgoing_items = [
+        {
+            "id": item.pk,
+            "description": item.description or "Despesa / investimento",
+            "detail": f"{short_date(item.occurred_on)} · Saída avulsa",
+            "amount_text": f"−{currency(item.amount)}",
+        }
+        for item in sorted(month_entries, key=lambda entry: entry.occurred_on, reverse=True)
+    ]
+    latest_movements = []
+    for item in ledger[:5]:
+        if item["kind"] == "incoming":
+            latest_movements.append(
+                {
+                    "tone": "up",
+                    "name": item["description"].replace("Recebido no trabalho de ", ""),
+                    "detail": f"{item['date_text']} · {item['label']}",
+                    "amount_text": f"+{item['amount_text']}",
+                }
+            )
+        else:
+            latest_movements.append(
+                {
+                    "tone": "down",
+                    "name": item["description"],
+                    "detail": f"{item['date_text']} · Saída",
+                    "amount_text": f"−{item['amount_text']}",
+                }
+            )
+
     return {
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
@@ -1728,6 +1776,34 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         ],
         "schedule": schedule,
         "ledger": ledger,
+        "finance_desktop": {
+            "revenue_total": currency(incoming_total),
+            "outgoing_total": currency(outgoing_total),
+            "receivable_total": currency(receivable_balance),
+            "cash_balance": currency(cash_balance),
+            "pro_labore": currency(pro_labore_amount),
+            "pro_labore_covered": incoming_total >= pro_labore_amount,
+            "fixed_cost": currency(fixed_cost_amount),
+            "distribution_base": currency(distribution_base),
+            "reserve": currency(reserve_amount),
+            "reserve_progress": reserve_progress,
+            "investment": currency(investment_amount),
+            "free_flow": currency(free_flow_amount),
+            "incoming_items": incoming_items,
+            "outgoing_items": outgoing_items,
+            "latest_movements": latest_movements,
+            "fixed_tools": [
+                {"icon": "ti-notebook", "name": "Notion Pro", "due": "Vence dia 01 todo mês", "amount": "R$60"},
+                {"icon": "ti-cut", "name": "CapCut Pro", "due": "Vence dia 10 todo mês", "amount": "R$40"},
+                {"icon": "ti-brand-adobe", "name": "Adobe Creative", "due": "Vence dia 12 todo mês", "amount": "R$120"},
+            ],
+            "fixed_collaborators": [
+                {"icon": "ti-user", "name": "Editor fixo", "due": "Vence dia 05 todo mês", "amount": "R$800"},
+            ],
+            "fixed_tools_total": "R$220",
+            "fixed_collaborators_total": "R$800",
+            "platform_fee": "R$180",
+        },
         "breakdown": [
             {"label": "Entradas dos trabalhos", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
             {"label": "Saídas registradas", "amount_text": currency(outgoing_total), "progress": round((outgoing_total / incoming_total) * 100) if incoming_total else 0, "accent": "#c04d57"},
