@@ -81,10 +81,14 @@ FOLLOW_UP_DISMISSED_COMPANIES_KEY = "ops_follow_up_dismissed_companies"
 
 
 def currency(value: Decimal | int | float | None) -> str:
-    amount = Decimal(value or 0)
-    integer_value = int(amount.quantize(Decimal("1")))
-    formatted = f"{integer_value:,.0f}".replace(",", "_").replace(".", ",").replace("_", ".")
-    return f"R${formatted}"
+    amount = Decimal(value or 0).quantize(Decimal("0.01"))
+    integer_part, cents = divmod(amount.copy_abs(), Decimal(1))
+    sign = "-" if amount < 0 else ""
+    integer_formatted = f"{int(integer_part):,.0f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    if cents == 0:
+        return f"{sign}R${integer_formatted}"
+    cents_value = int((cents * 100).quantize(Decimal("1")))
+    return f"{sign}R${integer_formatted},{cents_value:02d}"
 
 
 def sum_money(values) -> Decimal:
