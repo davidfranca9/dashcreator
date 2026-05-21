@@ -83,9 +83,9 @@
                     {% elif field.name == "service_category" or field.name == "new_service_category" %}
                         <div hidden>{{ field }}</div>
                     {% else %}
-                        <div class="form-field{% if field.name == 'note' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'has_installments' %} has-installments-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}"{% if field.name in form.recurring_contract_hidden_fields %} data-hide-for-recurring-contract{% endif %}{% if field.name in form.social_media_hidden_fields %} data-hide-for-social-media{% endif %}{% if field.name in form.entry_receipt_hidden_fields %} data-hide-for-entry-receipt{% endif %}{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}>
-                            <label for="{{ field.id_for_label }}"{% if field.name == 'total_value' %} data-default-label="{{ field.label }}" data-recurring-label="Valor mensal do contrato" data-ugc-manager-label="Valor total de contrato"{% endif %}{% if field.name == 'due_date' %} data-default-label="{{ field.label }}" data-recurring-label="Data de finalização do contrato"{% endif %}{% if field.name == 'close_date' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Início do contrato"{% endif %}{% if field.name == 'monthly_value' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Valor do gerenciamento"{% endif %}>{{ field.label }}</label>
-                            {% if field.name == "has_entry" or field.name == "has_installments" %}
+                        <div class="form-field{% if field.name == 'note' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'has_installments' %} has-installments-field{% endif %}{% if field.name == 'payment_recurrence' %} payment-recurrence-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'contract_duration_months' %} contract-duration-months-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}"{% if field.name in form.recurring_contract_hidden_fields %} data-hide-for-recurring-contract{% endif %}{% if field.name in form.social_media_hidden_fields %} data-hide-for-social-media{% endif %}{% if field.name in form.entry_receipt_hidden_fields %} data-hide-for-entry-receipt{% endif %}{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}>
+                            <label for="{{ field.id_for_label }}"{% if field.name == 'total_value' %} data-default-label="{{ field.label }}" data-recurring-label="Valor mensal do contrato" data-ugc-manager-label="Valor total de contrato"{% endif %}{% if field.name == 'due_date' %} data-default-label="{{ field.label }}" data-recurring-label="Data de finalização do contrato"{% endif %}{% if field.name == 'payment_due_date' %} data-default-label="{{ field.label }}" data-payment-recurring-label="Primeiro pagamento da recorrência"{% endif %}{% if field.name == 'close_date' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Início do contrato"{% endif %}{% if field.name == 'contract_duration_months' %} data-default-label="{{ field.label }}" data-payment-recurring-label="Duração da recorrência"{% endif %}{% if field.name == 'monthly_value' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Valor do gerenciamento"{% endif %}>{{ field.label }}</label>
+                            {% if field.name == "has_entry" or field.name == "has_installments" or field.name == "payment_recurrence" %}
                                 <div class="segmented-control" data-entry-mode>
                                     {% for choice in field %}
                                         <label class="segmented-control-option" for="{{ choice.id_for_label }}">
@@ -197,8 +197,10 @@
         const receivedField = document.getElementById("id_received_value");
         const hasEntryFields = Array.from(form.querySelectorAll('input[name="has_entry"]'));
         const hasInstallmentsFields = Array.from(form.querySelectorAll('input[name="has_installments"]'));
+        const paymentRecurrenceFields = Array.from(form.querySelectorAll('input[name="payment_recurrence"]'));
         const deliverablesField = document.getElementById("id_deliverables_count");
         const managedCreatorsField = document.getElementById("id_managed_creators_count");
+        const contractDurationField = document.getElementById("id_contract_duration_months");
         const stageField = document.getElementById("id_stage");
         const statusField = document.getElementById("id_status");
         const closeDateField = document.getElementById("id_close_date");
@@ -242,6 +244,14 @@
             }
             const selected = hasInstallmentsFields.find((field) => field.checked);
             return Boolean(selected && selected.value === "yes");
+        };
+
+        const hasPaymentRecurrence = () => {
+            if (!paymentRecurrenceFields.length) {
+                return false;
+            }
+            const selected = paymentRecurrenceFields.find((field) => field.checked);
+            return Boolean(selected && selected.value === "monthly");
         };
 
         const normalizeMoneyField = (field) => {
@@ -440,7 +450,7 @@
         const entryReceiptHiddenWrappers = Array.from(form.querySelectorAll("[data-hide-for-entry-receipt]"));
 
         const wrappersByName = {};
-        ["payment_due_date", "total_value", "received_value", "due_date", "meeting_scheduled", "meeting_date"].forEach((name) => {
+        ["payment_due_date", "contract_duration_months", "total_value", "received_value", "due_date", "meeting_scheduled", "meeting_date"].forEach((name) => {
             const wrapper = form.querySelector(`.${name.replace(/_/g, "-")}-field`);
             if (wrapper) {
                 wrappersByName[name] = wrapper;
@@ -451,7 +461,9 @@
         const entryValueWrapper = form.querySelector(".entry-value-field");
         const totalValueLabel = form.querySelector('label[for="id_total_value"]');
         const dueDateLabel = form.querySelector('label[for="id_due_date"]');
+        const paymentDueDateLabel = form.querySelector('label[for="id_payment_due_date"]');
         const closeDateLabel = form.querySelector('label[for="id_close_date"]');
+        const contractDurationLabel = form.querySelector('label[for="id_contract_duration_months"]');
         const managementValueLabel = form.querySelector('label[for="id_monthly_value"]');
 
         const setFieldLabel = (label, fallbackKey) => {
@@ -464,10 +476,12 @@
             }
         };
 
-        const syncServiceLabels = (isRecurring, isUgcManager) => {
+        const syncServiceLabels = (isRecurring, isUgcManager, isPaymentRecurring) => {
             setFieldLabel(totalValueLabel, isRecurring ? "recurringLabel" : (isUgcManager ? "ugcManagerLabel" : "defaultLabel"));
             setFieldLabel(dueDateLabel, isRecurring ? "recurringLabel" : "defaultLabel");
+            setFieldLabel(paymentDueDateLabel, isPaymentRecurring ? "paymentRecurringLabel" : "defaultLabel");
             setFieldLabel(closeDateLabel, isUgcManager ? "ugcManagerLabel" : "defaultLabel");
+            setFieldLabel(contractDurationLabel, isPaymentRecurring ? "paymentRecurringLabel" : "defaultLabel");
             setFieldLabel(managementValueLabel, isUgcManager ? "ugcManagerLabel" : "defaultLabel");
         };
 
@@ -480,6 +494,7 @@
             const isSocialMedia = selected === "social_media";
             const isEntryReceipt = entryReceiptTypes.includes(selected);
             const isUgcManager = selected === "ugc_manager";
+            const isPaymentRecurring = selected === "publicidade" && hasPaymentRecurrence();
 
             ["total_value", "received_value", "payment_due_date", "due_date", "meeting_scheduled"].forEach((name) => {
                 if (wrappersByName[name]) {
@@ -557,19 +572,29 @@
                     wrapper.hidden = true;
                 });
             }
+            if (wrappersByName.contract_duration_months && selected === "publicidade") {
+                wrappersByName.contract_duration_months.hidden = !isPaymentRecurring;
+                if (!isPaymentRecurring && contractDurationField) {
+                    contractDurationField.value = "";
+                }
+            }
             if (installmentsBlock) {
                 installmentsBlock.hidden = !(installmentsTypes.includes(selected) && hasInstallments());
             }
             if (wrappersByName.payment_due_date && isRecurringContract) {
                 wrappersByName.payment_due_date.hidden = hasInstallments();
             }
-            syncServiceLabels(isRecurringContract, isUgcManager);
+            syncServiceLabels(isRecurringContract, isUgcManager, isPaymentRecurring);
             if (!isRecurringContract && !isSimplifiedPayment && !isCommission) {
                 syncEntryValue();
             }
         };
 
         hasInstallmentsFields.forEach((field) => {
+            field.addEventListener("change", applyServiceTypeVisibility);
+        });
+
+        paymentRecurrenceFields.forEach((field) => {
             field.addEventListener("change", applyServiceTypeVisibility);
         });
 

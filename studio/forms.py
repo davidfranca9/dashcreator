@@ -47,6 +47,8 @@ HAS_ENTRY_YES = "yes"
 HAS_ENTRY_NO = "no"
 HAS_INSTALLMENTS_YES = "yes"
 HAS_INSTALLMENTS_NO = "no"
+PAYMENT_RECURRENCE_SINGLE = "single"
+PAYMENT_RECURRENCE_MONTHLY = "monthly"
 SOCIAL_MEDIA_SERVICE_TYPE = "social_media"
 MARKETING_CONSULTING_SERVICE_TYPE = "consultoria_marketing"
 UGC_CREATOR_SERVICE_TYPE = "ugc_creator"
@@ -111,6 +113,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     "posts_per_month": ["social_media"],
     "videos_per_month": ["social_media"],
     "profile_managed": ["social_media"],
+    "payment_recurrence": ["publicidade"],
     "contract_duration_months": ["social_media", "consultoria_marketing", "publicidade"],
     "monthly_value": ["ugc_manager"],
     "managed_creators_count": ["ugc_manager"],
@@ -446,6 +449,16 @@ class ProjectForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
     )
+    payment_recurrence = forms.ChoiceField(
+        label="Recorrência de pagamento",
+        choices=[
+            (PAYMENT_RECURRENCE_SINGLE, "Pagamento único"),
+            (PAYMENT_RECURRENCE_MONTHLY, "Mensal recorrente"),
+        ],
+        initial=PAYMENT_RECURRENCE_SINGLE,
+        required=False,
+        widget=forms.RadioSelect,
+    )
 
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -513,9 +526,12 @@ class ProjectForm(forms.ModelForm):
                 self.initial["has_entry"] = HAS_ENTRY_NO
             if self.instance.installments.exists():
                 self.initial["has_installments"] = HAS_INSTALLMENTS_YES
+            if self.instance.service_type == PUBLICIDADE_SERVICE_TYPE and int(self.instance.contract_duration_months or 0) > 1:
+                self.initial["payment_recurrence"] = PAYMENT_RECURRENCE_MONTHLY
 
         self.fields["has_entry"].help_text = "Marque Não quando o cliente pagar o valor total de uma vez."
         self.fields["has_installments"].help_text = "Marque Sim para cadastrar as parcelas com data e valor."
+        self.fields["payment_recurrence"].help_text = "Use mensal recorrente quando o pagamento de publicidade se repetir por mais de um mês."
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Você pode ajustar manualmente se quiser."
@@ -633,6 +649,7 @@ class ProjectForm(forms.ModelForm):
                 "has_entry",
                 "entry_value",
                 "received_value",
+                "payment_recurrence",
                 "has_installments",
                 "payment_due_date",
                 "monthly_value",
@@ -709,6 +726,8 @@ class ProjectForm(forms.ModelForm):
         received_value = cleaned_data.get("received_value") or 0
         has_entry = cleaned_data.get("has_entry") or HAS_ENTRY_YES
         has_installments = cleaned_data.get("has_installments") or HAS_INSTALLMENTS_NO
+        payment_recurrence = cleaned_data.get("payment_recurrence") or PAYMENT_RECURRENCE_SINGLE
+        payment_recurrence_was_posted = self.is_bound and self.add_prefix("payment_recurrence") in self.data
         content_distribution = cleaned_data.get("content_distribution")
         image_license_term_days = cleaned_data.get("image_license_term_days")
         is_social_media = service_type_value == SOCIAL_MEDIA_SERVICE_TYPE
@@ -758,8 +777,15 @@ class ProjectForm(forms.ModelForm):
                 self.add_error("deliverables_count", "Informe a quantidade de vídeos.")
             if service_type_value == PUBLICIDADE_SERVICE_TYPE:
                 duration_months = cleaned_data.get("contract_duration_months")
-                if duration_months and duration_months > 1 and not cleaned_data.get("payment_due_date"):
-                    cleaned_data["payment_due_date"] = cleaned_data.get("close_date")
+                if not payment_recurrence_was_posted and payment_recurrence == PAYMENT_RECURRENCE_SINGLE and duration_months and duration_months > 1:
+                    payment_recurrence = PAYMENT_RECURRENCE_MONTHLY
+                if payment_recurrence == PAYMENT_RECURRENCE_MONTHLY:
+                    if not duration_months or duration_months <= 1:
+                        self.add_error("contract_duration_months", "Informe a duração da recorrência de pagamento.")
+                    elif not cleaned_data.get("payment_due_date"):
+                        cleaned_data["payment_due_date"] = cleaned_data.get("close_date")
+                else:
+                    cleaned_data["contract_duration_months"] = None
 
         management_value = cleaned_data.get("monthly_value") or 0
         if is_ugc_manager:
