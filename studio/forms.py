@@ -54,6 +54,8 @@ FREELANCER_SERVICE_TYPE = "freelancer"
 VIDEO_EDITOR_SERVICE_TYPE = "editora_video"
 VIDEOMAKER_SERVICE_TYPE = "videomaker"
 STORYMAKER_SERVICE_TYPE = "storymaker"
+UGC_MANAGER_SERVICE_TYPE = "ugc_manager"
+PUBLICIDADE_SERVICE_TYPE = "publicidade"
 RECURRING_CONTRACT_TYPES = [SOCIAL_MEDIA_SERVICE_TYPE, MARKETING_CONSULTING_SERVICE_TYPE]
 RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "stage",
@@ -66,15 +68,23 @@ RECURRING_CONTRACT_HIDDEN_FIELDS = [
 SOCIAL_MEDIA_HIDDEN_FIELDS = [
     "deliverables_count",
 ]
-# UGC/Freelancer/Editora/Captação: entrada cobre o papel de recebido, e a etapa é
-# derivada do status no save(). Por isso esses campos ficam ocultos.
+# UGC/Freelancer/Editora/Captação/Publicidade: o campo "Recebido" é
+# calculado automaticamente (mirror da entrada ou via parcelas pagas),
+# e a etapa é derivada do status no save(). Por isso esses campos
+# ficam ocultos no formulário.
 ENTRY_RECEIPT_SERVICE_TYPES = [
     UGC_CREATOR_SERVICE_TYPE,
     FREELANCER_SERVICE_TYPE,
     VIDEO_EDITOR_SERVICE_TYPE,
     VIDEOMAKER_SERVICE_TYPE,
     STORYMAKER_SERVICE_TYPE,
+    UGC_MANAGER_SERVICE_TYPE,
+    PUBLICIDADE_SERVICE_TYPE,
 ]
+# Tipos com contratos plurimensais auto-faturados: ao definir uma
+# duração > 1 mês, o sistema gera as parcelas mensais automaticamente
+# a partir do dia escolhido em payment_due_date.
+AUTO_MONTHLY_INSTALLMENT_TYPES = [PUBLICIDADE_SERVICE_TYPE]
 ENTRY_RECEIPT_HIDDEN_FIELDS = [
     "stage",
     "received_value",
@@ -101,8 +111,8 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     "posts_per_month": ["social_media"],
     "videos_per_month": ["social_media"],
     "profile_managed": ["social_media"],
-    "contract_duration_months": ["social_media", "consultoria_marketing"],
-    "monthly_value": [],
+    "contract_duration_months": ["social_media", "consultoria_marketing", "publicidade"],
+    "monthly_value": ["ugc_manager"],
     "managed_creators_count": ["ugc_manager"],
     "publication_date": ["publicidade"],
     "affiliate_program": ["afiliacao"],
@@ -114,7 +124,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     # Campos universais com regra de exibição condicional ao tipo:
     "deliverables_count": [
         "ugc_creator", "freelancer", "editora_video", "videomaker",
-        "shop_creator", "ugc_manager",
+        "shop_creator", "ugc_manager", "publicidade",
     ],
     "content_distribution": ["ugc_creator"],
     "image_license_term_days": ["ugc_creator"],
@@ -584,6 +594,8 @@ class ProjectForm(forms.ModelForm):
         for count_field in ("stories_count", "posts_per_month", "videos_per_month", "managed_creators_count"):
             self.fields[count_field].widget.attrs.update({"min": "0"})
 
+        self.fields["monthly_value"].help_text = "Valor que entra no caixa pelo gerenciamento."
+        self.fields["managed_creators_count"].help_text = "Quantidade de creators envolvidos no gerenciamento."
         self.fields["briefing"].help_text = "Descreva o serviço para freelancer ou o briefing da consultoria."
         self.fields["affiliate_program"].help_text = "Nome do programa de afiliação ou marca."
         self.fields["story_coverage_date"].help_text = "Dia marcado para a captação."
@@ -700,6 +712,7 @@ class ProjectForm(forms.ModelForm):
         content_distribution = cleaned_data.get("content_distribution")
         image_license_term_days = cleaned_data.get("image_license_term_days")
         is_social_media = service_type_value == SOCIAL_MEDIA_SERVICE_TYPE
+        is_ugc_manager = service_type_value == UGC_MANAGER_SERVICE_TYPE
         is_recurring_contract = service_type_value in RECURRING_CONTRACT_TYPES
         is_existing_recurring_contract = (
             bool(getattr(self.instance, "pk", None))
@@ -743,15 +756,33 @@ class ProjectForm(forms.ModelForm):
                 and not cleaned_data.get("deliverables_count")
             ):
                 self.add_error("deliverables_count", "Informe a quantidade de vídeos.")
+            if service_type_value == PUBLICIDADE_SERVICE_TYPE:
+                duration_months = cleaned_data.get("contract_duration_months")
+                if not duration_months:
+                    self.add_error("contract_duration_months", "Informe a duração do contrato.")
+                elif duration_months > 1 and not cleaned_data.get("payment_due_date"):
+                    self.add_error("payment_due_date", "Informe a data fixa do pagamento mensal.")
+
+        management_value = cleaned_data.get("monthly_value") or 0
+        if is_ugc_manager:
+            if management_value <= 0:
+                self.add_error("monthly_value", "Informe o valor do gerenciamento.")
+            if management_value > total_value:
+                self.add_error("monthly_value", "O valor do gerenciamento não pode ser maior que o valor total do contrato.")
+            if not cleaned_data.get("managed_creators_count"):
+                self.add_error("managed_creators_count", "Informe a quantidade de creators.")
 
         if not is_recurring_contract and has_entry == HAS_ENTRY_NO:
-            entry_value = total_value
-            cleaned_data["entry_value"] = total_value
+            no_entry_value = management_value if is_ugc_manager and management_value > 0 else total_value
+            entry_value = no_entry_value
+            cleaned_data["entry_value"] = no_entry_value
         if service_type_value in ENTRY_RECEIPT_SERVICE_TYPES:
             received_value = entry_value
             cleaned_data["received_value"] = entry_value
         if entry_value > total_value:
             self.add_error("entry_value", "A entrada não pode ser maior que o valor total.")
+        if is_ugc_manager and management_value > 0 and entry_value > management_value:
+            self.add_error("entry_value", "A entrada não pode ser maior que o valor do gerenciamento.")
         if received_value > total_value:
             self.add_error("received_value", "O valor recebido não pode ser maior que o total.")
         if content_distribution == "Ads" and not image_license_term_days:
@@ -838,8 +869,8 @@ class ProjectForm(forms.ModelForm):
             "videos_per_month": "Vídeos por mês",
             "profile_managed": "Perfil gerenciado",
             "contract_duration_months": "Duração do contrato",
-            "monthly_value": "Valor por mês",
-            "managed_creators_count": "Quantidade de creators gerenciados",
+            "monthly_value": "Valor do gerenciamento",
+            "managed_creators_count": "Quantidade de creators",
             "publication_date": "Data de publicação",
             "affiliate_program": "Programa de afiliação",
             "sold_amount": "Valor total vendido",

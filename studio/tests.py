@@ -20,7 +20,7 @@ from PIL import Image
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
-from .services import dashboard_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
+from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 
 
@@ -728,6 +728,105 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(project.due_date, date(start_date.year, 6, 30))
 
+    def test_publicidade_form_auto_generates_monthly_installments(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 5, 21)
+        due_date = date(2026, 8, 21)
+        payment_due_date = date(2026, 5, 30)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Reserva",
+                "service_type": "publicidade",
+                "closing_source": "Inbound",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "9000",
+                "deliverables_count": "3",
+                "contract_duration_months": "3",
+                "publication_date": (close_date + timedelta(days=15)).isoformat(),
+                "close_date": close_date.isoformat(),
+                "due_date": due_date.isoformat(),
+                "payment_due_date": payment_due_date.isoformat(),
+                "has_installments": "no",
+                "installments-TOTAL_FORMS": "0",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Reserva")
+        installments = list(project.installments.order_by("due_date"))
+        self.assertEqual(len(installments), 3)
+        self.assertEqual([i.due_date for i in installments], [
+            date(2026, 5, 30),
+            date(2026, 6, 30),
+            date(2026, 7, 30),
+        ])
+        for installment in installments:
+            self.assertEqual(installment.amount, Decimal("3000.00"))
+            self.assertFalse(installment.paid)
+        # received_value mirrors entry (=0) e stage é derivado do status
+        self.assertEqual(project.received_value, Decimal("0"))
+        self.assertEqual(project.stage, "Fechado")
+
+    def test_publicidade_form_with_single_month_does_not_create_installments(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 5, 21)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Reserva",
+                "service_type": "publicidade",
+                "closing_source": "Inbound",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "1500",
+                "deliverables_count": "2",
+                "contract_duration_months": "1",
+                "publication_date": (close_date + timedelta(days=10)).isoformat(),
+                "close_date": close_date.isoformat(),
+                "due_date": (close_date + timedelta(days=30)).isoformat(),
+                "payment_due_date": (close_date + timedelta(days=30)).isoformat(),
+                "has_installments": "no",
+                "installments-TOTAL_FORMS": "0",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Reserva")
+        self.assertEqual(project.installments.count(), 0)
+
+    def test_publicidade_form_requires_contract_duration(self):
+        form = ProjectForm(
+            data={
+                "company": "Reserva",
+                "service_type": "publicidade",
+                "closing_source": "Inbound",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "1500",
+                "deliverables_count": "2",
+                "publication_date": date.today().isoformat(),
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=30)).isoformat(),
+                "payment_due_date": (date.today() + timedelta(days=30)).isoformat(),
+                "has_installments": "no",
+            },
+            workspace=self.workspace,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("contract_duration_months", form.errors)
+
     def test_project_form_without_entry_sets_entry_to_total_value(self):
         form = ProjectForm(
             data={
@@ -791,6 +890,40 @@ class DashboardSmokeTest(TestCase):
                 self.assertEqual(project.received_value, Decimal("1600"))
 
         self.assertEqual(ProjectForm.base_fields["story_coverage_date"].label, "Data de captação")
+
+    def test_ugc_manager_form_uses_management_value_as_cash_amount(self):
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "service_type": "ugc_manager",
+                "closing_source": "Networking",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "5000",
+                "monthly_value": "1200",
+                "managed_creators_count": "4",
+                "has_entry": "yes",
+                "entry_value": "600",
+                "received_value": "0",
+                "deliverables_count": "20",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=7)).isoformat(),
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertEqual(project.service_category.name, "UGC Manager")
+        self.assertEqual(project.total_value, Decimal("5000"))
+        self.assertEqual(project.monthly_value, Decimal("1200"))
+        self.assertEqual(project.entry_value, Decimal("600"))
+        self.assertEqual(project.received_value, Decimal("600"))
+        self.assertEqual(project.managed_creators_count, 4)
+        self.assertEqual(project.deliverables_count, 20)
 
     def test_project_edit_hides_entry_field_when_there_is_no_entry(self):
         self.project.entry_value = self.project.total_value
@@ -970,12 +1103,16 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, 'data-hide-for-social-media', html=False)
         self.assertContains(response, 'data-hide-for-recurring-contract', html=False)
         self.assertContains(response, 'data-hide-for-entry-receipt', html=False)
-        self.assertContains(response, 'data-entry-receipt-service-types="ugc_creator,freelancer,editora_video,videomaker,storymaker"', html=False)
+        self.assertContains(response, 'data-entry-receipt-service-types="ugc_creator,freelancer,editora_video,videomaker,storymaker,ugc_manager,publicidade"', html=False)
         self.assertContains(response, 'data-show-for-type="storymaker,videomaker"', html=False)
+        self.assertContains(response, 'data-show-for-type="ugc_manager"', html=False)
+        self.assertContains(response, 'data-ugc-manager-label="Valor total de contrato"', html=False)
+        self.assertContains(response, 'data-ugc-manager-label="Início do contrato"', html=False)
+        self.assertContains(response, 'Valor por creator:', html=False)
         self.assertContains(response, 'data-recurring-label="Valor mensal do contrato"', html=False)
         self.assertContains(response, 'data-recurring-label="Data de finalização do contrato"', html=False)
         self.assertContains(response, 'Tem parcela?', html=False)
-        self.assertContains(response, 'for="id_close_date">Data de fechamento</label>', html=False)
+        self.assertContains(response, 'data-default-label="Data de fechamento"', html=False)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):
         self.workspace.business_full_name = "Layfe Amorim"
@@ -1402,6 +1539,40 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(context["points"][1]["amount"], 1200)
         self.assertEqual(context["points"][2]["amount"], 1200)
         self.assertEqual(context["points"][3]["amount"], 0)
+
+    def test_ugc_manager_dashboard_and_finance_use_management_value(self):
+        close_date = (date.today().replace(day=28) + timedelta(days=4)).replace(day=1)
+        due_date = close_date + timedelta(days=10)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Networking",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="ugc_manager",
+            project_name="UGC Manager",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=5000,
+            monthly_value=1200,
+            managed_creators_count=4,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=20,
+            progress=20,
+            close_date=close_date,
+            due_date=due_date,
+        )
+
+        dashboard = dashboard_snapshot(self.workspace, close_date.strftime("%Y-%m"))
+        finance = finance_snapshot(self.workspace, close_date.strftime("%Y-%m"))
+        revenue = revenue_context(Project.objects.filter(workspace=self.workspace), selected_year=close_date.year)
+
+        self.assertEqual(dashboard["stats"][3]["value"], "R$1.200")
+        self.assertEqual(finance["stats"][2]["value"], "R$1.200")
+        self.assertEqual(finance["schedule"][0]["amount"], "R$1.200")
+        self.assertEqual(revenue["points"][close_date.month - 1]["amount"], 1200)
 
     def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
         Prospect.objects.create(
