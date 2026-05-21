@@ -134,6 +134,7 @@
                 <div class="installments-block-header">
                     <h4>Parcelas de pagamento</h4>
                     <p class="muted">Adicione cada parcela com data e valor; o total é calculado em tempo real.</p>
+                    <p class="muted installments-auto-hint" data-installments-auto-hint hidden>Parcelas geradas automaticamente após salvar, a partir da duração do contrato e do dia escolhido em <strong>Data prevista de pagamento</strong>. Você ainda pode marcá-las como pagas.</p>
                 </div>
                 {{ installments_formset.management_form }}
                 <div class="installments-list" data-installments-list>
@@ -597,12 +598,22 @@
             }
             const isAutoMonthly = autoMonthlyTypes.includes(selected);
             if (installmentsBlock) {
-                // Parcelas mensais agora são auto-geradas pelo backend; o
-                // bloco manual fica oculto para esses tipos.
-                const showManualBlock = installmentsTypes.includes(selected)
-                    && hasInstallments()
-                    && !isAutoMonthly;
-                installmentsBlock.hidden = !showManualBlock;
+                installmentsBlock.hidden = !(installmentsTypes.includes(selected) && hasInstallments());
+                // Para tipos com geração automática, esconde o "+ Adicionar"
+                // e os checkboxes de remover — as parcelas vêm prontas
+                // após salvar; o bloco serve só para visualizar e marcar
+                // como pago.
+                const addButton = installmentsBlock.querySelector("[data-installment-add]");
+                if (addButton) {
+                    addButton.hidden = isAutoMonthly;
+                }
+                installmentsBlock.querySelectorAll(".installment-delete").forEach((node) => {
+                    node.hidden = isAutoMonthly;
+                });
+                const autoHint = installmentsBlock.querySelector("[data-installments-auto-hint]");
+                if (autoHint) {
+                    autoHint.hidden = !isAutoMonthly;
+                }
             }
             if (wrappersByName.payment_due_date && isRecurringContract && !isAutoMonthly) {
                 wrappersByName.payment_due_date.hidden = hasInstallments();
