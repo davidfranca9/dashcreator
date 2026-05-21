@@ -1945,6 +1945,28 @@ class DashboardSmokeTest(TestCase):
         self.assertNotContains(response, "Viagens e Turismo")
         self.assertNotContains(response, "Adicionar nicho")
 
+    def test_settings_page_updates_pro_labore_amount_for_finance(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("settings"),
+            {
+                "settings_action": "preferences",
+                "ops_default_entry_rate": "50%",
+                "ops_primary_currency": "BRL (R$)",
+                "ops_pro_labore_amount": "3500.00",
+                "ops_follow_up_reminders": "on",
+                "legal_contract_signer_name": "",
+            },
+            follow=True,
+        )
+        finance_response = self.client.get(reverse("finance"))
+
+        self.assertRedirects(response, reverse("settings"))
+        self.assertEqual(self.workspace.settings.get(key="ops_pro_labore_amount").value, "3500.00")
+        self.assertContains(response, "Pró-labore mensal")
+        self.assertEqual(finance_response.context["finance_desktop"]["pro_labore"], "R$3.500")
+
     def test_prospect_form_preserves_default_niche_order(self):
         form = ProspectForm(workspace=self.workspace)
 

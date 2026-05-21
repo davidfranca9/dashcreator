@@ -445,6 +445,19 @@ def save_settings(workspace: Workspace, cleaned_data: dict) -> None:
         )
 
 
+def _decimal_setting(settings_values: dict[str, str], key: str, default: Decimal) -> Decimal:
+    raw_value = str(settings_values.get(key, default)).strip()
+    if not raw_value:
+        return default
+    raw_value = raw_value.replace("R$", "").replace(" ", "")
+    if "," in raw_value:
+        raw_value = raw_value.replace(".", "").replace(",", ".")
+    try:
+        return max(Decimal(raw_value), ZERO)
+    except Exception:
+        return default
+
+
 def navigation(page_key: str, month_filter: str | None = None, badges: dict | None = None) -> list[dict]:
     badges = badges or {}
     items = []
@@ -1717,7 +1730,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     for item in ledger:
         item.pop("sort_date", None)
 
-    pro_labore_amount = Decimal("5000")
+    workspace_settings = settings_map(workspace)
+    pro_labore_amount = _decimal_setting(workspace_settings, "ops_pro_labore_amount", Decimal("5000"))
     fixed_cost_amount = Decimal("1200")
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))

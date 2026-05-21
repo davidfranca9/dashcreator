@@ -878,6 +878,13 @@ class WorkspaceSettingsForm(forms.Form):
     ui_subtle_navigation_animation = forms.BooleanField(required=False, label="Animação discreta na navegação")
     ops_default_entry_rate = forms.ChoiceField(label="Entrada padrão sugerida", choices=[("50%", "50%"), ("40%", "40%"), ("30%", "30%")])
     ops_primary_currency = forms.ChoiceField(label="Moeda principal", choices=[("BRL (R$)", "BRL (R$)"), ("USD ($)", "USD ($)"), ("EUR (EUR)", "EUR (EUR)")])
+    ops_pro_labore_amount = forms.DecimalField(
+        label="Pró-labore mensal",
+        min_value=0,
+        max_digits=12,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={"step": "0.01", "min": "0", "inputmode": "decimal"}),
+    )
     ops_follow_up_reminders = forms.BooleanField(required=False, label="Lembretes de follow-up")
     legal_contract_signer_name = forms.CharField(required=False, label="Nome no contrato", max_length=160)
 

@@ -226,6 +226,13 @@ SETTINGS_GROUPS = [
                 "value": "BRL (R$)",
             },
             {
+                "id": "ops_pro_labore_amount",
+                "label": "Pró-labore mensal",
+                "detail": "Valor fixo retirado primeiro na distribuição financeira.",
+                "type": "money",
+                "value": "5000.00",
+            },
+            {
                 "id": "ops_follow_up_reminders",
                 "label": "Lembretes de follow-up",
                 "detail": "Sinaliza leads sem resposta a mais de 3 dias.",
