@@ -744,6 +744,10 @@ class DashboardSmokeTest(TestCase):
                 "stage": "Fechado",
                 "status": "Briefing",
                 "total_value": "9000",
+                # Browser-side JS still calcula entrada padrão (50%) mesmo
+                # com o wrapper escondido. O servidor precisa zerar.
+                "has_entry": "yes",
+                "entry_value": "4500",
                 "deliverables_count": "3",
                 "contract_duration_months": "3",
                 "publication_date": (close_date + timedelta(days=15)).isoformat(),
@@ -769,7 +773,9 @@ class DashboardSmokeTest(TestCase):
         for installment in installments:
             self.assertEqual(installment.amount, Decimal("3000.00"))
             self.assertFalse(installment.paid)
-        # received_value mirrors entry (=0) e stage é derivado do status
+        # Publicidade não tem entrada nem recebido — servidor ignora o que
+        # o navegador mandou em entry_value para o tipo simplificado.
+        self.assertEqual(project.entry_value, Decimal("0"))
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.stage, "Fechado")
 

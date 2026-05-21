@@ -519,6 +519,10 @@
             }
             if ((isSimplifiedPayment || isCommission) && entryValueWrapper) {
                 entryValueWrapper.hidden = true;
+                if (entryField) {
+                    entryField.value = "0.00";
+                    entryWasEdited = false;
+                }
             }
             if (isCommission && wrappersByName.total_value) {
                 wrappersByName.total_value.hidden = true;

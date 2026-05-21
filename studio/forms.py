@@ -776,6 +776,12 @@ class ProjectForm(forms.ModelForm):
             no_entry_value = management_value if is_ugc_manager and management_value > 0 else total_value
             entry_value = no_entry_value
             cleaned_data["entry_value"] = no_entry_value
+        if service_type_value in SIMPLIFIED_PAYMENT_TYPES:
+            # Pagamento único pós-produção (Publicidade, Shop Creator,
+            # Afiliação): não há entrada — ignora o que o navegador mandou
+            # mesmo que o JS tenha calculado um valor padrão.
+            entry_value = 0
+            cleaned_data["entry_value"] = 0
         if service_type_value in ENTRY_RECEIPT_SERVICE_TYPES:
             received_value = entry_value
             cleaned_data["received_value"] = entry_value
