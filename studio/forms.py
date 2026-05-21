@@ -758,10 +758,8 @@ class ProjectForm(forms.ModelForm):
                 self.add_error("deliverables_count", "Informe a quantidade de vídeos.")
             if service_type_value == PUBLICIDADE_SERVICE_TYPE:
                 duration_months = cleaned_data.get("contract_duration_months")
-                if not duration_months:
-                    self.add_error("contract_duration_months", "Informe a duração do contrato.")
-                elif duration_months > 1 and not cleaned_data.get("payment_due_date"):
-                    self.add_error("payment_due_date", "Informe a data fixa do pagamento mensal.")
+                if duration_months and duration_months > 1 and not cleaned_data.get("payment_due_date"):
+                    cleaned_data["payment_due_date"] = cleaned_data.get("close_date")
 
         management_value = cleaned_data.get("monthly_value") or 0
         if is_ugc_manager:

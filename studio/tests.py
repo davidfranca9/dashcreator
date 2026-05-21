@@ -810,7 +810,7 @@ class DashboardSmokeTest(TestCase):
         project = Project.objects.get(workspace=self.workspace, company="Reserva")
         self.assertEqual(project.installments.count(), 0)
 
-    def test_publicidade_form_requires_contract_duration(self):
+    def test_publicidade_form_without_contract_duration_defaults_to_single_job(self):
         form = ProjectForm(
             data={
                 "company": "Reserva",
@@ -830,8 +830,53 @@ class DashboardSmokeTest(TestCase):
             },
             workspace=self.workspace,
         )
-        self.assertFalse(form.is_valid())
-        self.assertIn("contract_duration_months", form.errors)
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertIsNone(project.contract_duration_months)
+        self.assertEqual(project.entry_value, Decimal("0"))
+        self.assertEqual(project.received_value, Decimal("0"))
+
+    def test_publicidade_multi_month_without_payment_date_uses_close_date(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 5, 21)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Reserva Sem Dia Fixo",
+                "service_type": "publicidade",
+                "closing_source": "Inbound",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "6000",
+                "has_entry": "yes",
+                "entry_value": "3000",
+                "deliverables_count": "3",
+                "contract_duration_months": "3",
+                "publication_date": (close_date + timedelta(days=15)).isoformat(),
+                "close_date": close_date.isoformat(),
+                "due_date": date(2026, 8, 21).isoformat(),
+                "payment_due_date": "",
+                "has_installments": "no",
+                "installments-TOTAL_FORMS": "0",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Reserva Sem Dia Fixo")
+        installments = list(project.installments.order_by("due_date"))
+
+        self.assertEqual(project.payment_due_date, close_date)
+        self.assertEqual(project.entry_value, Decimal("0"))
+        self.assertEqual([item.due_date for item in installments], [
+            date(2026, 5, 21),
+            date(2026, 6, 21),
+            date(2026, 7, 21),
+        ])
 
     def test_project_form_without_entry_sets_entry_to_total_value(self):
         form = ProjectForm(
