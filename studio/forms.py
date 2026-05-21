@@ -39,19 +39,26 @@ DEFAULT_CLOSING_SOURCE_CHOICES = [
     ("Plataforma", "Plataforma"),
     ("Agencia", "Agência"),
     ("Indicacao", "Indicação"),
+    ("Networking", "Networking"),
     ("Nao se aplica", "Não se aplica"),
 ]
 ADD_SERVICE_CATEGORY_VALUE = "__add_service_category__"
 HAS_ENTRY_YES = "yes"
 HAS_ENTRY_NO = "no"
+HAS_INSTALLMENTS_YES = "yes"
+HAS_INSTALLMENTS_NO = "no"
 SOCIAL_MEDIA_SERVICE_TYPE = "social_media"
-SOCIAL_MEDIA_HIDDEN_FIELDS = [
+MARKETING_CONSULTING_SERVICE_TYPE = "consultoria_marketing"
+RECURRING_CONTRACT_TYPES = [SOCIAL_MEDIA_SERVICE_TYPE, MARKETING_CONSULTING_SERVICE_TYPE]
+RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "stage",
     "status",
-    "due_date",
     "has_entry",
     "entry_value",
     "received_value",
+    "monthly_value",
+]
+SOCIAL_MEDIA_HIDDEN_FIELDS = [
     "deliverables_count",
 ]
 
@@ -77,7 +84,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     "videos_per_month": ["social_media"],
     "profile_managed": ["social_media"],
     "contract_duration_months": ["social_media", "consultoria_marketing"],
-    "monthly_value": ["consultoria_marketing"],
+    "monthly_value": [],
     "managed_creators_count": ["ugc_manager"],
     "publication_date": ["publicidade"],
     "affiliate_program": ["afiliacao"],
@@ -106,7 +113,7 @@ NO_DELIVERY_TYPES = COMMISSION_PAYMENT_TYPES
 # recorrentes onde o cliente paga em parcelas previsiveis. UGC e similares
 # (job unico com entrada + saldo) usam apenas has_entry / entry_value /
 # payment_due_date e nao mostram a lista de parcelas.
-INSTALLMENTS_TYPES = ["social_media", "ugc_manager", "consultoria_marketing"]
+INSTALLMENTS_TYPES = RECURRING_CONTRACT_TYPES
 
 CONTRACT_DURATION_CHOICES = [
     (1, "1 mês"),
@@ -404,6 +411,13 @@ class ProjectForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
     )
+    has_installments = forms.ChoiceField(
+        label="Tem parcela?",
+        choices=[(HAS_INSTALLMENTS_YES, "Sim"), (HAS_INSTALLMENTS_NO, "Não")],
+        initial=HAS_INSTALLMENTS_NO,
+        required=False,
+        widget=forms.RadioSelect,
+    )
 
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -466,16 +480,20 @@ class ProjectForm(forms.ModelForm):
         )
         if self.is_bound:
             self.show_new_service_category = self.data.get(self.add_prefix("service_category")) == ADD_SERVICE_CATEGORY_VALUE
-        elif getattr(self.instance, "pk", None) and self.instance.total_value and self.instance.entry_value == self.instance.total_value:
-            self.initial["has_entry"] = HAS_ENTRY_NO
+        elif getattr(self.instance, "pk", None):
+            if self.instance.total_value and self.instance.entry_value == self.instance.total_value:
+                self.initial["has_entry"] = HAS_ENTRY_NO
+            if self.instance.installments.exists():
+                self.initial["has_installments"] = HAS_INSTALLMENTS_YES
 
         self.fields["has_entry"].help_text = "Marque Não quando o cliente pagar o valor total de uma vez."
+        self.fields["has_installments"].help_text = "Marque Sim para cadastrar as parcelas com data e valor."
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Você pode ajustar manualmente se quiser."
         )
         self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
-        self.fields["payment_due_date"].help_text = "Use a data prevista para o recebimento desse trabalho."
+        self.fields["payment_due_date"].help_text = "Use quando não houver parcelas cadastradas."
         self.fields["meeting_date"].help_text = "Defina a data da reunião para gerar o atalho do Google Agenda."
         self.fields["note"].help_text = "Campo livre para anotações extras desse job."
         self.fields["content_distribution"] = forms.ChoiceField(
@@ -529,10 +547,10 @@ class ProjectForm(forms.ModelForm):
         for optional_money in ("monthly_value", "sold_amount", "commission_percentage", "extra_value"):
             self.fields[optional_money].required = False
 
-        # Alguns campos são escondidos pela UI para Social Média, mas o form
+        # Alguns campos são escondidos pela UI para contratos recorrentes, mas o form
         # ainda precisa aceitar o POST sem exigir valores invisíveis.
-        for hidden_for_social_media in ("due_date", "entry_value", "received_value", "deliverables_count"):
-            self.fields[hidden_for_social_media].required = False
+        for hidden_for_contract in ("due_date", "entry_value", "received_value", "deliverables_count"):
+            self.fields[hidden_for_contract].required = False
 
         # Configurações dos campos type-specific.
         self.fields["contract_duration_months"] = forms.TypedChoiceField(
@@ -562,6 +580,8 @@ class ProjectForm(forms.ModelForm):
         self.commission_payment_types = list(COMMISSION_PAYMENT_TYPES)
         self.no_delivery_types = list(NO_DELIVERY_TYPES)
         self.installments_types = list(INSTALLMENTS_TYPES)
+        self.recurring_contract_types = list(RECURRING_CONTRACT_TYPES)
+        self.recurring_contract_hidden_fields = RECURRING_CONTRACT_HIDDEN_FIELDS
         self.social_media_hidden_fields = SOCIAL_MEDIA_HIDDEN_FIELDS
         self.order_fields(
             [
@@ -581,6 +601,7 @@ class ProjectForm(forms.ModelForm):
                 "has_entry",
                 "entry_value",
                 "received_value",
+                "has_installments",
                 "payment_due_date",
                 "monthly_value",
                 "contract_duration_months",
@@ -655,23 +676,27 @@ class ProjectForm(forms.ModelForm):
         entry_value = cleaned_data.get("entry_value") or 0
         received_value = cleaned_data.get("received_value") or 0
         has_entry = cleaned_data.get("has_entry") or HAS_ENTRY_YES
+        has_installments = cleaned_data.get("has_installments") or HAS_INSTALLMENTS_NO
         content_distribution = cleaned_data.get("content_distribution")
         image_license_term_days = cleaned_data.get("image_license_term_days")
         is_social_media = service_type_value == SOCIAL_MEDIA_SERVICE_TYPE
-        is_existing_social_media = (
+        is_recurring_contract = service_type_value in RECURRING_CONTRACT_TYPES
+        is_existing_recurring_contract = (
             bool(getattr(self.instance, "pk", None))
-            and getattr(self.instance, "service_type", "") == SOCIAL_MEDIA_SERVICE_TYPE
+            and getattr(self.instance, "service_type", "") in RECURRING_CONTRACT_TYPES
         )
 
-        if is_social_media:
-            cleaned_data["due_date"] = (
-                _contract_due_date_from_start(
-                    cleaned_data.get("close_date"),
-                    cleaned_data.get("contract_duration_months"),
-                )
-                or cleaned_data.get("due_date")
+        if is_recurring_contract:
+            contract_end_date = cleaned_data.get("due_date") or _contract_due_date_from_start(
+                cleaned_data.get("close_date"),
+                cleaned_data.get("contract_duration_months"),
             )
-            if is_existing_social_media:
+            if contract_end_date:
+                cleaned_data["due_date"] = contract_end_date
+            else:
+                self.add_error("due_date", "Informe a data de finalização do contrato.")
+
+            if is_existing_recurring_contract:
                 entry_value = self.instance.entry_value or 0
                 received_value = self.instance.received_value or 0
                 deliverables_count = self.instance.deliverables_count or 1
@@ -681,7 +706,13 @@ class ProjectForm(forms.ModelForm):
                 deliverables_count = 1
             cleaned_data["entry_value"] = entry_value
             cleaned_data["received_value"] = received_value
-            cleaned_data["deliverables_count"] = deliverables_count
+            cleaned_data["monthly_value"] = 0
+            if is_social_media:
+                cleaned_data["deliverables_count"] = deliverables_count
+            if has_installments == HAS_INSTALLMENTS_YES:
+                cleaned_data["payment_due_date"] = None
+            elif not cleaned_data.get("payment_due_date"):
+                self.add_error("payment_due_date", "Informe a data prevista de pagamento.")
         elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
             cleaned_data["due_date"] = cleaned_data.get("close_date")
         else:
@@ -693,7 +724,7 @@ class ProjectForm(forms.ModelForm):
             ):
                 self.add_error("deliverables_count", "Informe a quantidade de vídeos.")
 
-        if not is_social_media and has_entry == HAS_ENTRY_NO:
+        if not is_recurring_contract and has_entry == HAS_ENTRY_NO:
             entry_value = total_value
             cleaned_data["entry_value"] = total_value
         if entry_value > total_value:

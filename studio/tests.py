@@ -569,6 +569,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn(("Plataforma", "Plataforma"), form.fields["closing_source"].choices)
         self.assertIn(("Agencia", "Agência"), form.fields["closing_source"].choices)
         self.assertIn(("Indicacao", "Indicação"), form.fields["closing_source"].choices)
+        self.assertIn(("Networking", "Networking"), form.fields["closing_source"].choices)
         self.assertIn(("Nao se aplica", "Não se aplica"), form.fields["closing_source"].choices)
         self.assertNotIn("progress", form.fields)
         self.assertIn(("Em produção", "Em produção"), form.fields["status"].choices)
@@ -581,11 +582,16 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("note", form.fields)
         self.assertIn("image_license_term_days", form.fields)
         self.assertIn("has_entry", form.fields)
+        self.assertIn("has_installments", form.fields)
+        self.assertIn("social_media", form.recurring_contract_types)
+        self.assertIn("consultoria_marketing", form.recurring_contract_types)
         self.assertIn("new_service_category", form.fields)
         self.assertEqual(form.fields["service_category"].choices[-1], (ADD_SERVICE_CATEGORY_VALUE, "Adicionar categoria"))
 
-    def test_social_media_form_hides_removed_fields_and_fills_required_defaults(self):
+    def test_social_media_form_uses_contract_end_and_monthly_payment_date(self):
         start_date = date(2026, 5, 20)
+        contract_end = date(2026, 8, 20)
+        payment_due_date = date(2026, 6, 15)
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -602,7 +608,9 @@ class DashboardSmokeTest(TestCase):
                 "received_value": "700",
                 "deliverables_count": "9",
                 "close_date": start_date.isoformat(),
-                "due_date": "",
+                "due_date": contract_end.isoformat(),
+                "has_installments": "no",
+                "payment_due_date": payment_due_date.isoformat(),
                 "contract_duration_months": "3",
                 "posts_per_month": "12",
                 "videos_per_month": "4",
@@ -615,10 +623,78 @@ class DashboardSmokeTest(TestCase):
         project = form.save(commit=False)
 
         self.assertNotIn("social_media", form.field_visibility_by_type["deliverables_count"])
-        self.assertEqual(project.due_date, date(2026, 7, 31))
+        self.assertEqual(project.due_date, contract_end)
+        self.assertEqual(project.payment_due_date, payment_due_date)
         self.assertEqual(project.entry_value, Decimal("0"))
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.deliverables_count, 1)
+
+    def test_marketing_consulting_form_uses_total_value_as_monthly_contract_value(self):
+        contract_end = date.today() + timedelta(days=100)
+        payment_due_date = date.today() + timedelta(days=20)
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "service_type": "consultoria_marketing",
+                "closing_source": "Networking",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "2500",
+                "has_entry": "yes",
+                "entry_value": "1250",
+                "received_value": "500",
+                "has_installments": "no",
+                "payment_due_date": payment_due_date.isoformat(),
+                "close_date": date.today().isoformat(),
+                "due_date": contract_end.isoformat(),
+                "contract_duration_months": "3",
+                "monthly_value": "1200",
+                "briefing": "Consultoria mensal",
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertEqual(project.service_category.name, "Consultoria de Marketing")
+        self.assertEqual(project.total_value, Decimal("2500"))
+        self.assertEqual(project.monthly_value, Decimal("0"))
+        self.assertEqual(project.entry_value, Decimal("0"))
+        self.assertEqual(project.received_value, Decimal("0"))
+        self.assertEqual(project.payment_due_date, payment_due_date)
+
+    def test_recurring_contract_with_installments_does_not_require_payment_due_date(self):
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "service_type": "social_media",
+                "closing_source": "Networking",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "2500",
+                "has_entry": "yes",
+                "entry_value": "1250",
+                "received_value": "0",
+                "has_installments": "yes",
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=90)).isoformat(),
+                "contract_duration_months": "3",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@insider",
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertIsNone(project.payment_due_date)
 
     def test_project_form_without_entry_sets_entry_to_total_value(self):
         form = ProjectForm(
@@ -654,7 +730,7 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("project_edit", args=[self.project.pk]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="form-field entry-value-field" data-hide-for-social-media hidden', html=False)
+        self.assertContains(response, 'class="form-field entry-value-field" data-hide-for-recurring-contract hidden', html=False)
 
     def test_project_form_syncs_stage_with_status(self):
         delivered_form = ProjectForm(
@@ -813,16 +889,19 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.service_category.name, "Conteudo Performance")
         self.assertTrue(ServiceCategory.objects.filter(workspace=self.workspace, name="Conteudo Performance").exists())
 
-    def test_project_create_page_shows_add_service_category_option(self):
+    def test_project_create_page_hides_duplicated_service_category_dropdown(self):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("project_create"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Adicionar categoria")
-        self.assertContains(response, 'id="id_new_service_category"', html=False)
+        self.assertNotContains(response, 'for="id_service_category">Categoria de serviço</label>', html=False)
+        self.assertNotContains(response, 'for="id_new_service_category">Nova categoria</label>', html=False)
         self.assertContains(response, 'data-hide-for-social-media', html=False)
-        self.assertContains(response, 'for="id_total_value">Valor de contrato</label>', html=False)
+        self.assertContains(response, 'data-hide-for-recurring-contract', html=False)
+        self.assertContains(response, 'data-recurring-label="Valor mensal do contrato"', html=False)
+        self.assertContains(response, 'data-recurring-label="Data de finalização do contrato"', html=False)
+        self.assertContains(response, 'Tem parcela?', html=False)
         self.assertContains(response, 'for="id_close_date">Início do contrato</label>', html=False)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):

@@ -32,6 +32,7 @@ from .forms import (
     ContractBrandForm,
     EmailOrUsernameAuthenticationForm,
     FinanceEntryForm,
+    HAS_INSTALLMENTS_YES,
     ManagedOptionForm,
     ProfilePhotoForm,
     ProjectForm,
@@ -1479,10 +1480,20 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         "image_license_term_days": None,
     }
     form = ProjectForm(request.POST or None, initial=initial, workspace=workspace)
-    if request.method == "POST" and form.is_valid():
+    has_installments_post = request.method == "POST" and _installments_payload_present(request)
+    installments_formset = ProjectInstallmentFormSet(
+        request.POST if has_installments_post else None,
+        instance=Project(),
+        prefix="installments",
+    )
+    formset_ok = installments_formset.is_valid() if has_installments_post else True
+    if request.method == "POST" and form.is_valid() and formset_ok:
         project = form.save(commit=False)
         project.workspace = workspace
         project.save()
+        if has_installments_post and form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES:
+            installments_formset.instance = project
+            _save_installments_formset(installments_formset, project, workspace)
         prospect.delete()
         messages.success(request, "Lead convertido em trabalho.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
@@ -1490,7 +1501,12 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("jobs")
 
     context = shell_context("prospection", workspace, "Converter lead", "Transforme a oportunidade em trabalho.", user=request.user)
-    context.update({"form": form, "form_title": "Trabalho", "cancel_url": "prospection"})
+    context.update({
+        "form": form,
+        "form_title": "Trabalho",
+        "cancel_url": "prospection",
+        "installments_formset": installments_formset,
+    })
     return render(request, "studio/project_form.html", context)
 
 
@@ -1527,7 +1543,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
         project = form.save(commit=False)
         project.workspace = workspace
         project.save()
-        if has_installments_post:
+        if has_installments_post and form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES:
             installments_formset.instance = project
             _save_installments_formset(installments_formset, project, workspace)
         messages.success(request, "Trabalho salvo com sucesso.")
@@ -1559,8 +1575,10 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
     formset_ok = installments_formset.is_valid() if has_installments_post else True
     if request.method == "POST" and form.is_valid() and formset_ok:
         project = form.save()
-        if has_installments_post:
+        if has_installments_post and form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES:
             _save_installments_formset(installments_formset, project, workspace)
+        elif form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
+            project.installments.all().delete()
         messages.success(request, "Trabalho atualizado.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
