@@ -1772,6 +1772,10 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_tools_amount = sum((item.monthly_equivalent() for item in fixed_tools), ZERO)
     fixed_collaborators_amount = sum((item.monthly_equivalent() for item in fixed_collaborators), ZERO)
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
+    pro_labore_remaining = max(pro_labore_amount - incoming_total, ZERO)
+    pro_labore_covered = pro_labore_remaining == ZERO
+    fixed_cost_covered = incoming_total >= (pro_labore_amount + fixed_cost_amount)
+    distribution_complete = pro_labore_covered and fixed_cost_covered
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
     investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
@@ -1835,7 +1839,11 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "receivable_total": currency(receivable_balance),
             "cash_balance": currency(cash_balance),
             "pro_labore": currency(pro_labore_amount),
-            "pro_labore_covered": incoming_total >= pro_labore_amount,
+            "pro_labore_covered": pro_labore_covered,
+            "pro_labore_remaining": currency(pro_labore_remaining),
+            "pro_labore_status_text": "Coberto" if pro_labore_covered else f"Faltam {currency(pro_labore_remaining)}",
+            "distribution_complete": distribution_complete,
+            "fixed_cost_covered": fixed_cost_covered,
             "fixed_cost": currency(fixed_cost_amount),
             "distribution_base": currency(distribution_base),
             "reserve": currency(reserve_amount),

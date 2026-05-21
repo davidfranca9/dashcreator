@@ -3865,6 +3865,11 @@ body.page-finance .message {
     color: #6ee7b7;
 }
 
+.fd-pill-warn {
+    background: rgba(245, 158, 11, 0.18);
+    color: var(--fd-warn);
+}
+
 .fd-card,
 .fd-box {
     padding: 16px 18px;
@@ -4062,7 +4067,8 @@ body.page-finance .message {
     color: var(--fd-accent);
 }
 
-.fd-warn {
+.fd-warn,
+.fd-text-warn {
     color: var(--fd-warn);
 }
 
@@ -4080,7 +4086,8 @@ body.page-finance .message {
     font-size: 12px;
 }
 
-.fd-alert-ok {
+.fd-alert-ok,
+.fd-alert-warn {
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -4091,20 +4098,37 @@ body.page-finance .message {
     background: var(--fd-green-bg);
 }
 
+.fd-alert-warn {
+    border-color: rgba(245, 158, 11, 0.32);
+    background: rgba(245, 158, 11, 0.10);
+}
+
 .fd-alert-ok i {
     margin-top: 1px;
     color: var(--fd-green);
     font-size: 18px;
 }
 
-.fd-alert-ok p {
+.fd-alert-warn i {
+    margin-top: 1px;
+    color: var(--fd-warn);
+    font-size: 18px;
+}
+
+.fd-alert-ok p,
+.fd-alert-warn p {
     margin: 0 0 2px;
     color: var(--fd-green-text);
     font-size: 13px;
     font-weight: 500;
 }
 
-.fd-alert-ok span {
+.fd-alert-warn p {
+    color: var(--fd-warn);
+}
+
+.fd-alert-ok span,
+.fd-alert-warn span {
     color: var(--fd-muted);
     font-size: 12px;
 }
@@ -4163,6 +4187,11 @@ body.page-finance .message {
 .fd-tag-blue {
     background: var(--fd-blue-bg);
     color: var(--fd-blue-text);
+}
+
+.fd-tag-warn {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--fd-warn);
 }
 
 .fd-bar-wrap {

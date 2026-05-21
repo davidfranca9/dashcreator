@@ -2244,6 +2244,23 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(len(response.context["ledger"]), 2)
         self.assertEqual(len(response.context["schedule"]), 1)
 
+    def test_finance_page_does_not_mark_pro_labore_covered_when_revenue_is_short(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("finance"), {"month": date.today().strftime("%Y-%m")})
+
+        finance_desktop = response.context["finance_desktop"]
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(finance_desktop["revenue_total"], "R$800")
+        self.assertEqual(finance_desktop["pro_labore"], "R$5.000")
+        self.assertFalse(finance_desktop["pro_labore_covered"])
+        self.assertEqual(finance_desktop["pro_labore_remaining"], "R$4.200")
+        self.assertContains(response, "Faltam R$4.200")
+        self.assertContains(response, "Distribuição ainda não fechou")
+        self.assertContains(response, "fd-pill-warn")
+        self.assertContains(response, "fd-tag-warn")
+        self.assertNotContains(response, "Todas as caixinhas abastecidas")
+
     def test_finance_page_prefers_payment_due_date_when_available(self):
         payment_due_date = date.today() + timedelta(days=45)
         project = Project.objects.create(
