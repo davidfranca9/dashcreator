@@ -346,6 +346,27 @@ class FinanceEntry(WorkspaceOwnedModel):
         return f"{self.get_kind_display()} - {self.amount}"
 
 
+class FixedCost(WorkspaceOwnedModel):
+    KIND_TOOL = "tool"
+    KIND_COLLABORATOR = "collaborator"
+    KIND_CHOICES = [
+        (KIND_TOOL, "Ferramenta"),
+        (KIND_COLLABORATOR, "Colaborador"),
+    ]
+
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    name = models.CharField(max_length=120)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    due_day = models.PositiveSmallIntegerField(default=1)
+    icon = models.CharField(max_length=60, blank=True, default="")
+
+    class Meta:
+        ordering = ["kind", "name"]
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} - {self.name}"
+
+
 class WorkspaceSetting(TimestampedModel):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="settings")
     key = models.CharField(max_length=120)

@@ -19,7 +19,7 @@ from PIL import Image
 
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
-from .models import AccessCode, ActiveUserSession, FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory
+from .models import AccessCode, ActiveUserSession, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 
@@ -2127,6 +2127,137 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(entry.amount, Decimal("175.50"))
         self.assertEqual(entry.description, "Editor freelancer")
         self.assertContains(update_response, "Saída atualizada.")
+
+    def test_finance_page_lists_fixed_costs_and_does_not_show_hubla(self):
+        FixedCost.objects.create(
+            workspace=self.workspace,
+            kind=FixedCost.KIND_TOOL,
+            name="Notion Pro",
+            amount=Decimal("60"),
+            due_day=1,
+        )
+        FixedCost.objects.create(
+            workspace=self.workspace,
+            kind=FixedCost.KIND_COLLABORATOR,
+            name="Editor fixo",
+            amount=Decimal("800"),
+            due_day=5,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("finance"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Notion Pro")
+        self.assertContains(response, "Editor fixo")
+        self.assertContains(response, "Vence dia 01 todo mês")
+        self.assertContains(response, "Vence dia 05 todo mês")
+        # Hubla / taxa variável de plataforma foi removida
+        self.assertNotContains(response, "Hubla")
+        self.assertNotContains(response, "Taxas variáveis de plataforma")
+        finance_desktop = response.context["finance_desktop"]
+        self.assertEqual(finance_desktop["fixed_tools_total"], "R$60")
+        self.assertEqual(finance_desktop["fixed_collaborators_total"], "R$800")
+        self.assertEqual(finance_desktop["fixed_cost"], "R$860")
+        self.assertNotIn("platform_fee", finance_desktop)
+
+    def test_finance_page_allows_creating_fixed_cost(self):
+        self.client.force_login(self.user)
+
+        add_response = self.client.get(reverse("finance"), {"add_fixed_cost": "tool"})
+        self.assertEqual(add_response.status_code, 200)
+        self.assertTrue(add_response.context["fixed_cost_modal_open"])
+        self.assertContains(add_response, "Adicionar custo fixo")
+
+        response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "fixed_cost",
+                "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-name": "CapCut Pro",
+                "fixed_cost-amount": "40",
+                "fixed_cost-due_day": "10",
+            },
+            follow=True,
+        )
+        self.assertRedirects(response, reverse("finance"))
+        self.assertTrue(FixedCost.objects.filter(workspace=self.workspace, name="CapCut Pro").exists())
+        self.assertContains(response, "Custo fixo adicionado.")
+
+    def test_finance_page_allows_editing_fixed_cost(self):
+        cost = FixedCost.objects.create(
+            workspace=self.workspace,
+            kind=FixedCost.KIND_TOOL,
+            name="Notion Pro",
+            amount=Decimal("60"),
+            due_day=1,
+        )
+        self.client.force_login(self.user)
+
+        edit_response = self.client.get(reverse("finance"), {"edit_fixed_cost": str(cost.pk)})
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertTrue(edit_response.context["fixed_cost_modal_open"])
+        self.assertEqual(edit_response.context["fixed_cost_form"].instance.pk, cost.pk)
+        self.assertContains(edit_response, "Editar custo fixo")
+
+        update_response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "fixed_cost",
+                "fixed_cost_id": str(cost.pk),
+                "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-name": "Notion Plus",
+                "fixed_cost-amount": "75.50",
+                "fixed_cost-due_day": "3",
+            },
+            follow=True,
+        )
+        cost.refresh_from_db()
+        self.assertRedirects(update_response, reverse("finance"))
+        self.assertEqual(cost.name, "Notion Plus")
+        self.assertEqual(cost.amount, Decimal("75.50"))
+        self.assertEqual(cost.due_day, 3)
+        self.assertContains(update_response, "Custo fixo atualizado.")
+
+    def test_finance_page_allows_deleting_fixed_cost(self):
+        cost = FixedCost.objects.create(
+            workspace=self.workspace,
+            kind=FixedCost.KIND_COLLABORATOR,
+            name="Editor temporário",
+            amount=Decimal("500"),
+            due_day=15,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "fixed_cost_delete",
+                "fixed_cost_id": str(cost.pk),
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("finance"))
+        self.assertFalse(FixedCost.objects.filter(pk=cost.pk).exists())
+        self.assertContains(response, "Custo fixo removido.")
+
+    def test_finance_page_rejects_fixed_cost_with_invalid_due_day(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "fixed_cost",
+                "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-name": "Test",
+                "fixed_cost-amount": "10",
+                "fixed_cost-due_day": "32",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(FixedCost.objects.filter(workspace=self.workspace).exists())
+        self.assertTrue(response.context["fixed_cost_modal_open"])
 
     def test_dashboard_snapshot_respects_selected_global_month(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)

@@ -4190,6 +4190,33 @@ body.page-finance .message {
     background: var(--fd-brand);
     color: #ffffff;
     cursor: pointer;
+    text-decoration: none;
+}
+
+.fd-cost-row-link {
+    color: inherit;
+    text-decoration: none;
+    transition: background 0.15s ease;
+    border-radius: 6px;
+}
+
+.fd-cost-row-link:hover {
+    background: rgba(127, 111, 255, 0.06);
+}
+
+.fd-cancel-button-danger {
+    color: #c04d57;
+    border-color: #c04d57;
+}
+
+.fd-cancel-button-danger:hover {
+    background: rgba(192, 77, 87, 0.08);
+}
+
+.fd-delete-form {
+    border-top: 0.5px solid var(--fd-border);
+    margin-top: 12px;
+    padding-top: 12px;
 }
 
 .fd-cost-row {

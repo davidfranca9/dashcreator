@@ -35,6 +35,7 @@ from .forms import (
     ContractBrandForm,
     EmailOrUsernameAuthenticationForm,
     FinanceEntryForm,
+    FixedCostForm,
     HAS_INSTALLMENTS_YES,
     ManagedOptionForm,
     ProfilePhotoForm,
@@ -45,7 +46,7 @@ from .forms import (
     WorkspaceBusinessForm,
     WorkspaceSettingsForm,
 )
-from .models import FinanceEntry, Project, ProjectInstallment, Prospect, ServiceCategory
+from .models import FinanceEntry, FixedCost, Project, ProjectInstallment, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
@@ -1163,6 +1164,18 @@ def finance(request: HttpRequest) -> HttpResponse:
             FinanceEntry.objects.filter(workspace=workspace, kind=FinanceEntry.KIND_OUTGOING),
             pk=int(editing_entry_id),
         )
+    editing_fixed_cost_id = request.POST.get("fixed_cost_id") if request.method == "POST" else request.GET.get("edit_fixed_cost")
+    editing_fixed_cost = None
+    if editing_fixed_cost_id:
+        if not editing_fixed_cost_id.isdigit():
+            raise Http404("Custo fixo nao encontrado.")
+        editing_fixed_cost = get_object_or_404(
+            FixedCost.objects.filter(workspace=workspace),
+            pk=int(editing_fixed_cost_id),
+        )
+    add_fixed_cost_kind = request.GET.get("add_fixed_cost")
+    if add_fixed_cost_kind not in {FixedCost.KIND_TOOL, FixedCost.KIND_COLLABORATOR}:
+        add_fixed_cost_kind = None
     selected_month = parse_month_value(month_filter) if month_filter and month_filter != "all" else None
     today = date.today()
     initial_date = (
@@ -1176,6 +1189,16 @@ def finance(request: HttpRequest) -> HttpResponse:
     else:
         outgoing_form_kwargs["initial"] = {"occurred_on": initial_date}
     outgoing_form = FinanceEntryForm(**outgoing_form_kwargs)
+
+    fixed_cost_form_kwargs = {"prefix": "fixed_cost"}
+    if editing_fixed_cost is not None:
+        fixed_cost_form_kwargs["instance"] = editing_fixed_cost
+    elif add_fixed_cost_kind is not None:
+        fixed_cost_form_kwargs["initial"] = {"kind": add_fixed_cost_kind, "due_day": 1}
+    else:
+        fixed_cost_form_kwargs["initial"] = {"kind": FixedCost.KIND_TOOL, "due_day": 1}
+    fixed_cost_form = FixedCostForm(**fixed_cost_form_kwargs)
+    fixed_cost_modal_open = editing_fixed_cost is not None or add_fixed_cost_kind is not None
 
     if request.method == "POST":
         action = request.POST.get("finance_action")
@@ -1191,6 +1214,25 @@ def finance(request: HttpRequest) -> HttpResponse:
                 if month_filter:
                     redirect_url = f"{redirect_url}?month={month_filter}"
                 return redirect(redirect_url)
+        elif action == "fixed_cost":
+            fixed_cost_form = FixedCostForm(request.POST, **fixed_cost_form_kwargs)
+            if fixed_cost_form.is_valid():
+                cost = fixed_cost_form.save(commit=False)
+                cost.workspace = workspace
+                cost.save()
+                messages.success(request, "Custo fixo atualizado." if editing_fixed_cost is not None else "Custo fixo adicionado.")
+                redirect_url = reverse("finance")
+                if month_filter:
+                    redirect_url = f"{redirect_url}?month={month_filter}"
+                return redirect(redirect_url)
+            fixed_cost_modal_open = True
+        elif action == "fixed_cost_delete" and editing_fixed_cost is not None:
+            editing_fixed_cost.delete()
+            messages.success(request, "Custo fixo removido.")
+            redirect_url = reverse("finance")
+            if month_filter:
+                redirect_url = f"{redirect_url}?month={month_filter}"
+            return redirect(redirect_url)
 
     context = shell_context(
         "finance",
@@ -1212,6 +1254,11 @@ def finance(request: HttpRequest) -> HttpResponse:
                 else "Use para custos de produção, ferramentas ou investimentos."
             ),
             "editing_entry": editing_entry,
+            "fixed_cost_form": fixed_cost_form,
+            "editing_fixed_cost": editing_fixed_cost,
+            "fixed_cost_modal_open": fixed_cost_modal_open,
+            "fixed_cost_form_title": "Editar custo fixo" if editing_fixed_cost is not None else "Adicionar custo fixo",
+            "fixed_cost_form_submit_label": "Salvar alteração" if editing_fixed_cost is not None else "Salvar custo fixo",
             "finance_cancel_url": f"{reverse('finance')}?month={month_filter}" if month_filter else reverse("finance"),
         }
     )

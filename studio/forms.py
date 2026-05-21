@@ -20,7 +20,7 @@ from .constants import (
     SERVICE_TYPE_TO_CATEGORY,
     SETTINGS_GROUPS,
 )
-from .models import AccessCode, FinanceEntry, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
+from .models import AccessCode, FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
@@ -1033,3 +1033,31 @@ class FinanceEntryForm(forms.ModelForm):
         self.fields["amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["occurred_on"].input_formats = ["%Y-%m-%d"]
         self.fields["occurred_on"].widget.format = "%Y-%m-%d"
+
+
+class FixedCostForm(forms.ModelForm):
+    class Meta:
+        model = FixedCost
+        fields = ["kind", "name", "amount", "due_day"]
+        labels = {
+            "kind": "Tipo",
+            "name": "Nome",
+            "amount": "Valor mensal",
+            "due_day": "Dia do vencimento",
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Ex.: Notion Pro, Editor fixo"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
+        self.fields["due_day"].widget.attrs.update({"min": "1", "max": "31", "inputmode": "numeric"})
+
+    def clean_due_day(self):
+        value = self.cleaned_data.get("due_day")
+        if value is None:
+            return value
+        if value < 1 or value > 31:
+            raise forms.ValidationError("Informe um dia entre 1 e 31.")
+        return value

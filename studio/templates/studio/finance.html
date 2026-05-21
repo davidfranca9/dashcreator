@@ -317,42 +317,44 @@
             <div class="fd-two-col">
                 <div class="fd-col">
                     <article class="fd-card">
-                        <div class="fd-card-header"><span class="fd-card-title">Ferramentas</span><button type="button" class="fd-add-round"><i class="ti ti-plus"></i></button></div>
+                        <div class="fd-card-header">
+                            <span class="fd-card-title">Ferramentas</span>
+                            <a class="fd-add-round" href="{% url 'finance' %}?add_fixed_cost=tool{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}" aria-label="Adicionar ferramenta"><i class="ti ti-plus"></i></a>
+                        </div>
                         {% for item in finance_desktop.fixed_tools %}
-                            <div class="fd-cost-row">
+                            <a class="fd-cost-row fd-cost-row-link" href="{% url 'finance' %}?edit_fixed_cost={{ item.id }}{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                                 <span class="fd-cost-icon"><i class="ti {{ item.icon }}"></i></span>
                                 <span class="fd-row-info">
                                     <strong>{{ item.name }}</strong>
                                     <small>{{ item.due }}</small>
                                 </span>
                                 <strong class="fd-cost-value">{{ item.amount }}</strong>
-                            </div>
+                            </a>
+                        {% empty %}
+                            <p class="fd-empty">Nenhuma ferramenta cadastrada.</p>
                         {% endfor %}
                         <div class="fd-total-line"><span>Subtotal ferramentas</span><strong class="fd-cost-value">{{ finance_desktop.fixed_tools_total }}</strong></div>
                     </article>
                 </div>
                 <div class="fd-col">
                     <article class="fd-card">
-                        <div class="fd-card-header"><span class="fd-card-title">Colaboradores</span><button type="button" class="fd-add-round"><i class="ti ti-plus"></i></button></div>
+                        <div class="fd-card-header">
+                            <span class="fd-card-title">Colaboradores</span>
+                            <a class="fd-add-round" href="{% url 'finance' %}?add_fixed_cost=collaborator{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}" aria-label="Adicionar colaborador"><i class="ti ti-plus"></i></a>
+                        </div>
                         {% for item in finance_desktop.fixed_collaborators %}
-                            <div class="fd-cost-row">
+                            <a class="fd-cost-row fd-cost-row-link" href="{% url 'finance' %}?edit_fixed_cost={{ item.id }}{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                                 <span class="fd-cost-icon"><i class="ti {{ item.icon }}"></i></span>
                                 <span class="fd-row-info">
                                     <strong>{{ item.name }}</strong>
                                     <small>{{ item.due }}</small>
                                 </span>
                                 <strong class="fd-cost-value">{{ item.amount }}</strong>
-                            </div>
+                            </a>
+                        {% empty %}
+                            <p class="fd-empty">Nenhum colaborador cadastrado.</p>
                         {% endfor %}
                         <div class="fd-total-line"><span>Subtotal colaboradores</span><strong class="fd-cost-value">{{ finance_desktop.fixed_collaborators_total }}</strong></div>
-                    </article>
-                    <article class="fd-card fd-card-soft">
-                        <div class="fd-card-header"><span class="fd-card-title">Taxas variáveis de plataforma</span></div>
-                        <div class="fd-row">
-                            <div class="fd-row-left"><span class="fd-row-dot fd-dot-blue"></span><span>Hubla — 15% sobre vendas de infoprodutos</span></div>
-                            <span class="fd-row-value fd-value-blue">{{ finance_desktop.platform_fee }}</span>
-                        </div>
-                        <p class="fd-note">Calculado automaticamente. Já descontado da receita bruta — não é deduzido das caixinhas.</p>
                     </article>
                     <article class="fd-fixed-total">
                         <div>
@@ -406,6 +408,48 @@
     </div>
 </div>
 
+<div class="fd-modal-backdrop" data-fixed-cost-modal{% if not fixed_cost_modal_open %} hidden{% endif %}>
+    <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="fixed-cost-title">
+        <div class="fd-modal-header">
+            <div>
+                <h3 id="fixed-cost-title">{{ fixed_cost_form_title }}</h3>
+                <p>Defina nome, valor e dia do vencimento mensal.</p>
+            </div>
+            <a class="fd-modal-close" href="{{ finance_cancel_url }}" aria-label="Fechar">&times;</a>
+        </div>
+        <form method="post" class="fd-expense-form">
+            {% csrf_token %}
+            <input type="hidden" name="finance_action" value="fixed_cost">
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+            {% if editing_fixed_cost %}
+                <input type="hidden" name="fixed_cost_id" value="{{ editing_fixed_cost.id }}">
+            {% endif %}
+            {% for field in fixed_cost_form %}
+                <label class="fd-form-field">
+                    <span>{{ field.label }}</span>
+                    {{ field }}
+                    {{ field.errors }}
+                </label>
+            {% endfor %}
+            <div class="fd-modal-actions">
+                <a class="fd-cancel-button" href="{{ finance_cancel_url }}">Cancelar</a>
+                <button type="submit" class="fd-submit-button">{{ fixed_cost_form_submit_label }}</button>
+            </div>
+        </form>
+        {% if editing_fixed_cost %}
+            <form method="post" class="fd-expense-form fd-delete-form" onsubmit="return confirm('Excluir esse custo fixo?');">
+                {% csrf_token %}
+                <input type="hidden" name="finance_action" value="fixed_cost_delete">
+                <input type="hidden" name="month" value="{{ selected_month.value }}">
+                <input type="hidden" name="fixed_cost_id" value="{{ editing_fixed_cost.id }}">
+                <div class="fd-modal-actions">
+                    <button type="submit" class="fd-cancel-button fd-cancel-button-danger">Excluir custo fixo</button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
 <script>
     (() => {
         const tabs = Array.from(document.querySelectorAll("[data-fd-tab]"));
@@ -433,6 +477,19 @@
             modal.addEventListener("click", (event) => {
                 if (event.target === modal) {
                     setModal(false);
+                }
+            });
+        }
+
+        const fixedCostModal = document.querySelector("[data-fixed-cost-modal]");
+        if (fixedCostModal) {
+            const cancelLink = fixedCostModal.querySelector(".fd-modal-close");
+            if (!fixedCostModal.hidden) {
+                document.body.classList.add("has-popup-open");
+            }
+            fixedCostModal.addEventListener("click", (event) => {
+                if (event.target === fixedCostModal && cancelLink) {
+                    window.location.href = cancelLink.getAttribute("href");
                 }
             });
         }

@@ -22,7 +22,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import FinanceEntry, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -1752,7 +1752,12 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
 
     workspace_settings = settings_map(workspace)
     pro_labore_amount = _decimal_setting(workspace_settings, "ops_pro_labore_amount", Decimal("5000"))
-    fixed_cost_amount = Decimal("1200")
+    fixed_costs = list(FixedCost.objects.filter(workspace=workspace).order_by("kind", "name", "pk"))
+    fixed_tools = [item for item in fixed_costs if item.kind == FixedCost.KIND_TOOL]
+    fixed_collaborators = [item for item in fixed_costs if item.kind == FixedCost.KIND_COLLABORATOR]
+    fixed_tools_amount = sum((item.amount for item in fixed_tools), ZERO)
+    fixed_collaborators_amount = sum((item.amount for item in fixed_collaborators), ZERO)
+    fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
     investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
@@ -1827,16 +1832,27 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "outgoing_items": outgoing_items,
             "latest_movements": latest_movements,
             "fixed_tools": [
-                {"icon": "ti-notebook", "name": "Notion Pro", "due": "Vence dia 01 todo mês", "amount": "R$60"},
-                {"icon": "ti-cut", "name": "CapCut Pro", "due": "Vence dia 10 todo mês", "amount": "R$40"},
-                {"icon": "ti-brand-adobe", "name": "Adobe Creative", "due": "Vence dia 12 todo mês", "amount": "R$120"},
+                {
+                    "id": item.pk,
+                    "icon": item.icon or "ti-tool",
+                    "name": item.name,
+                    "due": f"Vence dia {item.due_day:02d} todo mês",
+                    "amount": currency(item.amount),
+                }
+                for item in fixed_tools
             ],
             "fixed_collaborators": [
-                {"icon": "ti-user", "name": "Editor fixo", "due": "Vence dia 05 todo mês", "amount": "R$800"},
+                {
+                    "id": item.pk,
+                    "icon": item.icon or "ti-user",
+                    "name": item.name,
+                    "due": f"Vence dia {item.due_day:02d} todo mês",
+                    "amount": currency(item.amount),
+                }
+                for item in fixed_collaborators
             ],
-            "fixed_tools_total": "R$220",
-            "fixed_collaborators_total": "R$800",
-            "platform_fee": "R$180",
+            "fixed_tools_total": currency(fixed_tools_amount),
+            "fixed_collaborators_total": currency(fixed_collaborators_amount),
         },
         "breakdown": [
             {"label": "Entradas dos trabalhos", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
