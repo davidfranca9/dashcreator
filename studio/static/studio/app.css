@@ -4389,3 +4389,194 @@ body.page-finance .message {
         grid-template-columns: 1fr;
     }
 }
+
+/* Mantem o sidebar do Financeiro igual ao sidebar padrao do app. */
+body.page-finance .app-shell {
+    background: var(--bg);
+}
+
+body.page-finance .brand-block::before,
+body.page-finance .brand-block::after {
+    content: none;
+}
+
+body.page-finance .brand-logo {
+    display: block;
+}
+
+@media (min-width: 1101px) {
+    body.page-finance .app-shell {
+        padding-left: calc(var(--sidebar-width-expanded) + 10px);
+    }
+
+    body.page-finance .sidebar {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: var(--sidebar-width-expanded);
+        min-height: 100vh;
+        min-height: 100dvh;
+        height: 100vh;
+        height: 100dvh;
+        padding: 26px 20px 22px;
+        gap: 18px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: linear-gradient(180deg, var(--sidebar-top), var(--sidebar-bottom));
+    }
+}
+
+body.page-finance .brand-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 120px;
+    padding: 6px 0 10px;
+    border-bottom: 0;
+}
+
+body.page-finance .sidebar .brand-logo {
+    width: calc(100% + 20px);
+    max-width: 300px;
+    margin: 0 auto;
+    transform: scale(1.12);
+    transform-origin: center;
+}
+
+body.page-finance .nav-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+body.page-finance .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+}
+
+body.page-finance .nav-group + .nav-group {
+    border-top: 0;
+}
+
+body.page-finance .nav-group-label {
+    padding: 0 8px;
+    margin-bottom: 0;
+    color: #8ea4c4;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+body.page-finance .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+body.page-finance .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 14px;
+    color: #edf5ff;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+body.page-finance .nav-link:hover,
+body.page-finance .nav-link.active {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.page-finance .nav-link-icon {
+    width: 18px;
+    height: 18px;
+    color: rgba(237, 245, 255, 0.78);
+}
+
+body.page-finance .nav-link.active .nav-link-icon {
+    color: #ffffff;
+}
+
+body.page-finance .workspace-chip {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border-top: 0;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.page-finance .workspace-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(5, 11, 21, 0.18);
+}
+
+body.page-finance .workspace-chip-avatar-image,
+body.page-finance .workspace-chip-avatar-fallback {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+body.page-finance .workspace-chip-avatar-fallback {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+body.page-finance .workspace-chip-name {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+body.page-finance .workspace-label {
+    color: rgba(156, 175, 203, 0.85);
+    font-size: 11px;
+}
+
+@media (max-width: 1100px) {
+    body.page-finance .app-shell {
+        padding-left: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    body.page-finance .sidebar {
+        display: flex;
+        position: static;
+        width: auto;
+        min-height: 0;
+        height: auto;
+        padding: 26px 20px 22px;
+        gap: 18px;
+        overflow: visible;
+        background: linear-gradient(180deg, var(--sidebar-top), var(--sidebar-bottom));
+    }
+}
+
+@media (max-width: 768px) {
+    body.page-finance .sidebar {
+        display: none;
+    }
+
+    body.page-finance .app-shell {
+        padding-left: 0;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        grid-template-columns: 1fr;
+    }
+
+    body.page-finance .bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
