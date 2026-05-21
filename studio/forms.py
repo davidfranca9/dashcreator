@@ -633,27 +633,22 @@ class ProjectForm(forms.ModelForm):
         self.entry_receipt_hidden_fields = ENTRY_RECEIPT_HIDDEN_FIELDS
         self.order_fields(
             [
+                # --- Identidade do trabalho ---
                 "company",
                 "service_type",
                 "service_category",
                 "new_service_category",
+                # --- Bloco de contrato (em cima) ---
                 "niche",
                 "closing_source",
                 "stage",
                 "status",
                 "close_date",
                 "due_date",
+                "contract_duration_months",
                 "meeting_scheduled",
                 "meeting_date",
-                "total_value",
-                "has_entry",
-                "entry_value",
-                "received_value",
-                "payment_recurrence",
-                "has_installments",
-                "payment_due_date",
-                "monthly_value",
-                "contract_duration_months",
+                # Campos type-specific (parte de contrato/entregáveis)
                 "deliverables_count",
                 "stories_count",
                 "story_coverage_date",
@@ -670,6 +665,16 @@ class ProjectForm(forms.ModelForm):
                 "extra_value",
                 "withdrawal_date",
                 "briefing",
+                # --- Bloco de pagamento (embaixo) ---
+                "total_value",
+                "monthly_value",
+                "has_entry",
+                "entry_value",
+                "received_value",
+                "has_installments",
+                "payment_recurrence",
+                "payment_due_date",
+                # --- Observações no final ---
                 "note",
             ]
         )

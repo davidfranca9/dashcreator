@@ -1295,6 +1295,27 @@ body.theme-dark .stat-card p {
     grid-column: 1 / -1;
 }
 
+.project-form-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 0;
+}
+
+.project-form-section::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--border);
+}
+
+.project-form-section-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
 .project-form-actions {
     display: flex;
     gap: 10px;

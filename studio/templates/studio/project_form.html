@@ -74,6 +74,21 @@
         <div class="project-form-fields form-field--full" data-form-fields hidden>
             <div class="form-grid project-form-fields-grid">
                 {% for field in form %}
+                    {% if field.name == "niche" %}
+                        <div class="form-field--full project-form-section" data-form-section="contract">
+                            <span class="project-form-section-label">Contrato</span>
+                        </div>
+                    {% endif %}
+                    {% if field.name == "total_value" %}
+                        <div class="form-field--full project-form-section" data-form-section="payment">
+                            <span class="project-form-section-label">Pagamento</span>
+                        </div>
+                    {% endif %}
+                    {% if field.name == "note" %}
+                        <div class="form-field--full project-form-section" data-form-section="notes">
+                            <span class="project-form-section-label">Observações</span>
+                        </div>
+                    {% endif %}
                     {% if field.name == "company" %}{# Ja rendido na etapa 1 #}
                     {% elif field.name == "service_type" %}
                         {# service_type fica hidden; pills controlam o valor #}
