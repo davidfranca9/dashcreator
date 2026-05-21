@@ -7,6 +7,7 @@ from django import forms
 from django.contrib.auth import authenticate, get_user_model, password_validation
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, UserCreationForm, UsernameField
 from django.contrib.auth.models import User
+from django.db.models import Sum
 from django.utils import timezone
 
 from .contact_types import DEFAULT_CONTACT_TYPE_CHOICES, infer_contact_type, normalize_contact_type
@@ -20,7 +21,7 @@ from .constants import (
     SERVICE_TYPE_TO_CATEGORY,
     SETTINGS_GROUPS,
 )
-from .models import AccessCode, FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
+from .models import AccessCode, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
@@ -1115,3 +1116,44 @@ class FixedCostForm(forms.ModelForm):
         if value < 1 or value > 31:
             raise forms.ValidationError("Informe um dia entre 1 e 31.")
         return value
+
+
+class CashBoxForm(forms.ModelForm):
+    class Meta:
+        model = CashBox
+        fields = ["name", "allocation_percentage", "description"]
+        labels = {
+            "name": "Nome da caixinha",
+            "allocation_percentage": "% do fluxo livre",
+            "description": "Descrição",
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Ex.: Impostos, viagem, equipamento"}),
+            "description": forms.TextInput(attrs={"placeholder": "Ex.: Separar para troca de câmera"}),
+        }
+
+    def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workspace = workspace
+        self.fields["allocation_percentage"].widget.attrs.update({"step": "0.01", "min": "0.01", "max": "100", "inputmode": "decimal"})
+        self.fields["allocation_percentage"].help_text = "Percentual calculado sobre o valor que sobra depois de pró-labore, custo fixo, reserva e investimento."
+
+    def clean_allocation_percentage(self):
+        value = self.cleaned_data.get("allocation_percentage")
+        if value is None or value <= 0:
+            raise forms.ValidationError("Informe um percentual maior que zero.")
+        if value > 100:
+            raise forms.ValidationError("O percentual não pode passar de 100%.")
+        return value
+
+    def clean(self):
+        cleaned_data = super().clean()
+        percentage = cleaned_data.get("allocation_percentage")
+        if self.workspace is None or percentage is None:
+            return cleaned_data
+        existing_total = CashBox.objects.filter(workspace=self.workspace).exclude(pk=getattr(self.instance, "pk", None)).aggregate(
+            total=Sum("allocation_percentage")
+        )["total"] or 0
+        if existing_total + percentage > 100:
+            self.add_error("allocation_percentage", "A soma das caixinhas extras não pode passar de 100% do fluxo livre.")
+        return cleaned_data

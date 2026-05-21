@@ -22,7 +22,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -1765,6 +1765,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     workspace_settings = settings_map(workspace)
     pro_labore_amount = _decimal_setting(workspace_settings, "ops_pro_labore_amount", Decimal("5000"))
     fixed_costs = list(FixedCost.objects.filter(workspace=workspace).order_by("kind", "name", "pk"))
+    cash_boxes = list(CashBox.objects.filter(workspace=workspace).order_by("name", "pk"))
     fixed_tools = [item for item in fixed_costs if item.kind == FixedCost.KIND_TOOL]
     fixed_collaborators = [item for item in fixed_costs if item.kind == FixedCost.KIND_COLLABORATOR]
     # Custos anuais entram no total como 1/12 do valor anual, para
@@ -1779,7 +1780,26 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
     investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
-    free_flow_amount = max(distribution_base - reserve_amount - investment_amount, ZERO)
+    free_flow_base = max(distribution_base - reserve_amount - investment_amount, ZERO)
+    custom_boxes_total = ZERO
+    custom_box_items = []
+    for box in cash_boxes:
+        percentage = Decimal(box.allocation_percentage or 0)
+        amount = (free_flow_base * percentage / Decimal("100")).quantize(Decimal("0.01"))
+        percentage_text = f"{int(percentage)}%" if percentage == percentage.to_integral() else f"{percentage}%"
+        custom_boxes_total += amount
+        custom_box_items.append(
+            {
+                "id": box.pk,
+                "name": box.name,
+                "icon": box.icon or "ti-pig-money",
+                "description": box.description or f"{percentage_text} do fluxo livre",
+                "percentage": percentage_text,
+                "amount": currency(amount),
+                "progress": min(100, int(round(percentage))),
+            }
+        )
+    free_flow_amount = max(free_flow_base - custom_boxes_total, ZERO)
     reserve_goal = Decimal("30000")
     reserve_progress = min(100, round((reserve_amount / reserve_goal) * 100)) if reserve_goal and reserve_amount else 0
 
@@ -1849,6 +1869,9 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "reserve": currency(reserve_amount),
             "reserve_progress": reserve_progress,
             "investment": currency(investment_amount),
+            "custom_boxes": custom_box_items,
+            "custom_boxes_total": currency(custom_boxes_total),
+            "free_flow_base": currency(free_flow_base),
             "free_flow": currency(free_flow_amount),
             "incoming_items": incoming_items,
             "outgoing_items": outgoing_items,

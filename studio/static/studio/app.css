@@ -4133,6 +4133,27 @@ body.page-finance .message {
     font-size: 12px;
 }
 
+.fd-section-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 0 14px;
+}
+
+.fd-section-toolbar h3 {
+    margin: 0;
+    color: var(--fd-text);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.fd-section-toolbar p {
+    margin: 3px 0 0;
+    color: var(--fd-soft);
+    font-size: 12px;
+}
+
 .fd-box-head {
     margin-bottom: 8px;
 }
@@ -4172,6 +4193,22 @@ body.page-finance .message {
 
 .fd-box-free {
     border-color: #bbf7d0;
+}
+
+.fd-box-muted {
+    border-style: dashed;
+}
+
+.fd-box-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.fd-box-link:hover {
+    border-color: var(--fd-green);
+    transform: translateY(-1px);
 }
 
 .fd-tag {
@@ -4255,6 +4292,15 @@ body.page-finance .message {
     color: #ffffff;
     cursor: pointer;
     text-decoration: none;
+}
+
+.fd-add-round-wide {
+    width: auto;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .fd-cost-row-link {
@@ -4432,6 +4478,12 @@ body.page-finance .message {
     background: var(--fd-bg);
     color: var(--fd-text);
     font-size: 13px;
+}
+
+.fd-form-field small {
+    color: var(--fd-soft);
+    font-size: 11px;
+    line-height: 1.35;
 }
 
 .fd-modal-actions {

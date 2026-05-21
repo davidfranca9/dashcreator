@@ -395,6 +395,20 @@ class FixedCost(WorkspaceOwnedModel):
         return _Decimal(self.amount or 0)
 
 
+class CashBox(WorkspaceOwnedModel):
+    name = models.CharField(max_length=120)
+    allocation_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    description = models.CharField(max_length=220, blank=True, default="")
+    icon = models.CharField(max_length=60, blank=True, default="ti-pig-money")
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = [("workspace", "name")]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class WorkspaceSetting(TimestampedModel):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="settings")
     key = models.CharField(max_length=120)

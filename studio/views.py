@@ -32,6 +32,7 @@ from .forms import (
     AUTO_MONTHLY_INSTALLMENT_TYPES,
     AppPasswordResetForm,
     AppSetPasswordForm,
+    CashBoxForm,
     ContractBrandForm,
     EmailOrUsernameAuthenticationForm,
     FinanceEntryForm,
@@ -46,7 +47,7 @@ from .forms import (
     WorkspaceBusinessForm,
     WorkspaceSettingsForm,
 )
-from .models import FinanceEntry, FixedCost, Project, ProjectInstallment, Prospect, ServiceCategory
+from .models import CashBox, FinanceEntry, FixedCost, Project, ProjectInstallment, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
@@ -1173,9 +1174,19 @@ def finance(request: HttpRequest) -> HttpResponse:
             FixedCost.objects.filter(workspace=workspace),
             pk=int(editing_fixed_cost_id),
         )
+    editing_cash_box_id = request.POST.get("cash_box_id") if request.method == "POST" else request.GET.get("edit_cash_box")
+    editing_cash_box = None
+    if editing_cash_box_id:
+        if not editing_cash_box_id.isdigit():
+            raise Http404("Caixinha nao encontrada.")
+        editing_cash_box = get_object_or_404(
+            CashBox.objects.filter(workspace=workspace),
+            pk=int(editing_cash_box_id),
+        )
     add_fixed_cost_kind = request.GET.get("add_fixed_cost")
     if add_fixed_cost_kind not in {FixedCost.KIND_TOOL, FixedCost.KIND_COLLABORATOR}:
         add_fixed_cost_kind = None
+    add_cash_box = request.GET.get("add_cash_box") == "1"
     selected_month = parse_month_value(month_filter) if month_filter and month_filter != "all" else None
     today = date.today()
     initial_date = (
@@ -1209,6 +1220,11 @@ def finance(request: HttpRequest) -> HttpResponse:
         }
     fixed_cost_form = FixedCostForm(**fixed_cost_form_kwargs)
     fixed_cost_modal_open = editing_fixed_cost is not None or add_fixed_cost_kind is not None
+    cash_box_form_kwargs = {"prefix": "cash_box", "workspace": workspace}
+    if editing_cash_box is not None:
+        cash_box_form_kwargs["instance"] = editing_cash_box
+    cash_box_form = CashBoxForm(**cash_box_form_kwargs)
+    cash_box_modal_open = editing_cash_box is not None or add_cash_box
 
     if request.method == "POST":
         action = request.POST.get("finance_action")
@@ -1258,6 +1274,25 @@ def finance(request: HttpRequest) -> HttpResponse:
             if month_filter:
                 redirect_url = f"{redirect_url}?month={month_filter}"
             return redirect(redirect_url)
+        elif action == "cash_box":
+            cash_box_form = CashBoxForm(request.POST, **cash_box_form_kwargs)
+            if cash_box_form.is_valid():
+                cash_box = cash_box_form.save(commit=False)
+                cash_box.workspace = workspace
+                cash_box.save()
+                messages.success(request, "Caixinha atualizada." if editing_cash_box is not None else "Caixinha criada.")
+                redirect_url = reverse("finance")
+                if month_filter:
+                    redirect_url = f"{redirect_url}?month={month_filter}"
+                return redirect(redirect_url)
+            cash_box_modal_open = True
+        elif action == "cash_box_delete" and editing_cash_box is not None:
+            editing_cash_box.delete()
+            messages.success(request, "Caixinha removida.")
+            redirect_url = reverse("finance")
+            if month_filter:
+                redirect_url = f"{redirect_url}?month={month_filter}"
+            return redirect(redirect_url)
 
     context = shell_context(
         "finance",
@@ -1284,6 +1319,11 @@ def finance(request: HttpRequest) -> HttpResponse:
             "fixed_cost_modal_open": fixed_cost_modal_open,
             "fixed_cost_form_title": "Editar custo fixo" if editing_fixed_cost is not None else "Adicionar custo fixo",
             "fixed_cost_form_submit_label": "Salvar alteração" if editing_fixed_cost is not None else "Salvar custo fixo",
+            "cash_box_form": cash_box_form,
+            "editing_cash_box": editing_cash_box,
+            "cash_box_modal_open": cash_box_modal_open,
+            "cash_box_form_title": "Editar caixinha" if editing_cash_box is not None else "Nova caixinha",
+            "cash_box_form_submit_label": "Salvar alteração" if editing_cash_box is not None else "Criar caixinha",
             "finance_cancel_url": f"{reverse('finance')}?month={month_filter}" if month_filter else reverse("finance"),
         }
     )

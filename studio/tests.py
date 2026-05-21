@@ -19,7 +19,7 @@ from PIL import Image
 
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
-from .models import AccessCode, ActiveUserSession, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, ServiceCategory
+from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, ServiceCategory
 from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 
@@ -2260,6 +2260,84 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "fd-pill-warn")
         self.assertContains(response, "fd-tag-warn")
         self.assertNotContains(response, "Todas as caixinhas abastecidas")
+
+    def test_finance_snapshot_includes_custom_cash_boxes_from_free_flow(self):
+        self.workspace.settings.update_or_create(key="ops_pro_labore_amount", defaults={"value": "100.00"})
+        CashBox.objects.create(
+            workspace=self.workspace,
+            name="Equipamento",
+            allocation_percentage=Decimal("10"),
+            description="Troca de camera",
+        )
+
+        snapshot = finance_snapshot(self.workspace, date.today().strftime("%Y-%m"))
+        custom_box = snapshot["finance_desktop"]["custom_boxes"][0]
+
+        self.assertEqual(custom_box["name"], "Equipamento")
+        self.assertEqual(custom_box["percentage"], "10%")
+        self.assertEqual(custom_box["amount"], "R$35")
+        self.assertEqual(snapshot["finance_desktop"]["custom_boxes_total"], "R$35")
+        self.assertEqual(snapshot["finance_desktop"]["free_flow"], "R$315")
+
+    def test_finance_page_allows_creating_editing_and_deleting_cash_box(self):
+        self.client.force_login(self.user)
+
+        add_response = self.client.get(reverse("finance"), {"add_cash_box": "1"})
+        self.assertEqual(add_response.status_code, 200)
+        self.assertTrue(add_response.context["cash_box_modal_open"])
+        self.assertContains(add_response, "Nova caixinha")
+
+        response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "cash_box",
+                "cash_box-name": "Impostos",
+                "cash_box-allocation_percentage": "12.5",
+                "cash_box-description": "Separar imposto mensal",
+            },
+            follow=True,
+        )
+        cash_box = CashBox.objects.get(workspace=self.workspace, name="Impostos")
+
+        self.assertRedirects(response, reverse("finance"))
+        self.assertContains(response, "Caixinha criada.")
+        self.assertContains(response, "Impostos")
+        self.assertEqual(cash_box.allocation_percentage, Decimal("12.50"))
+
+        edit_response = self.client.get(reverse("finance"), {"edit_cash_box": str(cash_box.pk)})
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertTrue(edit_response.context["cash_box_modal_open"])
+        self.assertEqual(edit_response.context["cash_box_form"].instance.pk, cash_box.pk)
+
+        update_response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "cash_box",
+                "cash_box_id": str(cash_box.pk),
+                "cash_box-name": "Impostos e taxas",
+                "cash_box-allocation_percentage": "15",
+                "cash_box-description": "Reserva fiscal",
+            },
+            follow=True,
+        )
+        cash_box.refresh_from_db()
+
+        self.assertRedirects(update_response, reverse("finance"))
+        self.assertEqual(cash_box.name, "Impostos e taxas")
+        self.assertEqual(cash_box.allocation_percentage, Decimal("15.00"))
+
+        delete_response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "cash_box_delete",
+                "cash_box_id": str(cash_box.pk),
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(delete_response, reverse("finance"))
+        self.assertFalse(CashBox.objects.filter(pk=cash_box.pk).exists())
+        self.assertContains(delete_response, "Caixinha removida.")
 
     def test_finance_page_prefers_payment_due_date_when_available(self):
         payment_due_date = date.today() + timedelta(days=45)

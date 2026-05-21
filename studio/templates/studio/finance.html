@@ -169,6 +169,15 @@
                     {% endif %}
                 </div>
             </div>
+            <div class="fd-section-toolbar">
+                <div>
+                    <h3>Caixinhas</h3>
+                    <p>Crie objetivos extras usando uma parte do fluxo livre.</p>
+                </div>
+                <a class="fd-add-round fd-add-round-wide" href="{% url 'finance' %}?add_cash_box=1{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
+                    <i class="ti ti-plus"></i> Nova caixinha
+                </a>
+            </div>
             <div class="fd-three-col">
                 <article class="fd-box">
                     <div class="fd-box-head">
@@ -203,6 +212,26 @@
                     <div class="fd-box-meta"><span>20% do restante</span><strong class="fd-purple">Aporte feito ✓</strong></div>
                     <p>Equipamentos, cursos, mentorias, eventos de networking.</p>
                 </article>
+                {% for item in finance_desktop.custom_boxes %}
+                    <a class="fd-box fd-box-link fd-box-custom" href="{% url 'finance' %}?edit_cash_box={{ item.id }}{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
+                        <div class="fd-box-head">
+                            <span class="fd-box-name fd-text-green"><i class="ti {{ item.icon }}"></i> {{ item.name }}</span>
+                            <strong>{{ item.amount }}</strong>
+                        </div>
+                        <div class="fd-bar-wrap"><span class="fd-bar fd-bar-green" style="width: {{ item.progress }}%"></span></div>
+                        <div class="fd-box-meta"><span>{{ item.percentage }} do fluxo livre</span><strong class="fd-text-green">Editável</strong></div>
+                        <p>{{ item.description }}</p>
+                    </a>
+                {% empty %}
+                    <article class="fd-box fd-box-muted">
+                        <div class="fd-box-head">
+                            <span class="fd-box-name fd-blue"><i class="ti ti-plus"></i> Nova caixinha</span>
+                            <strong>R$0</strong>
+                        </div>
+                        <div class="fd-box-meta"><span>objetivo extra</span><strong class="fd-blue">0%</strong></div>
+                        <p>Adicione uma caixinha para separar parte do fluxo livre automaticamente.</p>
+                    </article>
+                {% endfor %}
             </div>
             <div class="fd-two-col">
                 <article class="fd-box">
@@ -469,6 +498,49 @@
     </div>
 </div>
 
+<div class="fd-modal-backdrop" data-cash-box-modal{% if not cash_box_modal_open %} hidden{% endif %}>
+    <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="cash-box-title">
+        <div class="fd-modal-header">
+            <div>
+                <h3 id="cash-box-title">{{ cash_box_form_title }}</h3>
+                <p>Defina quanto do fluxo livre deve ir para essa caixinha.</p>
+            </div>
+            <a class="fd-modal-close" href="{{ finance_cancel_url }}" aria-label="Fechar">&times;</a>
+        </div>
+        <form method="post" class="fd-expense-form">
+            {% csrf_token %}
+            <input type="hidden" name="finance_action" value="cash_box">
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+            {% if editing_cash_box %}
+                <input type="hidden" name="cash_box_id" value="{{ editing_cash_box.id }}">
+            {% endif %}
+            {% for field in cash_box_form %}
+                <label class="fd-form-field{% if field.name == 'description' %} fd-form-field-full{% endif %}">
+                    <span>{{ field.label }}</span>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {{ field.errors }}
+                </label>
+            {% endfor %}
+            <div class="fd-modal-actions">
+                <a class="fd-cancel-button" href="{{ finance_cancel_url }}">Cancelar</a>
+                <button type="submit" class="fd-submit-button">{{ cash_box_form_submit_label }}</button>
+            </div>
+        </form>
+        {% if editing_cash_box %}
+            <form method="post" class="fd-expense-form fd-delete-form" onsubmit="return confirm('Excluir essa caixinha?');">
+                {% csrf_token %}
+                <input type="hidden" name="finance_action" value="cash_box_delete">
+                <input type="hidden" name="month" value="{{ selected_month.value }}">
+                <input type="hidden" name="cash_box_id" value="{{ editing_cash_box.id }}">
+                <div class="fd-modal-actions">
+                    <button type="submit" class="fd-cancel-button fd-cancel-button-danger">Excluir caixinha</button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
 <script>
     (() => {
         const tabs = Array.from(document.querySelectorAll("[data-fd-tab]"));
@@ -508,6 +580,19 @@
             }
             fixedCostModal.addEventListener("click", (event) => {
                 if (event.target === fixedCostModal && cancelLink) {
+                    window.location.href = cancelLink.getAttribute("href");
+                }
+            });
+        }
+
+        const cashBoxModal = document.querySelector("[data-cash-box-modal]");
+        if (cashBoxModal) {
+            const cancelLink = cashBoxModal.querySelector(".fd-modal-close");
+            if (!cashBoxModal.hidden) {
+                document.body.classList.add("has-popup-open");
+            }
+            cashBoxModal.addEventListener("click", (event) => {
+                if (event.target === cashBoxModal && cancelLink) {
                     window.location.href = cancelLink.getAttribute("href");
                 }
             });
