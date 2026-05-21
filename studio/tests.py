@@ -696,6 +696,38 @@ class DashboardSmokeTest(TestCase):
 
         self.assertIsNone(project.payment_due_date)
 
+    def test_recurring_contract_end_date_fallback_uses_contract_start_date(self):
+        start_date = date(date.today().year + 1, 1, 10)
+        form = ProjectForm(
+            data={
+                "company": "Insider",
+                "service_type": "social_media",
+                "closing_source": "Networking",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "2500",
+                "has_entry": "yes",
+                "entry_value": "1250",
+                "received_value": "0",
+                "has_installments": "no",
+                "payment_due_date": date(start_date.year, 5, 15).isoformat(),
+                "close_date": start_date.isoformat(),
+                "due_date": "",
+                "contract_duration_months": "6",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@insider",
+            },
+            workspace=self.workspace,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertEqual(project.due_date, date(start_date.year, 6, 30))
+
     def test_project_form_without_entry_sets_entry_to_total_value(self):
         form = ProjectForm(
             data={
@@ -1256,12 +1288,10 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["stats"][3]["value"], "R$1.500")
 
     def test_recurring_contract_uses_payment_due_day_for_monthly_receipts(self):
-        close_date = date.today()
-        first_payment_month = (close_date.replace(day=28) + timedelta(days=4)).replace(day=1)
-        second_payment_month = (first_payment_month.replace(day=28) + timedelta(days=4)).replace(day=1)
-        third_payment_month = (second_payment_month.replace(day=28) + timedelta(days=4)).replace(day=1)
-        payment_due_date = first_payment_month.replace(day=15)
-        contract_end = third_payment_month.replace(day=20)
+        close_date = date(date.today().year + 1, 1, 10)
+        sixth_contract_month = date(close_date.year, 6, 1)
+        payment_due_date = date(close_date.year, 5, 15)
+        contract_end = date(close_date.year, 6, 30)
         Project.objects.create(
             workspace=self.workspace,
             company="Reserva",
@@ -1274,7 +1304,7 @@ class DashboardSmokeTest(TestCase):
             stage="Fechado",
             status="Briefing",
             total_value=1500,
-            contract_duration_months=3,
+            contract_duration_months=6,
             entry_value=0,
             received_value=0,
             deliverables_count=1,
@@ -1284,19 +1314,19 @@ class DashboardSmokeTest(TestCase):
             due_date=contract_end,
         )
 
-        dashboard = dashboard_snapshot(self.workspace, third_payment_month.strftime("%Y-%m"))
+        dashboard = dashboard_snapshot(self.workspace, sixth_contract_month.strftime("%Y-%m"))
         self.client.force_login(self.user)
-        finance_response = self.client.get(reverse("finance"), {"month": third_payment_month.strftime("%Y-%m")})
+        finance_response = self.client.get(reverse("finance"), {"month": sixth_contract_month.strftime("%Y-%m")})
 
-        self.assertEqual(dashboard["selected_month"]["value"], third_payment_month.strftime("%Y-%m"))
+        self.assertEqual(dashboard["selected_month"]["value"], sixth_contract_month.strftime("%Y-%m"))
         self.assertEqual(dashboard["stats"][2]["value"], "1")
         self.assertEqual(dashboard["stats"][3]["value"], "R$1.500")
         self.assertEqual(finance_response.status_code, 200)
-        self.assertEqual(finance_response.context["selected_month"]["value"], third_payment_month.strftime("%Y-%m"))
+        self.assertEqual(finance_response.context["selected_month"]["value"], sixth_contract_month.strftime("%Y-%m"))
         self.assertEqual(finance_response.context["stats"][2]["value"], "R$1.500")
         self.assertEqual(len(finance_response.context["schedule"]), 1)
         self.assertEqual(finance_response.context["schedule"][0]["company"], "Reserva")
-        self.assertEqual(finance_response.context["schedule"][0]["kind"], "Mensalidade 3")
+        self.assertEqual(finance_response.context["schedule"][0]["kind"], "Mensalidade 6")
         self.assertTrue(finance_response.context["schedule"][0]["due"].startswith("15 "))
         self.assertEqual(finance_response.context["schedule"][0]["amount"], "R$1.500")
 
@@ -1327,10 +1357,10 @@ class DashboardSmokeTest(TestCase):
 
         context = revenue_context([recurring], selected_year=start_month.year)
 
-        self.assertEqual(context["points"][0]["amount"], 0)
+        self.assertEqual(context["points"][0]["amount"], 1200)
         self.assertEqual(context["points"][1]["amount"], 1200)
         self.assertEqual(context["points"][2]["amount"], 1200)
-        self.assertEqual(context["points"][3]["amount"], 1200)
+        self.assertEqual(context["points"][3]["amount"], 0)
 
     def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
         Prospect.objects.create(

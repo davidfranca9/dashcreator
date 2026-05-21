@@ -276,12 +276,8 @@ def month_options_for_workspace(workspace: Workspace) -> list[date]:
                 months.add(_shift_month(close_date.replace(day=1), month_index))
         if due_date:
             months.add(due_date.replace(day=1))
-        if payment_due_date:
+        if payment_due_date and contract_month_count <= 1:
             months.add(payment_due_date.replace(day=1))
-        payment_start = payment_due_date or close_date
-        if payment_start and contract_month_count > 1:
-            for month_index in range(contract_month_count):
-                months.add(_shift_date_month(payment_start, month_index).replace(day=1))
         if meeting_date:
             months.add(meeting_date.replace(day=1))
     for due_date, paid_on in ProjectInstallment.objects.filter(workspace=workspace).values_list("due_date", "paid_on"):
@@ -574,6 +570,11 @@ def _shift_date_month(base_date: date, months: int) -> date:
     return date(year, month, day)
 
 
+def _date_in_month_with_day(month_start: date, day: int) -> date:
+    month_day = min(day, calendar.monthrange(month_start.year, month_start.month)[1])
+    return date(month_start.year, month_start.month, month_day)
+
+
 def _project_contract_month_count(project: Project) -> int:
     return max(1, int(project.contract_duration_months or 1))
 
@@ -587,13 +588,17 @@ def _project_recurring_months(project: Project) -> list[date]:
     return [_shift_month(start_month, index) for index in range(_project_contract_month_count(project))]
 
 
-def _project_recurring_payment_start_date(project: Project) -> date:
-    return project.payment_due_date or project.close_date
+def _project_recurring_payment_day(project: Project) -> int:
+    return (project.payment_due_date or project.close_date).day
 
 
 def _project_recurring_payment_dates(project: Project) -> list[date]:
-    start_date = _project_recurring_payment_start_date(project)
-    return [_shift_date_month(start_date, index) for index in range(_project_contract_month_count(project))]
+    payment_day = _project_recurring_payment_day(project)
+    start_month = _project_contract_start_month(project)
+    return [
+        _date_in_month_with_day(_shift_month(start_month, index), payment_day)
+        for index in range(_project_contract_month_count(project))
+    ]
 
 
 def _project_matches_recurring_payment_month(project: Project, month_start: date) -> bool:
