@@ -1707,9 +1707,12 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     confirmed_incoming_events = [item for item in month_events if item["paid"]]
     incoming_total = sum_money(item["amount"] for item in confirmed_incoming_events)
     outgoing_total = sum_money(item.amount for item in month_entries)
+    # "A receber" abrange todos os recebíveis futuros (em qualquer mês),
+    # não apenas o mês filtrado, para refletir o caixa que ainda vai
+    # entrar — incluindo parcelas mensais de contratos plurimensais.
     receivable_events = [
         item
-        for item in month_events
+        for item in finance_events
         if not item["paid"] and item["due_date"] >= date.today()
     ]
     receivable_balance = sum_money(item["amount"] for item in receivable_events)

@@ -1712,12 +1712,70 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(dashboard["stats"][3]["value"], "R$1.500")
         self.assertEqual(finance_response.status_code, 200)
         self.assertEqual(finance_response.context["selected_month"]["value"], sixth_contract_month.strftime("%Y-%m"))
-        self.assertEqual(finance_response.context["stats"][2]["value"], "R$1.500")
-        self.assertEqual(len(finance_response.context["schedule"]), 1)
-        self.assertEqual(finance_response.context["schedule"][0]["company"], "Reserva")
-        self.assertEqual(finance_response.context["schedule"][0]["kind"], "Mensalidade 6")
-        self.assertTrue(finance_response.context["schedule"][0]["due"].startswith("15 "))
-        self.assertEqual(finance_response.context["schedule"][0]["amount"], "R$1.500")
+        # "A receber" agora abrange todos os meses futuros do contrato
+        # plurimensal — encontra a Mensalidade 6 na lista.
+        sixth_installment = next(
+            (item for item in finance_response.context["schedule"] if item["kind"] == "Mensalidade 6"),
+            None,
+        )
+        self.assertIsNotNone(sixth_installment)
+        self.assertEqual(sixth_installment["company"], "Reserva")
+        self.assertTrue(sixth_installment["due"].startswith("15 "))
+        self.assertEqual(sixth_installment["amount"], "R$1.500")
+
+    def test_receivable_balance_covers_all_future_months_of_recurring_contract(self):
+        # Contrato Social Media de 12 meses começando no futuro — todas as
+        # 12 mensalidades estão pendentes; "A receber" precisa somar tudo,
+        # não apenas a mensalidade do mês filtrado.
+        close_date = date(date.today().year + 1, 1, 10)
+        payment_due_date = date(close_date.year, 2, 15)
+        contract_end = date(close_date.year, 12, 31)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Insider",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="social_media",
+            project_name="Social media 12 meses",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=500,
+            contract_duration_months=12,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            payment_due_date=payment_due_date,
+            close_date=close_date,
+            due_date=contract_end,
+        )
+        for index in range(12):
+            month_index = payment_due_date.month - 1 + index
+            year = payment_due_date.year + month_index // 12
+            month = month_index % 12 + 1
+            from .models import ProjectInstallment
+            ProjectInstallment.objects.create(
+                workspace=self.workspace,
+                project=Project.objects.get(workspace=self.workspace, company="Insider"),
+                due_date=date(year, month, payment_due_date.day),
+                amount=Decimal("500"),
+                paid=False,
+            )
+
+        snapshot = finance_snapshot(self.workspace, "%04d-%02d" % (payment_due_date.year, payment_due_date.month))
+        insider_entries = [item for item in snapshot["schedule"] if item["company"] == "Insider"]
+        self.assertEqual(len(insider_entries), 12)
+        # Saldo de recebíveis (stats[2]) inclui as 12 parcelas + qualquer
+        # outro recebível pré-existente.
+        receivable_text = snapshot["stats"][2]["value"]
+        self.assertIn("R$", receivable_text)
+        # Pelo menos R$6.000 (12 × R$500) dentro do total.
+        receivable_value = Decimal(
+            receivable_text.replace("R$", "").replace(".", "").replace(",", ".")
+        )
+        self.assertGreaterEqual(receivable_value, Decimal("6000"))
 
     def test_revenue_chart_spreads_recurring_contract_across_duration_months(self):
         start_month = date(date.today().year, 1, 1)
@@ -2239,10 +2297,12 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["selected_month"]["value"], self.project.due_date.strftime("%Y-%m"))
         self.assertEqual(response.context["stats"][0]["value"], "R$800")
         self.assertEqual(response.context["stats"][1]["value"], "R$320")
-        self.assertEqual(response.context["stats"][2]["value"], "R$1.600")
+        # Saldo de recebíveis agora soma todos os recebíveis futuros,
+        # incluindo os de Insider (próximos meses), não apenas o filtrado.
+        self.assertEqual(response.context["stats"][2]["value"], "R$5.600")
         self.assertEqual(response.context["stats"][3]["value"], "R$480")
         self.assertEqual(len(response.context["ledger"]), 2)
-        self.assertEqual(len(response.context["schedule"]), 1)
+        self.assertEqual(len(response.context["schedule"]), 2)
 
     def test_finance_page_does_not_mark_pro_labore_covered_when_revenue_is_short(self):
         self.client.force_login(self.user)
@@ -2366,8 +2426,8 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected_month"]["value"], payment_due_date.strftime("%Y-%m"))
-        self.assertEqual(len(response.context["schedule"]), 1)
-        self.assertEqual(response.context["schedule"][0]["company"], "Reserva")
+        reserva_entries = [item for item in response.context["schedule"] if item["company"] == "Reserva"]
+        self.assertEqual(len(reserva_entries), 1)
 
     def test_finance_page_uses_job_receipts_and_creates_outgoing_entries(self):
         self.client.force_login(self.user)
