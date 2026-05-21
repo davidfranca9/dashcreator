@@ -18,6 +18,7 @@
         data-installments-types="{{ form.installments_types|join:',' }}"
         data-recurring-contract-types="{{ form.recurring_contract_types|join:',' }}"
         data-entry-receipt-service-types="{{ form.entry_receipt_service_types|join:',' }}"
+        data-auto-monthly-installment-types="{{ form.auto_monthly_installment_types|join:',' }}"
     >
         {% csrf_token %}
 
@@ -459,6 +460,7 @@
         const installmentsTypes = csv(form.dataset.installmentsTypes);
         const recurringContractTypes = csv(form.dataset.recurringContractTypes);
         const entryReceiptTypes = csv(form.dataset.entryReceiptServiceTypes);
+        const autoMonthlyTypes = csv(form.dataset.autoMonthlyInstallmentTypes);
         const conditionalWrappers = Array.from(form.querySelectorAll('[data-show-for-type]'));
         const recurringHiddenWrappers = Array.from(form.querySelectorAll("[data-hide-for-recurring-contract]"));
         const socialMediaHiddenWrappers = Array.from(form.querySelectorAll("[data-hide-for-social-media]"));
@@ -593,10 +595,16 @@
                     contractDurationField.value = "";
                 }
             }
+            const isAutoMonthly = autoMonthlyTypes.includes(selected);
             if (installmentsBlock) {
-                installmentsBlock.hidden = !(installmentsTypes.includes(selected) && hasInstallments());
+                // Parcelas mensais agora são auto-geradas pelo backend; o
+                // bloco manual fica oculto para esses tipos.
+                const showManualBlock = installmentsTypes.includes(selected)
+                    && hasInstallments()
+                    && !isAutoMonthly;
+                installmentsBlock.hidden = !showManualBlock;
             }
-            if (wrappersByName.payment_due_date && isRecurringContract) {
+            if (wrappersByName.payment_due_date && isRecurringContract && !isAutoMonthly) {
                 wrappersByName.payment_due_date.hidden = hasInstallments();
             }
             syncServiceLabels(isRecurringContract, isUgcManager, isPaymentRecurring);

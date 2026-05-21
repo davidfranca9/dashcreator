@@ -85,8 +85,15 @@ ENTRY_RECEIPT_SERVICE_TYPES = [
 ]
 # Tipos com contratos plurimensais auto-faturados: ao definir uma
 # duração > 1 mês, o sistema gera as parcelas mensais automaticamente
-# a partir do dia escolhido em payment_due_date.
-AUTO_MONTHLY_INSTALLMENT_TYPES = [PUBLICIDADE_SERVICE_TYPE]
+# a partir do dia escolhido em payment_due_date. Para os contratos
+# recorrentes (Social Media, Consultoria), o valor de cada parcela é
+# o "Valor mensal do contrato"; para Publicidade é o total dividido
+# pela duração.
+AUTO_MONTHLY_INSTALLMENT_TYPES = [
+    PUBLICIDADE_SERVICE_TYPE,
+    SOCIAL_MEDIA_SERVICE_TYPE,
+    MARKETING_CONSULTING_SERVICE_TYPE,
+]
 ENTRY_RECEIPT_HIDDEN_FIELDS = [
     "stage",
     "received_value",
@@ -159,7 +166,7 @@ class ProjectInstallmentForm(forms.ModelForm):
         model = ProjectInstallment
         fields = ["due_date", "amount", "paid"]
         widgets = {
-            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "due_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "amount": forms.NumberInput(attrs={"step": "0.01", "min": "0", "inputmode": "decimal"}),
         }
         labels = {
@@ -167,6 +174,12 @@ class ProjectInstallmentForm(forms.ModelForm):
             "amount": "Valor",
             "paid": "Pago",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # type="date" inputs só aceitam yyyy-mm-dd; sem isso o Django
+        # renderiza dd/mm/yyyy do locale e o browser mostra vazio.
+        self.fields["due_date"].input_formats = ["%Y-%m-%d"]
 
 
 ProjectInstallmentFormSet = forms.inlineformset_factory(
@@ -631,6 +644,7 @@ class ProjectForm(forms.ModelForm):
         self.social_media_hidden_fields = SOCIAL_MEDIA_HIDDEN_FIELDS
         self.entry_receipt_service_types = list(ENTRY_RECEIPT_SERVICE_TYPES)
         self.entry_receipt_hidden_fields = ENTRY_RECEIPT_HIDDEN_FIELDS
+        self.auto_monthly_installment_types = list(AUTO_MONTHLY_INSTALLMENT_TYPES)
         self.order_fields(
             [
                 # --- Identidade do trabalho ---
@@ -766,9 +780,10 @@ class ProjectForm(forms.ModelForm):
             cleaned_data["monthly_value"] = 0
             if is_social_media:
                 cleaned_data["deliverables_count"] = deliverables_count
-            if has_installments == HAS_INSTALLMENTS_YES:
-                cleaned_data["payment_due_date"] = None
-            elif not cleaned_data.get("payment_due_date"):
+            # Parcelas mensais agora são geradas automaticamente; o
+            # payment_due_date define o dia fixo de cobrança em todos os
+            # meses do contrato.
+            if not cleaned_data.get("payment_due_date"):
                 self.add_error("payment_due_date", "Informe a data prevista de pagamento.")
         elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
             cleaned_data["due_date"] = cleaned_data.get("close_date")

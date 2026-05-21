@@ -1544,7 +1544,11 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         if has_installments_post and form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES:
             installments_formset.instance = project
             _save_installments_formset(installments_formset, project, workspace)
-        _sync_auto_monthly_installments(project, workspace)
+        _sync_auto_monthly_installments(
+            project,
+            workspace,
+            has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
+        )
         prospect.delete()
         messages.success(request, "Lead convertido em trabalho.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
@@ -1579,19 +1583,36 @@ def _installments_payload_present(request: HttpRequest) -> bool:
     return "installments-TOTAL_FORMS" in request.POST
 
 
-def _sync_auto_monthly_installments(project: Project, workspace) -> None:
-    """Para tipos de contrato plurimensais (ex.: Publicidade) com duração
-    maior que 1 mês, gera N parcelas com mesmo dia do mês baseado em
-    payment_due_date. Quando duração <= 1, remove parcelas auto criadas."""
+def _sync_auto_monthly_installments(
+    project: Project, workspace, has_installments_yes: bool = True
+) -> None:
+    """Para tipos de contrato plurimensais (Publicidade, Social Media,
+    Consultoria de Marketing) com duração maior que 1 mês, gera N parcelas
+    com mesmo dia do mês baseado em payment_due_date.
+
+    O valor de cada parcela depende do tipo:
+    - Publicidade: total_value é o valor total → divide por duration.
+    - Contratos recorrentes: total_value é "Valor mensal do contrato" → usa
+      como está (parcela = total_value).
+
+    Quando duração <= 1 ou o usuário marca has_installments=No em contrato
+    recorrente, remove parcelas existentes sem regenerar."""
     if project.service_type not in AUTO_MONTHLY_INSTALLMENT_TYPES:
         return
     duration = int(project.contract_duration_months or 0)
     base_date = project.payment_due_date or project.close_date
     project.installments.all().delete()
-    if duration <= 1 or base_date is None:
+    is_publicidade = project.service_type == "publicidade"
+    should_generate = duration > 1 and base_date is not None
+    if not is_publicidade and not has_installments_yes:
+        should_generate = False
+    if not should_generate:
         return
     total = Decimal(project.total_value or 0)
-    amount_per_month = (total / Decimal(duration)).quantize(Decimal("0.01"))
+    if is_publicidade:
+        amount_per_month = (total / Decimal(duration)).quantize(Decimal("0.01"))
+    else:
+        amount_per_month = total.quantize(Decimal("0.01"))
     base_day = base_date.day
     for index in range(duration):
         month_index = base_date.month - 1 + index
@@ -1626,7 +1647,11 @@ def project_create(request: HttpRequest) -> HttpResponse:
         if has_installments_post and form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES:
             installments_formset.instance = project
             _save_installments_formset(installments_formset, project, workspace)
-        _sync_auto_monthly_installments(project, workspace)
+        _sync_auto_monthly_installments(
+            project,
+            workspace,
+            has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
+        )
         messages.success(request, "Trabalho salvo com sucesso.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
@@ -1663,7 +1688,11 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
             and project.service_type not in AUTO_MONTHLY_INSTALLMENT_TYPES
         ):
             project.installments.all().delete()
-        _sync_auto_monthly_installments(project, workspace)
+        _sync_auto_monthly_installments(
+            project,
+            workspace,
+            has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
+        )
         messages.success(request, "Trabalho atualizado.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")

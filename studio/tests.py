@@ -668,7 +668,10 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.payment_due_date, payment_due_date)
 
-    def test_recurring_contract_with_installments_does_not_require_payment_due_date(self):
+    def test_recurring_contract_with_installments_requires_payment_due_date(self):
+        # Parcelas agora são geradas automaticamente usando payment_due_date
+        # como dia fixo de cobrança, então ele é obrigatório mesmo quando
+        # has_installments=yes.
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -693,10 +696,99 @@ class DashboardSmokeTest(TestCase):
             workspace=self.workspace,
         )
 
-        self.assertTrue(form.is_valid(), form.errors)
-        project = form.save(commit=False)
+        self.assertFalse(form.is_valid())
+        self.assertIn("payment_due_date", form.errors)
 
-        self.assertIsNone(project.payment_due_date)
+    def test_social_media_auto_generates_monthly_installments_for_duration(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 5, 20)
+        contract_end = date(2026, 8, 20)
+        payment_due_date = date(2026, 5, 30)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Insider",
+                "service_type": "social_media",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "500",
+                "has_entry": "yes",
+                "entry_value": "250",
+                "received_value": "0",
+                "has_installments": "yes",
+                "close_date": close_date.isoformat(),
+                "due_date": contract_end.isoformat(),
+                "payment_due_date": payment_due_date.isoformat(),
+                "contract_duration_months": "3",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@insider",
+                "installments-TOTAL_FORMS": "0",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Insider")
+        installments = list(project.installments.order_by("due_date"))
+        self.assertEqual(len(installments), 3)
+        self.assertEqual([i.due_date for i in installments], [
+            date(2026, 5, 30),
+            date(2026, 6, 30),
+            date(2026, 7, 30),
+        ])
+        # Para contratos recorrentes, total_value é "valor mensal" e cada
+        # parcela carrega esse mesmo valor (não divide por duration).
+        for installment in installments:
+            self.assertEqual(installment.amount, Decimal("500.00"))
+
+    def test_social_media_with_has_installments_no_does_not_generate(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 5, 20)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Insider",
+                "service_type": "social_media",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "500",
+                "has_entry": "yes",
+                "entry_value": "250",
+                "received_value": "0",
+                "has_installments": "no",
+                "close_date": close_date.isoformat(),
+                "due_date": (close_date + timedelta(days=90)).isoformat(),
+                "payment_due_date": (close_date + timedelta(days=30)).isoformat(),
+                "contract_duration_months": "3",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@insider",
+                "installments-TOTAL_FORMS": "0",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Insider")
+        self.assertEqual(project.installments.count(), 0)
+
+    def test_installment_form_renders_due_date_in_iso_format(self):
+        from .forms import ProjectInstallmentForm
+        installment_date = date(2026, 7, 15)
+        form = ProjectInstallmentForm(initial={"due_date": installment_date, "amount": "500.00"})
+        rendered = form["due_date"].as_widget()
+        # Browser type="date" só lê value em ISO; pt-BR locale renderiza
+        # dd/mm/yyyy se não forçar o formato.
+        self.assertIn('value="2026-07-15"', rendered)
 
     def test_recurring_contract_end_date_fallback_uses_contract_start_date(self):
         start_date = date(date.today().year + 1, 1, 10)
