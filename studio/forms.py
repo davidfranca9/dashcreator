@@ -49,6 +49,9 @@ HAS_INSTALLMENTS_YES = "yes"
 HAS_INSTALLMENTS_NO = "no"
 SOCIAL_MEDIA_SERVICE_TYPE = "social_media"
 MARKETING_CONSULTING_SERVICE_TYPE = "consultoria_marketing"
+UGC_CREATOR_SERVICE_TYPE = "ugc_creator"
+FREELANCER_SERVICE_TYPE = "freelancer"
+VIDEO_EDITOR_SERVICE_TYPE = "editora_video"
 RECURRING_CONTRACT_TYPES = [SOCIAL_MEDIA_SERVICE_TYPE, MARKETING_CONSULTING_SERVICE_TYPE]
 RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "stage",
@@ -60,6 +63,13 @@ RECURRING_CONTRACT_HIDDEN_FIELDS = [
 ]
 SOCIAL_MEDIA_HIDDEN_FIELDS = [
     "deliverables_count",
+]
+# UGC/Freelancer/Editora: entrada cobre o papel de recebido, e a etapa é
+# derivada do status no save(). Por isso esses campos ficam ocultos.
+ENTRY_RECEIPT_SERVICE_TYPES = [UGC_CREATOR_SERVICE_TYPE, FREELANCER_SERVICE_TYPE, VIDEO_EDITOR_SERVICE_TYPE]
+ENTRY_RECEIPT_HIDDEN_FIELDS = [
+    "stage",
+    "received_value",
 ]
 
 
@@ -583,6 +593,8 @@ class ProjectForm(forms.ModelForm):
         self.recurring_contract_types = list(RECURRING_CONTRACT_TYPES)
         self.recurring_contract_hidden_fields = RECURRING_CONTRACT_HIDDEN_FIELDS
         self.social_media_hidden_fields = SOCIAL_MEDIA_HIDDEN_FIELDS
+        self.entry_receipt_service_types = list(ENTRY_RECEIPT_SERVICE_TYPES)
+        self.entry_receipt_hidden_fields = ENTRY_RECEIPT_HIDDEN_FIELDS
         self.order_fields(
             [
                 "company",
@@ -727,6 +739,9 @@ class ProjectForm(forms.ModelForm):
         if not is_recurring_contract and has_entry == HAS_ENTRY_NO:
             entry_value = total_value
             cleaned_data["entry_value"] = total_value
+        if service_type_value in ENTRY_RECEIPT_SERVICE_TYPES:
+            received_value = entry_value
+            cleaned_data["received_value"] = entry_value
         if entry_value > total_value:
             self.add_error("entry_value", "A entrada não pode ser maior que o valor total.")
         if received_value > total_value:
@@ -807,7 +822,7 @@ class ProjectForm(forms.ModelForm):
             "payment_due_date": "Data prevista de pagamento",
             "meeting_scheduled": "Reunião agendada",
             "meeting_date": "Data da reunião",
-            "close_date": "Início do contrato",
+            "close_date": "Data de fechamento",
             "due_date": "Data prevista para entrega",
             "stories_count": "Quantidade de stories",
             "story_coverage_date": "Data de cobertura",

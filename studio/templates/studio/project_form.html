@@ -17,6 +17,7 @@
         data-no-delivery-types="{{ form.no_delivery_types|join:',' }}"
         data-installments-types="{{ form.installments_types|join:',' }}"
         data-recurring-contract-types="{{ form.recurring_contract_types|join:',' }}"
+        data-entry-receipt-service-types="{{ form.entry_receipt_service_types|join:',' }}"
     >
         {% csrf_token %}
 
@@ -82,7 +83,7 @@
                     {% elif field.name == "service_category" or field.name == "new_service_category" %}
                         <div hidden>{{ field }}</div>
                     {% else %}
-                        <div class="form-field{% if field.name == 'note' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'has_installments' %} has-installments-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}"{% if field.name in form.recurring_contract_hidden_fields %} data-hide-for-recurring-contract{% endif %}{% if field.name in form.social_media_hidden_fields %} data-hide-for-social-media{% endif %}{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}>
+                        <div class="form-field{% if field.name == 'note' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'has_installments' %} has-installments-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}"{% if field.name in form.recurring_contract_hidden_fields %} data-hide-for-recurring-contract{% endif %}{% if field.name in form.social_media_hidden_fields %} data-hide-for-social-media{% endif %}{% if field.name in form.entry_receipt_hidden_fields %} data-hide-for-entry-receipt{% endif %}{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}>
                             <label for="{{ field.id_for_label }}"{% if field.name == 'total_value' %} data-default-label="{{ field.label }}" data-recurring-label="Valor mensal do contrato"{% endif %}{% if field.name == 'due_date' %} data-default-label="{{ field.label }}" data-recurring-label="Data de finalização do contrato"{% endif %}>{{ field.label }}</label>
                             {% if field.name == "has_entry" or field.name == "has_installments" %}
                                 <div class="segmented-control" data-entry-mode>
@@ -402,9 +403,11 @@
         const noDeliveryTypes = csv(form.dataset.noDeliveryTypes);
         const installmentsTypes = csv(form.dataset.installmentsTypes);
         const recurringContractTypes = csv(form.dataset.recurringContractTypes);
+        const entryReceiptTypes = csv(form.dataset.entryReceiptServiceTypes);
         const conditionalWrappers = Array.from(form.querySelectorAll('[data-show-for-type]'));
         const recurringHiddenWrappers = Array.from(form.querySelectorAll("[data-hide-for-recurring-contract]"));
         const socialMediaHiddenWrappers = Array.from(form.querySelectorAll("[data-hide-for-social-media]"));
+        const entryReceiptHiddenWrappers = Array.from(form.querySelectorAll("[data-hide-for-entry-receipt]"));
 
         const wrappersByName = {};
         ["payment_due_date", "total_value", "received_value", "due_date", "meeting_scheduled", "meeting_date"].forEach((name) => {
@@ -438,6 +441,7 @@
             const isNoDelivery = noDeliveryTypes.includes(selected);
             const isRecurringContract = recurringContractTypes.includes(selected);
             const isSocialMedia = selected === "social_media";
+            const isEntryReceipt = entryReceiptTypes.includes(selected);
 
             ["total_value", "received_value", "payment_due_date", "due_date", "meeting_scheduled"].forEach((name) => {
                 if (wrappersByName[name]) {
@@ -460,6 +464,13 @@
                 const allowed = csv(wrapper.dataset.showForType);
                 const shouldShow = !selected || !allowed.length || allowed.includes(selected);
                 wrapper.hidden = !shouldShow;
+            });
+            entryReceiptHiddenWrappers.forEach((wrapper) => {
+                if (!wrapper.hasAttribute("data-show-for-type")
+                    && !wrapper.hasAttribute("data-hide-for-recurring-contract")
+                    && !wrapper.hasAttribute("data-hide-for-social-media")) {
+                    wrapper.hidden = false;
+                }
             });
 
             if (hasEntryWrapper) {
@@ -496,6 +507,11 @@
             }
             if (isRecurringContract) {
                 recurringHiddenWrappers.forEach((wrapper) => {
+                    wrapper.hidden = true;
+                });
+            }
+            if (isEntryReceipt) {
+                entryReceiptHiddenWrappers.forEach((wrapper) => {
                     wrapper.hidden = true;
                 });
             }

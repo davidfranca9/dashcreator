@@ -560,7 +560,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(form.default_entry_rate, 40)
         self.assertEqual(form.fields["close_date"].initial, date.today())
         self.assertEqual(form.fields["total_value"].label, "Valor de contrato")
-        self.assertEqual(form.fields["close_date"].label, "Início do contrato")
+        self.assertEqual(form.fields["close_date"].label, "Data de fechamento")
         self.assertEqual(form.fields["deliverables_count"].label, "Quantidade de vídeos")
         self.assertIn("quantidade total de vídeos", form.fields["deliverables_count"].help_text)
         self.assertIn(("Inbound", "Inbound"), form.fields["closing_source"].choices)
@@ -754,6 +754,39 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(project.entry_value, Decimal("4000"))
 
+    def test_freelancer_and_video_editor_use_entry_as_received_value(self):
+        for service_type, expected_category in (
+            ("freelancer", "Freelancer"),
+            ("editora_video", "Editora de Vídeo"),
+        ):
+            with self.subTest(service_type=service_type):
+                form = ProjectForm(
+                    data={
+                        "company": "Insider",
+                        "service_type": service_type,
+                        "closing_source": "Networking",
+                        "content_distribution": "Organico",
+                        "niche": self.niche.pk,
+                        "stage": "Fechado",
+                        "status": "Briefing",
+                        "total_value": "4000",
+                        "has_entry": "yes",
+                        "entry_value": "1600",
+                        "received_value": "0",
+                        "deliverables_count": "2",
+                        "close_date": date.today().isoformat(),
+                        "due_date": (date.today() + timedelta(days=7)).isoformat(),
+                    },
+                    workspace=self.workspace,
+                )
+
+                self.assertTrue(form.is_valid(), form.errors)
+                project = form.save(commit=False)
+
+                self.assertEqual(project.service_category.name, expected_category)
+                self.assertEqual(project.entry_value, Decimal("1600"))
+                self.assertEqual(project.received_value, Decimal("1600"))
+
     def test_project_edit_hides_entry_field_when_there_is_no_entry(self):
         self.project.entry_value = self.project.total_value
         self.project.save(update_fields=["entry_value", "updated_at"])
@@ -931,10 +964,12 @@ class DashboardSmokeTest(TestCase):
         self.assertNotContains(response, 'for="id_new_service_category">Nova categoria</label>', html=False)
         self.assertContains(response, 'data-hide-for-social-media', html=False)
         self.assertContains(response, 'data-hide-for-recurring-contract', html=False)
+        self.assertContains(response, 'data-hide-for-entry-receipt', html=False)
+        self.assertContains(response, 'data-entry-receipt-service-types="ugc_creator,freelancer,editora_video"', html=False)
         self.assertContains(response, 'data-recurring-label="Valor mensal do contrato"', html=False)
         self.assertContains(response, 'data-recurring-label="Data de finalização do contrato"', html=False)
         self.assertContains(response, 'Tem parcela?', html=False)
-        self.assertContains(response, 'for="id_close_date">Início do contrato</label>', html=False)
+        self.assertContains(response, 'for="id_close_date">Data de fechamento</label>', html=False)
 
     def test_distribution_and_legal_pages_reflect_ads_licensing(self):
         self.workspace.business_full_name = "Layfe Amorim"
