@@ -3407,6 +3407,27 @@ body.page-finance {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+body.theme-dark.page-finance {
+    --fd-brand: #060d17;
+    --fd-accent: #67a3ff;
+    --fd-bg: #07111f;
+    --fd-white: #0f1b2d;
+    --fd-text: #edf5ff;
+    --fd-muted: #95a8c4;
+    --fd-soft: #7186a5;
+    --fd-border: #22324b;
+    --fd-border-strong: #2a3f5d;
+    --fd-green: #3ecbbd;
+    --fd-green-bg: rgba(62, 203, 189, 0.12);
+    --fd-green-text: #8ee9de;
+    --fd-blue-bg: rgba(103, 163, 255, 0.14);
+    --fd-blue-text: #b9d4ff;
+    --fd-warn: #f6b84b;
+    --fd-purple: #a78bfa;
+    --fd-red: #ff7f8a;
+    background: #07111f;
+}
+
 body.page-finance .app-shell {
     padding-left: 210px;
     background: var(--fd-bg);

@@ -1650,6 +1650,29 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(context["theme_class"], "theme-dark")
         self.assertEqual(context["workspace_membership"].user, self.user)
 
+    def test_settings_toggle_dark_theme_applies_body_class(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("settings"),
+            {
+                "settings_action": "preferences",
+                "ui_dark_theme": "on",
+                "ops_default_entry_rate": "50%",
+                "ops_primary_currency": "BRL (R$)",
+                "ops_pro_labore_amount": "5000.00",
+                "ops_follow_up_reminders": "on",
+                "legal_contract_signer_name": "",
+            },
+            follow=True,
+        )
+        finance_response = self.client.get(reverse("finance"))
+
+        self.assertRedirects(response, reverse("settings"))
+        self.assertEqual(self.workspace.settings.get(key="ui_dark_theme").value, "1")
+        self.assertContains(response, 'body class="theme-dark page-settings"', html=False)
+        self.assertContains(finance_response, 'body class="theme-dark page-finance"', html=False)
+
     def test_finance_page_filters_month_detail_by_due_date(self):
         FinanceEntry.objects.create(
             workspace=self.workspace,
