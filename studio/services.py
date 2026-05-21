@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 import json
 import re
 import unicodedata
@@ -21,7 +22,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import FinanceEntry, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import FinanceEntry, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -268,16 +269,26 @@ def month_options_for_workspace(workspace: Workspace) -> list[date]:
         "meeting_date",
         "contract_duration_months",
     ):
+        contract_month_count = max(1, int(contract_duration_months or 1))
         if close_date:
             months.add(close_date.replace(day=1))
-            for month_index in range(1, max(1, int(contract_duration_months or 1))):
+            for month_index in range(1, contract_month_count):
                 months.add(_shift_month(close_date.replace(day=1), month_index))
         if due_date:
             months.add(due_date.replace(day=1))
         if payment_due_date:
             months.add(payment_due_date.replace(day=1))
+        payment_start = payment_due_date or close_date
+        if payment_start and contract_month_count > 1:
+            for month_index in range(contract_month_count):
+                months.add(_shift_date_month(payment_start, month_index).replace(day=1))
         if meeting_date:
             months.add(meeting_date.replace(day=1))
+    for due_date, paid_on in ProjectInstallment.objects.filter(workspace=workspace).values_list("due_date", "paid_on"):
+        if due_date:
+            months.add(due_date.replace(day=1))
+        if paid_on:
+            months.add(paid_on.replace(day=1))
     for occurred_on in FinanceEntry.objects.filter(workspace=workspace).exclude(occurred_on__isnull=True).values_list("occurred_on", flat=True):
         if occurred_on:
             months.add(occurred_on.replace(day=1))
@@ -542,6 +553,14 @@ def _shift_month(base_date: date, months: int) -> date:
     return date(year, month, 1)
 
 
+def _shift_date_month(base_date: date, months: int) -> date:
+    absolute_month = (base_date.year * 12) + (base_date.month - 1) + months
+    year = absolute_month // 12
+    month = (absolute_month % 12) + 1
+    day = min(base_date.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
 def _project_contract_month_count(project: Project) -> int:
     return max(1, int(project.contract_duration_months or 1))
 
@@ -555,10 +574,25 @@ def _project_recurring_months(project: Project) -> list[date]:
     return [_shift_month(start_month, index) for index in range(_project_contract_month_count(project))]
 
 
+def _project_recurring_payment_start_date(project: Project) -> date:
+    return project.payment_due_date or project.close_date
+
+
+def _project_recurring_payment_dates(project: Project) -> list[date]:
+    start_date = _project_recurring_payment_start_date(project)
+    return [_shift_date_month(start_date, index) for index in range(_project_contract_month_count(project))]
+
+
+def _project_matches_recurring_payment_month(project: Project, month_start: date) -> bool:
+    return any(payment_date.replace(day=1) == month_start for payment_date in _project_recurring_payment_dates(project))
+
+
 def _project_matches_contract_month(project: Project, month_start: date) -> bool:
     duration = _project_contract_month_count(project)
     start_month = _project_contract_start_month(project)
     end_month = _shift_month(start_month, duration - 1)
+    if duration > 1 and project.due_date:
+        end_month = max(end_month, project.due_date.replace(day=1))
     return start_month <= month_start <= end_month
 
 
@@ -575,7 +609,7 @@ def _project_dashboard_revenue_for_month(project: Project, selected_month: date 
             return _project_monthly_contract_value(project) * _project_contract_month_count(project)
         return Decimal(project.received_value or 0)
     if _project_contract_month_count(project) > 1:
-        return _project_monthly_contract_value(project) if _project_matches_contract_month(project, selected_month) else ZERO
+        return _project_monthly_contract_value(project) if _project_matches_recurring_payment_month(project, selected_month) else ZERO
     if project.close_date.year == selected_month.year and project.close_date.month == selected_month.month:
         return Decimal(project.received_value or 0)
     return ZERO
@@ -595,7 +629,8 @@ def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: 
     for project in projects:
         if _project_contract_month_count(project) > 1:
             amount = _project_monthly_contract_value(project)
-            for month_start in _project_recurring_months(project):
+            for payment_date in _project_recurring_payment_dates(project):
+                month_start = payment_date.replace(day=1)
                 if month_start in totals:
                     totals[month_start] += amount
             continue
@@ -1087,7 +1122,11 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         if normalized_name:
             active_company_names.add(normalized_name)
     active_companies = len(active_company_names)
-    monthly_revenue = sum_money(_project_dashboard_revenue_for_month(item, selected_month) for item in active_projects + delivered_projects)
+    monthly_revenue = sum_money(
+        _project_dashboard_revenue_for_month(item, selected_month)
+        for item in projects
+        if item.stage in {"Fechado", "Entregue"}
+    )
     total_closed = sum_money(item.total_value for item in active_projects)
 
     open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
@@ -1505,18 +1544,112 @@ def legal_snapshot(workspace: Workspace, user: User | None = None) -> dict:
     }
 
 
+def _project_installment_list(project: Project) -> list[ProjectInstallment]:
+    cached = getattr(project, "_prefetched_objects_cache", {}).get("installments")
+    if cached is not None:
+        return list(cached)
+    return list(project.installments.all())
+
+
+def _project_finance_events(project: Project) -> list[dict]:
+    installments = _project_installment_list(project)
+    if installments:
+        return [
+            {
+                "project": project,
+                "kind": "Parcela",
+                "amount": Decimal(item.amount or 0),
+                "due_date": item.due_date,
+                "paid": item.paid,
+                "paid_on": item.paid_on or item.due_date,
+            }
+            for item in installments
+            if Decimal(item.amount or 0) > ZERO
+        ]
+
+    events = []
+    if _project_contract_month_count(project) > 1:
+        monthly_amount = _project_monthly_contract_value(project)
+        if monthly_amount <= ZERO:
+            return events
+        remaining_received = Decimal(project.received_value or 0)
+        for index, payment_date in enumerate(_project_recurring_payment_dates(project), start=1):
+            paid_amount = min(remaining_received, monthly_amount)
+            outstanding_amount = monthly_amount - paid_amount
+            if paid_amount > ZERO:
+                events.append(
+                    {
+                        "project": project,
+                        "kind": f"Mensalidade {index}",
+                        "amount": paid_amount,
+                        "due_date": payment_date,
+                        "paid": True,
+                        "paid_on": payment_date,
+                    }
+                )
+            if outstanding_amount > ZERO:
+                events.append(
+                    {
+                        "project": project,
+                        "kind": f"Mensalidade {index}",
+                        "amount": outstanding_amount,
+                        "due_date": payment_date,
+                        "paid": False,
+                        "paid_on": None,
+                    }
+                )
+            remaining_received = max(remaining_received - monthly_amount, ZERO)
+        return events
+
+    payment_date = payment_reference_date(project)
+    total_amount = Decimal(project.total_value or 0)
+    received_amount = Decimal(project.received_value or 0)
+    outstanding_amount = max(total_amount - received_amount, ZERO)
+    if received_amount > ZERO:
+        events.append(
+            {
+                "project": project,
+                "kind": "Entrada",
+                "amount": received_amount,
+                "due_date": payment_date,
+                "paid": True,
+                "paid_on": payment_date,
+            }
+        )
+    if outstanding_amount > ZERO:
+        events.append(
+            {
+                "project": project,
+                "kind": "Saldo" if received_amount > ZERO else "Entrada",
+                "amount": outstanding_amount,
+                "due_date": payment_date,
+                "paid": False,
+                "paid_on": None,
+            }
+        )
+    return events
+
+
+def _finance_event_reference_date(event: dict) -> date:
+    return event["paid_on"] if event["paid"] and event["paid_on"] else event["due_date"]
+
+
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
-    projects = list(Project.objects.filter(workspace=workspace).order_by("payment_due_date", "due_date"))
+    projects = list(Project.objects.filter(workspace=workspace).prefetch_related("installments").order_by("payment_due_date", "due_date"))
     finance_entries = list(
         FinanceEntry.objects.filter(workspace=workspace, kind=FinanceEntry.KIND_OUTGOING).order_by("-occurred_on", "-updated_at")
     )
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
-    month_projects = (
-        projects
+    finance_events = [event for project in projects for event in _project_finance_events(project)]
+    month_events = (
+        finance_events
         if selected_month is None
         else [
-            item for item in projects if payment_reference_date(item).year == selected_month.year and payment_reference_date(item).month == selected_month.month
+            item
+            for item in finance_events
+            if _finance_event_reference_date(item).year == selected_month.year
+            and _finance_event_reference_date(item).month == selected_month.month
         ]
     )
     month_entries = (
@@ -1526,30 +1659,27 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             item for item in finance_entries if item.occurred_on.year == selected_month.year and item.occurred_on.month == selected_month.month
         ]
     )
-    confirmed_incoming_projects = [item for item in month_projects if Decimal(item.received_value) > 0]
-    incoming_total = sum_money(Decimal(item.received_value) for item in confirmed_incoming_projects)
+    confirmed_incoming_events = [item for item in month_events if item["paid"]]
+    incoming_total = sum_money(item["amount"] for item in confirmed_incoming_events)
     outgoing_total = sum_money(item.amount for item in month_entries)
-    receivable_projects = [
+    receivable_events = [
         item
-        for item in month_projects
-        if max(Decimal(item.total_value) - Decimal(item.received_value), ZERO) > 0 and payment_reference_date(item) >= date.today()
+        for item in month_events
+        if not item["paid"] and item["due_date"] >= date.today()
     ]
-    receivable_balance = sum_money(
-        max(Decimal(item.total_value) - Decimal(item.received_value), ZERO)
-        for item in receivable_projects
-    )
+    receivable_balance = sum_money(item["amount"] for item in receivable_events)
     cash_balance = incoming_total - outgoing_total
 
     schedule = []
-    for item in receivable_projects:
-        outstanding = max(Decimal(item.total_value) - Decimal(item.received_value), ZERO)
-        _, _, accent = company_palette(item.company)
+    for item in sorted(receivable_events, key=lambda event: (event["due_date"], event["project"].company.casefold())):
+        project = item["project"]
+        _, _, accent = company_palette(project.company)
         schedule.append(
             {
-                "company": item.company,
-                "kind": "Saldo" if item.received_value > 0 else "Entrada",
-                "due": short_date(payment_reference_date(item)),
-                "amount": currency(outstanding),
+                "company": project.company,
+                "kind": item["kind"],
+                "due": short_date(item["due_date"]),
+                "amount": currency(item["amount"]),
                 "status": "Previsto",
                 "accent": accent,
             }
@@ -1558,16 +1688,16 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     ledger = [
         {
             "label": "Entrada",
-            "description": f"Recebido no trabalho de {item.company}",
-            "date_text": short_date(payment_reference_date(item)),
-            "amount_text": currency(item.received_value),
+            "description": f"Recebido no trabalho de {item['project'].company}",
+            "date_text": short_date(_finance_event_reference_date(item)),
+            "amount_text": currency(item["amount"]),
             "accent": "#20b7a7",
             "kind": "incoming",
             "entry_id": None,
             "can_edit": False,
-            "sort_date": payment_reference_date(item),
+            "sort_date": _finance_event_reference_date(item),
         }
-        for item in confirmed_incoming_projects
+        for item in confirmed_incoming_events
     ]
     ledger.extend(
         {
