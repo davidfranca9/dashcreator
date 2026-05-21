@@ -1088,11 +1088,12 @@ class FinanceEntryForm(forms.ModelForm):
 class FixedCostForm(forms.ModelForm):
     class Meta:
         model = FixedCost
-        fields = ["kind", "name", "amount", "due_day"]
+        fields = ["kind", "recurrence", "name", "amount", "due_day"]
         labels = {
             "kind": "Tipo",
+            "recurrence": "Tipo de custo",
             "name": "Nome",
-            "amount": "Valor mensal",
+            "amount": "Valor",
             "due_day": "Dia do vencimento",
         }
         widgets = {
@@ -1103,6 +1104,7 @@ class FixedCostForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["due_day"].widget.attrs.update({"min": "1", "max": "31", "inputmode": "numeric"})
+        self.fields["amount"].help_text = "Para custos anuais, informe o valor total do ano — o sistema converte para o equivalente mensal no total reservado."
 
     def clean_due_day(self):
         value = self.cleaned_data.get("due_day")

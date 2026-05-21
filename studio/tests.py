@@ -2385,6 +2385,7 @@ class DashboardSmokeTest(TestCase):
             {
                 "finance_action": "fixed_cost",
                 "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-recurrence": FixedCost.RECURRENCE_MONTHLY,
                 "fixed_cost-name": "CapCut Pro",
                 "fixed_cost-amount": "40",
                 "fixed_cost-due_day": "10",
@@ -2417,6 +2418,7 @@ class DashboardSmokeTest(TestCase):
                 "finance_action": "fixed_cost",
                 "fixed_cost_id": str(cost.pk),
                 "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-recurrence": FixedCost.RECURRENCE_MONTHLY,
                 "fixed_cost-name": "Notion Plus",
                 "fixed_cost-amount": "75.50",
                 "fixed_cost-due_day": "3",
@@ -2461,6 +2463,7 @@ class DashboardSmokeTest(TestCase):
             {
                 "finance_action": "fixed_cost",
                 "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-recurrence": FixedCost.RECURRENCE_MONTHLY,
                 "fixed_cost-name": "Test",
                 "fixed_cost-amount": "10",
                 "fixed_cost-due_day": "32",
@@ -2469,6 +2472,58 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(FixedCost.objects.filter(workspace=self.workspace).exists())
         self.assertTrue(response.context["fixed_cost_modal_open"])
+
+    def test_finance_page_converts_annual_fixed_cost_to_monthly_equivalent(self):
+        FixedCost.objects.create(
+            workspace=self.workspace,
+            kind=FixedCost.KIND_TOOL,
+            recurrence=FixedCost.RECURRENCE_ANNUAL,
+            name="Adobe Creative",
+            amount=Decimal("1200"),
+            due_day=12,
+        )
+        FixedCost.objects.create(
+            workspace=self.workspace,
+            kind=FixedCost.KIND_TOOL,
+            recurrence=FixedCost.RECURRENCE_MONTHLY,
+            name="Notion Pro",
+            amount=Decimal("60"),
+            due_day=1,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("finance"))
+
+        self.assertEqual(response.status_code, 200)
+        finance_desktop = response.context["finance_desktop"]
+        # Adobe Anual R$1200 entra como R$100/mês; Notion Mensal mantém R$60.
+        self.assertEqual(finance_desktop["fixed_tools_total"], "R$160")
+        self.assertEqual(finance_desktop["fixed_cost"], "R$160")
+        # O valor exibido em cada item continua sendo o que o usuário cadastrou.
+        adobe_row = next(item for item in finance_desktop["fixed_tools"] if item["name"] == "Adobe Creative")
+        self.assertEqual(adobe_row["amount"], "R$1.200")
+        self.assertEqual(adobe_row["recurrence_label"], "Anual")
+        self.assertIn("todo ano", adobe_row["due"])
+
+    def test_finance_page_allows_creating_annual_fixed_cost(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "fixed_cost",
+                "fixed_cost-kind": FixedCost.KIND_TOOL,
+                "fixed_cost-recurrence": FixedCost.RECURRENCE_ANNUAL,
+                "fixed_cost-name": "Adobe Creative",
+                "fixed_cost-amount": "1200",
+                "fixed_cost-due_day": "12",
+            },
+            follow=True,
+        )
+        self.assertRedirects(response, reverse("finance"))
+        cost = FixedCost.objects.get(workspace=self.workspace, name="Adobe Creative")
+        self.assertEqual(cost.recurrence, FixedCost.RECURRENCE_ANNUAL)
+        self.assertEqual(cost.monthly_equivalent(), Decimal("100.00"))
 
     def test_dashboard_snapshot_respects_selected_global_month(self):
         previous_month = (self.project.close_date.replace(day=1) - timedelta(days=1)).replace(day=1)

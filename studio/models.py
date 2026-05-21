@@ -353,10 +353,17 @@ class FixedCost(WorkspaceOwnedModel):
         (KIND_TOOL, "Ferramenta"),
         (KIND_COLLABORATOR, "Colaborador"),
     ]
+    RECURRENCE_MONTHLY = "monthly"
+    RECURRENCE_ANNUAL = "annual"
+    RECURRENCE_CHOICES = [
+        (RECURRENCE_MONTHLY, "Mensal"),
+        (RECURRENCE_ANNUAL, "Anual"),
+    ]
 
     kind = models.CharField(max_length=20, choices=KIND_CHOICES)
     name = models.CharField(max_length=120)
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    recurrence = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default=RECURRENCE_MONTHLY)
     due_day = models.PositiveSmallIntegerField(default=1)
     icon = models.CharField(max_length=60, blank=True, default="")
 
@@ -365,6 +372,12 @@ class FixedCost(WorkspaceOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.get_kind_display()} - {self.name}"
+
+    def monthly_equivalent(self) -> "Decimal":
+        from decimal import Decimal as _Decimal
+        if self.recurrence == self.RECURRENCE_ANNUAL:
+            return (_Decimal(self.amount or 0) / _Decimal(12)).quantize(_Decimal("0.01"))
+        return _Decimal(self.amount or 0)
 
 
 class WorkspaceSetting(TimestampedModel):

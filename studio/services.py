@@ -1667,6 +1667,13 @@ def _finance_event_reference_date(event: dict) -> date:
     return event["paid_on"] if event["paid"] and event["paid_on"] else event["due_date"]
 
 
+def _fixed_cost_due_text(item: FixedCost) -> str:
+    day = f"{item.due_day:02d}"
+    if item.recurrence == FixedCost.RECURRENCE_ANNUAL:
+        return f"Vence dia {day} todo ano"
+    return f"Vence dia {day} todo mês"
+
+
 def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     projects = list(Project.objects.filter(workspace=workspace).prefetch_related("installments").order_by("payment_due_date", "due_date"))
     finance_entries = list(
@@ -1755,8 +1762,10 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_costs = list(FixedCost.objects.filter(workspace=workspace).order_by("kind", "name", "pk"))
     fixed_tools = [item for item in fixed_costs if item.kind == FixedCost.KIND_TOOL]
     fixed_collaborators = [item for item in fixed_costs if item.kind == FixedCost.KIND_COLLABORATOR]
-    fixed_tools_amount = sum((item.amount for item in fixed_tools), ZERO)
-    fixed_collaborators_amount = sum((item.amount for item in fixed_collaborators), ZERO)
+    # Custos anuais entram no total como 1/12 do valor anual, para
+    # refletir o quanto precisa ser reservado por mês.
+    fixed_tools_amount = sum((item.monthly_equivalent() for item in fixed_tools), ZERO)
+    fixed_collaborators_amount = sum((item.monthly_equivalent() for item in fixed_collaborators), ZERO)
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
@@ -1836,8 +1845,9 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                     "id": item.pk,
                     "icon": item.icon or "ti-tool",
                     "name": item.name,
-                    "due": f"Vence dia {item.due_day:02d} todo mês",
+                    "due": _fixed_cost_due_text(item),
                     "amount": currency(item.amount),
+                    "recurrence_label": item.get_recurrence_display(),
                 }
                 for item in fixed_tools
             ],
@@ -1846,8 +1856,9 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                     "id": item.pk,
                     "icon": item.icon or "ti-user",
                     "name": item.name,
-                    "due": f"Vence dia {item.due_day:02d} todo mês",
+                    "due": _fixed_cost_due_text(item),
                     "amount": currency(item.amount),
+                    "recurrence_label": item.get_recurrence_display(),
                 }
                 for item in fixed_collaborators
             ],
