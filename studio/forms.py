@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 from datetime import date, timedelta
 import re
 
@@ -67,6 +68,9 @@ RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "entry_value",
     "received_value",
     "monthly_value",
+    # Para Social Media e Consultoria, payment_due_day cobre o dia
+    # do mês — o usuário não precisa escolher uma data completa.
+    "payment_due_date",
 ]
 SOCIAL_MEDIA_HIDDEN_FIELDS = [
     "deliverables_count",
@@ -122,6 +126,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     "videos_per_month": ["social_media"],
     "profile_managed": ["social_media"],
     "payment_recurrence": ["publicidade"],
+    "payment_due_day": ["social_media", "consultoria_marketing"],
     "contract_duration_months": ["social_media", "consultoria_marketing", "publicidade"],
     "monthly_value": ["ugc_manager"],
     "managed_creators_count": ["ugc_manager"],
@@ -509,6 +514,21 @@ class ProjectForm(forms.ModelForm):
         self.fields["due_date"].input_formats = ["%Y-%m-%d"]
         self.fields["payment_due_date"].widget.format = "%Y-%m-%d"
         self.fields["payment_due_date"].input_formats = ["%Y-%m-%d"]
+        # Para contratos recorrentes (Social Media / Consultoria) o que
+        # importa é apenas o dia do mês — o sistema gera as datas mensais
+        # a partir dele.
+        initial_payment_day = None
+        if getattr(self.instance, "pk", None) and self.instance.payment_due_date:
+            initial_payment_day = self.instance.payment_due_date.day
+        self.fields["payment_due_day"] = forms.IntegerField(
+            label="Dia do pagamento",
+            min_value=1,
+            max_value=31,
+            required=False,
+            initial=initial_payment_day,
+            widget=forms.NumberInput(attrs={"min": "1", "max": "31", "inputmode": "numeric", "placeholder": "Ex.: 15"}),
+            help_text="Dia do mês em que a mensalidade vence. Usado em contratos recorrentes.",
+        )
         self.fields["meeting_date"].widget.format = "%Y-%m-%d"
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
         service_category_choices = [("", "---------")]
@@ -688,6 +708,7 @@ class ProjectForm(forms.ModelForm):
                 "received_value",
                 "has_installments",
                 "payment_recurrence",
+                "payment_due_day",
                 "payment_due_date",
                 # --- Observações no final ---
                 "note",
@@ -781,11 +802,18 @@ class ProjectForm(forms.ModelForm):
             cleaned_data["monthly_value"] = 0
             if is_social_media:
                 cleaned_data["deliverables_count"] = deliverables_count
-            # Parcelas mensais agora são geradas automaticamente; o
-            # payment_due_date define o dia fixo de cobrança em todos os
-            # meses do contrato.
+            # Para contratos recorrentes o usuário informa apenas o dia do
+            # mês. Constrói o payment_due_date a partir desse dia ancorado
+            # no mês de fechamento do contrato.
+            payment_due_day = cleaned_data.get("payment_due_day")
+            if payment_due_day:
+                anchor = cleaned_data.get("close_date") or date.today()
+                last_day = calendar.monthrange(anchor.year, anchor.month)[1]
+                cleaned_data["payment_due_date"] = date(
+                    anchor.year, anchor.month, min(int(payment_due_day), last_day)
+                )
             if not cleaned_data.get("payment_due_date"):
-                self.add_error("payment_due_date", "Informe a data prevista de pagamento.")
+                self.add_error("payment_due_day", "Informe o dia do pagamento mensal.")
         elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
             cleaned_data["due_date"] = cleaned_data.get("close_date")
         else:
