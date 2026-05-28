@@ -668,10 +668,10 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.payment_due_date, payment_due_date)
 
-    def test_recurring_contract_with_installments_requires_payment_due_day(self):
-        # Parcelas agora são geradas automaticamente usando o dia do mês
-        # informado em payment_due_day. Para Social Media / Consultoria,
-        # esse dia é obrigatório mesmo quando has_installments=yes.
+    def test_recurring_contract_with_installments_requires_payment_due_date(self):
+        # Parcelas agora são geradas automaticamente usando payment_due_date
+        # como dia fixo de cobrança, então ele é obrigatório mesmo quando
+        # has_installments=yes.
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -697,7 +697,7 @@ class DashboardSmokeTest(TestCase):
         )
 
         self.assertFalse(form.is_valid())
-        self.assertIn("payment_due_day", form.errors)
+        self.assertIn("payment_due_date", form.errors)
 
     def test_social_media_auto_generates_monthly_installments_for_duration(self):
         self.client.force_login(self.user)
@@ -1722,38 +1722,6 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(sixth_installment["company"], "Reserva")
         self.assertTrue(sixth_installment["due"].startswith("15 "))
         self.assertEqual(sixth_installment["amount"], "R$1.500")
-
-    def test_recurring_contract_accepts_payment_due_day_without_full_date(self):
-        # Para contratos recorrentes, o usuário informa apenas o dia do
-        # mês; o form constrói payment_due_date a partir do close_date.
-        close_date = date(2026, 1, 15)
-        form = ProjectForm(
-            data={
-                "company": "Insider",
-                "service_type": "consultoria_marketing",
-                "closing_source": "Networking",
-                "content_distribution": "Nao se aplica",
-                "niche": self.niche.pk,
-                "stage": "Fechado",
-                "status": "Briefing",
-                "total_value": "3500",
-                "has_entry": "yes",
-                "entry_value": "0",
-                "received_value": "0",
-                "has_installments": "no",
-                "payment_due_day": "20",
-                "close_date": close_date.isoformat(),
-                "due_date": date(2026, 6, 30).isoformat(),
-                "contract_duration_months": "6",
-                "briefing": "Consultoria mensal",
-            },
-            workspace=self.workspace,
-        )
-
-        self.assertTrue(form.is_valid(), form.errors)
-        project = form.save(commit=False)
-        # payment_due_date construído a partir do dia + close_date.
-        self.assertEqual(project.payment_due_date, date(2026, 1, 20))
 
     def test_recurring_contract_counts_past_monthlies_as_received(self):
         # Contrato Consultoria de 6 meses, fechado em 15/jan, R$3.500/mês,
