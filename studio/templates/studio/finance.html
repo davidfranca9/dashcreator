@@ -44,10 +44,10 @@
                     <div class="fd-metric-detail fd-text-green">recebido em {{ selected_month.label|lower }}</div>
                 </article>
                 <article class="fd-metric-card">
-                    <div class="fd-metric-label"><i class="ti ti-home"></i> Pró-labore</div>
-                    <div class="fd-metric-value">{{ finance_desktop.pro_labore }}</div>
-                    <div class="fd-metric-detail {% if finance_desktop.pro_labore_covered %}fd-text-green{% else %}fd-text-warn{% endif %}">
-                        {% if finance_desktop.pro_labore_covered %}✓ coberto este mês{% else %}faltam {{ finance_desktop.pro_labore_remaining }}{% endif %}
+                    <div class="fd-metric-label"><i class="ti ti-tool"></i> Custo fixo</div>
+                    <div class="fd-metric-value">{{ finance_desktop.fixed_cost }}</div>
+                    <div class="fd-metric-detail {% if finance_desktop.fixed_cost_covered %}fd-text-green{% else %}fd-text-warn{% endif %}">
+                        {% if finance_desktop.fixed_cost_covered %}✓ coberto este mês{% else %}faltam {{ finance_desktop.fixed_cost_remaining }}{% endif %}
                     </div>
                 </article>
                 <article class="fd-metric-card">
@@ -165,7 +165,7 @@
                         <span>{{ finance_desktop.revenue_total }} distribuídos automaticamente · distribuição concluída</span>
                     {% else %}
                         <p>Distribuição ainda não fechou em {{ selected_month.label }}</p>
-                        <span>Receita de {{ finance_desktop.revenue_total }} · faltam {{ finance_desktop.pro_labore_remaining }} para cobrir o pró-labore</span>
+                        <span>Receita de {{ finance_desktop.revenue_total }} · {{ finance_desktop.distribution_pending_text }}</span>
                     {% endif %}
                 </div>
             </div>
@@ -359,7 +359,7 @@
                 <i class="ti ti-check"></i>
                 <div>
                     <p>{{ finance_desktop.fixed_cost }} reservados automaticamente todo mês</p>
-                    <span>Deduzido junto com o pró-labore antes da distribuição nas caixinhas</span>
+                    <span>Separado do pró-labore antes da distribuição nas caixinhas</span>
                 </div>
             </div>
             <div class="fd-two-col">

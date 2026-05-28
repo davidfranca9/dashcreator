@@ -1793,8 +1793,14 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
     pro_labore_remaining = max(pro_labore_amount - incoming_total, ZERO)
     pro_labore_covered = pro_labore_remaining == ZERO
-    fixed_cost_covered = incoming_total >= (pro_labore_amount + fixed_cost_amount)
-    distribution_complete = pro_labore_covered and fixed_cost_covered
+    fixed_cost_remaining = max(fixed_cost_amount - incoming_total, ZERO)
+    fixed_cost_covered = fixed_cost_remaining == ZERO
+    distribution_remaining = max(pro_labore_amount + fixed_cost_amount - incoming_total, ZERO)
+    distribution_complete = distribution_remaining == ZERO
+    if pro_labore_covered:
+        distribution_pending_text = f"faltam {currency(distribution_remaining)} para fechar pró-labore e custo fixo"
+    else:
+        distribution_pending_text = f"faltam {currency(pro_labore_remaining)} para cobrir o pró-labore"
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
     investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
@@ -1883,6 +1889,9 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "distribution_complete": distribution_complete,
             "fixed_cost_covered": fixed_cost_covered,
             "fixed_cost": currency(fixed_cost_amount),
+            "fixed_cost_remaining": currency(fixed_cost_remaining),
+            "fixed_cost_status_text": "Coberto" if fixed_cost_covered else f"Faltam {currency(fixed_cost_remaining)}",
+            "distribution_pending_text": distribution_pending_text,
             "distribution_base": currency(distribution_base),
             "reserve": currency(reserve_amount),
             "reserve_progress": reserve_progress,
