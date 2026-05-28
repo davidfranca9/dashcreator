@@ -1,9 +1,6 @@
 ﻿import re
-import shutil
-import tempfile
 from unittest.mock import patch
 from io import StringIO
-from io import BytesIO
 from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
 
@@ -15,7 +12,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.core.management.base import CommandError
 from django.urls import reverse
-from PIL import Image
 
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
@@ -2937,30 +2933,43 @@ class DashboardSmokeTest(TestCase):
         )
         self.assertIn("Haircare", list(form.fields["niche"].queryset.values_list("name", flat=True)))
 
-    def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
+    def test_profile_page_uses_initials_only_and_hides_photo_upload_slug_and_role(self):
         self.client.force_login(self.user)
-        temp_media_root = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, temp_media_root, ignore_errors=True)
-        buffer = BytesIO()
-        Image.new("RGBA", (1600, 1200), (255, 0, 0, 255)).save(buffer, format="PNG")
-        image_file = SimpleUploadedFile("avatar.png", buffer.getvalue(), content_type="image/png")
+        self.user.first_name = "Tester"
+        self.user.last_name = "Autora"
+        self.user.save(update_fields=["first_name", "last_name"])
+        membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+        membership.avatar = "ugc_fotos/avatar-antigo.jpg"
+        membership.save(update_fields=["avatar"])
 
-        with self.settings(MEDIA_ROOT=temp_media_root):
-            response = self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
+        response = self.client.get(reverse("profile"))
 
-            self.assertRedirects(response, reverse("profile"))
-            membership = Membership.objects.get(user=self.user, workspace=self.workspace)
-            self.assertTrue(membership.avatar.name.startswith("ugc_fotos/"))
-            self.assertTrue(membership.avatar.name.endswith(".jpg"))
-            self.assertContains(response, membership.avatar.url)
-            self.assertNotContains(response, "data:image/")
-            with Image.open(membership.avatar.path) as stored_image:
-                self.assertEqual(stored_image.format, "JPEG")
-                self.assertLessEqual(stored_image.width, 1080)
-                self.assertLessEqual(stored_image.height, 1080)
+        self.assertContains(response, "profile-avatar-fallback")
+        self.assertContains(response, "TA")
+        self.assertContains(response, "Iniciais do perfil")
+        self.assertNotContains(response, "avatar-antigo.jpg")
+        self.assertNotContains(response, "profile-avatar-image")
+        self.assertNotContains(response, 'type="file"')
+        self.assertNotContains(response, "Salvar foto")
+        self.assertNotContains(response, "Foto de perfil")
+        self.assertNotContains(response, "data:image/")
 
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
+
+    def test_profile_photo_post_is_ignored(self):
+        self.client.force_login(self.user)
+        image_file = SimpleUploadedFile("avatar.png", b"fake image", content_type="image/png")
+
+        response = self.client.post(
+            reverse("profile"),
+            {"profile_action": "photo", "photo": image_file},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("profile"))
+        membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+        self.assertFalse(membership.avatar)
 
     def test_profile_page_shows_last_login_in_local_timezone(self):
         self.client.force_login(self.user)
@@ -3029,26 +3038,6 @@ class DashboardSmokeTest(TestCase):
                 "street": "Rua das Palmeiras",
             },
         )
-
-    def test_profile_avatar_file_is_served_by_media_url(self):
-        self.client.force_login(self.user)
-        temp_media_root = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, temp_media_root, ignore_errors=True)
-        buffer = BytesIO()
-        Image.new("RGBA", (900, 900), (0, 80, 255, 255)).save(buffer, format="PNG")
-        image_file = SimpleUploadedFile("avatar-producao.png", buffer.getvalue(), content_type="image/png")
-
-        with self.settings(MEDIA_ROOT=temp_media_root, DEBUG=False):
-            self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
-            membership = Membership.objects.get(user=self.user, workspace=self.workspace)
-
-            media_response = self.client.get(membership.avatar.url)
-
-        self.assertEqual(media_response.status_code, 200)
-        self.assertEqual(media_response["Content-Type"], "image/jpeg")
-        self.assertIn("max-age=86400", media_response["Cache-Control"])
-        streamed_content = b"".join(media_response.streaming_content)
-        self.assertGreater(len(streamed_content), 0)
 
     def test_profile_and_settings_pages_show_internal_navigation(self):
         self.client.force_login(self.user)

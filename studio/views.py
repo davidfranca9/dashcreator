@@ -39,7 +39,6 @@ from .forms import (
     FixedCostForm,
     HAS_INSTALLMENTS_YES,
     ManagedOptionForm,
-    ProfilePhotoForm,
     ProjectForm,
     ProjectInstallmentFormSet,
     ProspectForm,
@@ -1483,30 +1482,23 @@ def settings(request: HttpRequest) -> HttpResponse:
 def profile(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     membership = request.user.memberships.select_related("workspace").filter(workspace=workspace).first()
-    photo_form = ProfilePhotoForm()
     business_form = WorkspaceBusinessForm(instance=workspace)
 
     if request.method == "POST":
         action = request.POST.get("profile_action")
-        if action == "photo":
-            photo_form = ProfilePhotoForm(request.POST, request.FILES)
-            if photo_form.is_valid() and membership:
-                membership.avatar = photo_form.cleaned_data["photo"]
-                membership.save(update_fields=["avatar", "updated_at"])
-                messages.success(request, "Foto de perfil atualizada.")
-                return redirect("profile")
-        elif action == "business":
+        if action == "business":
             business_form = WorkspaceBusinessForm(request.POST, instance=workspace)
             if business_form.is_valid():
                 business_form.save()
                 messages.success(request, "Dados empresariais atualizados.")
                 return redirect("profile")
+        elif action == "photo":
+            return redirect("profile")
 
     context = shell_context("profile", workspace, "Perfil", "Dados cadastrais da conta e do workspace ativo.", user=request.user)
     context.update(
         {
             "membership": membership,
-            "photo_form": photo_form,
             "business_form": business_form,
             "profile_sections": [
                 {
