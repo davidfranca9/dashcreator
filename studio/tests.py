@@ -2094,6 +2094,38 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(snapshot["overdue"][0]["payment_due_text"])
         self.assertEqual(snapshot["overdue"][0]["note"], "Pedir retorno da marca")
 
+    def test_jobs_snapshot_does_not_count_awaiting_approval_as_overdue(self):
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Reserva",
+            closing_source="Follow-up",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Entrega enviada",
+            content_type="",
+            stage="Fechado",
+            status="Aguardando aprovação",
+            total_value=2200,
+            entry_value=1100,
+            received_value=0,
+            deliverables_count=3,
+            progress=80,
+            close_date=date.today() - timedelta(days=20),
+            due_date=date.today() - timedelta(days=2),
+        )
+
+        snapshot = jobs_snapshot(self.workspace)
+        approval_card = next(item for item in snapshot["active"] if item["company"] == "Reserva")
+        context = shell_context("dashboard", self.workspace, "Dashboard", "", user=self.user)
+        nav_items = [item for group in context["nav_groups"] for item in group["items"]]
+        jobs_nav_item = next(item for item in nav_items if item["key"] == "jobs")
+
+        self.assertEqual(snapshot["stats"][0]["value"], "0")
+        self.assertEqual(snapshot["stats"][1]["value"], "1")
+        self.assertEqual(snapshot["overdue"], [])
+        self.assertEqual(approval_card["days_overdue"], 0)
+        self.assertIsNone(jobs_nav_item["badge"])
+
     def test_jobs_kpis_open_subtle_modal_lists(self):
         self.client.force_login(self.user)
 
