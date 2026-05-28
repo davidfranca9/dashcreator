@@ -6,29 +6,14 @@
 
     <article class="card profile-hero">
         <div class="profile-avatar-panel">
-            {% if membership and membership.avatar %}
-                <img class="profile-avatar-image" src="{{ membership.avatar.url }}" alt="Foto de perfil">
-            {% else %}
-                <div class="profile-avatar-fallback">
-                    {{ membership.initials|default:"P" }}
-                </div>
-            {% endif %}
+            <div class="profile-avatar-fallback">
+                {{ membership.initials|default:"P" }}
+            </div>
             <div class="profile-avatar-copy">
-                <h3>Foto de perfil</h3>
-                <p class="muted">Envie uma imagem para personalizar sua conta dentro do workspace.</p>
+                <h3>{{ user_display_name|default:"Perfil" }}</h3>
+                <p class="muted">Workspace &middot; {{ workspace.name }}</p>
             </div>
         </div>
-
-        <form method="post" enctype="multipart/form-data" class="profile-photo-form">
-            {% csrf_token %}
-            <input type="hidden" name="profile_action" value="photo">
-            <div class="form-field">
-                <label for="{{ photo_form.photo.id_for_label }}">{{ photo_form.photo.label }}</label>
-                {{ photo_form.photo }}
-                {{ photo_form.photo.errors }}
-            </div>
-            <button type="submit" class="primary-button">Salvar foto</button>
-        </form>
     </article>
 
     <article class="card">
