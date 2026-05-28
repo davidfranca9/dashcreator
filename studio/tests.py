@@ -1,6 +1,9 @@
 ﻿import re
+import shutil
+import tempfile
 from unittest.mock import patch
 from io import StringIO
+from io import BytesIO
 from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
 
@@ -8,9 +11,11 @@ from django.contrib.sessions.models import Session
 from django.core import mail
 from django.core.management import call_command
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.core.management.base import CommandError
 from django.urls import reverse
+from PIL import Image
 
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
@@ -2169,38 +2174,6 @@ class DashboardSmokeTest(TestCase):
         self.assertTrue(snapshot["overdue"][0]["payment_due_text"])
         self.assertEqual(snapshot["overdue"][0]["note"], "Pedir retorno da marca")
 
-    def test_jobs_snapshot_does_not_count_awaiting_approval_as_overdue(self):
-        Project.objects.create(
-            workspace=self.workspace,
-            company="Reserva",
-            closing_source="Follow-up",
-            niche=self.niche,
-            service_category=self.category,
-            project_name="Entrega enviada",
-            content_type="",
-            stage="Fechado",
-            status="Aguardando aprovação",
-            total_value=2200,
-            entry_value=1100,
-            received_value=0,
-            deliverables_count=3,
-            progress=80,
-            close_date=date.today() - timedelta(days=20),
-            due_date=date.today() - timedelta(days=2),
-        )
-
-        snapshot = jobs_snapshot(self.workspace)
-        approval_card = next(item for item in snapshot["active"] if item["company"] == "Reserva")
-        context = shell_context("dashboard", self.workspace, "Dashboard", "", user=self.user)
-        nav_items = [item for group in context["nav_groups"] for item in group["items"]]
-        jobs_nav_item = next(item for item in nav_items if item["key"] == "jobs")
-
-        self.assertEqual(snapshot["stats"][0]["value"], "0")
-        self.assertEqual(snapshot["stats"][1]["value"], "1")
-        self.assertEqual(snapshot["overdue"], [])
-        self.assertEqual(approval_card["days_overdue"], 0)
-        self.assertIsNone(jobs_nav_item["badge"])
-
     def test_jobs_kpis_open_subtle_modal_lists(self):
         self.client.force_login(self.user)
 
@@ -2414,7 +2387,7 @@ class DashboardSmokeTest(TestCase):
     def test_finance_page_does_not_mark_pro_labore_covered_when_revenue_is_short(self):
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse("finance"), {"month": self.project.due_date.strftime("%Y-%m")})
+        response = self.client.get(reverse("finance"), {"month": date.today().strftime("%Y-%m")})
 
         finance_desktop = response.context["finance_desktop"]
         self.assertEqual(response.status_code, 200)
@@ -2428,49 +2401,6 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "fd-tag-warn")
         self.assertNotContains(response, "Todas as caixinhas abastecidas")
 
-    def test_finance_fixed_cost_card_does_not_reduce_pro_labore(self):
-        FixedCost.objects.create(
-            workspace=self.workspace,
-            kind=FixedCost.KIND_TOOL,
-            name="Ferramenta fixa",
-            amount=Decimal("700"),
-            due_day=1,
-        )
-        self.client.force_login(self.user)
-
-        response = self.client.get(reverse("finance"), {"month": self.project.due_date.strftime("%Y-%m")})
-
-        finance_desktop = response.context["finance_desktop"]
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(finance_desktop["fixed_cost"], "R$700")
-        self.assertTrue(finance_desktop["fixed_cost_covered"])
-        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$0")
-        self.assertFalse(finance_desktop["pro_labore_covered"])
-        self.assertEqual(finance_desktop["pro_labore_remaining"], "R$4.200")
-        self.assertFalse(finance_desktop["distribution_complete"])
-        self.assertContains(response, "Custo fixo")
-        self.assertContains(response, "Separado do pró-labore")
-
-    def test_finance_distribution_still_reserves_fixed_cost_after_pro_labore(self):
-        self.workspace.settings.update_or_create(key="ops_pro_labore_amount", defaults={"value": "500.00"})
-        FixedCost.objects.create(
-            workspace=self.workspace,
-            kind=FixedCost.KIND_TOOL,
-            name="Ferramenta fixa",
-            amount=Decimal("500"),
-            due_day=1,
-        )
-        self.client.force_login(self.user)
-
-        response = self.client.get(reverse("finance"), {"month": self.project.due_date.strftime("%Y-%m")})
-
-        finance_desktop = response.context["finance_desktop"]
-        self.assertTrue(finance_desktop["pro_labore_covered"])
-        self.assertTrue(finance_desktop["fixed_cost_covered"])
-        self.assertFalse(finance_desktop["distribution_complete"])
-        self.assertEqual(finance_desktop["distribution_pending_text"], "faltam R$200 para cobrir o custo fixo")
-        self.assertContains(response, "faltam R$200 para cobrir o custo fixo")
-
     def test_finance_snapshot_includes_custom_cash_boxes_from_free_flow(self):
         self.workspace.settings.update_or_create(key="ops_pro_labore_amount", defaults={"value": "100.00"})
         CashBox.objects.create(
@@ -2480,7 +2410,7 @@ class DashboardSmokeTest(TestCase):
             description="Troca de camera",
         )
 
-        snapshot = finance_snapshot(self.workspace, self.project.due_date.strftime("%Y-%m"))
+        snapshot = finance_snapshot(self.workspace, date.today().strftime("%Y-%m"))
         custom_box = snapshot["finance_desktop"]["custom_boxes"][0]
 
         self.assertEqual(custom_box["name"], "Equipamento")
@@ -3055,23 +2985,28 @@ class DashboardSmokeTest(TestCase):
         )
         self.assertIn("Haircare", list(form.fields["niche"].queryset.values_list("name", flat=True)))
 
-    def test_profile_page_shows_initials_only_and_hides_photo_upload_slug_and_role(self):
+    def test_profile_page_accepts_photo_upload_and_hides_slug_and_role(self):
         self.client.force_login(self.user)
-        membership = Membership.objects.get(user=self.user, workspace=self.workspace)
-        membership.avatar = "ugc_fotos/avatar-antigo.jpg"
-        membership.save(update_fields=["avatar"])
+        temp_media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, temp_media_root, ignore_errors=True)
+        buffer = BytesIO()
+        Image.new("RGBA", (1600, 1200), (255, 0, 0, 255)).save(buffer, format="PNG")
+        image_file = SimpleUploadedFile("avatar.png", buffer.getvalue(), content_type="image/png")
 
-        response = self.client.get(reverse("profile"))
+        with self.settings(MEDIA_ROOT=temp_media_root):
+            response = self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "workspace-chip-avatar-fallback")
-        self.assertContains(response, "profile-avatar-fallback")
-        self.assertNotContains(response, "workspace-chip-avatar-image")
-        self.assertNotContains(response, "profile-avatar-image")
-        self.assertNotContains(response, 'type="file"', html=False)
-        self.assertNotContains(response, "Salvar foto")
-        self.assertNotContains(response, "Foto de perfil")
-        self.assertNotContains(response, "data:image/")
+            self.assertRedirects(response, reverse("profile"))
+            membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+            self.assertTrue(membership.avatar.name.startswith("ugc_fotos/"))
+            self.assertTrue(membership.avatar.name.endswith(".jpg"))
+            self.assertContains(response, membership.avatar.url)
+            self.assertNotContains(response, "data:image/")
+            with Image.open(membership.avatar.path) as stored_image:
+                self.assertEqual(stored_image.format, "JPEG")
+                self.assertLessEqual(stored_image.width, 1080)
+                self.assertLessEqual(stored_image.height, 1080)
+
         self.assertNotContains(response, "Slug")
         self.assertNotContains(response, "Perfil de acesso")
 
@@ -3142,6 +3077,26 @@ class DashboardSmokeTest(TestCase):
                 "street": "Rua das Palmeiras",
             },
         )
+
+    def test_profile_avatar_file_is_served_by_media_url(self):
+        self.client.force_login(self.user)
+        temp_media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, temp_media_root, ignore_errors=True)
+        buffer = BytesIO()
+        Image.new("RGBA", (900, 900), (0, 80, 255, 255)).save(buffer, format="PNG")
+        image_file = SimpleUploadedFile("avatar-producao.png", buffer.getvalue(), content_type="image/png")
+
+        with self.settings(MEDIA_ROOT=temp_media_root, DEBUG=False):
+            self.client.post(reverse("profile"), {"photo": image_file}, follow=True)
+            membership = Membership.objects.get(user=self.user, workspace=self.workspace)
+
+            media_response = self.client.get(membership.avatar.url)
+
+        self.assertEqual(media_response.status_code, 200)
+        self.assertEqual(media_response["Content-Type"], "image/jpeg")
+        self.assertIn("max-age=86400", media_response["Cache-Control"])
+        streamed_content = b"".join(media_response.streaming_content)
+        self.assertGreater(len(streamed_content), 0)
 
     def test_profile_and_settings_pages_show_internal_navigation(self):
         self.client.force_login(self.user)

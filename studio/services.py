@@ -78,8 +78,6 @@ SOURCE_MIX_ORDER = ["Inbound", "Prospec\u00e7\u00e3o", "Follow-up", "Indica\u00e
 
 FOLLOW_UP_CONFIRMED_COMPANIES_KEY = "ops_follow_up_confirmed_companies"
 FOLLOW_UP_DISMISSED_COMPANIES_KEY = "ops_follow_up_dismissed_companies"
-AWAITING_APPROVAL_STATUS = "Aguardando aprovação"
-OVERDUE_EXCLUDED_STATUSES = {AWAITING_APPROVAL_STATUS}
 
 
 def currency(value: Decimal | int | float | None) -> str:
@@ -215,15 +213,6 @@ def google_calendar_event_url(title: str, event_date: date, details: str = "") -
             "dates": f"{event_date.strftime('%Y%m%d')}/{next_day.strftime('%Y%m%d')}",
             "details": details,
         }
-    )
-
-
-def project_counts_as_overdue(project: Project, today: date | None = None) -> bool:
-    reference_date = today or date.today()
-    return (
-        project.stage == "Fechado"
-        and project.due_date < reference_date
-        and project.status not in OVERDUE_EXCLUDED_STATUSES
     )
 
 
@@ -497,7 +486,7 @@ def overdue_projects_count(workspace: Workspace) -> int:
         workspace=workspace,
         stage="Fechado",
         due_date__lt=date.today(),
-    ).exclude(status__in=OVERDUE_EXCLUDED_STATUSES).count()
+    ).count()
 
 
 def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:
@@ -1344,7 +1333,7 @@ def empresas_snapshot(
         color_a, color_b, accent = company_palette(item.company)
         expires_on = image_usage_expires_on(item)
         contact_url = whatsapp_contact_url(item.company_phone)
-        days_overdue = (today - item.due_date).days if project_counts_as_overdue(item, today) else 0
+        days_overdue = (today - item.due_date).days if item.due_date < today and item.stage == "Fechado" else 0
         return {
             "id": item.id,
             "company": item.company,
@@ -1377,7 +1366,7 @@ def empresas_snapshot(
         }
 
     cards = [serialize_job_card(item) for item in projects]
-    overdue_source = overdue_projects if overdue_projects is not None else [item for item in active if project_counts_as_overdue(item, today)]
+    overdue_source = overdue_projects if overdue_projects is not None else [item for item in active if item.due_date < today]
     overdue_cards = [serialize_job_card(item) for item in overdue_source]
 
     active_cards = [item for item in cards if item["stage"] == "Fechado"]
@@ -1496,11 +1485,7 @@ def jobs_snapshot_filtered(
         )
 
     filtered_projects = list(projects_query.order_by("due_date"))
-    overdue_projects = list(
-        overdue_projects_query.filter(stage="Fechado", due_date__lt=date.today())
-        .exclude(status__in=OVERDUE_EXCLUDED_STATUSES)
-        .order_by("due_date")
-    )
+    overdue_projects = list(overdue_projects_query.filter(stage="Fechado", due_date__lt=date.today()).order_by("due_date"))
     upcoming_limit = date.today() + timedelta(days=21)
     upcoming_projects = list(
         upcoming_projects_query.filter(stage="Fechado", due_date__gte=date.today(), due_date__lte=upcoming_limit).order_by("due_date")
@@ -1803,14 +1788,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
     pro_labore_remaining = max(pro_labore_amount - incoming_total, ZERO)
     pro_labore_covered = pro_labore_remaining == ZERO
-    fixed_cost_remaining = max(fixed_cost_amount - incoming_total, ZERO)
-    fixed_cost_covered = fixed_cost_remaining == ZERO
-    distribution_remaining = max(pro_labore_amount + fixed_cost_amount - incoming_total, ZERO)
-    distribution_complete = distribution_remaining == ZERO
-    if pro_labore_covered:
-        distribution_pending_text = f"faltam {currency(distribution_remaining)} para cobrir o custo fixo"
-    else:
-        distribution_pending_text = f"faltam {currency(pro_labore_remaining)} para cobrir o pró-labore"
+    fixed_cost_covered = incoming_total >= (pro_labore_amount + fixed_cost_amount)
+    distribution_complete = pro_labore_covered and fixed_cost_covered
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
     reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
     investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
@@ -1899,9 +1878,6 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "distribution_complete": distribution_complete,
             "fixed_cost_covered": fixed_cost_covered,
             "fixed_cost": currency(fixed_cost_amount),
-            "fixed_cost_remaining": currency(fixed_cost_remaining),
-            "fixed_cost_status_text": "Coberto" if fixed_cost_covered else f"Faltam {currency(fixed_cost_remaining)}",
-            "distribution_pending_text": distribution_pending_text,
             "distribution_base": currency(distribution_base),
             "reserve": currency(reserve_amount),
             "reserve_progress": reserve_progress,

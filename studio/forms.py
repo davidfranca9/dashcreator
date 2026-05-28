@@ -1077,6 +1077,22 @@ class ManagedOptionForm(forms.Form):
         self.fields["name"].help_text = help_text
 
 
+class ProfilePhotoForm(forms.Form):
+    photo = forms.FileField(label="Foto de perfil")
+
+    allowed_types = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+    max_size = 2 * 1024 * 1024
+
+    def clean_photo(self):
+        photo = self.cleaned_data["photo"]
+        content_type = getattr(photo, "content_type", "")
+        if content_type not in self.allowed_types:
+            raise forms.ValidationError("Envie uma imagem em PNG, JPG, WEBP ou GIF.")
+        if photo.size > self.max_size:
+            raise forms.ValidationError("A imagem precisa ter no máximo 2 MB.")
+        return photo
+
+
 class FinanceEntryForm(forms.ModelForm):
     class Meta:
         model = FinanceEntry
