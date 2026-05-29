@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 from datetime import date, timedelta
 import re
 
@@ -110,6 +111,14 @@ def _contract_due_date_from_start(start_date: date | None, duration_months: int 
     month = (month_index % 12) + 1
     return date(year, month, 1) - timedelta(days=1)
 
+
+def _date_from_payment_day(start_date: date | None, payment_day: int | None) -> date | None:
+    if start_date is None or not payment_day:
+        return None
+    day = min(int(payment_day), calendar.monthrange(start_date.year, start_date.month)[1])
+    return date(start_date.year, start_date.month, day)
+
+
 # Mapeia cada campo type-specific aos service_type que devem exibi-lo no
 # form. Lido pelo template para gerar atributos data-show-for-type, e pelo
 # JS para mostrar/esconder conforme o tipo de serviço selecionado.
@@ -121,6 +130,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
     "posts_per_month": ["social_media"],
     "videos_per_month": ["social_media"],
     "profile_managed": ["social_media"],
+    "payment_due_day": RECURRING_CONTRACT_TYPES,
     "payment_recurrence": ["publicidade"],
     "contract_duration_months": ["social_media", "consultoria_marketing", "publicidade"],
     "monthly_value": ["ugc_manager"],
@@ -473,6 +483,13 @@ class ProjectForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
     )
+    payment_due_day = forms.IntegerField(
+        label="Dia do pagamento",
+        min_value=1,
+        max_value=31,
+        required=False,
+        widget=forms.NumberInput(attrs={"min": "1", "max": "31", "inputmode": "numeric"}),
+    )
 
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -509,6 +526,10 @@ class ProjectForm(forms.ModelForm):
         self.fields["due_date"].input_formats = ["%Y-%m-%d"]
         self.fields["payment_due_date"].widget.format = "%Y-%m-%d"
         self.fields["payment_due_date"].input_formats = ["%Y-%m-%d"]
+        if not self.is_bound:
+            payment_due_date = self.initial.get("payment_due_date") or getattr(self.instance, "payment_due_date", None)
+            if isinstance(payment_due_date, date):
+                self.initial["payment_due_day"] = payment_due_date.day
         self.fields["meeting_date"].widget.format = "%Y-%m-%d"
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
         service_category_choices = [("", "---------")]
@@ -552,6 +573,7 @@ class ProjectForm(forms.ModelForm):
         )
         self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
         self.fields["payment_due_date"].help_text = "Use quando não houver parcelas cadastradas."
+        self.fields["payment_due_day"].help_text = "Dia fixo em que o pagamento mensal acontece."
         self.fields["meeting_date"].help_text = "Defina a data da reunião para gerar o atalho do Google Agenda."
         self.fields["note"].help_text = "Campo livre para anotações extras desse job."
         self.fields["content_distribution"] = forms.ChoiceField(
@@ -688,6 +710,7 @@ class ProjectForm(forms.ModelForm):
                 "received_value",
                 "has_installments",
                 "payment_recurrence",
+                "payment_due_day",
                 "payment_due_date",
                 # --- Observações no final ---
                 "note",
@@ -784,8 +807,14 @@ class ProjectForm(forms.ModelForm):
             # Parcelas mensais agora são geradas automaticamente; o
             # payment_due_date define o dia fixo de cobrança em todos os
             # meses do contrato.
+            payment_due_day = cleaned_data.get("payment_due_day")
+            if not payment_due_day and cleaned_data.get("payment_due_date"):
+                payment_due_day = cleaned_data["payment_due_date"].day
+                cleaned_data["payment_due_day"] = payment_due_day
+            if payment_due_day:
+                cleaned_data["payment_due_date"] = _date_from_payment_day(cleaned_data.get("close_date"), payment_due_day)
             if not cleaned_data.get("payment_due_date"):
-                self.add_error("payment_due_date", "Informe a data prevista de pagamento.")
+                self.add_error("payment_due_day", "Informe o dia do pagamento.")
         elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
             cleaned_data["due_date"] = cleaned_data.get("close_date")
         else:

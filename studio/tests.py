@@ -580,6 +580,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("has_entry", form.fields)
         self.assertIn("has_installments", form.fields)
         self.assertIn("payment_recurrence", form.fields)
+        self.assertIn("payment_due_day", form.fields)
         self.assertEqual(form.fields["payment_recurrence"].label, "Recorrência de pagamento")
         self.assertIn("social_media", form.recurring_contract_types)
         self.assertIn("consultoria_marketing", form.recurring_contract_types)
@@ -589,7 +590,6 @@ class DashboardSmokeTest(TestCase):
     def test_social_media_form_uses_contract_end_and_monthly_payment_date(self):
         start_date = date(2026, 5, 20)
         contract_end = date(2026, 8, 20)
-        payment_due_date = date(2026, 6, 15)
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -608,7 +608,7 @@ class DashboardSmokeTest(TestCase):
                 "close_date": start_date.isoformat(),
                 "due_date": contract_end.isoformat(),
                 "has_installments": "no",
-                "payment_due_date": payment_due_date.isoformat(),
+                "payment_due_day": "15",
                 "contract_duration_months": "3",
                 "posts_per_month": "12",
                 "videos_per_month": "4",
@@ -622,14 +622,14 @@ class DashboardSmokeTest(TestCase):
 
         self.assertNotIn("social_media", form.field_visibility_by_type["deliverables_count"])
         self.assertEqual(project.due_date, contract_end)
-        self.assertEqual(project.payment_due_date, payment_due_date)
+        self.assertEqual(project.payment_due_date, date(2026, 5, 15))
         self.assertEqual(project.entry_value, Decimal("0"))
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.deliverables_count, 1)
 
     def test_marketing_consulting_form_uses_total_value_as_monthly_contract_value(self):
         contract_end = date.today() + timedelta(days=100)
-        payment_due_date = date.today() + timedelta(days=20)
+        payment_due_day = min(date.today().day, 20)
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -644,7 +644,7 @@ class DashboardSmokeTest(TestCase):
                 "entry_value": "1250",
                 "received_value": "500",
                 "has_installments": "no",
-                "payment_due_date": payment_due_date.isoformat(),
+                "payment_due_day": str(payment_due_day),
                 "close_date": date.today().isoformat(),
                 "due_date": contract_end.isoformat(),
                 "contract_duration_months": "3",
@@ -662,12 +662,9 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.monthly_value, Decimal("0"))
         self.assertEqual(project.entry_value, Decimal("0"))
         self.assertEqual(project.received_value, Decimal("0"))
-        self.assertEqual(project.payment_due_date, payment_due_date)
+        self.assertEqual(project.payment_due_date, date.today().replace(day=payment_due_day))
 
-    def test_recurring_contract_with_installments_requires_payment_due_date(self):
-        # Parcelas agora são geradas automaticamente usando payment_due_date
-        # como dia fixo de cobrança, então ele é obrigatório mesmo quando
-        # has_installments=yes.
+    def test_recurring_contract_with_installments_requires_payment_due_day(self):
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -693,7 +690,7 @@ class DashboardSmokeTest(TestCase):
         )
 
         self.assertFalse(form.is_valid())
-        self.assertIn("payment_due_date", form.errors)
+        self.assertIn("payment_due_day", form.errors)
 
     def test_social_media_manual_installments_are_payment_splits(self):
         self.client.force_login(self.user)
@@ -717,7 +714,7 @@ class DashboardSmokeTest(TestCase):
                 "has_installments": "yes",
                 "close_date": close_date.isoformat(),
                 "due_date": contract_end.isoformat(),
-                "payment_due_date": payment_due_date.isoformat(),
+                "payment_due_day": str(payment_due_date.day),
                 "contract_duration_months": "3",
                 "posts_per_month": "12",
                 "videos_per_month": "4",
@@ -765,7 +762,7 @@ class DashboardSmokeTest(TestCase):
                 "has_installments": "no",
                 "close_date": close_date.isoformat(),
                 "due_date": (close_date + timedelta(days=90)).isoformat(),
-                "payment_due_date": (close_date + timedelta(days=30)).isoformat(),
+                "payment_due_day": str((close_date + timedelta(days=30)).day),
                 "contract_duration_months": "3",
                 "posts_per_month": "12",
                 "videos_per_month": "4",
@@ -841,7 +838,7 @@ class DashboardSmokeTest(TestCase):
                 "entry_value": "1250",
                 "received_value": "0",
                 "has_installments": "no",
-                "payment_due_date": date(start_date.year, 5, 15).isoformat(),
+                "payment_due_day": "15",
                 "close_date": start_date.isoformat(),
                 "due_date": "",
                 "contract_duration_months": "6",
@@ -1357,6 +1354,8 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, 'Valor por creator:', html=False)
         self.assertContains(response, 'data-recurring-label="Valor mensal do contrato"', html=False)
         self.assertContains(response, 'data-recurring-label="Data de finalização do contrato"', html=False)
+        self.assertContains(response, 'Dia do pagamento', html=False)
+        self.assertContains(response, 'data-show-for-type="social_media,consultoria_marketing"', html=False)
         self.assertContains(response, 'Tem parcela?', html=False)
         self.assertContains(response, 'data-default-label="Data de fechamento"', html=False)
 
