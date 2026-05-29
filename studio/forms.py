@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import calendar
 from datetime import date, timedelta
+from decimal import Decimal
 import re
 
 from django import forms
@@ -13,6 +14,7 @@ from django.utils import timezone
 
 from .contact_types import DEFAULT_CONTACT_TYPE_CHOICES, infer_contact_type, normalize_contact_type
 from .constants import (
+    CASH_BOX_ALLOCATION_SETTINGS,
     COMMISSION_PAYMENT_TYPES,
     IMAGE_LICENSE_TERM_CHOICES,
     POST_PRODUCTION_PAYMENT_TYPES,
@@ -1129,6 +1131,55 @@ class FixedCostForm(forms.ModelForm):
         if value < 1 or value > 31:
             raise forms.ValidationError("Informe um dia entre 1 e 31.")
         return value
+
+
+def _decimal_from_setting(raw_value, default: str):
+    raw_text = str(raw_value if raw_value not in {None, ""} else default).strip()
+    raw_text = raw_text.replace("%", "").replace(" ", "")
+    if "," in raw_text:
+        raw_text = raw_text.replace(".", "").replace(",", ".")
+    try:
+        return Decimal(raw_text)
+    except Exception:
+        return Decimal(default)
+
+
+class CashBoxAllocationForm(forms.Form):
+    allocation_percentage = forms.DecimalField(
+        label="Percentual",
+        min_value=0,
+        max_value=100,
+        max_digits=5,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={"step": "0.01", "min": "0", "max": "100", "inputmode": "decimal"}),
+    )
+
+    def __init__(self, *args, box_key: str, settings_values: dict[str, str] | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.box_key = box_key
+        self.settings_values = settings_values or {}
+        self.box_config = CASH_BOX_ALLOCATION_SETTINGS[box_key]
+        raw_value = self.settings_values.get(self.box_config["key"], self.box_config["default"])
+        self.fields["allocation_percentage"].label = f"% para {self.box_config['label']}"
+        self.fields["allocation_percentage"].initial = _decimal_from_setting(raw_value, self.box_config["default"])
+        self.fields["allocation_percentage"].help_text = self.box_config["description"]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        percentage = cleaned_data.get("allocation_percentage")
+        if percentage is None:
+            return cleaned_data
+        other_total = Decimal("0")
+        for key, config in CASH_BOX_ALLOCATION_SETTINGS.items():
+            if key == self.box_key:
+                continue
+            other_total += _decimal_from_setting(
+                self.settings_values.get(config["key"], config["default"]),
+                config["default"],
+            )
+        if other_total + percentage > 100:
+            self.add_error("allocation_percentage", "Reserva e investimento juntos nao podem passar de 100%.")
+        return cleaned_data
 
 
 class CashBoxForm(forms.ModelForm):

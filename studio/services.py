@@ -14,6 +14,7 @@ from django.urls import reverse
 
 from .contact_types import infer_contact_type
 from .constants import (
+    CASH_BOX_ALLOCATION_SETTINGS,
     COMPANY_COLORS,
     DEFAULT_NICHE_NAMES,
     LEGACY_DEFAULT_NICHE_NAMES,
@@ -468,6 +469,13 @@ def _decimal_setting(settings_values: dict[str, str], key: str, default: Decimal
         return max(Decimal(raw_value), ZERO)
     except Exception:
         return default
+
+
+def _percentage_text(value: Decimal) -> str:
+    amount = Decimal(value or 0).quantize(Decimal("0.01"))
+    if amount == amount.to_integral():
+        return f"{int(amount)}%"
+    return f"{amount.normalize()}%".replace(".", ",")
 
 
 def navigation(page_key: str, month_filter: str | None = None, badges: dict | None = None) -> list[dict]:
@@ -1809,8 +1817,20 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     else:
         distribution_pending_text = f"faltam {currency(pro_labore_remaining)} para cobrir o pró-labore"
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)
-    reserve_amount = (distribution_base * Decimal("0.30")).quantize(Decimal("0.01"))
-    investment_amount = (distribution_base * Decimal("0.20")).quantize(Decimal("0.01"))
+    reserve_config = CASH_BOX_ALLOCATION_SETTINGS["reserve"]
+    investment_config = CASH_BOX_ALLOCATION_SETTINGS["investment"]
+    reserve_percentage = _decimal_setting(
+        workspace_settings,
+        reserve_config["key"],
+        Decimal(reserve_config["default"]),
+    )
+    investment_percentage = _decimal_setting(
+        workspace_settings,
+        investment_config["key"],
+        Decimal(investment_config["default"]),
+    )
+    reserve_amount = (distribution_base * reserve_percentage / Decimal("100")).quantize(Decimal("0.01"))
+    investment_amount = (distribution_base * investment_percentage / Decimal("100")).quantize(Decimal("0.01"))
     free_flow_base = max(distribution_base - reserve_amount - investment_amount, ZERO)
     custom_boxes_total = ZERO
     custom_box_items = []
@@ -1901,8 +1921,10 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "distribution_pending_text": distribution_pending_text,
             "distribution_base": currency(distribution_base),
             "reserve": currency(reserve_amount),
+            "reserve_percentage": _percentage_text(reserve_percentage),
             "reserve_progress": reserve_progress,
             "investment": currency(investment_amount),
+            "investment_percentage": _percentage_text(investment_percentage),
             "custom_boxes": custom_box_items,
             "custom_boxes_total": currency(custom_boxes_total),
             "free_flow_base": currency(free_flow_base),

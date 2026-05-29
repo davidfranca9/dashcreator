@@ -31,6 +31,7 @@ from .emails import send_signup_confirmation_email
 from .forms import (
     AUTO_MONTHLY_INSTALLMENT_TYPES,
     AppPasswordResetForm,
+    CashBoxAllocationForm,
     AppSetPasswordForm,
     CashBoxForm,
     ContractBrandForm,
@@ -46,6 +47,7 @@ from .forms import (
     WorkspaceBusinessForm,
     WorkspaceSettingsForm,
 )
+from .constants import CASH_BOX_ALLOCATION_SETTINGS
 from .models import CashBox, FinanceEntry, FixedCost, Project, ProjectInstallment, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
@@ -1182,10 +1184,14 @@ def finance(request: HttpRequest) -> HttpResponse:
             CashBox.objects.filter(workspace=workspace),
             pk=int(editing_cash_box_id),
         )
+    editing_cash_box_rule_key = request.POST.get("cash_box_rule") if request.method == "POST" else request.GET.get("edit_cash_box_rule")
+    if editing_cash_box_rule_key and editing_cash_box_rule_key not in CASH_BOX_ALLOCATION_SETTINGS:
+        raise Http404("Caixinha nao encontrada.")
     add_fixed_cost_kind = request.GET.get("add_fixed_cost")
     if add_fixed_cost_kind not in {FixedCost.KIND_TOOL, FixedCost.KIND_COLLABORATOR}:
         add_fixed_cost_kind = None
     add_cash_box = request.GET.get("add_cash_box") == "1"
+    workspace_settings = settings_map(workspace)
     selected_month = parse_month_value(month_filter) if month_filter and month_filter != "all" else None
     today = date.today()
     initial_date = (
@@ -1224,6 +1230,11 @@ def finance(request: HttpRequest) -> HttpResponse:
         cash_box_form_kwargs["instance"] = editing_cash_box
     cash_box_form = CashBoxForm(**cash_box_form_kwargs)
     cash_box_modal_open = editing_cash_box is not None or add_cash_box
+    cash_box_rule_form = CashBoxAllocationForm(
+        box_key=editing_cash_box_rule_key or "reserve",
+        settings_values=workspace_settings,
+    )
+    cash_box_rule_modal_open = editing_cash_box_rule_key is not None
 
     if request.method == "POST":
         action = request.POST.get("finance_action")
@@ -1292,6 +1303,24 @@ def finance(request: HttpRequest) -> HttpResponse:
             if month_filter:
                 redirect_url = f"{redirect_url}?month={month_filter}"
             return redirect(redirect_url)
+        elif action == "cash_box_rule" and editing_cash_box_rule_key is not None:
+            cash_box_rule_form = CashBoxAllocationForm(
+                request.POST,
+                box_key=editing_cash_box_rule_key,
+                settings_values=workspace_settings,
+            )
+            if cash_box_rule_form.is_valid():
+                box_config = CASH_BOX_ALLOCATION_SETTINGS[editing_cash_box_rule_key]
+                save_settings(
+                    workspace,
+                    {box_config["key"]: cash_box_rule_form.cleaned_data["allocation_percentage"]},
+                )
+                messages.success(request, "Caixinha atualizada.")
+                redirect_url = reverse("finance")
+                if month_filter:
+                    redirect_url = f"{redirect_url}?month={month_filter}"
+                return redirect(redirect_url)
+            cash_box_rule_modal_open = True
 
     context = shell_context(
         "finance",
@@ -1323,6 +1352,14 @@ def finance(request: HttpRequest) -> HttpResponse:
             "cash_box_modal_open": cash_box_modal_open,
             "cash_box_form_title": "Editar caixinha" if editing_cash_box is not None else "Nova caixinha",
             "cash_box_form_submit_label": "Salvar alteração" if editing_cash_box is not None else "Criar caixinha",
+            "cash_box_rule_form": cash_box_rule_form,
+            "cash_box_rule_modal_open": cash_box_rule_modal_open,
+            "cash_box_rule_key": editing_cash_box_rule_key,
+            "cash_box_rule_title": (
+                f"Editar {CASH_BOX_ALLOCATION_SETTINGS[editing_cash_box_rule_key]['label']}"
+                if editing_cash_box_rule_key is not None
+                else "Editar caixinha"
+            ),
             "finance_cancel_url": f"{reverse('finance')}?month={month_filter}" if month_filter else reverse("finance"),
         }
     )

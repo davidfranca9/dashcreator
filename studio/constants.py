@@ -177,6 +177,21 @@ COMPANY_COLORS = {
     "Adidas": ("#dbe4ef", "#eef3f8", "#61748e"),
 }
 
+CASH_BOX_ALLOCATION_SETTINGS = {
+    "reserve": {
+        "key": "finance_reserve_percentage",
+        "label": "Reserva",
+        "default": "30.00",
+        "description": "Percentual separado para reserva antes do fluxo livre.",
+    },
+    "investment": {
+        "key": "finance_investment_percentage",
+        "label": "Investimento",
+        "default": "20.00",
+        "description": "Percentual separado para investimento antes do fluxo livre.",
+    },
+}
+
 SETTINGS_GROUPS = [
     {
         "title": "Experiência visual",

@@ -194,24 +194,24 @@
                     </div>
                     <p>Seu salário mensal fixo, independente do faturamento.</p>
                 </article>
-                <article class="fd-box">
+                <a class="fd-box fd-box-link" href="{% url 'finance' %}?edit_cash_box_rule=reserve{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                     <div class="fd-box-head">
                         <span class="fd-box-name fd-warn"><i class="ti ti-shield"></i> Reserva</span>
                         <strong>{{ finance_desktop.reserve }}</strong>
                     </div>
                     <div class="fd-bar-wrap"><span class="fd-bar fd-bar-warn" style="width: {{ finance_desktop.reserve_progress }}%"></span></div>
-                    <div class="fd-box-meta"><span>30% do restante</span><strong class="fd-warn">{{ finance_desktop.reserve_progress }}% da meta</strong></div>
+                    <div class="fd-box-meta"><span>{{ finance_desktop.reserve_percentage }} do restante</span><strong class="fd-warn">Editar</strong></div>
                     <p>Meta: R$30.000 (6× pró-labore). Só usar em emergência real.</p>
-                </article>
-                <article class="fd-box">
+                </a>
+                <a class="fd-box fd-box-link" href="{% url 'finance' %}?edit_cash_box_rule=investment{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                     <div class="fd-box-head">
                         <span class="fd-box-name fd-purple"><i class="ti ti-rocket"></i> Investimento</span>
                         <strong>{{ finance_desktop.investment }}</strong>
                     </div>
                     <div class="fd-bar-wrap"><span class="fd-bar fd-bar-purple" style="width: 100%"></span></div>
-                    <div class="fd-box-meta"><span>20% do restante</span><strong class="fd-purple">Aporte feito ✓</strong></div>
+                    <div class="fd-box-meta"><span>{{ finance_desktop.investment_percentage }} do restante</span><strong class="fd-purple">Editar</strong></div>
                     <p>Equipamentos, cursos, mentorias, eventos de networking.</p>
-                </article>
+                </a>
                 {% for item in finance_desktop.custom_boxes %}
                     <a class="fd-box fd-box-link fd-box-custom" href="{% url 'finance' %}?edit_cash_box={{ item.id }}{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                         <div class="fd-box-head">
@@ -498,6 +498,36 @@
     </div>
 </div>
 
+<div class="fd-modal-backdrop" data-cash-box-rule-modal{% if not cash_box_rule_modal_open %} hidden{% endif %}>
+    <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="cash-box-rule-title">
+        <div class="fd-modal-header">
+            <div>
+                <h3 id="cash-box-rule-title">{{ cash_box_rule_title }}</h3>
+                <p>Ajuste quanto do restante vai para essa caixinha.</p>
+            </div>
+            <a class="fd-modal-close" href="{{ finance_cancel_url }}" aria-label="Fechar">&times;</a>
+        </div>
+        <form method="post" class="fd-expense-form">
+            {% csrf_token %}
+            <input type="hidden" name="finance_action" value="cash_box_rule">
+            <input type="hidden" name="month" value="{{ selected_month.value }}">
+            <input type="hidden" name="cash_box_rule" value="{{ cash_box_rule_key }}">
+            {% for field in cash_box_rule_form %}
+                <label class="fd-form-field">
+                    <span>{{ field.label }}</span>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {{ field.errors }}
+                </label>
+            {% endfor %}
+            <div class="fd-modal-actions">
+                <a class="fd-cancel-button" href="{{ finance_cancel_url }}">Cancelar</a>
+                <button type="submit" class="fd-submit-button">Salvar percentual</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="fd-modal-backdrop" data-cash-box-modal{% if not cash_box_modal_open %} hidden{% endif %}>
     <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="cash-box-title">
         <div class="fd-modal-header">
@@ -593,6 +623,19 @@
             }
             cashBoxModal.addEventListener("click", (event) => {
                 if (event.target === cashBoxModal && cancelLink) {
+                    window.location.href = cancelLink.getAttribute("href");
+                }
+            });
+        }
+
+        const cashBoxRuleModal = document.querySelector("[data-cash-box-rule-modal]");
+        if (cashBoxRuleModal) {
+            const cancelLink = cashBoxRuleModal.querySelector(".fd-modal-close");
+            if (!cashBoxRuleModal.hidden) {
+                document.body.classList.add("has-popup-open");
+            }
+            cashBoxRuleModal.addEventListener("click", (event) => {
+                if (event.target === cashBoxRuleModal && cancelLink) {
                     window.location.href = cancelLink.getAttribute("href");
                 }
             });

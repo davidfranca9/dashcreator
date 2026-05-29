@@ -2512,6 +2512,41 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(snapshot["finance_desktop"]["custom_boxes_total"], "R$35")
         self.assertEqual(snapshot["finance_desktop"]["free_flow"], "R$315")
 
+    def test_finance_page_allows_editing_default_cash_box_percentages(self):
+        self.workspace.settings.update_or_create(key="ops_pro_labore_amount", defaults={"value": "100.00"})
+        selected_month = self.project.due_date.strftime("%Y-%m")
+        self.client.force_login(self.user)
+
+        edit_response = self.client.get(
+            reverse("finance"),
+            {"edit_cash_box_rule": "reserve", "month": selected_month},
+        )
+
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertTrue(edit_response.context["cash_box_rule_modal_open"])
+        self.assertEqual(edit_response.context["cash_box_rule_key"], "reserve")
+        self.assertContains(edit_response, "Editar Reserva")
+
+        update_response = self.client.post(
+            reverse("finance"),
+            {
+                "finance_action": "cash_box_rule",
+                "cash_box_rule": "reserve",
+                "allocation_percentage": "40",
+                "month": selected_month,
+            },
+            follow=True,
+        )
+        snapshot = finance_snapshot(self.workspace, selected_month)
+
+        self.assertRedirects(update_response, f"{reverse('finance')}?month={selected_month}")
+        self.assertContains(update_response, "Caixinha atualizada.")
+        self.assertEqual(self.workspace.settings.get(key="finance_reserve_percentage").value, "40")
+        self.assertEqual(snapshot["finance_desktop"]["reserve_percentage"], "40%")
+        self.assertEqual(snapshot["finance_desktop"]["reserve"], "R$280")
+        self.assertEqual(snapshot["finance_desktop"]["investment"], "R$140")
+        self.assertEqual(snapshot["finance_desktop"]["free_flow"], "R$280")
+
     def test_finance_page_allows_creating_editing_and_deleting_cash_box(self):
         self.client.force_login(self.user)
 
