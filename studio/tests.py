@@ -695,7 +695,7 @@ class DashboardSmokeTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("payment_due_date", form.errors)
 
-    def test_social_media_auto_generates_monthly_installments_for_duration(self):
+    def test_social_media_manual_installments_are_payment_splits(self):
         self.client.force_login(self.user)
         close_date = date(2026, 5, 20)
         contract_end = date(2026, 8, 20)
@@ -722,25 +722,28 @@ class DashboardSmokeTest(TestCase):
                 "posts_per_month": "12",
                 "videos_per_month": "4",
                 "profile_managed": "@insider",
-                "installments-TOTAL_FORMS": "0",
+                "installments-TOTAL_FORMS": "2",
                 "installments-INITIAL_FORMS": "0",
                 "installments-MIN_NUM_FORMS": "0",
                 "installments-MAX_NUM_FORMS": "1000",
+                "installments-0-due_date": date(2026, 5, 5).isoformat(),
+                "installments-0-amount": "200",
+                "installments-0-paid": "on",
+                "installments-1-due_date": date(2026, 5, 20).isoformat(),
+                "installments-1-amount": "300",
             },
         )
         self.assertRedirects(response, reverse("jobs"))
         project = Project.objects.get(workspace=self.workspace, company="Insider")
         installments = list(project.installments.order_by("due_date"))
-        self.assertEqual(len(installments), 3)
+        self.assertEqual(len(installments), 2)
         self.assertEqual([i.due_date for i in installments], [
-            date(2026, 5, 30),
-            date(2026, 6, 30),
-            date(2026, 7, 30),
+            date(2026, 5, 5),
+            date(2026, 5, 20),
         ])
-        # Para contratos recorrentes, total_value é "valor mensal" e cada
-        # parcela carrega esse mesmo valor (não divide por duration).
-        for installment in installments:
-            self.assertEqual(installment.amount, Decimal("500.00"))
+        self.assertEqual([i.amount for i in installments], [Decimal("200.00"), Decimal("300.00")])
+        self.assertTrue(installments[0].paid)
+        self.assertFalse(installments[1].paid)
 
     def test_social_media_with_has_installments_no_does_not_generate(self):
         self.client.force_login(self.user)
@@ -776,6 +779,42 @@ class DashboardSmokeTest(TestCase):
         self.assertRedirects(response, reverse("jobs"))
         project = Project.objects.get(workspace=self.workspace, company="Insider")
         self.assertEqual(project.installments.count(), 0)
+
+    def test_recurring_contract_without_manual_installments_enters_on_payment_day(self):
+        self.client.force_login(self.user)
+        today = date.today()
+        close_date = date(today.year, 1, 15)
+        payment_due_date = date(today.year, today.month, 15)
+        contract_end = date(today.year, 12, 31)
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Amara",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="social_media",
+            project_name="Social media mensal",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=3500,
+            contract_duration_months=12,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=1,
+            progress=20,
+            payment_due_date=payment_due_date,
+            close_date=close_date,
+            due_date=contract_end,
+        )
+
+        response = self.client.get(reverse("finance"), {"month": today.strftime("%Y-%m")})
+
+        incoming_items = response.context["finance_desktop"]["incoming_items"]
+        amara_entry = next((item for item in incoming_items if item["company"] == "Amara"), None)
+        self.assertIsNotNone(amara_entry)
+        self.assertEqual(amara_entry["amount_text"], "+R$3.500")
+        self.assertIn("Mensalidade", amara_entry["detail"])
 
     def test_installment_form_renders_due_date_in_iso_format(self):
         from .forms import ProjectInstallmentForm

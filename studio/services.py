@@ -1624,33 +1624,30 @@ def _project_finance_events(project: Project) -> list[dict]:
         monthly_amount = _project_monthly_contract_value(project)
         if monthly_amount <= ZERO:
             return events
-        remaining_received = Decimal(project.received_value or 0)
         for index, payment_date in enumerate(_project_recurring_payment_dates(project), start=1):
-            paid_amount = min(remaining_received, monthly_amount)
-            outstanding_amount = monthly_amount - paid_amount
-            if paid_amount > ZERO:
+            is_paid = payment_date <= date.today()
+            if is_paid:
                 events.append(
                     {
                         "project": project,
                         "kind": f"Mensalidade {index}",
-                        "amount": paid_amount,
+                        "amount": monthly_amount,
                         "due_date": payment_date,
                         "paid": True,
                         "paid_on": payment_date,
                     }
                 )
-            if outstanding_amount > ZERO:
+            else:
                 events.append(
                     {
                         "project": project,
                         "kind": f"Mensalidade {index}",
-                        "amount": outstanding_amount,
+                        "amount": monthly_amount,
                         "due_date": payment_date,
                         "paid": False,
                         "paid_on": None,
                     }
                 )
-            remaining_received = max(remaining_received - monthly_amount, ZERO)
         return events
 
     payment_date = payment_reference_date(project)
@@ -1831,7 +1828,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     incoming_items = [
         {
             "company": item["project"].company,
-            "detail": f"{short_date(_finance_event_reference_date(item))} · {item['project'].service_category_name}",
+            "detail": f"{short_date(_finance_event_reference_date(item))} · {item['kind']} · {item['project'].service_category_name}",
             "amount_text": f"+{currency(item['amount'])}",
             "status": "Recebido",
         }

@@ -1652,17 +1652,20 @@ def _sync_auto_monthly_installments(
     - Contratos recorrentes: total_value é "Valor mensal do contrato" → usa
       como está (parcela = total_value).
 
-    Quando duração <= 1 ou o usuário marca has_installments=No em contrato
-    recorrente, remove parcelas existentes sem regenerar."""
+    Contratos recorrentes (Social Media / Consultoria) sem parcelas manuais
+    usam mensalidades virtuais no financeiro. O bloco de parcelas fica livre
+    para pagamentos divididos em datas/valores especificos."""
     if project.service_type not in AUTO_MONTHLY_INSTALLMENT_TYPES:
         return
     duration = int(project.contract_duration_months or 0)
     base_date = project.payment_due_date or project.close_date
-    project.installments.all().delete()
     is_publicidade = project.service_type == "publicidade"
+    if not is_publicidade:
+        if not has_installments_yes:
+            project.installments.all().delete()
+        return
+    project.installments.all().delete()
     should_generate = duration > 1 and base_date is not None
-    if not is_publicidade and not has_installments_yes:
-        should_generate = False
     if not should_generate:
         return
     total = Decimal(project.total_value or 0)
