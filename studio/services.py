@@ -1791,14 +1791,15 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_tools_amount = sum((item.monthly_equivalent() for item in fixed_tools), ZERO)
     fixed_collaborators_amount = sum((item.monthly_equivalent() for item in fixed_collaborators), ZERO)
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
-    pro_labore_remaining = max(pro_labore_amount - incoming_total, ZERO)
-    pro_labore_covered = pro_labore_remaining == ZERO
-    fixed_cost_remaining = max(pro_labore_amount + fixed_cost_amount - incoming_total, ZERO) if fixed_cost_amount else ZERO
+    fixed_cost_remaining = max(fixed_cost_amount - incoming_total, ZERO)
     fixed_cost_covered = fixed_cost_remaining == ZERO
+    pro_labore_available = max(incoming_total - fixed_cost_amount, ZERO)
+    pro_labore_remaining = max(pro_labore_amount - pro_labore_available, ZERO)
+    pro_labore_covered = pro_labore_remaining == ZERO
     distribution_remaining = max(pro_labore_amount + fixed_cost_amount - incoming_total, ZERO)
     distribution_complete = distribution_remaining == ZERO
-    if pro_labore_covered:
-        distribution_pending_text = f"faltam {currency(distribution_remaining)} para fechar pró-labore e custo fixo"
+    if not fixed_cost_covered:
+        distribution_pending_text = f"faltam {currency(fixed_cost_remaining)} para cobrir o custo fixo"
     else:
         distribution_pending_text = f"faltam {currency(pro_labore_remaining)} para cobrir o pró-labore"
     distribution_base = max(incoming_total - pro_labore_amount - fixed_cost_amount, ZERO)

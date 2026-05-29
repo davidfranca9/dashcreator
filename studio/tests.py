@@ -2349,12 +2349,15 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "fd-tag-warn")
         self.assertNotContains(response, "Todas as caixinhas abastecidas")
 
-    def test_finance_fixed_cost_card_waits_for_pro_labore_first(self):
+    def test_finance_revenue_covers_fixed_cost_before_pro_labore(self):
+        self.workspace.settings.update_or_create(key="ops_pro_labore_amount", defaults={"value": "4000.00"})
+        self.project.received_value = Decimal("1000")
+        self.project.save(update_fields=["received_value"])
         FixedCost.objects.create(
             workspace=self.workspace,
             kind=FixedCost.KIND_TOOL,
             name="Ferramenta fixa",
-            amount=Decimal("700"),
+            amount=Decimal("600"),
             due_day=1,
         )
         self.client.force_login(self.user)
@@ -2363,14 +2366,17 @@ class DashboardSmokeTest(TestCase):
 
         finance_desktop = response.context["finance_desktop"]
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(finance_desktop["fixed_cost"], "R$700")
-        self.assertFalse(finance_desktop["fixed_cost_covered"])
-        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$4.900")
+        self.assertEqual(finance_desktop["revenue_total"], "R$1.000")
+        self.assertEqual(finance_desktop["fixed_cost"], "R$600")
+        self.assertTrue(finance_desktop["fixed_cost_covered"])
+        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$0")
+        self.assertEqual(finance_desktop["pro_labore"], "R$4.000")
         self.assertFalse(finance_desktop["pro_labore_covered"])
-        self.assertEqual(finance_desktop["pro_labore_remaining"], "R$4.200")
+        self.assertEqual(finance_desktop["pro_labore_remaining"], "R$3.600")
         self.assertFalse(finance_desktop["distribution_complete"])
         self.assertContains(response, "Custo fixo")
-        self.assertContains(response, "faltam R$4.900")
+        self.assertContains(response, "coberto este mês")
+        self.assertContains(response, "Faltam R$3.600")
         self.assertContains(response, "Separado do pró-labore")
 
     def test_finance_distribution_waits_for_pro_labore_plus_fixed_cost(self):
@@ -2387,15 +2393,16 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("finance"), {"month": self.project.due_date.strftime("%Y-%m")})
 
         finance_desktop = response.context["finance_desktop"]
-        self.assertTrue(finance_desktop["pro_labore_covered"])
-        self.assertFalse(finance_desktop["fixed_cost_covered"])
-        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$200")
+        self.assertTrue(finance_desktop["fixed_cost_covered"])
+        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$0")
+        self.assertFalse(finance_desktop["pro_labore_covered"])
+        self.assertEqual(finance_desktop["pro_labore_remaining"], "R$200")
         self.assertFalse(finance_desktop["distribution_complete"])
         self.assertEqual(
             finance_desktop["distribution_pending_text"],
-            "faltam R$200 para fechar pró-labore e custo fixo",
+            "faltam R$200 para cobrir o pró-labore",
         )
-        self.assertContains(response, "faltam R$200 para fechar pró-labore e custo fixo")
+        self.assertContains(response, "faltam R$200 para cobrir o pró-labore")
 
     def test_finance_snapshot_includes_custom_cash_boxes_from_free_flow(self):
         self.workspace.settings.update_or_create(key="ops_pro_labore_amount", defaults={"value": "100.00"})
