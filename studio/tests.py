@@ -2349,7 +2349,7 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "fd-tag-warn")
         self.assertNotContains(response, "Todas as caixinhas abastecidas")
 
-    def test_finance_fixed_cost_card_does_not_reduce_pro_labore(self):
+    def test_finance_fixed_cost_card_waits_for_pro_labore_first(self):
         FixedCost.objects.create(
             workspace=self.workspace,
             kind=FixedCost.KIND_TOOL,
@@ -2364,12 +2364,13 @@ class DashboardSmokeTest(TestCase):
         finance_desktop = response.context["finance_desktop"]
         self.assertEqual(response.status_code, 200)
         self.assertEqual(finance_desktop["fixed_cost"], "R$700")
-        self.assertTrue(finance_desktop["fixed_cost_covered"])
-        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$0")
+        self.assertFalse(finance_desktop["fixed_cost_covered"])
+        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$4.900")
         self.assertFalse(finance_desktop["pro_labore_covered"])
         self.assertEqual(finance_desktop["pro_labore_remaining"], "R$4.200")
         self.assertFalse(finance_desktop["distribution_complete"])
         self.assertContains(response, "Custo fixo")
+        self.assertContains(response, "faltam R$4.900")
         self.assertContains(response, "Separado do pró-labore")
 
     def test_finance_distribution_waits_for_pro_labore_plus_fixed_cost(self):
@@ -2387,7 +2388,8 @@ class DashboardSmokeTest(TestCase):
 
         finance_desktop = response.context["finance_desktop"]
         self.assertTrue(finance_desktop["pro_labore_covered"])
-        self.assertTrue(finance_desktop["fixed_cost_covered"])
+        self.assertFalse(finance_desktop["fixed_cost_covered"])
+        self.assertEqual(finance_desktop["fixed_cost_remaining"], "R$200")
         self.assertFalse(finance_desktop["distribution_complete"])
         self.assertEqual(
             finance_desktop["distribution_pending_text"],

@@ -1793,7 +1793,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
     pro_labore_remaining = max(pro_labore_amount - incoming_total, ZERO)
     pro_labore_covered = pro_labore_remaining == ZERO
-    fixed_cost_remaining = max(fixed_cost_amount - incoming_total, ZERO)
+    fixed_cost_remaining = max(pro_labore_amount + fixed_cost_amount - incoming_total, ZERO) if fixed_cost_amount else ZERO
     fixed_cost_covered = fixed_cost_remaining == ZERO
     distribution_remaining = max(pro_labore_amount + fixed_cost_amount - incoming_total, ZERO)
     distribution_complete = distribution_remaining == ZERO
