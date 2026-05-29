@@ -1345,6 +1345,13 @@ def empresas_snapshot(
         expires_on = image_usage_expires_on(item)
         contact_url = whatsapp_contact_url(item.company_phone)
         days_overdue = (today - item.due_date).days if project_counts_as_overdue(item, today) else 0
+        payment_due_date = item.payment_due_date
+        if selected_month is not None and _project_contract_month_count(item) > 1:
+            payment_due_date = (
+                _date_in_month_with_day(selected_month, _project_recurring_payment_day(item))
+                if _project_matches_recurring_payment_month(item, selected_month)
+                else None
+            )
         return {
             "id": item.id,
             "company": item.company,
@@ -1353,7 +1360,7 @@ def empresas_snapshot(
             "total_value": currency(item.total_value),
             "progress": item.progress,
             "due_text": short_date(item.due_date),
-            "payment_due_text": short_date(item.payment_due_date) if item.payment_due_date else "",
+            "payment_due_text": short_date(payment_due_date) if payment_due_date else "",
             "meeting_date_text": short_date(item.meeting_date) if item.meeting_date else "",
             "meeting_scheduled": item.meeting_scheduled,
             "distribution_text": distribution_label(item),
@@ -1486,16 +1493,18 @@ def jobs_snapshot_filtered(
     overdue_projects_query = projects_query if progress_filter != "entregue" else projects_query.none()
     upcoming_projects_query = projects_query if progress_filter != "entregue" else projects_query.none()
     if selected_month is not None:
-        projects_query = projects_query.filter(
-            close_date__year=selected_month.year,
-            close_date__month=selected_month.month,
-        )
         upcoming_projects_query = upcoming_projects_query.filter(
             due_date__year=selected_month.year,
             due_date__month=selected_month.month,
         )
 
     filtered_projects = list(projects_query.order_by("due_date"))
+    if selected_month is not None:
+        filtered_projects = [
+            item
+            for item in filtered_projects
+            if _project_matches_contract_month(item, selected_month)
+        ]
     overdue_projects = list(
         overdue_projects_query.filter(stage="Fechado", due_date__lt=date.today())
         .exclude(status__in=OVERDUE_EXCLUDED_STATUSES)

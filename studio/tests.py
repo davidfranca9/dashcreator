@@ -2018,6 +2018,58 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, f'name="month" value="{self.project.close_date.strftime("%Y-%m")}"', html=False)
         self.assertContains(response, f'{reverse("finance")}?month={self.project.close_date.strftime("%Y-%m")}')
 
+    def test_jobs_page_includes_recurring_active_contracts_in_selected_month(self):
+        current_month = date.today().replace(day=1)
+        start_absolute = current_month.year * 12 + current_month.month - 1 - 4
+        end_absolute = start_absolute + 5
+        start_month = date(start_absolute // 12, (start_absolute % 12) + 1, 1)
+        end_month = date(end_absolute // 12, (end_absolute % 12) + 1, 1)
+        month_abbreviations = {
+            1: "Jan",
+            2: "Fev",
+            3: "Mar",
+            4: "Abr",
+            5: "Mai",
+            6: "Jun",
+            7: "Jul",
+            8: "Ago",
+            9: "Set",
+            10: "Out",
+            11: "Nov",
+            12: "Dez",
+        }
+        Project.objects.create(
+            workspace=self.workspace,
+            company="Amara",
+            closing_source="Inbound",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="social_media",
+            project_name="Social media mensal",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=3500,
+            monthly_value=3500,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=1,
+            progress=25,
+            contract_duration_months=6,
+            payment_due_date=start_month.replace(day=15),
+            close_date=start_month.replace(day=15),
+            due_date=end_month.replace(day=28),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("jobs"), {"month": current_month.strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        active_companies = [item["company"] for item in response.context["active"]]
+        self.assertIn("Amara", active_companies)
+        amara_card = next(item for item in response.context["active"] if item["company"] == "Amara")
+        self.assertEqual(amara_card["payment_due_text"], f"15 {month_abbreviations[current_month.month]}")
+
     def test_jobs_upcoming_deliveries_respect_delivery_month(self):
         current_month = date.today().replace(day=1)
         previous_month = (current_month - timedelta(days=1)).replace(day=1)
