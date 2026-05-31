@@ -1,0 +1,11 @@
+(globalThis["webpackChunk_canva_web"] = globalThis["webpackChunk_canva_web"] || []).push([[27918],{
+
+/***/ 355285:
+function(_, __, __webpack_require__) {__webpack_require__.n_x = __webpack_require__.n;const __web_req__ = __webpack_require__;__web_req__(905716);__web_req__(261896);globalThis._5f74ec40302898c5a55451c9fbd04240 = globalThis._5f74ec40302898c5a55451c9fbd04240 || {};(function(__c) {__c.Sbd={hl:__c.HC()(({xA:{expr:a}})=>({...__c.yV,metadata:{type:"demo-11",name:__c.Fb("vAIjvQ",[11])},KS:["responsive"],C:{type:0,kt:({C:b})=>{const c=a.classes.gX;var d=a.classes.b4;const e=a.classes.kR,f=__c.FVb.create({...__c.l2b,box:{top:50,left:50,width:50,height:50},kn:[4],Uc:2,text:{...__c.tH,stream:__c.Jh.qb().ib("\n").build()},Db:void 0});Object.defineProperty(f,"text",{get:()=>b.vub});const g=d.create({},{S:{cb:a.list([()=>e.create({d:"M75 50 L100 100 L50 100 Z"},{S:{fill:c.create({},{attributes:{color:"#f5a623",
+qa:.2}})}})]),wb:a.list([f])},attributes:{top:50,left:50,width:50,height:50,viewBox:{top:50,left:50,width:50,height:50},Rd:{yA:!0,FE:!1,GE:!1,TC:!1,VD:!1,eD:!1}}});d={text:{...__c.tH,stream:__c.Jh.qb().attrs({color:"#ff5555","font-size":12}).ib("hi cell\n").build()},Db:void 0};d={...__c.Q1b,content:d};const h=__c.tWb.create({...__c.O1b,id:"LBBBBBBBBBBBBBBH",layout:{...__c.P1b,columns:[{id:"A",width:50},{id:"B",width:50}],rows:[{height:1,minHeight:1,Pl:new Map([["A","A1"],["B","B1"]])}],cellPadding:2,
+borderStyle:{color:"#4df04a",weight:.5,Rc:[]}},cells:new Map([["A1",d],["B1",d]]),top:15,left:10,width:80,height:18,K:280,O:63,locked:!0,Rd:{yA:!0,FE:!1,GE:!1,TC:!1,VD:!1,eD:!1}});Object.defineProperty(h.cells.get("A1").content,"text",{get:()=>b.H7a});Object.defineProperty(h.cells.get("B1").content,"text",{get:()=>b.J7a});d={...__c.k2b,text:{...__c.tH,stream:__c.Jh.qb().attrs({color:"#281caf","font-size":3}).ib("ok ?\n").build()},width:16,height:14,position:.5};const k=__c.uT.create({...__c.j2b,start:{...__c.cU,
+position:{top:60,left:10}},end:{...__c.cU,marker:3,position:{top:60,left:50}},id:"LBBBBBBBBBBBBBJ",top:58,left:10,width:40,height:4,weight:2,color:"#00c4cc",wb:[d]});Object.defineProperty(k.wb.first(()=>!0),"text",{get:()=>b.Sib});return{Ma:a.list(()=>[g,h,k])}}}}))};
+}).call(globalThis, globalThis._5f74ec40302898c5a55451c9fbd04240);}
+
+}])
+//# sourceMappingURL=sourcemaps/238d055369cb7f7d.js.map

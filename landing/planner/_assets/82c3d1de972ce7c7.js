@@ -1,0 +1,10 @@
+(globalThis["webpackChunk_canva_web"] = globalThis["webpackChunk_canva_web"] || []).push([[64414],{
+
+/***/ 744243:
+function(_, __, __webpack_require__) {__webpack_require__.n_x = __webpack_require__.n;const __web_req__ = __webpack_require__;__web_req__(905716);globalThis._5f74ec40302898c5a55451c9fbd04240 = globalThis._5f74ec40302898c5a55451c9fbd04240 || {};(function(__c) {var u2c=__webpack_require__(296713),K2=u2c.jsx,v2c=u2c.jsxs;var w2c=__webpack_require__(900581).PA;var x2c=__webpack_require__(978109),y2c=x2c.useCallback,z2c=x2c.useMemo,A2c=x2c.useState;var B2c=__webpack_require__(594314).A;var C2c=class{get m8(){return!this.Tl.active}get ZJ(){return __c.Uy()||this.isPlaying||this.Wj}get s8(){return!this.ZJ}get isPlaying(){return this.Ck.isPlaying(this.fill)}get fe(){return this.Ck.fe(this.fill)}get Wj(){return this.Ck.Wj(this.fill)}get Uj(){return this.Ck.Uj(this.fill)}get duration(){return this.Ck.getDuration(this.fill)}get Bq(){return this.Ck.getState(this.fill).Bq}get currentTime(){return this.Ck.getCurrentTime(this.fill)}get Qh(){return __c.BD(this.Ck,this.fill)}get volume(){return this.Ck.getVolume(this.fill)}get muted(){return this.volume===
+0}constructor(a,b,c){this.Ck=a;this.fill=b;this.Tl=c;this.contentType=1;this.wa=this.zIndex=void 0;this.Eia=this.yO=this.$T=this.KD=this.PRa=this.iRa=this.aK=this.Cia=!0;this.XT=this.a_a=!1}};__c.w5a={wca:w2c(a=>{const {Ck:b,X1a:c,ACb:d,...e}=a,f=e.item;__c.x(f.type==="design");const [g,h]=A2c(0),k=z2c(()=>new __c.nhb,[]),l=__c.y(__c.lE(c,__c.y(f.V.first()))),m=y2c(r=>{r!=null&&k.jma(r)},[k]),n=k.active?{width:g,left:0}:a.Vd,p=z2c(()=>new C2c(b,l,k),[l,k,b]),q=z2c(()=>new __c.GD(b,l),[l,b]);return a.ia.bg?.QAa!=null?K2(d,{...e}):K2(B2c,{onResize:r=>h(r.entry?.width??0),children:({measureRef:r})=>v2c("div",{ref:__c.zy(m,r),className:"jkKFFw",children:[K2(d,{...e,Vd:n}),K2(__c.FD,{store:p,
+controller:q,dCa:!0,Tl:k})]})})})};
+}).call(globalThis, globalThis._5f74ec40302898c5a55451c9fbd04240);}
+
+}])
+//# sourceMappingURL=sourcemaps/82c3d1de972ce7c7.js.map

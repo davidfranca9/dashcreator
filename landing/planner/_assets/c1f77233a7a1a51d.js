@@ -1,0 +1,12 @@
+(globalThis["webpackChunk_canva_web"] = globalThis["webpackChunk_canva_web"] || []).push([[44057],{
+
+/***/ 972068:
+function(_, __, __webpack_require__) {__webpack_require__.n_x = __webpack_require__.n;const __web_req__ = __webpack_require__;__web_req__(905716);__web_req__(597172);__web_req__(734120);__web_req__(261896);__web_req__(143712);globalThis._5f74ec40302898c5a55451c9fbd04240 = globalThis._5f74ec40302898c5a55451c9fbd04240 || {};(function(__c) {var t6=__c.t6;var Rld=function(){return{ref:void 0,set:a=>{__c.w(a==null)}}},Sld=__webpack_require__(296713),Tld=Sld.Fragment,u6=Sld.jsx,Uld=Sld.jsxs;var Vld=__webpack_require__(900581).PA;var Wld;Wld=(a,b={})=>__c.EZ(a,{color:"#ffffff",...b});
+__c.Tbd={hl:__c.HC()(({xA:{expr:a}})=>({...__c.yV,metadata:{type:"demo-12",name:__c.Fb("vAIjvQ",[12])},KS:["responsive"],aD:__c.Nld,C:__c.GC(Vld(({data:{C:b,local:c},La:{page:d,Kb:e},je:f})=>{const g=a.classes.gX,h=a.classes.dpa,k=[`Document ID: ${d.container.id}`,`Language: ${d.container.language??"not set"}`,`Interactivity: ${e>10?"PERSISTENT":"NONE"}`,`Selected: ${c.selected}`,""].join("\n");d=()=>b.width/2+5;const l=a.computed(()=>b.Ka.length),m=t6(b,{Ka:void 0}),n=t6(b,{X:void 0}).map(r=>[r],
+([r])=>r),p=[],q=h.create({},{S:{fill:g.create({},{S:{Oa:Rld()}})},attributes:{weight:t6(b,{Od:void 0}),color:__c.s6(t6(b,{borderColor:void 0})),Rc:t6(b,{Bda:void 0}).map(r=>r??p,r=>r.length?r:void 0),cf:!0}});return Uld(Tld,{children:[Array(l()).fill(null).map((r,t)=>u6(f.Ox,{args:{},S:{stroke:a.box(q),fill:g.create({},{S:{Oa:Rld()},attributes:{color:__c.s6(m.project(__c.Ild(t)))}})},attributes:{locked:!1,top:0,left:()=>Math.max(t*b.width/l()-.5,0),width:()=>b.width/l()+.5,height:()=>b.height,X:n}},
+t)),u6(f.ju,{args:{},S:{text:()=>Wld(k,{color:b.he,...__c.FZ(b.nv)})},attributes:{top:5,left:5,width:40,height:40}}),u6(f.ju,{args:{},S:{text:()=>b.label},attributes:{top:()=>b.height-40-5,left:d,width:40,height:40}}),u6(f.ju,{args:{},S:{text:()=>c.Neb},attributes:{top:5,left:d,width:40,height:40},maa:!1}),u6(f.Tn,{PB:"footest",style:{position:"absolute",top:b.height-40-5,left:5,width:40,height:40,color:b.he},children:u6(f.zi,{text:Wld("This text is rendered as a normal React component.",{color:b.he,
+...__c.FZ(b.nv)})})})]})}))}))};
+}).call(globalThis, globalThis._5f74ec40302898c5a55451c9fbd04240);}
+
+}])
+//# sourceMappingURL=sourcemaps/c1f77233a7a1a51d.js.map
