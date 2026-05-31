@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Dash Creator - sistema para creators organizarem trabalhos, financeiro e contratos.">
+<title>Dash Creator | The Creator Club</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,600&family=DM+Sans:wght@300;400;500;600&family=IM+Fell+English:ital@1&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--navy:#0A2463;--cream:#EAE4D4;--paper:#F5F1E8;--terra:#C9956A;--dark:#1A1410;--navy2:#3E6CB5;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--navy);overflow-x:hidden;}
+
+nav{padding:1.2rem 2.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(10,36,99,0.1);background:rgba(245,241,232,0.97);position:sticky;top:0;z-index:10;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-icon{width:30px;height:30px;background:var(--navy);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.nav-name{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--navy);}
+.nav-sub{font-size:0.45rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(10,36,99,0.3);display:block;}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.nav-price{font-size:0.75rem;color:rgba(10,36,99,0.5);font-weight:300;}
+.nav-price strong{color:var(--navy);font-weight:600;}
+.nav-cta{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;background:var(--navy);color:var(--paper);padding:0.55rem 1.2rem;border-radius:2px;border:none;cursor:pointer;font-weight:500;}
+
+/* HERO */
+.hero{padding:6rem 2.5rem 5rem;max-width:900px;margin:0 auto;text-align:center;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--terra);border:0.5px solid rgba(201,149,106,0.4);padding:0.35rem 1rem;border-radius:50px;margin-bottom:2rem;}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--terra);}
+.hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,5vw,4.5rem);font-weight:400;line-height:1.05;color:var(--navy);margin-bottom:1.5rem;}
+.hero h1 em{font-style:italic;color:var(--terra);}
+.hero-sub{font-size:1rem;color:rgba(10,36,99,0.5);max-width:560px;margin:0 auto 2rem;line-height:1.8;font-weight:300;}
+.hero-oferta{display:inline-flex;flex-direction:column;align-items:center;background:var(--navy);border-radius:8px;padding:1.5rem 3rem;margin-bottom:2rem;}
+.ho-label{font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(234,228,212,0.4);margin-bottom:0.5rem;}
+.ho-price{display:flex;align-items:baseline;gap:0.5rem;}
+.ho-value{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:600;color:var(--cream);line-height:1;}
+.ho-period{font-size:0.78rem;color:rgba(234,228,212,0.5);font-weight:300;}
+.ho-installment{font-size:0.72rem;color:rgba(234,228,212,0.4);margin-top:0.3rem;}
+.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+.btn-p{background:var(--terra);color:var(--dark);padding:1rem 2.5rem;border-radius:2px;font-size:0.8rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;border:none;cursor:pointer;}
+.btn-g{background:transparent;color:var(--navy);border:0.5px solid rgba(10,36,99,0.25);padding:1rem 2rem;border-radius:2px;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;}
+
+/* PROOF STRIP */
+.proof-strip{background:var(--navy);padding:1.2rem 2.5rem;display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;}
+.proof-item{display:flex;align-items:center;gap:0.5rem;}
+.proof-num{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--terra);}
+.proof-label{font-size:0.68rem;color:rgba(234,228,212,0.4);text-transform:uppercase;letter-spacing:0.1em;font-weight:300;}
+
+/* APP PREVIEW */
+.app-preview{background:var(--dark);padding:4rem 2.5rem;position:relative;overflow:hidden;}
+.ap-noise{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");pointer-events:none;}
+.app-window{max-width:820px;margin:0 auto;background:#f0f2f5;border-radius:8px;overflow:hidden;position:relative;z-index:1;box-shadow:0 24px 60px rgba(0,0,0,0.4);}
+.app-bar{background:#fff;padding:0.7rem 1.2rem;border-bottom:0.5px solid rgba(10,36,99,0.08);display:flex;align-items:center;gap:6px;}
+.app-dot{width:9px;height:9px;border-radius:50%;}
+.app-title-bar{font-size:0.7rem;font-weight:500;color:var(--navy);margin-left:8px;}
+.app-body{display:grid;grid-template-columns:170px 1fr;}
+.app-sb{background:#0A2463;padding:1rem 0;}
+.app-sb-item{padding:0.55rem 1.1rem;font-size:0.68rem;color:rgba(234,228,212,0.4);display:flex;align-items:center;gap:7px;}
+.app-sb-item.active{background:rgba(234,228,212,0.08);color:var(--cream);}
+.app-sb-section{font-size:0.5rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(234,228,212,0.18);padding:0.6rem 1.1rem 0.2rem;}
+.app-main{padding:1.2rem;}
+.app-h{font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:0.2rem;}
+.app-s{font-size:0.62rem;color:rgba(10,36,99,0.4);margin-bottom:1rem;}
+.app-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:0.8rem;}
+.kpi{background:#fff;border:0.5px solid rgba(10,36,99,0.06);border-radius:5px;padding:0.6rem 0.75rem;}
+.kpi-l{font-size:0.55rem;color:rgba(10,36,99,0.4);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.2rem;}
+.kpi-v{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.kpi-v.green{color:#2e7d32;}
+.app-chart{background:#fff;border:0.5px solid rgba(10,36,99,0.06);border-radius:5px;padding:0.75rem;}
+.chart-title{font-size:0.62rem;font-weight:500;color:var(--navy);margin-bottom:0.6rem;}
+.chart-bars{display:flex;align-items:flex-end;gap:3px;height:44px;}
+.bar{flex:1;border-radius:2px 2px 0 0;background:rgba(10,36,99,0.08);}
+.bar.hi{background:var(--navy2);}
+.bar.med{background:rgba(62,108,181,0.5);}
+
+/* PROBLEMA */
+.problema{padding:6rem 2.5rem;max-width:780px;margin:0 auto;}
+.sec-label{font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(10,36,99,0.25);margin-bottom:2rem;display:block;}
+.problema h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.8rem);font-weight:400;line-height:1.2;color:var(--navy);margin-bottom:1.5rem;}
+.problema h2 strong{font-style:italic;font-weight:600;color:var(--terra);}
+.problema p{font-size:0.92rem;color:rgba(10,36,99,0.5);line-height:1.9;font-weight:300;margin-bottom:1rem;}
+
+/* ANTES DEPOIS */
+.antesdepois{padding:0 2.5rem 6rem;max-width:820px;margin:0 auto;}
+.ad-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(10,36,99,0.08);border-radius:4px;overflow:hidden;}
+.ad-col{padding:2rem;}
+.ad-col.antes{background:#fff8f6;}
+.ad-col.depois{background:#f0f5ff;}
+.ad-col-title{font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:1.2rem;display:block;}
+.antes .ad-col-title{color:#c0392b;}
+.depois .ad-col-title{color:var(--navy);}
+.ad-item{display:flex;align-items:flex-start;gap:0.6rem;margin-bottom:0.75rem;font-size:0.82rem;line-height:1.5;font-weight:300;color:rgba(10,36,99,0.65);}
+.ad-icon{flex-shrink:0;font-size:0.75rem;margin-top:1px;}
+
+/* MÓDULOS */
+.modulos{padding:7rem 2.5rem;background:var(--cream);}
+.mod-inner{max-width:860px;margin:0 auto;}
+.mod-inner h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:400;color:var(--navy);margin-bottom:0.6rem;}
+.mod-inner .intro{font-size:0.88rem;color:rgba(10,36,99,0.45);font-weight:300;margin-bottom:3rem;line-height:1.7;}
+.mod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;}
+.mod-card{background:var(--paper);border-radius:4px;padding:1.75rem;border:0.5px solid rgba(10,36,99,0.08);}
+.mod-num{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;color:rgba(10,36,99,0.08);line-height:1;margin-bottom:0.75rem;}
+.mod-title{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:600;color:var(--navy);margin-bottom:0.4rem;}
+.mod-desc{font-size:0.78rem;color:rgba(10,36,99,0.45);line-height:1.65;font-weight:300;}
+.mod-badge{display:inline-block;font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--terra);border:0.5px solid rgba(201,149,106,0.35);padding:0.2rem 0.6rem;border-radius:50px;margin-top:0.75rem;}
+
+/* FUNDADORA */
+.fundadora{padding:7rem 2.5rem;background:var(--navy);position:relative;overflow:hidden;}
+.fund-noise{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");pointer-events:none;}
+.fund-inner{max-width:820px;margin:0 auto;display:grid;grid-template-columns:200px 1fr;gap:3rem;align-items:start;position:relative;z-index:1;}
+.fund-avatar{width:180px;height:220px;background:rgba(234,228,212,0.08);border-radius:4px;border:0.5px solid rgba(234,228,212,0.12);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:1.2rem;overflow:hidden;position:relative;}
+.fund-avatar-bg{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,36,99,0.1),rgba(10,36,99,0.6));z-index:1;}
+.fund-avatar-initial{font-family:'Cormorant Garamond',serif;font-size:5rem;font-weight:600;color:rgba(234,228,212,0.1);position:absolute;top:0.5rem;left:0.75rem;line-height:1;}
+.fund-avatar-name{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--cream);position:relative;z-index:2;text-align:center;line-height:1.2;}
+.fund-avatar-role{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(234,228,212,0.4);position:relative;z-index:2;margin-top:4px;text-align:center;}
+.fund-content{}
+.fund-eyebrow{font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(234,228,212,0.25);margin-bottom:1rem;display:block;}
+.fund-quote{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:300;font-style:italic;color:var(--cream);line-height:1.35;margin-bottom:1.5rem;}
+.fund-text{font-size:0.85rem;color:rgba(234,228,212,0.5);line-height:1.85;font-weight:300;margin-bottom:0.75rem;}
+.fund-stat{display:flex;gap:2rem;margin-top:1.5rem;padding-top:1.5rem;border-top:0.5px solid rgba(234,228,212,0.08);}
+.fund-stat-item{}
+.fund-stat-num{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;color:var(--terra);line-height:1;}
+.fund-stat-label{font-size:0.62rem;color:rgba(234,228,212,0.3);text-transform:uppercase;letter-spacing:0.1em;font-weight:300;}
+
+/* DIFERENCIAL */
+.diferencial{padding:7rem 2.5rem;max-width:820px;margin:0 auto;}
+.diferencial h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.6rem,2.8vw,2.4rem);font-weight:400;color:var(--navy);margin-bottom:3rem;max-width:540px;line-height:1.2;}
+.diff-vs{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.diff-col{padding:2rem;border-radius:4px;}
+.diff-col.eles{background:rgba(10,36,99,0.03);border:0.5px solid rgba(10,36,99,0.08);}
+.diff-col.nos{background:var(--navy);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");}
+.diff-col-title{font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;margin-bottom:1.2rem;display:block;}
+.diff-col.eles .diff-col-title{color:rgba(10,36,99,0.35);}
+.diff-col.nos .diff-col-title{color:rgba(234,228,212,0.35);}
+.diff-item{font-size:0.82rem;line-height:1.6;font-weight:300;margin-bottom:0.6rem;display:flex;gap:0.6rem;align-items:flex-start;}
+.diff-col.eles .diff-item{color:rgba(10,36,99,0.5);}
+.diff-col.nos .diff-item{color:rgba(234,228,212,0.7);}
+.diff-dot-neg{color:rgba(10,36,99,0.2);flex-shrink:0;}
+.diff-dot-pos{color:var(--terra);flex-shrink:0;}
+
+/* DEPOIMENTOS */
+.depoimentos{padding:7rem 2.5rem;background:var(--dark);}
+.dep-inner{max-width:900px;margin:0 auto;}
+.dep-inner h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:400;color:var(--cream);margin-bottom:0.5rem;}
+.dep-inner .sub{font-size:0.85rem;color:rgba(234,228,212,0.35);font-weight:300;margin-bottom:3rem;}
+.dep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
+.dep-card{background:rgba(234,228,212,0.04);border:0.5px solid rgba(234,228,212,0.08);border-radius:4px;padding:1.75rem;}
+.dep-stars{color:var(--terra);font-size:0.75rem;margin-bottom:1rem;letter-spacing:2px;}
+.dep-text{font-family:'IM Fell English',serif;font-style:italic;font-size:0.92rem;color:rgba(234,228,212,0.7);line-height:1.65;margin-bottom:1.2rem;}
+.dep-author{font-size:0.72rem;font-weight:500;color:var(--cream);}
+.dep-role{font-size:0.65rem;color:rgba(234,228,212,0.3);font-weight:300;}
+.dep-highlight{background:var(--terra);border:none;padding:1.75rem;display:flex;flex-direction:column;justify-content:space-between;border-radius:4px;}
+.dep-highlight .dep-text{color:rgba(26,20,16,0.8);}
+.dep-highlight .dep-author{color:var(--dark);}
+.dep-highlight .dep-role{color:rgba(26,20,16,0.5);}
+.dep-highlight .dep-stars{color:rgba(26,20,16,0.4);}
+
+/* NARRATIVA */
+.narrativa{padding:6rem 2.5rem;max-width:720px;margin:0 auto;text-align:center;}
+.narrativa h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:300;font-style:italic;color:var(--navy);line-height:1.3;margin-bottom:1.5rem;}
+.narrativa p{font-size:0.92rem;color:rgba(10,36,99,0.45);line-height:1.85;font-weight:300;margin-bottom:1rem;}
+.narrativa strong{font-weight:500;color:var(--navy);}
+.narrativa-cta{display:inline-block;margin-top:1.5rem;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--terra);border:0.5px solid rgba(201,149,106,0.4);padding:0.5rem 1.2rem;border-radius:50px;cursor:pointer;}
+
+/* PREÇO */
+.preco{padding:7rem 2.5rem;background:var(--cream);}
+.preco-inner{max-width:600px;margin:0 auto;text-align:center;}
+.preco-inner h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:400;color:var(--navy);margin-bottom:0.5rem;}
+.preco-inner .sub{font-size:0.88rem;color:rgba(10,36,99,0.45);font-weight:300;margin-bottom:3rem;}
+.preco-card-single{background:var(--navy);border-radius:8px;padding:3rem 2.5rem;position:relative;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");}
+.preco-badge{display:inline-block;background:var(--terra);color:var(--dark);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;padding:0.3rem 1rem;border-radius:50px;margin-bottom:1.5rem;}
+.pc-plan{font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(234,228,212,0.3);margin-bottom:0.75rem;display:block;}
+.pc-price-block{margin-bottom:0.5rem;}
+.pc-annual{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:600;color:var(--cream);line-height:1;}
+.pc-annual-label{font-size:0.8rem;color:rgba(234,228,212,0.4);font-weight:300;display:block;margin-bottom:0.4rem;}
+.pc-divider{width:40px;height:0.5px;background:rgba(234,228,212,0.15);margin:1rem auto;}
+.pc-installment{font-size:0.88rem;color:rgba(234,228,212,0.55);margin-bottom:2rem;}
+.pc-installment strong{color:var(--cream);font-weight:600;}
+.pc-features{display:flex;flex-direction:column;gap:0.6rem;margin-bottom:2rem;text-align:left;}
+.pc-feat{font-size:0.8rem;color:rgba(234,228,212,0.6);display:flex;gap:0.6rem;align-items:flex-start;font-weight:300;line-height:1.4;}
+.pc-feat-check{color:var(--terra);flex-shrink:0;}
+.pc-btn{width:100%;padding:1rem;border-radius:2px;font-size:0.8rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;border:none;cursor:pointer;background:var(--terra);color:var(--dark);}
+.preco-guarantee{margin-top:1.2rem;font-size:0.72rem;color:rgba(10,36,99,0.35);font-weight:300;}
+
+/* CTA FINAL */
+.cta-final{padding:7rem 2.5rem;background:var(--navy);text-align:center;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");}
+.cta-final h2{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:400;color:var(--cream);margin-bottom:1rem;line-height:1.1;}
+.cta-final h2 em{font-style:italic;color:var(--terra);}
+.cta-final p{font-size:0.88rem;color:rgba(234,228,212,0.4);max-width:420px;margin:0 auto 2.5rem;font-weight:300;line-height:1.75;}
+.btn-cta-final{background:var(--terra);color:var(--dark);padding:1rem 2.5rem;border-radius:2px;font-size:0.8rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;border:none;cursor:pointer;}
+
+footer{padding:2rem 2.5rem;border-top:0.5px solid rgba(10,36,99,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;color:var(--navy);}
+.footer-info{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(10,36,99,0.25);font-weight:300;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill="#EAE4D4" opacity="0.8"/><rect x="9" y="2" width="5" height="5" rx="1" fill="#EAE4D4" opacity="0.5"/><rect x="2" y="9" width="5" height="5" rx="1" fill="#EAE4D4" opacity="0.5"/><rect x="9" y="9" width="5" height="5" rx="1" fill="#C9956A" opacity="0.8"/></svg>
+    </div>
+    <div>
+      <span class="nav-name">Dash Creator</span>
+      <span class="nav-sub">by The Creator Club</span>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-price">R$<strong>100,00</strong>/ano</span>
+    <button class="nav-cta">Quero o Dash</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-badge"><span class="hero-badge-dot"></span>App exclusivo para creators de alta performance</span>
+  <h1>Centralize toda a visão executiva<br>do seu negócio <em>em um único lugar.</em></h1>
+  <p class="hero-sub">Faturamento, prospecções, contratos, fontes de renda, finanças, base de clientes e muito mais. Tudo pensado pra você bater o olho e saber exatamente o próximo passo.</p>
+
+  <div class="hero-oferta">
+    <span class="ho-label">Acesso anual completo</span>
+    <div class="ho-price">
+      <span class="ho-value">R$100</span>
+      <span class="ho-period">/ano</span>
+    </div>
+    <span class="ho-installment">ou 12x de R$9,43 · Acesso imediato a todos os módulos</span>
+  </div>
+
+  <div class="hero-btns">
+    <button class="btn-p">Quero o Dash Creator</button>
+    <button class="btn-g">Ver como funciona</button>
+  </div>
+</section>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-item">
+    <span class="proof-num">500+</span>
+    <span class="proof-label">Creators usando</span>
+  </div>
+  <div class="proof-item">
+    <span class="proof-num">R$2M+</span>
+    <span class="proof-label">Gerenciados no app</span>
+  </div>
+  <div class="proof-item">
+    <span class="proof-num">6</span>
+    <span class="proof-label">Módulos integrados</span>
+  </div>
+  <div class="proof-item">
+    <span class="proof-num">4.9★</span>
+    <span class="proof-label">Avaliação média</span>
+  </div>
+</div>
+
+<!-- APP PREVIEW -->
+<div class="app-preview">
+  <div class="ap-noise"></div>
+  <div class="app-window">
+    <div class="app-bar">
+      <div class="app-dot" style="background:#ff5f57;"></div>
+      <div class="app-dot" style="background:#febc2e;"></div>
+      <div class="app-dot" style="background:#28c840;"></div>
+      <span class="app-title-bar">Dash Creator · Dashboard · Maio 2026</span>
+    </div>
+    <div class="app-body">
+      <div class="app-sb">
+        <div class="app-sb-section">Principal</div>
+        <div class="app-sb-item active"><span>▪</span>Dashboard</div>
+        <div class="app-sb-item"><span>▪</span>Trabalhos</div>
+        <div class="app-sb-item"><span>▪</span>Prospecção</div>
+        <div class="app-sb-section">Gestão</div>
+        <div class="app-sb-item"><span>▪</span>Financeiro</div>
+        <div class="app-sb-item"><span>▪</span>Distribuição</div>
+        <div class="app-sb-item"><span>▪</span>Jurídico</div>
+        <div class="app-sb-item"><span>▪</span>Relatórios</div>
+      </div>
+      <div class="app-main">
+        <div class="app-h">Dashboard</div>
+        <div class="app-s">Visão executiva do negócio · Maio 2026</div>
+        <div class="app-kpis">
+          <div class="kpi"><div class="kpi-l">Clientes</div><div class="kpi-v">7</div></div>
+          <div class="kpi"><div class="kpi-l">Trabalhos</div><div class="kpi-v">7</div></div>
+          <div class="kpi"><div class="kpi-l">Faturamento</div><div class="kpi-v green">R$7.250</div></div>
+          <div class="kpi"><div class="kpi-l">A receber</div><div class="kpi-v">R$6.533</div></div>
+        </div>
+        <div class="app-chart">
+          <div class="chart-title">Faturamento anual 2026</div>
+          <div class="chart-bars">
+            <div class="bar med" style="height:55%;"></div>
+            <div class="bar med" style="height:65%;"></div>
+            <div class="bar med" style="height:50%;"></div>
+            <div class="bar hi" style="height:62%;"></div>
+            <div class="bar hi" style="height:75%;"></div>
+            <div class="bar med" style="height:60%;"></div>
+            <div class="bar" style="height:18%;"></div>
+            <div class="bar" style="height:5%;"></div>
+            <div class="bar" style="height:5%;"></div>
+            <div class="bar" style="height:5%;"></div>
+            <div class="bar" style="height:5%;"></div>
+            <div class="bar" style="height:5%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEMA -->
+<section class="problema">
+  <span class="sec-label">O problema</span>
+  <h2>Chega de perder <strong>tempo e dinheiro.</strong></h2>
+  <p>Uma planilha para cada coisa — trabalhos, prospecções, clientes. Contrato de ads vencendo e você sem conseguir acompanhar os prazos. Faturamento alto, mas quando olha pro caixa, ele está sempre vazio. Você não tem previsão dos seus pagamentos, muito menos do tempo médio que leva para receber.</p>
+  <p>Não sabe por onde vem a maioria dos seus trabalhos — se é por prospecção, inbound ou plataforma. Tudo isso suja cada segundo do seu tempo, e a sensação é que você trabalha 24h por dia, 7 dias por semana. Entrou pro digital para ter mais liberdade, mas não consegue parar de pensar nele por 1 segundo.</p>
+</section>
+
+<!-- ANTES DEPOIS -->
+<div class="antesdepois">
+  <div class="ad-grid">
+    <div class="ad-col antes">
+      <span class="ad-col-title">✕ Sem o Dash Creator</span>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Não sabe quanto ganhou no mês</span></div>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Briefings perdidos no WhatsApp</span></div>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Direito de uso vencendo sem avisar</span></div>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Trabalhando sem contrato</span></div>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Não sabe quantas fontes de renda tem</span></div>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Não sabe quando dar follow-up em uma marca</span></div>
+      <div class="ad-item"><span class="ad-icon">✕</span><span>Scroll infinito disfarçado de trabalho</span></div>
+    </div>
+    <div class="ad-col depois">
+      <span class="ad-col-title">✓ Com o Dash Creator</span>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Dashboard com faturamento em tempo real</span></div>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Todos os trabalhos organizados por status</span></div>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Alerta automático de vencimento de licença</span></div>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Contrato gerado em 1 clique</span></div>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Visão clara de todas as fontes de renda</span></div>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Pipeline de prospecção com follow-up programado</span></div>
+      <div class="ad-item"><span class="ad-icon" style="color:#2e7d32;">✓</span><span>Visão executiva clara — sai da tela mais cedo</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MÓDULOS -->
+<section class="modulos">
+  <div class="mod-inner">
+    <span class="sec-label">Os módulos</span>
+    <h2>Tudo que você precisa para organizar a parte business do seu negócio enquanto creator. Em um só lugar.</h2>
+    <p class="intro">6 módulos integrados, pensados para a rotina real de uma UGC Creator. Cada aba foi construída a partir de quem vive desse mercado.</p>
+    <div class="mod-grid">
+      <div class="mod-card"><div class="mod-num">01</div><div class="mod-title">Dashboard</div><p class="mod-desc">Visão executiva completa — faturamento anual, trabalhos ativos, pipeline e atividades recentes. Bate o olho e sabe o próximo passo.</p><span class="mod-badge">Visão geral</span></div>
+      <div class="mod-card"><div class="mod-num">02</div><div class="mod-title">Trabalhos</div><p class="mod-desc">Gestão de jobs por status — atrasados, aguardando aprovação, entregas próximas. Filtro por tipo, andamento e nicho.</p><span class="mod-badge">Operacional</span></div>
+      <div class="mod-card"><div class="mod-num">03</div><div class="mod-title">Prospecção</div><p class="mod-desc">CRM de marcas com pipeline completo: rascunho → prospecção → aguardando retorno → negociação. Nenhum lead, nenhum follow-up esquecido.</p><span class="mod-badge">Comercial</span></div>
+      <div class="mod-card"><div class="mod-num">04</div><div class="mod-title">Financeiro</div><p class="mod-desc">Pró-labore fixo, caixinhas automáticas, reserva de emergência, tempo médio de recebimento e fluxo livre. Você para de confundir faturamento com lucro.</p><span class="mod-badge">Financeiro</span></div>
+      <div class="mod-card"><div class="mod-num">05</div><div class="mod-title">Distribuição</div><p class="mod-desc">Controle de licenciamento de imagem, orgânico vs ads e datas de vencimento — tudo monitorado automaticamente.</p><span class="mod-badge">Licenciamento</span></div>
+      <div class="mod-card"><div class="mod-num">06</div><div class="mod-title">Jurídico</div><p class="mod-desc">Contratos gerados em 1 clique. Alerta automático de vencimento de direito de uso — com sugestão de abordar a marca para renovar e não perder receita.</p><span class="mod-badge">⭐ Exclusivo</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNDADORA -->
+<section class="fundadora">
+  <div class="fund-noise"></div>
+  <div class="fund-inner">
+    <div class="fund-avatar">
+      <span class="fund-avatar-initial">L</span>
+      <div class="fund-avatar-bg"></div>
+      <span class="fund-avatar-name">Layfe Amorim</span>
+      <span class="fund-avatar-role">Fundadora · The Creator Club</span>
+    </div>
+    <div class="fund-content">
+      <span class="fund-eyebrow">Criado por quem vive esse mercado</span>
+      <p class="fund-quote">"Eu tinha 5 planilhas abertas ao mesmo tempo — e ainda assim não sabia o que fazer a seguir."</p>
+      <p class="fund-text">Por muito tempo lidei com planilhas para tudo. Conseguia ver quanto faturei, mas não tinha controle das saídas, muito menos do prazo médio que levava para receber. Quando precisava gerir o caixa, ele estava sempre vazio — porque não sabia o tempo médio de recebimento. Não tinha organização para separar as caixinhas necessárias de um negócio e não sabia qual era o meu próximo passo.</p>
+      <p class="fund-text">Quando precisei lidar melhor com o gerenciamento do meu negócio, tudo mudou. Passei a olhar pro dashboard e saber qual foi o meu melhor mês. Sabia exatamente qual marca abordar, quando dar follow-up, e de onde vinha a maior parte da minha renda. Isso me ajudou a enxergar o meu ticket médio — e a aumentar o meu valor.</p>
+      <p class="fund-text">Sair de 5 planilhas para um único app, exclusivo para criadores de conteúdo, me rendeu um aumento de 3x no faturamento. O Dash Creator é a estrutura que eu construí pra mim — e que agora existe para você.</p>
+      <div class="fund-stat">
+        <div class="fund-stat-item">
+          <div class="fund-stat-num">3x</div>
+          <div class="fund-stat-label">Aumento no faturamento</div>
+        </div>
+        <div class="fund-stat-item">
+          <div class="fund-stat-num">5→1</div>
+          <div class="fund-stat-label">Planilhas para um app</div>
+        </div>
+        <div class="fund-stat-item">
+          <div class="fund-stat-num">+2 anos</div>
+          <div class="fund-stat-label">No mercado UGC</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFERENCIAL -->
+<section class="diferencial">
+  <span class="sec-label">Por que o Dash Creator</span>
+  <h2>Não é só organização.<br>É visão executiva eficiente.</h2>
+  <div class="diff-vs">
+    <div class="diff-col eles">
+      <span class="diff-col-title">Outras ferramentas</span>
+      <div class="diff-item"><span class="diff-dot-neg">—</span><span>Genéricas, não feitas para UGC</span></div>
+      <div class="diff-item"><span class="diff-dot-neg">—</span><span>Empilham features sem profundidade</span></div>
+      <div class="diff-item"><span class="diff-dot-neg">—</span><span>Não monitoram vencimento de licença</span></div>
+      <div class="diff-item"><span class="diff-dot-neg">—</span><span>Ferramenta isolada, sem ecossistema</span></div>
+      <div class="diff-item"><span class="diff-dot-neg">—</span><span>Te mantêm na tela mais tempo</span></div>
+    </div>
+    <div class="diff-col nos">
+      <span class="diff-col-title">Dash Creator</span>
+      <div class="diff-item"><span class="diff-dot-pos">→</span><span>Construído por e para UGC Creators</span></div>
+      <div class="diff-item"><span class="diff-dot-pos">→</span><span>Faz o que precisa ser feito, sem distrações</span></div>
+      <div class="diff-item"><span class="diff-dot-pos">→</span><span>Alerta automático de licença — nunca perde receita</span></div>
+      <div class="diff-item"><span class="diff-dot-pos">→</span><span>Parte do ecossistema TCC — mentoria + comunidade</span></div>
+      <div class="diff-item"><span class="diff-dot-pos">→</span><span>Te devolve tempo para viver o off de verdade</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="depoimentos">
+  <div class="dep-inner">
+    <span class="sec-label" style="color:rgba(234,228,212,0.2);">Depoimentos</span>
+    <h2>Quem usa, não volta para a planilha.</h2>
+    <p class="sub">Creators reais. Resultados reais.</p>
+    <div class="dep-grid">
+      <div class="dep-card">
+        <div class="dep-stars">★★★★★</div>
+        <p class="dep-text">"Eu usava planilha e achava que tava tudo certo até ver o tanto de coisa que eu tava deixando passar. O financeiro do Dash mudou minha visão total."</p>
+        <div class="dep-author">Beatriz S.</div>
+        <div class="dep-role">UGC Creator · TikTok Shop</div>
+      </div>
+      <div class="dep-highlight">
+        <div class="dep-stars">★★★★★</div>
+        <p class="dep-text">"O jurídico me avisou que um direito de uso ia vencer. Entrei em contato com a marca, renovei o contrato e faturei R$1.200 que eu teria perdido sem perceber."</p>
+        <div class="dep-author">Thainara M.</div>
+        <div class="dep-role">UGC Creator · Wellness</div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-stars">★★★★★</div>
+        <p class="dep-text">"Finalmente sei exatamente quanto vou receber nos próximos 30 dias. Isso mudou como eu negocio — parei de aceitar qualquer proposta com medo de não ter trabalho."</p>
+        <div class="dep-author">Vanessa R.</div>
+        <div class="dep-role">UGC Creator · Lifestyle</div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-stars">★★★★★</div>
+        <p class="dep-text">"O contrato digital é um sonho. Mandei pro cliente e ele assinou na hora, sem enrolação. Nunca mais trabalho sem contrato."</p>
+        <div class="dep-author">Amanda L.</div>
+        <div class="dep-role">UGC Creator · Digital</div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-stars">★★★★★</div>
+        <p class="dep-text">"Saio da frente do computador mais cedo e sei que tudo está organizado. Consigo viver as coisas que sempre falei que queria viver."</p>
+        <div class="dep-author">Riane A.</div>
+        <div class="dep-role">UGC Creator · Lifestyle</div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-stars">★★★★★</div>
+        <p class="dep-text">"O módulo de prospecção mudou como eu abordo marcas. Tenho tudo registrado — quando abordei, o que falei, quando fazer follow-up. Fechei 3 contratos em 2 semanas."</p>
+        <div class="dep-author">Sabrina C.</div>
+        <div class="dep-role">UGC Creator · Maternidade</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NARRATIVA -->
+<section class="narrativa">
+  <span class="sec-label">A filosofia</span>
+  <h2>"A liberdade só existe com processo. E o processo precisa de um sistema."</h2>
+  <p>Você entrou pro digital para ter mais liberdade, mas não consegue se afastar do seu negócio por 1 segundo — porque não tem clareza de como ele roda. <strong>O Dash Creator é a estrutura que te devolve esse controle.</strong></p>
+  <p>Parte do ecossistema The Creator Club — para creators que querem produzir com intenção e viver o off de verdade.</p>
+  <span class="narrativa-cta">Conheça a Comunidade dos creators de alta performance →</span>
+</section>
+
+<!-- PREÇO -->
+<section class="preco">
+  <div class="preco-inner">
+    <span class="sec-label">Plano</span>
+    <h2>Investimento que se paga no primeiro contrato renovado.</h2>
+    <p class="sub">O alerta de vencimento de licença sozinho já vale o plano inteiro.</p>
+    <div class="preco-card-single">
+      <span class="preco-badge">Acesso completo</span>
+      <span class="pc-plan">Anual · Todos os módulos inclusos</span>
+      <div class="pc-price-block">
+        <span class="pc-annual">R$100</span>
+        <span class="pc-annual-label">por ano · acesso imediato</span>
+      </div>
+      <div class="pc-divider"></div>
+      <p class="pc-installment">ou <strong>12x de R$9,43</strong> no cartão</p>
+      <div class="pc-features">
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Dashboard executivo completo</span></div>
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Gestão de trabalhos e pipeline de prospecção</span></div>
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Financeiro com caixinhas e tempo médio de recebimento</span></div>
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Contratos gerados em 1 clique</span></div>
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Alerta automático de vencimento de licença</span></div>
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Atualizações automáticas incluídas</span></div>
+        <div class="pc-feat"><span class="pc-feat-check">✓</span><span>Acesso ao ecossistema The Creator Club</span></div>
+      </div>
+      <button class="pc-btn">Quero o Dash Creator</button>
+    </div>
+    <p class="preco-guarantee">Garantia de 7 dias · Testou, não gostou, devolvemos tudo · Sem pergunta, sem burocracia.</p>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final">
+  <h2>Organize o negócio.<br><em>Viva o que você prega.</em></h2>
+  <p>Acesso imediato a todos os 6 módulos. O único risco é continuar com a planilha.</p>
+  <button class="btn-cta-final">Quero o Dash Creator</button>
+</section>
+
+<footer>
+  <span class="footer-logo">Dash Creator · by The Creator Club</span>
+  <span class="footer-info">app.thecreatorsclub.com.br</span>
+</footer>
+</body>
+</html>
