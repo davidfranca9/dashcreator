@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout · Dash Creator</title>
+<meta name="description" content="Finalize sua compra do Dash Creator com segurança.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --navy: #0A2463;
+    --cream: #EAE4D4;
+    --paper: #F5F1E8;
+    --terra: #C9956A;
+    --dark: #1A1410;
+    --border: rgba(10, 36, 99, 0.12);
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--navy); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+.shell { max-width: 1080px; margin: 0 auto; padding: 3rem 1.5rem 4rem; display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem; }
+@media (max-width: 880px) { .shell { grid-template-columns: 1fr; padding: 2rem 1rem 3rem; } }
+.main { background: #fff; border: 0.5px solid var(--border); border-radius: 10px; padding: 2.5rem; }
+.side { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 2rem; align-self: start; }
+@media (max-width: 880px) { .side { position: static; } }
+.brand { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+.brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; }
+.brand-club { font-size: 0.55rem; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(10,36,99,0.4); }
+.label { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.5rem; }
+.title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 500; line-height: 1.1; margin-bottom: 0.4rem; }
+.title em { font-style: italic; color: var(--terra); }
+.subtitle { color: rgba(10,36,99,0.6); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 0.35rem; }
+.field label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(10,36,99,0.55); font-weight: 500; }
+.field input { border: 0.5px solid var(--border); border-radius: 6px; padding: 0.75rem 0.9rem; background: var(--paper); color: var(--navy); font-family: inherit; font-size: 0.95rem; transition: border-color 0.15s, background 0.15s; }
+.field input:focus { outline: none; border-color: var(--navy); background: #fff; }
+.payment-anchor { margin-top: 2rem; padding-top: 1.5rem; border-top: 0.5px solid var(--border); }
+#paymentBrick_container { min-height: 320px; }
+.summary { background: var(--navy); color: var(--cream); border-radius: 10px; padding: 1.75rem; }
+.summary .tag { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(234,228,212,0.5); margin-bottom: 0.4rem; }
+.summary .name { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 600; line-height: 1.1; margin-bottom: 0.5rem; }
+.summary .desc { font-size: 0.85rem; color: rgba(234,228,212,0.7); line-height: 1.55; margin-bottom: 1.4rem; }
+.bullets { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.bullets li { list-style: none; display: flex; gap: 0.6rem; font-size: 0.82rem; color: rgba(234,228,212,0.85); }
+.bullets li::before { content: "✓"; color: var(--terra); flex: 0 0 auto; }
+.total { display: flex; align-items: baseline; justify-content: space-between; padding-top: 1.2rem; border-top: 0.5px solid rgba(234,228,212,0.18); }
+.total span { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(234,228,212,0.6); }
+.total strong { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 600; color: var(--cream); }
+.help { font-size: 0.72rem; color: rgba(10,36,99,0.45); line-height: 1.6; padding: 0.9rem 1rem; border: 0.5px dashed var(--border); border-radius: 8px; }
+.banner { margin-top: 1.2rem; padding: 0.9rem 1rem; border-radius: 8px; font-size: 0.85rem; }
+.banner[hidden] { display: none; }
+.banner.error { background: rgba(192,77,87,0.08); color: #8a3b43; border: 0.5px solid rgba(192,77,87,0.25); }
+.banner.info { background: rgba(10,36,99,0.06); color: var(--navy); border: 0.5px solid var(--border); }
+.cta { margin-top: 1.4rem; width: 100%; background: var(--terra); color: var(--dark); font-family: inherit; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; border: none; padding: 0.95rem; border-radius: 6px; cursor: pointer; transition: opacity 0.15s; }
+.cta:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div class="shell">
+    <main class="main">
+        <div class="brand">
+            <span class="brand-name">The Creators Club</span>
+            <span class="brand-club">Checkout seguro</span>
+        </div>
+        <span class="label">Finalize seu pedido</span>
+        <h1 class="title">Dash Creator <em>— acesso imediato</em></h1>
+        <p class="subtitle">Centralize toda a visão do seu negócio em um único lugar. Faturamento, prospecções, contratos, jurídico e finanças — do caos ao posicionamento.</p>
+
+        <form id="customerForm" autocomplete="on" novalidate>
+            <div class="row">
+                <div class="field"><label for="customer_name">Nome completo</label><input id="customer_name" name="customer_name" type="text" autocomplete="name" required></div>
+                <div class="field"><label for="customer_email">Email</label><input id="customer_email" name="customer_email" type="email" autocomplete="email" required></div>
+            </div>
+            <div class="row">
+                <div class="field"><label for="customer_cpf">CPF</label><input id="customer_cpf" name="customer_cpf" type="text" inputmode="numeric" autocomplete="off"></div>
+                <div class="field"><label for="customer_phone">WhatsApp (opcional)</label><input id="customer_phone" name="customer_phone" type="tel" inputmode="tel" autocomplete="tel"></div>
+            </div>
+            <button type="submit" class="cta" id="continueBtn">Continuar para pagamento</button>
+            <div id="customerError" class="banner error" hidden></div>
+        </form>
+
+        <section id="paymentSection" class="payment-anchor" hidden>
+            <span class="label">Pagamento</span>
+            <p class="subtitle" style="margin-bottom:1.2rem;">Escolha cartão, PIX ou boleto. Tudo seguro, sem sair da página.</p>
+            <div id="paymentBrick_container"></div>
+            <div id="paymentStatus" class="banner info" hidden></div>
+        </section>
+    </main>
+
+    <aside class="side">
+        <div class="summary">
+            <div class="tag">Sua compra</div>
+            <div class="name">Dash Creator</div>
+            <div class="desc">Sistema completo para creators profissionais</div>
+            <ul class="bullets">
+                <li>Dashboard executivo do seu negócio UGC</li>
+                <li>CRM de marcas com pipeline de prospecção</li>
+                <li>Financeiro com caixinhas automáticas e custos fixos</li>
+                <li>Alerta de vencimento de direitos de uso de imagem</li>
+                <li>Contratos gerados em 1 clique</li>
+                <li>Acesso imediato após pagamento</li>
+            </ul>
+            <div class="total"><span>Total</span><strong>R$ 139,90</strong></div>
+        </div>
+        <div class="help">Pagamento processado com segurança. Após a confirmação você recebe por email um código de acesso para criar sua conta no Dash Creator.</div>
+    </aside>
+</div>
+
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+(() => {
+    const PUBLIC_KEY = "TEST-cc338359-7c79-42e6-bd18-067d50c6178b";
+    const API_BASE = "https://app.thecreatorsclub.com.br";
+    const PRODUCT_KEY = "dashcreator";
+    const PRODUCT_AMOUNT = 139.90;
+
+    const form = document.getElementById("customerForm");
+    const continueBtn = document.getElementById("continueBtn");
+    const paymentSection = document.getElementById("paymentSection");
+    const customerError = document.getElementById("customerError");
+    const paymentStatus = document.getElementById("paymentStatus");
+
+    const showError = (msg) => { customerError.textContent = msg; customerError.hidden = false; };
+    const showStatus = (msg, type = "info") => { paymentStatus.textContent = msg; paymentStatus.className = "banner " + type; paymentStatus.hidden = false; };
+
+    let bricksController = null;
+    const mp = new MercadoPago(PUBLIC_KEY, { locale: "pt-BR" });
+
+    const renderBrick = async (preferenceId) => {
+        if (bricksController) { bricksController.unmount(); bricksController = null; }
+        const bricks = mp.bricks();
+        bricksController = await bricks.create("payment", "paymentBrick_container", {
+            initialization: { amount: PRODUCT_AMOUNT, preferenceId },
+            customization: {
+                paymentMethods: { creditCard: "all", debitCard: "all", bankTransfer: "all", ticket: "all", maxInstallments: 12 },
+                visual: { style: { theme: "default" } },
+            },
+            callbacks: {
+                onReady: () => {},
+                onSubmit: () => Promise.resolve(),
+                onError: (error) => { console.error("Brick error", error); showStatus("Não foi possível processar o pagamento. Tente novamente.", "error"); },
+            },
+        });
+    };
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        customerError.hidden = true;
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Preparando pagamento...";
+
+        const data = new FormData(form);
+        const payload = {
+            product_key: PRODUCT_KEY,
+            customer_name: (data.get("customer_name") || "").toString().trim(),
+            customer_email: (data.get("customer_email") || "").toString().trim(),
+            customer_cpf: (data.get("customer_cpf") || "").toString().trim(),
+            customer_phone: (data.get("customer_phone") || "").toString().trim(),
+        };
+
+        if (!payload.customer_name || !payload.customer_email) {
+            showError("Preencha seu nome e email para continuar.");
+            continueBtn.disabled = false;
+            continueBtn.textContent = "Continuar para pagamento";
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/checkout/api/preference/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                showError("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
+                continueBtn.disabled = false;
+                continueBtn.textContent = "Continuar para pagamento";
+                return;
+            }
+            const { preference_id } = await response.json();
+            paymentSection.hidden = false;
+            paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            await renderBrick(preference_id);
+            continueBtn.textContent = "Continuar para pagamento";
+            continueBtn.disabled = true;
+        } catch (err) {
+            console.error(err);
+            showError("Erro de conexão. Recarregue a página e tente novamente.");
+            continueBtn.disabled = false;
+            continueBtn.textContent = "Continuar para pagamento";
+        }
+    });
+})();
+</script>
+</body>
+</html>

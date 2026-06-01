@@ -22,6 +22,32 @@ from .models import AccessCode, Purchase, normalize_access_code
 logger = logging.getLogger(__name__)
 
 
+CHECKOUT_ALLOWED_ORIGINS = {
+    "https://thecreatorsclub.com.br",
+    "https://www.thecreatorsclub.com.br",
+}
+CHECKOUT_PUBLIC_BASE = "https://thecreatorsclub.com.br"
+
+
+def _cors_headers(request: HttpRequest) -> dict:
+    origin = request.headers.get("Origin", "")
+    if origin in CHECKOUT_ALLOWED_ORIGINS:
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Vary": "Origin",
+        }
+    return {}
+
+
+def _json(request: HttpRequest, data: dict, status: int = 200) -> JsonResponse:
+    response = JsonResponse(data, status=status)
+    for key, value in _cors_headers(request).items():
+        response[key] = value
+    return response
+
+
 # ---------- Helpers ----------
 
 def _mp_sdk():
@@ -80,17 +106,21 @@ def checkout_page(request: HttpRequest, product_key: str) -> HttpResponse:
     return render(request, "checkout/checkout_page.html", context)
 
 
-@require_POST
+@csrf_exempt
 def checkout_preference(request: HttpRequest) -> JsonResponse:
+    if request.method == "OPTIONS":
+        return _json(request, {})
+    if request.method != "POST":
+        return _json(request, {"error": "method_not_allowed"}, status=405)
     try:
         payload = json.loads(request.body or b"{}")
     except json.JSONDecodeError:
-        return JsonResponse({"error": "invalid_payload"}, status=400)
+        return _json(request, {"error": "invalid_payload"}, status=400)
 
     product_key = (payload.get("product_key") or "").strip()
     product = get_product(product_key)
     if product is None:
-        return JsonResponse({"error": "unknown_product"}, status=404)
+        return _json(request, {"error": "unknown_product"}, status=404)
 
     customer_name = (payload.get("customer_name") or "").strip()
     customer_email = (payload.get("customer_email") or "").strip().lower()
@@ -98,9 +128,9 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     customer_phone = (payload.get("customer_phone") or "").strip()
 
     if not customer_name or not customer_email:
-        return JsonResponse({"error": "missing_customer"}, status=400)
+        return _json(request, {"error": "missing_customer"}, status=400)
     if not settings.MERCADO_PAGO_ACCESS_TOKEN:
-        return JsonResponse({"error": "mp_not_configured"}, status=503)
+        return _json(request, {"error": "mp_not_configured"}, status=503)
 
     purchase = Purchase.objects.create(
         product_key=product.key,
@@ -113,6 +143,8 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     )
 
     sdk = _mp_sdk()
+    success_url = f"{CHECKOUT_PUBLIC_BASE}/checkout/sucesso/?p={purchase.pk}"
+    failure_url = f"{CHECKOUT_PUBLIC_BASE}/checkout/erro/?p={purchase.pk}"
     preference_payload = {
         "items": [
             {
@@ -130,9 +162,9 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
         },
         "external_reference": str(purchase.pk),
         "back_urls": {
-            "success": _absolute_url(request, f"{reverse('checkout_success')}?p={purchase.pk}"),
-            "failure": _absolute_url(request, f"{reverse('checkout_failure')}?p={purchase.pk}"),
-            "pending": _absolute_url(request, f"{reverse('checkout_success')}?p={purchase.pk}"),
+            "success": success_url,
+            "failure": failure_url,
+            "pending": success_url,
         },
         "notification_url": _absolute_url(request, reverse("checkout_webhook")),
         "statement_descriptor": "THECREATORSCLUB",
@@ -148,23 +180,21 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     except Exception:  # pragma: no cover - rede / SDK
         logger.exception("Falha ao criar preference no MP")
         purchase.delete()
-        return JsonResponse({"error": "mp_request_failed"}, status=502)
+        return _json(request, {"error": "mp_request_failed"}, status=502)
 
     if mp_response.get("status") not in (200, 201):
         logger.error("MP preference status=%s body=%s", mp_response.get("status"), mp_response.get("response"))
         purchase.delete()
-        return JsonResponse({"error": "mp_preference_error"}, status=502)
+        return _json(request, {"error": "mp_preference_error"}, status=502)
 
     preference_data = mp_response["response"]
     purchase.mp_preference_id = preference_data.get("id", "")
     purchase.save(update_fields=["mp_preference_id", "updated_at"])
 
-    return JsonResponse(
-        {
-            "preference_id": preference_data.get("id"),
-            "purchase_id": purchase.pk,
-        }
-    )
+    return _json(request, {
+        "preference_id": preference_data.get("id"),
+        "purchase_id": purchase.pk,
+    })
 
 
 @require_GET
