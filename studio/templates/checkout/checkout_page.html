@@ -74,6 +74,17 @@ body {
 .status-banner[hidden] { display: none; }
 .status-banner.error { background: rgba(192,77,87,0.08); color: #8a3b43; border: 0.5px solid rgba(192,77,87,0.25); }
 .status-banner.info { background: rgba(10,36,99,0.06); color: var(--navy); border: 0.5px solid var(--border); }
+.pix-box { margin-top: 1rem; padding: 1rem; border: 0.5px solid var(--border); border-radius: 8px; background: var(--paper); display: grid; gap: 0.85rem; }
+.pix-box[hidden] { display: none; }
+.pix-box h2 { font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); }
+.pix-box p { color: rgba(10,36,99,0.62); font-size: 0.85rem; line-height: 1.5; }
+.pix-box img { width: min(260px, 100%); justify-self: center; border: 8px solid #fff; border-radius: 8px; }
+.pix-box textarea { width: 100%; min-height: 92px; resize: vertical; border: 0.5px solid var(--border); border-radius: 6px; padding: 0.75rem; color: var(--navy); background: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; line-height: 1.45; }
+.pix-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.pix-copy, .pix-link { border: none; border-radius: 6px; padding: 0.8rem 1rem; font-family: inherit; font-size: 0.76rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
+.pix-copy { background: var(--navy); color: #fff; }
+.pix-link { background: rgba(10,36,99,0.08); color: var(--navy); }
+.pix-link[hidden], .pix-copy[hidden], .pix-box img[hidden], .pix-box textarea[hidden] { display: none; }
 .continue-btn {
     margin-top: 1.4rem; width: 100%;
     background: var(--terra); color: var(--dark);
@@ -126,6 +137,16 @@ body {
             <p class="checkout-subtitle" style="margin-bottom:1.2rem;">Escolha cartão, PIX ou boleto. Tudo seguro, sem sair da página.</p>
             <div id="paymentBrick_container"></div>
             <div id="paymentStatus" class="status-banner info" hidden></div>
+            <div id="pixBox" class="pix-box" hidden>
+                <h2>Pix gerado</h2>
+                <p>Escaneie o QR Code no app do seu banco ou copie o codigo Pix abaixo. Depois do pagamento, o acesso sera liberado automaticamente.</p>
+                <img id="pixQrImage" alt="QR Code Pix" hidden>
+                <textarea id="pixCopyCode" readonly hidden></textarea>
+                <div class="pix-actions">
+                    <button type="button" id="copyPixBtn" class="pix-copy" hidden>Copiar codigo Pix</button>
+                    <a id="pixTicketLink" class="pix-link" target="_blank" rel="noopener" hidden>Abrir Pix</a>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -160,6 +181,11 @@ body {
     const paymentSection = document.getElementById("paymentSection");
     const customerError = document.getElementById("customerError");
     const paymentStatus = document.getElementById("paymentStatus");
+    const pixBox = document.getElementById("pixBox");
+    const pixQrImage = document.getElementById("pixQrImage");
+    const pixCopyCode = document.getElementById("pixCopyCode");
+    const copyPixBtn = document.getElementById("copyPixBtn");
+    const pixTicketLink = document.getElementById("pixTicketLink");
 
     const getCookie = (name) => {
         const match = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
@@ -176,6 +202,36 @@ body {
         paymentStatus.className = "status-banner " + type;
         paymentStatus.hidden = false;
     };
+    const normalizePixImage = (value) => value && value.startsWith("data:") ? value : `data:image/png;base64,${value}`;
+    const resetPix = () => {
+        pixBox.hidden = true;
+        pixQrImage.hidden = true;
+        pixQrImage.removeAttribute("src");
+        pixCopyCode.hidden = true;
+        pixCopyCode.value = "";
+        copyPixBtn.hidden = true;
+        pixTicketLink.hidden = true;
+        pixTicketLink.removeAttribute("href");
+    };
+    const renderPix = (pix) => {
+        if (!pix || (!pix.qr_code && !pix.qr_code_base64 && !pix.ticket_url)) return false;
+        if (pix.qr_code_base64) {
+            pixQrImage.src = normalizePixImage(pix.qr_code_base64);
+            pixQrImage.hidden = false;
+        }
+        if (pix.qr_code) {
+            pixCopyCode.value = pix.qr_code;
+            pixCopyCode.hidden = false;
+            copyPixBtn.hidden = false;
+        }
+        if (pix.ticket_url) {
+            pixTicketLink.href = pix.ticket_url;
+            pixTicketLink.hidden = false;
+        }
+        pixBox.hidden = false;
+        pixBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        return true;
+    };
 
     let bricksController = null;
     let activePurchaseId = null;
@@ -187,6 +243,7 @@ body {
             bricksController.unmount();
             bricksController = null;
         }
+        resetPix();
         const bricks = mp.bricks();
         bricksController = await bricks.create("payment", "paymentBrick_container", {
             initialization: {
@@ -239,7 +296,11 @@ body {
                         if (result.status === "approved" || result.purchase_status === "approved") {
                             showStatus("Pagamento aprovado. Seu código de acesso será enviado por email.", "info");
                         } else if (["pending", "in_process", "authorized"].includes(result.status)) {
-                            showStatus("Pagamento recebido e aguardando confirmação do Mercado Pago.", "info");
+                            if (renderPix(result.pix)) {
+                                showStatus("Pix gerado. Pague pelo QR Code ou copie o codigo Pix.", "info");
+                            } else {
+                                showStatus("Pagamento recebido e aguardando confirmação do Mercado Pago.", "info");
+                            }
                         } else if (["rejected", "cancelled"].includes(result.status)) {
                             showStatus("Pagamento recusado. Revise os dados ou tente outro método.", "error");
                         }
@@ -313,6 +374,18 @@ body {
             showError("Erro de conexão. Recarregue a página e tente novamente.");
             continueBtn.disabled = false;
             continueBtn.textContent = "Continuar para pagamento";
+        }
+    });
+
+    copyPixBtn.addEventListener("click", async () => {
+        if (!pixCopyCode.value) return;
+        try {
+            await navigator.clipboard.writeText(pixCopyCode.value);
+            copyPixBtn.textContent = "Codigo copiado";
+            setTimeout(() => { copyPixBtn.textContent = "Copiar codigo Pix"; }, 1800);
+        } catch (error) {
+            pixCopyCode.focus();
+            pixCopyCode.select();
         }
     });
 })();

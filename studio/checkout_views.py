@@ -207,6 +207,8 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     return _json(request, {
         "preference_id": preference_data.get("id"),
         "purchase_id": purchase.pk,
+        "public_key": settings.MERCADO_PAGO_PUBLIC_KEY,
+        "amount": float(purchase.amount),
     })
 
 
@@ -317,11 +319,21 @@ def checkout_payment(request: HttpRequest) -> JsonResponse:
         purchase.payment_method = payment_method_id
         purchase.save(update_fields=["mp_payment_id", "payment_method", "updated_at"])
 
+    point_of_interaction = payment_data.get("point_of_interaction") or {}
+    transaction_data = point_of_interaction.get("transaction_data") or {}
+    pix_data = {
+        "qr_code": transaction_data.get("qr_code") or "",
+        "qr_code_base64": transaction_data.get("qr_code_base64") or "",
+        "ticket_url": transaction_data.get("ticket_url") or "",
+    }
+
     return _json(request, {
         "payment_id": str(payment_data.get("id") or ""),
         "status": mp_status or purchase.status,
         "status_detail": payment_data.get("status_detail") or "",
         "purchase_status": purchase.status,
+        "payment_method": payment_method_id,
+        "pix": pix_data if any(pix_data.values()) else None,
     })
 
 

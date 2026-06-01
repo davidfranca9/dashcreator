@@ -3292,6 +3292,34 @@ class CheckoutTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "missing_cpf")
 
+    def test_checkout_preference_returns_public_key_and_amount(self):
+        class FakePreferenceApi:
+            def create(self, payload):
+                return {"status": 201, "response": {"id": "pref_123"}}
+
+        class FakeSdk:
+            def preference(self):
+                return FakePreferenceApi()
+
+        with patch("studio.checkout_views._mp_sdk", return_value=FakeSdk()):
+            response = self.client.post(
+                reverse("checkout_preference"),
+                data=json.dumps({
+                    "product_key": "dashcreator",
+                    "customer_name": "Maria",
+                    "customer_email": "maria@example.com",
+                    "customer_cpf": "123.456.789-09",
+                }),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["preference_id"], "pref_123")
+        self.assertEqual(data["public_key"], "TEST-public-key")
+        self.assertEqual(data["amount"], 139.90)
+        self.assertTrue(Purchase.objects.filter(customer_email="maria@example.com").exists())
+
     def test_checkout_payment_creates_mp_payment_and_approves_purchase(self):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
@@ -3348,6 +3376,68 @@ class CheckoutTest(TestCase):
         self.assertEqual(fake_payment_api.payload["external_reference"], str(purchase.pk))
         self.assertEqual(fake_payment_api.payload["transaction_amount"], 139.90)
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_checkout_payment_returns_pix_qr_data_when_pending(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+            customer_cpf="12345678909",
+        )
+
+        class FakePaymentApi:
+            def create(self, payload, request_options):
+                return {
+                    "status": 201,
+                    "response": {
+                        "id": "pay_456",
+                        "status": "pending",
+                        "status_detail": "pending_waiting_transfer",
+                        "payment_method_id": "pix",
+                        "point_of_interaction": {
+                            "transaction_data": {
+                                "qr_code": "000201pix-code",
+                                "qr_code_base64": "base64-image",
+                                "ticket_url": "https://mercadopago.test/pix",
+                            },
+                        },
+                    },
+                }
+
+        class FakeSdk:
+            def payment(self):
+                return FakePaymentApi()
+
+        with patch("studio.checkout_views._mp_sdk", return_value=FakeSdk()), patch(
+            "studio.checkout_views._mp_request_options",
+            return_value=object(),
+        ):
+            response = self.client.post(
+                reverse("checkout_payment"),
+                data=json.dumps({
+                    "purchase_id": purchase.pk,
+                    "form_data": {
+                        "transaction_amount": 139.90,
+                        "payment_method_id": "pix",
+                        "payer": {"email": "maria@example.com"},
+                    },
+                }),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "pending")
+        self.assertEqual(data["payment_method"], "pix")
+        self.assertEqual(data["pix"]["qr_code"], "000201pix-code")
+        self.assertEqual(data["pix"]["qr_code_base64"], "base64-image")
+        self.assertEqual(data["pix"]["ticket_url"], "https://mercadopago.test/pix")
+        purchase.refresh_from_db()
+        self.assertEqual(purchase.mp_payment_id, "pay_456")
+        self.assertIsNone(purchase.access_code)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_checkout_payment_rejects_amount_mismatch(self):
         purchase = Purchase.objects.create(
