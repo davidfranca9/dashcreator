@@ -4449,6 +4449,10 @@ body.page-finance .message {
     gap: 6px;
 }
 
+.fd-form-field[hidden] {
+    display: none !important;
+}
+
 .fd-form-field-full {
     grid-column: 1 / -1;
 }

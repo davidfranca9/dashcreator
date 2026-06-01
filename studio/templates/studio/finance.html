@@ -656,7 +656,9 @@
         const dueMonthWrapper = document.querySelector(".fd-form-field-due-month");
         const syncFixedCostDueMonth = () => {
             if (!recurrenceField || !dueMonthWrapper) return;
-            dueMonthWrapper.hidden = recurrenceField.value !== "annual";
+            const isAnnual = recurrenceField.value === "annual";
+            dueMonthWrapper.hidden = !isAnnual;
+            dueMonthWrapper.style.display = isAnnual ? "" : "none";
         };
         if (recurrenceField) {
             syncFixedCostDueMonth();
