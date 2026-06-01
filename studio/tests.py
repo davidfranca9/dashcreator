@@ -3594,6 +3594,7 @@ class CheckoutTest(TestCase):
         # Email enviado
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(purchase.access_code.code, mail.outbox[0].body)
+        self.assertIn(reverse("signup"), mail.outbox[0].body)
         self.assertEqual(mail.outbox[0].to, ["maria@example.com"])
 
     def test_approve_purchase_is_idempotent(self):
