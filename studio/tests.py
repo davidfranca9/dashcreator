@@ -4,6 +4,7 @@ import json
 from io import StringIO
 from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
+import os
 
 from django.contrib.sessions.models import Session
 from django.core import mail
@@ -15,6 +16,7 @@ from django.core.management.base import CommandError
 from django.urls import reverse
 
 from .constants import DEFAULT_NICHE_NAMES
+from .checkout import get_product
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
 from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
@@ -3251,6 +3253,14 @@ class CheckoutTest(TestCase):
         self.assertContains(response, "R$ 139,90")
         self.assertContains(response, 'id="paymentBrick_container"')
         self.assertContains(response, reverse("checkout_payment"))
+
+    def test_checkout_product_price_can_be_overridden_by_env(self):
+        with patch.dict(os.environ, {"CHECKOUT_DASHCREATOR_PRICE": "5,00"}):
+            product = get_product("dashcreator")
+            response = self.client.get(reverse("checkout_page", kwargs={"product_key": "dashcreator"}))
+
+        self.assertEqual(product.price, Decimal("5.00"))
+        self.assertContains(response, "R$ 5,00")
 
     def test_checkout_page_returns_503_when_mp_not_configured(self):
         with self.settings(MERCADO_PAGO_PUBLIC_KEY=""):

@@ -123,7 +123,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
                 <li>Contratos gerados em 1 clique</li>
                 <li>Acesso imediato após pagamento</li>
             </ul>
-            <div class="total"><span>Total</span><strong>R$ 139,90</strong></div>
+            <div class="total"><span>Total</span><strong id="checkoutTotal">R$ 139,90</strong></div>
         </div>
         <div class="help">Pagamento processado com segurança. Após a confirmação você recebe por email um código de acesso para criar sua conta no Dash Creator.</div>
     </aside>
@@ -147,9 +147,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
     const pixCopyCode = document.getElementById("pixCopyCode");
     const copyPixBtn = document.getElementById("copyPixBtn");
     const pixTicketLink = document.getElementById("pixTicketLink");
+    const checkoutTotal = document.getElementById("checkoutTotal");
 
     const showError = (msg) => { customerError.textContent = msg; customerError.hidden = false; };
     const showStatus = (msg, type = "info") => { paymentStatus.textContent = msg; paymentStatus.className = "banner " + type; paymentStatus.hidden = false; };
+    const formatMoney = (value) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
     const normalizePixImage = (value) => value && value.startsWith("data:") ? value : `data:image/png;base64,${value}`;
     const resetPix = () => {
         pixBox.hidden = true;
@@ -184,6 +186,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
     let bricksController = null;
     let activePurchaseId = null;
     let activeCustomer = null;
+    let activeAmount = PRODUCT_AMOUNT;
     let mp = null;
 
     const renderBrick = async (preferenceId, publicKey) => {
@@ -198,7 +201,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
         const bricks = mp.bricks();
         bricksController = await bricks.create("payment", "paymentBrick_container", {
             initialization: {
-                amount: PRODUCT_AMOUNT,
+                amount: activeAmount,
                 preferenceId,
                 payer: activeCustomer ? {
                     email: activeCustomer.email,
@@ -287,9 +290,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
                 continueBtn.textContent = "Continuar para pagamento";
                 return;
             }
-            const { preference_id, purchase_id, public_key } = await response.json();
+            const { preference_id, purchase_id, public_key, amount } = await response.json();
             activePurchaseId = purchase_id;
             activeCustomer = { email: payload.customer_email, cpf: cpfDigits };
+            activeAmount = Number(amount || PRODUCT_AMOUNT);
+            checkoutTotal.textContent = formatMoney(activeAmount);
             paymentSection.hidden = false;
             paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
             await renderBrick(preference_id, public_key);
