@@ -409,6 +409,46 @@ class CashBox(WorkspaceOwnedModel):
         return self.name
 
 
+class Purchase(TimestampedModel):
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pendente"),
+        (STATUS_APPROVED, "Aprovado"),
+        (STATUS_REJECTED, "Recusado"),
+        (STATUS_CANCELLED, "Cancelado"),
+    ]
+
+    product_key = models.CharField(max_length=40)
+    product_name = models.CharField(max_length=160)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    customer_name = models.CharField(max_length=160)
+    customer_email = models.EmailField()
+    customer_cpf = models.CharField(max_length=18, blank=True, default="")
+    customer_phone = models.CharField(max_length=40, blank=True, default="")
+    mp_preference_id = models.CharField(max_length=80, blank=True, default="")
+    mp_payment_id = models.CharField(max_length=80, blank=True, default="")
+    payment_method = models.CharField(max_length=40, blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    access_code = models.OneToOneField(
+        "AccessCode",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase",
+    )
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.product_key} - {self.customer_email} ({self.get_status_display()})"
+
+
 class WorkspaceSetting(TimestampedModel):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="settings")
     key = models.CharField(max_length=120)

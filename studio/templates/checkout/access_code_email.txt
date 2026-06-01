@@ -1,0 +1,15 @@
+Olá, {{ purchase.customer_name }}!
+
+Seu pagamento do {{ purchase.product_name }} foi confirmado.
+
+Use o código de acesso abaixo na hora de criar sua conta:
+
+    {{ access_code.code }}
+
+Acesse: {{ signup_url }}
+
+Esse código é único e só pode ser usado uma vez. Se tiver qualquer dúvida, é só responder este email.
+
+Bem-vinda ao Dash Creator,
+Layfe Amorim
+The Creators Club

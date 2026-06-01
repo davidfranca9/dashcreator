@@ -9,15 +9,16 @@ from django.core import mail
 from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.core.management.base import CommandError
 from django.urls import reverse
 
 from .constants import DEFAULT_NICHE_NAMES
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
-from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, ServiceCategory
+from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
 from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
+from .checkout_views import _approve_purchase
 
 
 class DashboardSmokeTest(TestCase):
@@ -1873,8 +1874,15 @@ class DashboardSmokeTest(TestCase):
         revenue = revenue_context(Project.objects.filter(workspace=self.workspace), selected_year=close_date.year)
 
         self.assertEqual(dashboard["stats"][3]["value"], "R$1.200")
-        self.assertEqual(finance["stats"][2]["value"], "R$1.200")
-        self.assertEqual(finance["schedule"][0]["amount"], "R$1.200")
+        # A receber agora soma todos os recebíveis futuros (Insider UGC
+        # Manager R$1.200 + saldo de self.project R$1.600 = R$2.800).
+        self.assertEqual(finance["stats"][2]["value"], "R$2.800")
+        insider_entry = next(
+            (item for item in finance["schedule"] if item["company"] == "Insider"),
+            None,
+        )
+        self.assertIsNotNone(insider_entry)
+        self.assertEqual(insider_entry["amount"], "R$1.200")
         self.assertEqual(revenue["points"][close_date.month - 1]["amount"], 1200)
 
     def test_dashboard_deduplicates_company_names_with_accents_and_punctuation(self):
@@ -3231,6 +3239,83 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(settings_response, reverse("profile"))
         self.assertContains(settings_response, reverse("settings"))
         self.assertContains(settings_response, "profile-nav-link active")
+
+
+@override_settings(MERCADO_PAGO_PUBLIC_KEY="TEST-public-key", MERCADO_PAGO_ACCESS_TOKEN="TEST-access-token")
+class CheckoutTest(TestCase):
+    def test_checkout_page_renders_product_details(self):
+        response = self.client.get(reverse("checkout_page", kwargs={"product_key": "dashcreator"}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dash Creator")
+        self.assertContains(response, "R$ 139,90")
+        self.assertContains(response, 'id="paymentBrick_container"')
+
+    def test_checkout_page_returns_503_when_mp_not_configured(self):
+        with self.settings(MERCADO_PAGO_PUBLIC_KEY=""):
+            response = self.client.get(reverse("checkout_page", kwargs={"product_key": "dashcreator"}))
+        self.assertEqual(response.status_code, 503)
+
+    def test_checkout_page_unknown_product_returns_404(self):
+        response = self.client.get(reverse("checkout_page", kwargs={"product_key": "inexistente"}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_checkout_preference_rejects_missing_fields(self):
+        response = self.client.post(
+            reverse("checkout_preference"),
+            data="{}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 404)  # produto vazio
+
+    def test_checkout_preference_requires_customer(self):
+        response = self.client.post(
+            reverse("checkout_preference"),
+            data='{"product_key": "dashcreator"}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "missing_customer")
+
+    def test_approve_purchase_generates_access_code_and_sends_email(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+        )
+        _approve_purchase(purchase, {
+            "id": "987654321",
+            "payment_method_id": "pix",
+            "date_approved": "2026-05-22T12:00:00.000-03:00",
+        })
+        purchase.refresh_from_db()
+        self.assertEqual(purchase.status, Purchase.STATUS_APPROVED)
+        self.assertIsNotNone(purchase.access_code)
+        self.assertEqual(purchase.mp_payment_id, "987654321")
+        self.assertEqual(purchase.payment_method, "pix")
+        self.assertEqual(purchase.access_code.audience, AccessCode.AUDIENCE_PAID)
+        # Email enviado
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(purchase.access_code.code, mail.outbox[0].body)
+        self.assertEqual(mail.outbox[0].to, ["maria@example.com"])
+
+    def test_approve_purchase_is_idempotent(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+        )
+        _approve_purchase(purchase, {"id": "1", "payment_method_id": "pix"})
+        first_code = purchase.access_code_id
+        _approve_purchase(purchase, {"id": "1", "payment_method_id": "pix"})
+        purchase.refresh_from_db()
+        self.assertEqual(purchase.access_code_id, first_code)
+        self.assertEqual(AccessCode.objects.filter(audience=AccessCode.AUDIENCE_PAID).count(), 1)
+        # email enviado apenas uma vez
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class AuthenticationFlowsTest(TestCase):
