@@ -3278,6 +3278,20 @@ class CheckoutTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "missing_customer")
 
+    def test_checkout_preference_requires_valid_cpf(self):
+        response = self.client.post(
+            reverse("checkout_preference"),
+            data=json.dumps({
+                "product_key": "dashcreator",
+                "customer_name": "Maria",
+                "customer_email": "maria@example.com",
+                "customer_cpf": "",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "missing_cpf")
+
     def test_checkout_payment_creates_mp_payment_and_approves_purchase(self):
         purchase = Purchase.objects.create(
             product_key="dashcreator",

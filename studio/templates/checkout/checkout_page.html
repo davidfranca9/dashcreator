@@ -110,7 +110,7 @@ body {
             <div class="form-row">
                 <div class="form-field">
                     <label for="customer_cpf">CPF</label>
-                    <input id="customer_cpf" name="customer_cpf" type="text" inputmode="numeric" autocomplete="off">
+                    <input id="customer_cpf" name="customer_cpf" type="text" inputmode="numeric" autocomplete="off" required>
                 </div>
                 <div class="form-field">
                     <label for="customer_phone">WhatsApp (opcional)</label>
@@ -179,6 +179,7 @@ body {
 
     let bricksController = null;
     let activePurchaseId = null;
+    let activeCustomer = null;
     const mp = new MercadoPago(publicKey, { locale: "pt-BR" });
 
     const renderBrick = async (preferenceId, amount) => {
@@ -191,6 +192,13 @@ body {
             initialization: {
                 amount: amount,
                 preferenceId: preferenceId,
+                payer: activeCustomer ? {
+                    email: activeCustomer.email,
+                    identification: {
+                        type: "CPF",
+                        number: activeCustomer.cpf,
+                    },
+                } : undefined,
             },
             customization: {
                 paymentMethods: {
@@ -224,7 +232,7 @@ body {
                         });
                         const result = await response.json().catch(() => ({}));
                         if (!response.ok) {
-                            showStatus("Não foi possível concluir o pagamento. Confira os dados e tente novamente.", "error");
+                            showStatus(result.message || "Não foi possível concluir o pagamento. Confira os dados e tente novamente.", "error");
                             reject(result);
                             return;
                         }
@@ -265,12 +273,14 @@ body {
             customer_phone: (data.get("customer_phone") || "").toString().trim(),
         };
 
-        if (!payload.customer_name || !payload.customer_email) {
-            showError("Preencha seu nome e email para continuar.");
+        const cpfDigits = payload.customer_cpf.replace(/\D/g, "");
+        if (!payload.customer_name || !payload.customer_email || cpfDigits.length !== 11) {
+            showError("Preencha nome, email e CPF com 11 dígitos para continuar.");
             continueBtn.disabled = false;
             continueBtn.textContent = "Continuar para pagamento";
             return;
         }
+        payload.customer_cpf = cpfDigits;
 
         try {
             const response = await fetch(preferenceEndpoint, {
@@ -292,6 +302,7 @@ body {
             }
             const { preference_id, purchase_id } = await response.json();
             activePurchaseId = purchase_id;
+            activeCustomer = { email: payload.customer_email, cpf: cpfDigits };
             paymentSection.hidden = false;
             paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
             await renderBrick(preference_id, parseFloat("{{ product.price|stringformat:'.2f' }}"));

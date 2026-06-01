@@ -139,6 +139,9 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
 
     if not customer_name or not customer_email:
         return _json(request, {"error": "missing_customer"}, status=400)
+    customer_cpf_digits = "".join(filter(str.isdigit, customer_cpf))
+    if len(customer_cpf_digits) != 11:
+        return _json(request, {"error": "missing_cpf"}, status=400)
     if not settings.MERCADO_PAGO_ACCESS_TOKEN:
         return _json(request, {"error": "mp_not_configured"}, status=503)
 
@@ -148,7 +151,7 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
         amount=product.price,
         customer_name=customer_name,
         customer_email=customer_email,
-        customer_cpf=customer_cpf,
+        customer_cpf=customer_cpf_digits,
         customer_phone=customer_phone,
     )
 
@@ -179,10 +182,10 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
         "notification_url": _absolute_url(request, reverse("checkout_webhook")),
         "statement_descriptor": "THECREATORSCLUB",
     }
-    if customer_cpf:
+    if customer_cpf_digits:
         preference_payload["payer"]["identification"] = {
             "type": "CPF",
-            "number": "".join(filter(str.isdigit, customer_cpf)),
+            "number": customer_cpf_digits,
         }
 
     try:
@@ -288,8 +291,14 @@ def checkout_payment(request: HttpRequest) -> JsonResponse:
         return _json(request, {"error": "mp_payment_failed"}, status=502)
 
     if mp_payment.get("status") not in (200, 201):
-        logger.error("MP payment status=%s body=%s", mp_payment.get("status"), mp_payment.get("response"))
-        return _json(request, {"error": "mp_payment_error"}, status=502)
+        mp_body = mp_payment.get("response") or {}
+        logger.error("MP payment status=%s body=%s", mp_payment.get("status"), mp_body)
+        return _json(request, {
+            "error": "mp_payment_error",
+            "message": mp_body.get("message") or "Pagamento recusado pelo Mercado Pago. Confira os dados e tente novamente.",
+            "mp_status": mp_payment.get("status"),
+            "causes": mp_body.get("cause") or [],
+        }, status=502)
 
     payment_data = mp_payment.get("response") or {}
     mp_status = (payment_data.get("status") or "").lower()
