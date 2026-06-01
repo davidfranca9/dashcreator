@@ -10,7 +10,7 @@ Na tela de cadastro, informe este código de acesso:
 
     {{ access_code.code }}
 
-Esse código é único e só pode ser usado uma vez. Se tiver qualquer dúvida, é só responder este email.
+Esse código é único e só pode ser usado uma vez.
 
 Bem-vinda ao Dash Creator,
 Layfe Amorim
