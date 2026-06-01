@@ -5,7 +5,9 @@ import json
 import logging
 import secrets
 import string
+import uuid
 from datetime import datetime, timezone as dt_timezone
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
@@ -55,6 +57,14 @@ def _mp_sdk():
     aplicação se a dependência ainda não estiver instalada em dev."""
     import mercadopago  # type: ignore
     return mercadopago.SDK(settings.MERCADO_PAGO_ACCESS_TOKEN)
+
+
+def _mp_request_options(idempotency_key: str):
+    """Opções exigidas pelo MP para criação idempotente de pagamentos."""
+    import mercadopago  # type: ignore
+    request_options = mercadopago.config.RequestOptions()
+    request_options.custom_headers = {"x-idempotency-key": idempotency_key}
+    return request_options
 
 
 def _absolute_url(request: HttpRequest, path: str) -> str:
@@ -194,6 +204,115 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     return _json(request, {
         "preference_id": preference_data.get("id"),
         "purchase_id": purchase.pk,
+    })
+
+
+@csrf_exempt
+def checkout_payment(request: HttpRequest) -> JsonResponse:
+    if request.method == "OPTIONS":
+        return _json(request, {})
+    if request.method != "POST":
+        return _json(request, {"error": "method_not_allowed"}, status=405)
+    try:
+        payload = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return _json(request, {"error": "invalid_payload"}, status=400)
+
+    purchase_id = str(payload.get("purchase_id") or "")
+    if not purchase_id.isdigit():
+        return _json(request, {"error": "missing_purchase"}, status=400)
+
+    purchase = Purchase.objects.filter(pk=int(purchase_id)).first()
+    if purchase is None:
+        return _json(request, {"error": "purchase_not_found"}, status=404)
+    if purchase.status == Purchase.STATUS_APPROVED and purchase.access_code_id:
+        return _json(request, {
+            "status": purchase.status,
+            "payment_id": purchase.mp_payment_id,
+        })
+
+    form_data = payload.get("form_data") or {}
+    if not isinstance(form_data, dict):
+        return _json(request, {"error": "invalid_payment_data"}, status=400)
+
+    payment_method_id = str(form_data.get("payment_method_id") or "").strip()
+    if not payment_method_id:
+        return _json(request, {"error": "missing_payment_method"}, status=400)
+
+    try:
+        transaction_amount = Decimal(str(form_data.get("transaction_amount") or purchase.amount))
+    except (InvalidOperation, TypeError, ValueError):
+        return _json(request, {"error": "invalid_amount"}, status=400)
+    if transaction_amount.quantize(Decimal("0.01")) != purchase.amount:
+        return _json(request, {"error": "amount_mismatch"}, status=400)
+
+    if not settings.MERCADO_PAGO_ACCESS_TOKEN:
+        return _json(request, {"error": "mp_not_configured"}, status=503)
+
+    payer = form_data.get("payer") if isinstance(form_data.get("payer"), dict) else {}
+    payer_email = (payer.get("email") or purchase.customer_email or "").strip().lower()
+    payer_payload = {"email": payer_email}
+
+    identification = payer.get("identification") if isinstance(payer.get("identification"), dict) else {}
+    cpf_digits = "".join(filter(str.isdigit, str(purchase.customer_cpf or "")))
+    if not identification and cpf_digits:
+        identification = {"type": "CPF", "number": cpf_digits}
+    if identification:
+        payer_payload["identification"] = identification
+
+    payment_payload = {
+        "transaction_amount": float(purchase.amount),
+        "description": purchase.product_name,
+        "payment_method_id": payment_method_id,
+        "payer": payer_payload,
+        "external_reference": str(purchase.pk),
+        "notification_url": _absolute_url(request, reverse("checkout_webhook")),
+        "statement_descriptor": "THECREATORSCLUB",
+    }
+
+    for field in ("token", "issuer_id"):
+        if form_data.get(field):
+            payment_payload[field] = form_data[field]
+    if form_data.get("installments"):
+        try:
+            payment_payload["installments"] = int(form_data["installments"])
+        except (TypeError, ValueError):
+            return _json(request, {"error": "invalid_installments"}, status=400)
+
+    sdk = _mp_sdk()
+    idempotency_key = f"purchase-{purchase.pk}-{uuid.uuid4().hex}"
+    try:
+        mp_payment = sdk.payment().create(payment_payload, _mp_request_options(idempotency_key))
+    except Exception:  # pragma: no cover - rede / SDK
+        logger.exception("Falha ao criar pagamento no MP")
+        return _json(request, {"error": "mp_payment_failed"}, status=502)
+
+    if mp_payment.get("status") not in (200, 201):
+        logger.error("MP payment status=%s body=%s", mp_payment.get("status"), mp_payment.get("response"))
+        return _json(request, {"error": "mp_payment_error"}, status=502)
+
+    payment_data = mp_payment.get("response") or {}
+    mp_status = (payment_data.get("status") or "").lower()
+    payment_method_id = payment_data.get("payment_method_id") or payment_method_id
+
+    if mp_status == "approved":
+        _approve_purchase(purchase, payment_data)
+        purchase.refresh_from_db()
+    elif mp_status in {"rejected", "cancelled"}:
+        purchase.status = Purchase.STATUS_REJECTED if mp_status == "rejected" else Purchase.STATUS_CANCELLED
+        purchase.mp_payment_id = str(payment_data.get("id") or "")
+        purchase.payment_method = payment_method_id
+        purchase.save(update_fields=["status", "mp_payment_id", "payment_method", "updated_at"])
+    else:
+        purchase.mp_payment_id = str(payment_data.get("id") or "")
+        purchase.payment_method = payment_method_id
+        purchase.save(update_fields=["mp_payment_id", "payment_method", "updated_at"])
+
+    return _json(request, {
+        "payment_id": str(payment_data.get("id") or ""),
+        "status": mp_status or purchase.status,
+        "status_detail": payment_data.get("status_detail") or "",
+        "purchase_status": purchase.status,
     })
 
 

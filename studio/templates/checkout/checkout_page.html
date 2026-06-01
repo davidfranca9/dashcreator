@@ -178,6 +178,7 @@ body {
     };
 
     let bricksController = null;
+    let activePurchaseId = null;
     const mp = new MercadoPago(publicKey, { locale: "pt-BR" });
 
     const renderBrick = async (preferenceId, amount) => {
@@ -207,7 +208,40 @@ body {
             },
             callbacks: {
                 onReady: () => {},
-                onSubmit: () => Promise.resolve(),
+                onSubmit: ({ selectedPaymentMethod, formData }) => new Promise(async (resolve, reject) => {
+                    try {
+                        const response = await fetch("{% url 'checkout_payment' %}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": getCookie("csrftoken"),
+                            },
+                            body: JSON.stringify({
+                                purchase_id: activePurchaseId,
+                                selected_payment_method: selectedPaymentMethod,
+                                form_data: formData,
+                            }),
+                        });
+                        const result = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            showStatus("Não foi possível concluir o pagamento. Confira os dados e tente novamente.", "error");
+                            reject(result);
+                            return;
+                        }
+                        if (result.status === "approved" || result.purchase_status === "approved") {
+                            showStatus("Pagamento aprovado. Seu código de acesso será enviado por email.", "info");
+                        } else if (["pending", "in_process", "authorized"].includes(result.status)) {
+                            showStatus("Pagamento recebido e aguardando confirmação do Mercado Pago.", "info");
+                        } else if (["rejected", "cancelled"].includes(result.status)) {
+                            showStatus("Pagamento recusado. Revise os dados ou tente outro método.", "error");
+                        }
+                        resolve();
+                    } catch (error) {
+                        console.error("Payment submit error", error);
+                        showStatus("Erro de conexão ao concluir pagamento. Tente novamente.", "error");
+                        reject(error);
+                    }
+                }),
                 onError: (error) => {
                     console.error("Brick error", error);
                     showStatus("Não foi possível processar o pagamento. Tente novamente.", "error");
@@ -257,6 +291,7 @@ body {
                 return;
             }
             const { preference_id, purchase_id } = await response.json();
+            activePurchaseId = purchase_id;
             paymentSection.hidden = false;
             paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
             await renderBrick(preference_id, parseFloat("{{ product.price|stringformat:'.2f' }}"));

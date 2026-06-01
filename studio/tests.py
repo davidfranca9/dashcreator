@@ -1,5 +1,6 @@
 ﻿import re
 from unittest.mock import patch
+import json
 from io import StringIO
 from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from decimal import Decimal
@@ -3249,6 +3250,7 @@ class CheckoutTest(TestCase):
         self.assertContains(response, "Dash Creator")
         self.assertContains(response, "R$ 139,90")
         self.assertContains(response, 'id="paymentBrick_container"')
+        self.assertContains(response, reverse("checkout_payment"))
 
     def test_checkout_page_returns_503_when_mp_not_configured(self):
         with self.settings(MERCADO_PAGO_PUBLIC_KEY=""):
@@ -3275,6 +3277,86 @@ class CheckoutTest(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "missing_customer")
+
+    def test_checkout_payment_creates_mp_payment_and_approves_purchase(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+        )
+
+        class FakePaymentApi:
+            payload = None
+
+            def create(self, payload, request_options):
+                self.payload = payload
+                return {
+                    "status": 201,
+                    "response": {
+                        "id": "pay_123",
+                        "status": "approved",
+                        "payment_method_id": "pix",
+                        "date_approved": "2026-05-22T12:00:00.000-03:00",
+                    },
+                }
+
+        fake_payment_api = FakePaymentApi()
+
+        class FakeSdk:
+            def payment(self):
+                return fake_payment_api
+
+        with patch("studio.checkout_views._mp_sdk", return_value=FakeSdk()), patch(
+            "studio.checkout_views._mp_request_options",
+            return_value=object(),
+        ):
+            response = self.client.post(
+                reverse("checkout_payment"),
+                data=json.dumps({
+                    "purchase_id": purchase.pk,
+                    "form_data": {
+                        "transaction_amount": 139.90,
+                        "payment_method_id": "pix",
+                        "payer": {"email": "maria@example.com"},
+                    },
+                }),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "approved")
+        purchase.refresh_from_db()
+        self.assertEqual(purchase.status, Purchase.STATUS_APPROVED)
+        self.assertEqual(purchase.mp_payment_id, "pay_123")
+        self.assertEqual(purchase.access_code.audience, AccessCode.AUDIENCE_PAID)
+        self.assertEqual(fake_payment_api.payload["external_reference"], str(purchase.pk))
+        self.assertEqual(fake_payment_api.payload["transaction_amount"], 139.90)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_checkout_payment_rejects_amount_mismatch(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+        )
+        response = self.client.post(
+            reverse("checkout_payment"),
+            data=json.dumps({
+                "purchase_id": purchase.pk,
+                "form_data": {
+                    "transaction_amount": 10,
+                    "payment_method_id": "pix",
+                    "payer": {"email": "maria@example.com"},
+                },
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "amount_mismatch")
 
     def test_approve_purchase_generates_access_code_and_sends_email(self):
         purchase = Purchase.objects.create(

@@ -3,6 +3,7 @@ from django.urls import path
 from .checkout_views import (
     checkout_failure,
     checkout_page,
+    checkout_payment,
     checkout_preference,
     checkout_success,
     checkout_webhook,
@@ -78,6 +79,7 @@ urlpatterns = [
     path("configuracoes/", settings, name="settings"),
     path("checkout/<slug:product_key>/", checkout_page, name="checkout_page"),
     path("checkout/api/preference/", checkout_preference, name="checkout_preference"),
+    path("checkout/api/payment/", checkout_payment, name="checkout_payment"),
     path("checkout/api/webhook/", checkout_webhook, name="checkout_webhook"),
     path("checkout/obrigado/", checkout_success, name="checkout_success"),
     path("checkout/erro/", checkout_failure, name="checkout_failure"),
