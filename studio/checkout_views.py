@@ -36,7 +36,7 @@ def _cors_headers(request: HttpRequest) -> dict:
     if origin in CHECKOUT_ALLOWED_ORIGINS:
         return {
             "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
             "Vary": "Origin",
         }
@@ -93,6 +93,26 @@ def _parse_mp_datetime(value: str | None) -> datetime | None:
 
 
 # ---------- Views públicas ----------
+
+def _sync_purchase_with_payment_data(purchase: Purchase, payment_data: dict) -> Purchase:
+    mp_status = (payment_data.get("status") or "").lower()
+    payment_method_id = payment_data.get("payment_method_id") or purchase.payment_method or ""
+
+    if mp_status == "approved":
+        _approve_purchase(purchase, payment_data)
+        purchase.refresh_from_db()
+    elif mp_status in {"rejected", "cancelled"}:
+        purchase.status = Purchase.STATUS_REJECTED if mp_status == "rejected" else Purchase.STATUS_CANCELLED
+        purchase.mp_payment_id = str(payment_data.get("id") or purchase.mp_payment_id or "")
+        purchase.payment_method = payment_method_id
+        purchase.save(update_fields=["status", "mp_payment_id", "payment_method", "updated_at"])
+    else:
+        purchase.mp_payment_id = str(payment_data.get("id") or purchase.mp_payment_id or "")
+        purchase.payment_method = payment_method_id
+        purchase.save(update_fields=["mp_payment_id", "payment_method", "updated_at"])
+
+    return purchase
+
 
 @require_GET
 def checkout_page(request: HttpRequest, product_key: str) -> HttpResponse:
@@ -305,19 +325,10 @@ def checkout_payment(request: HttpRequest) -> JsonResponse:
     payment_data = mp_payment.get("response") or {}
     mp_status = (payment_data.get("status") or "").lower()
     payment_method_id = payment_data.get("payment_method_id") or payment_method_id
+    if not payment_data.get("payment_method_id") and payment_method_id:
+        payment_data = {**payment_data, "payment_method_id": payment_method_id}
 
-    if mp_status == "approved":
-        _approve_purchase(purchase, payment_data)
-        purchase.refresh_from_db()
-    elif mp_status in {"rejected", "cancelled"}:
-        purchase.status = Purchase.STATUS_REJECTED if mp_status == "rejected" else Purchase.STATUS_CANCELLED
-        purchase.mp_payment_id = str(payment_data.get("id") or "")
-        purchase.payment_method = payment_method_id
-        purchase.save(update_fields=["status", "mp_payment_id", "payment_method", "updated_at"])
-    else:
-        purchase.mp_payment_id = str(payment_data.get("id") or "")
-        purchase.payment_method = payment_method_id
-        purchase.save(update_fields=["mp_payment_id", "payment_method", "updated_at"])
+    purchase = _sync_purchase_with_payment_data(purchase, payment_data)
 
     point_of_interaction = payment_data.get("point_of_interaction") or {}
     transaction_data = point_of_interaction.get("transaction_data") or {}
@@ -337,13 +348,54 @@ def checkout_payment(request: HttpRequest) -> JsonResponse:
     })
 
 
+@csrf_exempt
+def checkout_status(request: HttpRequest) -> JsonResponse:
+    if request.method == "OPTIONS":
+        return _json(request, {})
+    if request.method != "GET":
+        return _json(request, {"error": "method_not_allowed"}, status=405)
+
+    purchase_id = str(request.GET.get("purchase_id") or "")
+    if not purchase_id.isdigit():
+        return _json(request, {"error": "missing_purchase"}, status=400)
+
+    purchase = Purchase.objects.filter(pk=int(purchase_id)).first()
+    if purchase is None:
+        return _json(request, {"error": "purchase_not_found"}, status=404)
+
+    if purchase.status != Purchase.STATUS_APPROVED and purchase.mp_payment_id and settings.MERCADO_PAGO_ACCESS_TOKEN:
+        try:
+            mp_payment = _mp_sdk().payment().get(purchase.mp_payment_id)
+        except Exception:  # pragma: no cover - rede / SDK
+            logger.exception("Erro consultando payment %s no status do checkout", purchase.mp_payment_id)
+        else:
+            if mp_payment.get("status") in (200, 201):
+                payment_data = mp_payment.get("response") or {}
+                external_reference = str(payment_data.get("external_reference") or purchase.pk)
+                if external_reference == str(purchase.pk):
+                    purchase = _sync_purchase_with_payment_data(purchase, payment_data)
+
+    return _json(request, {
+        "purchase_id": purchase.pk,
+        "status": purchase.status,
+        "payment_id": purchase.mp_payment_id,
+        "payment_method": purchase.payment_method,
+        "access_ready": bool(purchase.access_code_id),
+        "notified": bool(purchase.notified_at),
+    })
+
+
 @require_GET
 def checkout_success(request: HttpRequest) -> HttpResponse:
     purchase_id = request.GET.get("p")
     purchase = None
     if purchase_id and purchase_id.isdigit():
         purchase = Purchase.objects.filter(pk=int(purchase_id)).first()
-    return render(request, "checkout/checkout_success.html", {"purchase": purchase})
+    signup_url = f"{settings.CHECKOUT_BASE_URL.rstrip('/')}{reverse('signup')}"
+    return render(request, "checkout/checkout_success.html", {
+        "purchase": purchase,
+        "signup_url": signup_url,
+    })
 
 
 @require_GET
@@ -406,21 +458,7 @@ def checkout_webhook(request: HttpRequest) -> HttpResponse:
     if purchase is None:
         return HttpResponse(status=200)
 
-    mp_status = (payment_data.get("status") or "").lower()
-    payment_method_id = payment_data.get("payment_method_id") or ""
-
-    if mp_status == "approved":
-        _approve_purchase(purchase, payment_data)
-    elif mp_status in {"rejected", "cancelled"}:
-        purchase.status = Purchase.STATUS_REJECTED if mp_status == "rejected" else Purchase.STATUS_CANCELLED
-        purchase.mp_payment_id = str(payment_data.get("id") or "")
-        purchase.payment_method = payment_method_id
-        purchase.save(update_fields=["status", "mp_payment_id", "payment_method", "updated_at"])
-    else:
-        # pending, in_process, authorized... só atualiza metadata
-        purchase.mp_payment_id = str(payment_data.get("id") or "")
-        purchase.payment_method = payment_method_id
-        purchase.save(update_fields=["mp_payment_id", "payment_method", "updated_at"])
+    _sync_purchase_with_payment_data(purchase, payment_data)
 
     return HttpResponse(status=200)
 

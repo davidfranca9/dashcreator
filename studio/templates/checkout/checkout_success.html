@@ -3,47 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pagamento recebido · The Creators Club</title>
+<title>Pagamento aprovado · The Creators Club</title>
+{% if purchase and purchase.status == 'approved' %}<meta http-equiv="refresh" content="5;url={{ signup_url }}">{% endif %}
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --navy:#0A2463; --cream:#EAE4D4; --paper:#F5F1E8; --terra:#C9956A; --dark:#1A1410; }
-body {
-    font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--navy);
-    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem;
-}
-.card {
-    max-width: 540px; width: 100%; background: #fff; border-radius: 12px; padding: 3rem 2.5rem;
-    text-align: center; border: 0.5px solid rgba(10,36,99,0.12);
-}
-.dot {
-    width: 60px; height: 60px; border-radius: 50%;
-    background: var(--terra); color: #fff; display: inline-flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; margin-bottom: 1.5rem;
-}
-h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 500; margin-bottom: 0.6rem; line-height: 1.1; }
-h1 em { font-style: italic; color: var(--terra); }
-p { color: rgba(10,36,99,0.6); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1.2rem; }
-.meta { font-size: 0.8rem; color: rgba(10,36,99,0.4); margin-top: 2rem; }
-.btn {
-    display: inline-block; background: var(--navy); color: var(--cream);
-    padding: 0.85rem 1.6rem; border-radius: 6px; text-decoration: none;
-    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
-    margin-top: 1rem;
-}
+:root { --navy:#0A2463; --cream:#EAE4D4; --paper:#F5F1E8; --terra:#C9956A; --border:rgba(10,36,99,0.12); }
+body { font-family:'DM Sans',sans-serif; background:var(--paper); color:var(--navy); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem 1rem; -webkit-font-smoothing:antialiased; }
+.card { max-width:620px; width:100%; background:#fff; border:0.5px solid var(--border); border-radius:12px; padding:3rem 2.5rem; text-align:center; box-shadow:0 22px 70px rgba(10,36,99,0.08); }
+.mark { width:68px; height:68px; border-radius:50%; background:var(--terra); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:2rem; margin-bottom:1.5rem; }
+.label { display:block; font-size:0.68rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--terra); margin-bottom:0.8rem; }
+h1 { font-family:'Cormorant Garamond',serif; font-size:2.5rem; font-weight:500; line-height:1.05; margin-bottom:0.9rem; }
+h1 em { color:var(--terra); font-style:italic; }
+p { color:rgba(10,36,99,0.62); font-size:0.98rem; line-height:1.7; margin:0 auto 1.2rem; max-width:470px; }
+.note { color:rgba(10,36,99,0.45); font-size:0.82rem; }
+.btn { display:inline-flex; align-items:center; justify-content:center; background:var(--navy); color:var(--cream); min-height:48px; padding:0.85rem 1.5rem; border-radius:6px; text-decoration:none; font-size:0.78rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; margin-top:1.6rem; }
+.pending .mark { background:rgba(10,36,99,0.12); color:var(--navy); }
+.pending .btn { background:rgba(10,36,99,0.08); color:var(--navy); }
+.meta { color:rgba(10,36,99,0.35); font-size:0.76rem; margin-top:1.6rem; }
 </style>
 </head>
 <body>
-<div class="card">
-    <div class="dot">✓</div>
-    <h1>Recebemos seu pedido<br><em>obrigada!</em></h1>
+<main class="card{% if not purchase or purchase.status != 'approved' %} pending{% endif %}">
+    <div class="mark">✓</div>
     {% if purchase and purchase.status == 'approved' %}
-        <p>Seu pagamento foi aprovado. Te mandamos um email com o seu código de acesso para criar a conta no Dash Creator.</p>
+        <span class="label">Pagamento aprovado</span>
+        <h1>Pagamento concluido<br><em>com sucesso</em></h1>
+        <p>Seu acesso foi liberado. Tambem enviamos o codigo de acesso para o seu email.</p>
+        <p class="note" id="redirectNote">Vamos te redirecionar para o cadastro em 5 segundos.</p>
+        <a class="btn" href="{{ signup_url }}">Ir para o cadastro agora</a>
     {% else %}
-        <p>Estamos confirmando o seu pagamento. Assim que ele cair (geralmente em segundos para cartão e PIX, alguns dias para boleto), você recebe um email com seu código de acesso.</p>
+        <span class="label">Confirmando pagamento</span>
+        <h1>Estamos validando<br><em>seu pagamento</em></h1>
+        <p>Assim que o Mercado Pago confirmar, vamos liberar o seu acesso e te enviar o codigo por email.</p>
+        <p class="note">Pode levar alguns segundos para PIX e cartao.</p>
+        <a class="btn" href="https://thecreatorsclub.com.br/checkout/dashcreator/">Voltar ao checkout</a>
     {% endif %}
-    <a class="btn" href="https://thecreatorsclub.com.br/">Voltar para o site</a>
     {% if purchase %}<div class="meta">Pedido #{{ purchase.pk }} · {{ purchase.product_name }}</div>{% endif %}
-</div>
+</main>
+{% if purchase and purchase.status == 'approved' %}
+<script>
+(() => {
+    const note = document.getElementById("redirectNote");
+    let countdown = 5;
+    setInterval(() => {
+        countdown -= 1;
+        note.textContent = `Vamos te redirecionar para o cadastro em ${countdown} segundos.`;
+    }, 1000);
+})();
+</script>
+{% endif %}
 </body>
 </html>

@@ -3271,6 +3271,25 @@ class CheckoutTest(TestCase):
         response = self.client.get(reverse("checkout_page", kwargs={"product_key": "inexistente"}))
         self.assertEqual(response.status_code, 404)
 
+    def test_checkout_success_redirects_approved_purchase_to_signup(self):
+        access_code = AccessCode.objects.create(code="PAIDCODE01", audience=AccessCode.AUDIENCE_PAID)
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+            status=Purchase.STATUS_APPROVED,
+            access_code=access_code,
+        )
+
+        response = self.client.get(reverse("checkout_success"), {"p": purchase.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pagamento concluido")
+        self.assertContains(response, reverse("signup"))
+        self.assertContains(response, 'http-equiv="refresh"')
+
     def test_checkout_preference_rejects_missing_fields(self):
         response = self.client.post(
             reverse("checkout_preference"),
@@ -3329,6 +3348,87 @@ class CheckoutTest(TestCase):
         self.assertEqual(data["public_key"], "TEST-public-key")
         self.assertEqual(data["amount"], 139.90)
         self.assertTrue(Purchase.objects.filter(customer_email="maria@example.com").exists())
+
+    def test_checkout_status_reports_purchase_state(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+            status=Purchase.STATUS_PENDING,
+            mp_payment_id="pay_pending",
+            payment_method="pix",
+        )
+
+        with self.settings(MERCADO_PAGO_ACCESS_TOKEN=""):
+            response = self.client.get(reverse("checkout_status"), {"purchase_id": purchase.pk})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "pending")
+        self.assertEqual(data["payment_id"], "pay_pending")
+        self.assertEqual(data["payment_method"], "pix")
+        self.assertFalse(data["access_ready"])
+
+    def test_checkout_status_reports_access_ready_when_approved(self):
+        access_code = AccessCode.objects.create(code="PAIDCODE02", audience=AccessCode.AUDIENCE_PAID)
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+            status=Purchase.STATUS_APPROVED,
+            access_code=access_code,
+        )
+
+        response = self.client.get(reverse("checkout_status"), {"purchase_id": purchase.pk})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "approved")
+        self.assertTrue(data["access_ready"])
+
+    def test_checkout_status_syncs_approved_payment_from_mercado_pago(self):
+        purchase = Purchase.objects.create(
+            product_key="dashcreator",
+            product_name="Dash Creator",
+            amount=Decimal("139.90"),
+            customer_name="Maria",
+            customer_email="maria@example.com",
+            status=Purchase.STATUS_PENDING,
+            mp_payment_id="pay_sync",
+            payment_method="pix",
+        )
+
+        class FakePaymentApi:
+            def get(self, payment_id):
+                return {
+                    "status": 200,
+                    "response": {
+                        "id": payment_id,
+                        "status": "approved",
+                        "payment_method_id": "pix",
+                        "external_reference": str(purchase.pk),
+                        "date_approved": "2026-05-22T12:00:00.000-03:00",
+                    },
+                }
+
+        class FakeSdk:
+            def payment(self):
+                return FakePaymentApi()
+
+        with patch("studio.checkout_views._mp_sdk", return_value=FakeSdk()):
+            response = self.client.get(reverse("checkout_status"), {"purchase_id": purchase.pk})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "approved")
+        self.assertTrue(data["access_ready"])
+        purchase.refresh_from_db()
+        self.assertEqual(purchase.status, Purchase.STATUS_APPROVED)
+        self.assertEqual(purchase.access_code.audience, AccessCode.AUDIENCE_PAID)
 
     def test_checkout_payment_creates_mp_payment_and_approves_purchase(self):
         purchase = Purchase.objects.create(

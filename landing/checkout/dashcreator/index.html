@@ -136,6 +136,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
     const API_BASE = "https://app.thecreatorsclub.com.br";
     const PRODUCT_KEY = "dashcreator";
     const PRODUCT_AMOUNT = 139.90;
+    const SUCCESS_PATH = "/checkout/sucesso/";
 
     const form = document.getElementById("customerForm");
     const continueBtn = document.getElementById("continueBtn");
@@ -188,6 +189,44 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
     let activeCustomer = null;
     let activeAmount = PRODUCT_AMOUNT;
     let mp = null;
+    let statusPollTimer = null;
+
+    const redirectToSuccess = () => {
+        if (!activePurchaseId) return;
+        window.location.href = `${SUCCESS_PATH}?p=${encodeURIComponent(activePurchaseId)}`;
+    };
+
+    const stopStatusPolling = () => {
+        if (statusPollTimer) {
+            clearInterval(statusPollTimer);
+            statusPollTimer = null;
+        }
+    };
+
+    const checkPurchaseStatus = async () => {
+        if (!activePurchaseId) return;
+        try {
+            const response = await fetch(`${API_BASE}/checkout/api/status/?purchase_id=${encodeURIComponent(activePurchaseId)}`);
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) return;
+            if (result.status === "approved" && result.access_ready) {
+                stopStatusPolling();
+                showStatus("Pagamento aprovado. Vamos te levar para criar sua conta.", "info");
+                setTimeout(redirectToSuccess, 900);
+            } else if (["rejected", "cancelled"].includes(result.status)) {
+                stopStatusPolling();
+                showStatus("Pagamento recusado. Revise os dados ou tente outro metodo.", "error");
+            }
+        } catch (error) {
+            console.error("Status polling error", error);
+        }
+    };
+
+    const startStatusPolling = () => {
+        stopStatusPolling();
+        checkPurchaseStatus();
+        statusPollTimer = setInterval(checkPurchaseStatus, 4000);
+    };
 
     const renderBrick = async (preferenceId, publicKey) => {
         const key = publicKey || FALLBACK_PUBLIC_KEY;
@@ -232,13 +271,15 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
                             return;
                         }
                         if (result.status === "approved" || result.purchase_status === "approved") {
-                            showStatus("Pagamento aprovado. Seu código de acesso será enviado por email.", "info");
+                            showStatus("Pagamento aprovado. Vamos te levar para criar sua conta.", "info");
+                            setTimeout(redirectToSuccess, 900);
                         } else if (["pending", "in_process", "authorized"].includes(result.status)) {
                             if (renderPix(result.pix)) {
                                 showStatus("Pix gerado. Pague pelo QR Code ou copie o codigo Pix.", "info");
                             } else {
                                 showStatus("Pagamento recebido e aguardando confirmação do Mercado Pago.", "info");
                             }
+                            startStatusPolling();
                         } else if (["rejected", "cancelled"].includes(result.status)) {
                             showStatus("Pagamento recusado. Revise os dados ou tente outro método.", "error");
                         }

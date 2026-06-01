@@ -5,6 +5,7 @@ from .checkout_views import (
     checkout_page,
     checkout_payment,
     checkout_preference,
+    checkout_status,
     checkout_success,
     checkout_webhook,
 )
@@ -77,10 +78,11 @@ urlpatterns = [
     path("perfil/", profile, name="profile"),
     path("perfil/cep/", business_zip_lookup, name="business_zip_lookup"),
     path("configuracoes/", settings, name="settings"),
-    path("checkout/<slug:product_key>/", checkout_page, name="checkout_page"),
     path("checkout/api/preference/", checkout_preference, name="checkout_preference"),
     path("checkout/api/payment/", checkout_payment, name="checkout_payment"),
+    path("checkout/api/status/", checkout_status, name="checkout_status"),
     path("checkout/api/webhook/", checkout_webhook, name="checkout_webhook"),
     path("checkout/obrigado/", checkout_success, name="checkout_success"),
     path("checkout/erro/", checkout_failure, name="checkout_failure"),
+    path("checkout/<slug:product_key>/", checkout_page, name="checkout_page"),
 ]
