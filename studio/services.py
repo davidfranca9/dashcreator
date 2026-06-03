@@ -1666,10 +1666,10 @@ def distribution_snapshot(workspace: Workspace) -> dict:
     organic_count = len(grouped["Orgânico"])
     return {
         "stats": [
-            {"title": "Ads", "value": str(ads_count), "icon_label": "A"},
-            {"title": "Orgânico", "value": str(organic_count), "icon_label": "O"},
-            {"title": "Licenciamento ativo", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] >= 0)), "icon_label": "L"},
-            {"title": "Vence hoje", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] == 0)), "icon_label": "!"},
+            {"title": "Ads", "value": str(ads_count), "icon_label": "A", "icon": "monitor"},
+            {"title": "Orgânico", "value": str(organic_count), "icon_label": "O", "icon": "edit"},
+            {"title": "Licenciamento ativo", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] >= 0)), "icon_label": "L", "icon": "shield"},
+            {"title": "Vence hoje", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] == 0)), "icon_label": "!", "icon": "clock", "tone": "warning"},
         ],
         "columns": [
             {"title": "Ads", "items": grouped["Ads"]},

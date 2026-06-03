@@ -3,8 +3,20 @@
 {% block content %}
 <section class="stats-grid">
     {% for item in stats %}
-        <article class="stat-card">
-            <span class="stat-icon">{{ item.icon_label }}</span>
+        <article class="stat-card{% if item.tone %} stat-card--{{ item.tone }}{% endif %}">
+            <span class="stat-icon stat-icon--svg">
+                {% if item.icon == "monitor" %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                {% elif item.icon == "edit" %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                {% elif item.icon == "shield" %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                {% elif item.icon == "clock" %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {% else %}
+                    {{ item.icon_label }}
+                {% endif %}
+            </span>
             <div>
                 <p>{{ item.title }}</p>
                 <strong>{{ item.value }}</strong>
@@ -13,45 +25,34 @@
     {% endfor %}
 </section>
 
-<section class="board-grid">
+<section class="dist-grid">
     {% for column in columns %}
-        <article class="card">
-            <div class="card-header">
-                <div>
-                    <h3>{{ column.title }}</h3>
-                </div>
-            </div>
-            {% if column.items %}
-                <div class="stack-list">
-                    {% for item in column.items %}
-                        <article class="soft-card prospect-card">
-                            <div class="prospect-top">
-                                <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
-                                <strong>{{ item.company }}</strong>
-                            </div>
-                            <strong>{{ item.service_category }}</strong>
-                            <div class="job-meta-list">
-                                <span class="chip">{{ item.distribution }}</span>
-                                <span class="chip">Data prevista para entrega {{ item.delivery_text }}</span>
-                                {% if item.term_text %}
-                                    <span class="chip">Uso {{ item.term_text }}</span>
-                                {% endif %}
-                                {% if item.expires_text %}
-                                    <span class="chip">Vence {{ item.expires_text }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="card-actions">
-                                <div class="card-actions-group">
-                                    <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
-                                </div>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="muted">Nenhum trabalho nessa distribuição.</p>
-            {% endif %}
-        </article>
+        <div class="dist-col">
+            <article class="card dist-col-header">
+                <div class="dist-col-title">{{ column.title }}</div>
+                {% if not column.items %}<div class="dist-col-empty">Nenhum trabalho nessa distribuição.</div>{% endif %}
+            </article>
+            {% for item in column.items %}
+                <article class="dist-work-card">
+                    <div class="dist-work-head">
+                        <span class="dist-work-av" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.company|slice:":1" }}</span>
+                        <span class="dist-work-brand">{{ item.company }}</span>
+                    </div>
+                    <div class="dist-work-body">
+                        <div class="dist-work-type">{{ item.service_category }}</div>
+                        <div class="dist-work-pills">
+                            <span class="pill pill-blue">{{ item.distribution }}</span>
+                            <span class="pill">Data prevista para entrega {{ item.delivery_text }}</span>
+                            {% if item.term_text %}<span class="pill">Uso {{ item.term_text }}</span>{% endif %}
+                            {% if item.expires_text %}<span class="pill">Vence {{ item.expires_text }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="dist-work-footer">
+                        <a class="edit-btn" href="{% url 'project_edit' item.id %}">Editar</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
     {% endfor %}
 </section>
 {% endblock %}
