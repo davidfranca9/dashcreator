@@ -1071,8 +1071,6 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "Dashboard",
         "Visão executiva do negócio UGC.",
         user=request.user,
-        action_label="Novo trabalho",
-        action_url="project_create",
         month_filter=month_filter,
     )
     context.update(dashboard_snapshot(workspace, month_filter))

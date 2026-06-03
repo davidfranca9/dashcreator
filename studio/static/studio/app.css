@@ -4921,3 +4921,8 @@ body.page-finance .workspace-label {
 }
 .pipeline-bar span { display: block; height: 100%; border-radius: 999px; }
 
+/* stat-card svg icons + success tone */
+.stat-icon--svg svg { display: block; }
+.stat-card--success strong { color: #1f7b46; }
+
+
