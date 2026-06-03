@@ -1,20 +1,17 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
-<nav class="subtabs" aria-label="Tipos de trabalho">
+<nav class="subtabs jobs-subtabs" aria-label="Tipos de trabalho">
     <button type="button" class="subtab subtab--active" aria-current="page">
         <span>Serviços</span>
-        {% if overdue %}
-            <span class="subtab-badge subtab-badge--danger">{{ overdue|length }} atrasado{{ overdue|length|pluralize }}</span>
-        {% endif %}
     </button>
-    <button type="button" class="subtab subtab--disabled" disabled aria-disabled="true" data-subtab-toggle="infoprodutos">
+    <button type="button" class="subtab subtab--disabled" disabled aria-disabled="true">
         <span>Infoprodutos</span>
-        <span class="subtab-badge subtab-badge--muted">em breve</span>
+        <span class="subtab-badge subtab-badge--terra">EM BREVE</span>
     </button>
 </nav>
 
-<section class="infoprodutos-empty" data-subtab-panel="infoprodutos" hidden>
+<section class="infoprodutos-empty">
     <div class="infoprodutos-empty-copy">
         <h3>Infoprodutos chegando em breve</h3>
         <p>Gerencie cursos, e-books, templates e outros produtos digitais em um só lugar.</p>

@@ -1653,14 +1653,14 @@ def distribution_snapshot(workspace: Workspace) -> dict:
     organic_count = len(grouped["Orgânico"])
     return {
         "stats": [
-            {"title": "Orgânico", "value": str(organic_count), "icon_label": "O"},
             {"title": "Ads", "value": str(ads_count), "icon_label": "A"},
+            {"title": "Orgânico", "value": str(organic_count), "icon_label": "O"},
             {"title": "Licenciamento ativo", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] >= 0)), "icon_label": "L"},
             {"title": "Vence hoje", "value": str(sum(1 for item in legal_usage_items(workspace) if item["days_until_expiry"] == 0)), "icon_label": "!"},
         ],
         "columns": [
-            {"title": "Orgânico", "items": grouped["Orgânico"]},
             {"title": "Ads", "items": grouped["Ads"]},
+            {"title": "Orgânico", "items": grouped["Orgânico"]},
             {"title": "Não se aplica", "items": grouped["Não se aplica"]},
             {"title": "Não definido", "items": grouped["Não definido"]},
         ],
