@@ -1235,10 +1235,10 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
 
     return {
         "stats": [
-            {"title": "Carteira de Clientes", "value": str(clients_portfolio), "icon_label": "C", "icon": "users"},
-            {"title": "Carteira Ativa", "value": str(active_companies), "icon_label": "E", "icon": "wallet"},
-            {"title": "Trabalhos Ativos", "value": str(active_jobs), "icon_label": "T", "icon": "briefcase"},
-            {"title": "Faturamento Mensal", "value": currency(monthly_revenue), "icon_label": "$", "icon": "money", "tone": "success"},
+            {"title": "Carteira de clientes", "value": str(clients_portfolio), "icon_label": "C", "icon": "users"},
+            {"title": "Carteira ativa", "value": str(active_companies), "icon_label": "E", "icon": "star"},
+            {"title": "Trabalhos ativos", "value": str(active_jobs), "icon_label": "T", "icon": "briefcase"},
+            {"title": "Faturamento mensal", "value": currency(monthly_revenue), "icon_label": "$", "icon": "money", "tone": "success"},
         ],
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
