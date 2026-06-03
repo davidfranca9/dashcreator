@@ -1676,11 +1676,11 @@ def legal_snapshot(workspace: Workspace, user: User | None = None) -> dict:
     active = [item for item in items if item["days_until_expiry"] >= 0]
     return {
         "stats": [
-            {"title": "Contratos", "value": str(len(contract_items)), "icon_label": "C"},
-            {"title": "Licenças ativas", "value": str(len(active)), "icon_label": "L"},
-            {"title": "Vencendo hoje", "value": str(len(expiring_today)), "icon_label": "!"},
-            {"title": "Próximos 30 dias", "value": str(len(expiring_soon)), "icon_label": "30"},
-            {"title": "Expirados", "value": str(len(expired)), "icon_label": "E"},
+            {"title": "Contratos", "value": str(len(contract_items)), "icon_label": "C", "icon": "doc"},
+            {"title": "Licenças ativas", "value": str(len(active)), "icon_label": "L", "icon": "shield"},
+            {"title": "Vencendo hoje", "value": str(len(expiring_today)), "icon_label": "!", "icon": "clock", "tone": "danger"},
+            {"title": "Próximos 30 dias", "value": str(len(expiring_soon)), "icon_label": "30", "icon": "alert", "tone": "warning"},
+            {"title": "Expirados", "value": str(len(expired)), "icon_label": "E", "icon": "ban"},
         ],
         "contracts": contract_items,
         "records": items,

@@ -4924,5 +4924,9 @@ body.page-finance .workspace-label {
 /* stat-card svg icons + success tone */
 .stat-icon--svg svg { display: block; }
 .stat-card--success strong { color: #1f7b46; }
+.stat-card--danger strong { color: #c04d57; }
+.stat-card--warning { background: #fffaee; border-color: #f3d784; }
+.stat-card--warning strong { color: #b5811a; }
+
 
 
