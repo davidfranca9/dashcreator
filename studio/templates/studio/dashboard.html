@@ -53,26 +53,24 @@
     <div class="dashboard-lower-grid">
         <article class="card">
             <div class="card-header">
-                <div>
-                    <h3>Atividades Recentes</h3>
-                </div>
+                <div><h3>Atividades Recentes</h3></div>
+                <a class="link-inline" href="{% url 'jobs' %}">Ver trabalhos</a>
             </div>
             {% if activities %}
-                <div class="stack-list">
+                <div class="activity-list">
                     {% for item in activities %}
-                        <article class="soft-card activity-row">
-                            <div class="visual-block" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
-                                <span>{{ item.company|slice:":1" }}</span>
-                            </div>
-                            <div class="activity-copy">
+                        <article class="activity-line">
+                            <span class="activity-avatar" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.company|slice:":1" }}</span>
+                            <div class="activity-info">
                                 <strong>{{ item.service_category }}</strong>
-                                <p>{{ item.company }}</p>
-                                <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
+                                <span class="muted">{{ item.company }}</span>
                             </div>
                             <div class="activity-meta">
-                                <span class="chip">{{ item.date }}</span>
-                                <small>{{ item.company }}</small>
+                                <small class="muted">{{ item.date }}</small>
+                                <small class="muted">{{ item.company }}</small>
                             </div>
+                            <span class="activity-percent muted">{{ item.progress }}%</span>
+                            <div class="activity-bar"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                         </article>
                     {% endfor %}
                 </div>
@@ -83,25 +81,17 @@
 
         <article class="card">
             <div class="card-header">
-                <div>
-                    <h3>Pipeline de Trabalhos</h3>
-                </div>
+                <div><h3>Pipeline de Trabalhos</h3></div>
                 <a class="link-inline" href="{% url 'jobs' %}">Ver trabalhos</a>
             </div>
-            <div class="stack-list">
+            <div class="pipeline-list">
                 {% for item in pipeline %}
-                    <article class="pipeline-card{% if item.stage == 'Fechado' %} pipeline-card--highlight{% endif %}">
-                        <div class="pipeline-row">
-                            <span class="pipeline-icon" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.icon_label }}</span>
-                            <div>
-                                <strong>{{ item.stage }}</strong>
-                                <p>{{ item.count }} itens</p>
-                            </div>
-                            {% if item.amount_text %}
-                                <strong>{{ item.amount_text }}</strong>
-                            {% endif %}
-                        </div>
-                        <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
+                    <article class="pipeline-line">
+                        <span class="pipeline-dot" style="background: {{ item.accent }};"></span>
+                        <strong class="pipeline-stage">{{ item.stage }}</strong>
+                        <span class="muted pipeline-count">{{ item.count }} itens</span>
+                        {% if item.amount_text %}<strong class="pipeline-amount">{{ item.amount_text }}</strong>{% endif %}
+                        <div class="pipeline-bar"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
                     </article>
                 {% endfor %}
             </div>
