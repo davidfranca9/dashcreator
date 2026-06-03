@@ -5015,5 +5015,136 @@ body.page-finance .workspace-label {
 .chip--warning { background: #fef0d7; color: #9a6911; }
 .chip--danger { background: #fde2e4; color: #b13540; }
 
+/* ============ Trabalhos redesign ============ */
+.jobs-counters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+@media (max-width: 720px) { .jobs-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.jobs-counter {
+    background: #fff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; text-align: left; transition: all .15s;
+    font-family: inherit;
+}
+.jobs-counter:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,.08); }
+.jobs-counter-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.jobs-counter--danger .jobs-counter-icon { background: #fef2f2; color: #ef4444; }
+.jobs-counter--info .jobs-counter-icon { background: #eff6ff; color: #3b82f6; }
+.jobs-counter--warning .jobs-counter-icon { background: #fffbeb; color: #f59e0b; }
+.jobs-counter--success .jobs-counter-icon { background: #f0fdf4; color: #10b981; }
+.jobs-counter-body { flex: 1; min-width: 0; }
+.jobs-counter-value { font-size: 22px; font-weight: 700; color: #1a2340; letter-spacing: -.5px; display: block; line-height: 1; }
+.jobs-counter--danger .jobs-counter-value { color: #ef4444; }
+.jobs-counter-label { font-size: 11px; color: #94a3b8; margin-top: 3px; display: block; }
+.jobs-counter-arrow { color: #94a3b8; flex-shrink: 0; }
+
+.jobs-section-label {
+    font-size: 12px; font-weight: 600; color: #64748b;
+    margin: 4px 0 10px;
+    display: flex; align-items: center; gap: 6px;
+}
+.jobs-section-label svg { color: #94a3b8; flex-shrink: 0; }
+.jobs-section-label--danger svg { color: #ef4444; }
+.jobs-empty-card { padding: 18px 22px; }
+.jobs-empty-card p { font-size: 13px; color: #64748b; font-weight: 500; margin: 0; }
+.jobs-cards-wrap { padding: 16px; }
+.jobs-section { display: flex; flex-direction: column; gap: 0; }
+.jobs-section + .jobs-section { margin-top: 12px; }
+
+.jobs-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+@media (max-width: 1100px) { .jobs-cards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 820px) { .jobs-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .jobs-cards-grid { grid-template-columns: 1fr; } }
+
+.jobs-work-card {
+    background: #fff;
+    border: 0.5px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all .15s;
+    display: flex; flex-direction: column;
+}
+.jobs-work-card:hover { box-shadow: 0 4px 16px rgba(26,35,64,.08); }
+.jobs-work-card--overdue { border-color: #fca5a5; }
+.jobs-work-thumb {
+    height: 80px;
+    padding: 10px 12px;
+    display: flex; align-items: flex-end;
+    color: #1a2340;
+}
+.jobs-work-thumb span {
+    font-size: 13px; font-weight: 600;
+}
+.jobs-work-body { padding: 11px 13px; flex: 1; }
+.jobs-work-client { font-size: 12px; font-weight: 500; color: #1a2340; margin-bottom: 2px; }
+.jobs-work-type { font-size: 11px; color: #64748b; margin-bottom: 8px; }
+.jobs-work-status {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 9px; border-radius: 999px;
+    display: inline-block;
+    background: rgba(0,0,0,0.05); color: #64748b;
+}
+.jobs-work-status--danger { background: #fef2f2; color: #ef4444; }
+.jobs-work-status--success { background: #f0fdf4; color: #065f46; }
+.jobs-work-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 13px;
+    border-top: 0.5px solid rgba(0,0,0,0.06);
+    gap: 5px;
+}
+.jobs-work-value { font-size: 13px; font-weight: 600; color: #1a2340; }
+.jobs-work-actions { display: flex; gap: 5px; }
+.jobs-work-actions form { margin: 0; display: inline; }
+.wc-btn {
+    font-size: 11px; font-weight: 500;
+    padding: 4px 10px; border-radius: 6px;
+    border: 0.5px solid rgba(0,0,0,0.1); background: transparent; color: #64748b;
+    cursor: pointer; transition: all .12s;
+    font-family: inherit; text-decoration: none; display: inline-block;
+}
+.wc-btn:hover { background: #f4f5f8; }
+.wc-btn--danger { background: #fef2f2; color: #ef4444; border-color: #fca5a5; }
+.wc-btn--danger:hover { background: #fee2e2; }
+
+/* "Em breve" pill no tab (atualiza estilo existente) */
+.subtab-badge--terra {
+    background: #f4f5f8 !important; color: #94a3b8 !important;
+    border: 0.5px solid #dde1ea !important;
+    font-size: 10px !important; font-weight: 500 !important;
+    text-transform: uppercase !important; letter-spacing: 0.04em !important;
+    padding: 2px 7px !important;
+}
+
+/* Card "Infoprodutos chegando em breve" — refinamento */
+.infoprodutos-empty {
+    background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.08);
+    padding: 18px 20px; margin-bottom: 16px;
+}
+.infoprodutos-empty-copy h3 { font-size: 14px; font-weight: 600; color: #1a2340; margin-bottom: 3px; }
+.infoprodutos-empty-copy p { font-size: 12px; color: #94a3b8; margin: 0 0 14px; }
+.infoprodutos-preview-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px;
+}
+@media (max-width: 720px) { .infoprodutos-preview-grid { grid-template-columns: 1fr; } }
+.infoprodutos-preview-card {
+    background: #f4f5f8; border-radius: 10px; border: 0.5px solid rgba(0,0,0,0.06);
+    padding: 12px 14px;
+}
+.infoprodutos-preview-card strong { font-size: 12px; font-weight: 600; color: #1a2340; display: block; margin-bottom: 4px; }
+.infoprodutos-preview-card p { font-size: 11px; color: #64748b; line-height: 1.5; margin: 0; }
+
 
 

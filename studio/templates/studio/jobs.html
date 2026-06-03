@@ -61,14 +61,25 @@
     </form>
 </article>
 
-<section class="stats-grid">
+<section class="jobs-counters">
     {% for item in stats %}
-        <button type="button" class="stat-card stat-card-link" data-jobs-kpi-open="{{ item.modal_id }}">
-            <span class="stat-icon">{{ item.icon_label }}</span>
-            <div>
-                <p>{{ item.title }}</p>
-                <strong>{{ item.value }}</strong>
+        <button type="button" class="jobs-counter jobs-counter--{{ item.tone }}" data-jobs-kpi-open="{{ item.modal_id }}">
+            <span class="jobs-counter-icon">
+                {% if item.icon == "alert" %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {% elif item.icon == "clock" %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {% elif item.icon == "calendar" %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                {% elif item.icon == "check" %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                {% endif %}
+            </span>
+            <div class="jobs-counter-body">
+                <span class="jobs-counter-value">{{ item.value }}</span>
+                <span class="jobs-counter-label">{{ item.title }}</span>
             </div>
+            <svg class="jobs-counter-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
     {% endfor %}
 </section>
@@ -115,63 +126,32 @@
     </div>
 {% endfor %}
 
-<section class="stack-section">
-    <article class="card" id="jobs-overdue">
-        <div class="card-header"><div><h3>Trabalhos atrasados</h3></div></div>
-        <div class="jobs-grid">
+<section class="stack-section jobs-section">
+    <div class="jobs-section-label jobs-section-label--danger">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Trabalhos atrasados
+    </div>
+    <article class="card jobs-empty-card" id="jobs-overdue" {% if overdue %}hidden{% endif %}>
+        <p>Nenhum trabalho atrasado no momento.</p>
+    </article>
+    <article class="card jobs-cards-wrap" {% if not overdue %}hidden{% endif %}>
+        <div class="jobs-cards-grid">
             {% for item in overdue %}
-                <article class="job-card job-card--overdue">
-                    <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
+                <article class="jobs-work-card jobs-work-card--overdue">
+                    <div class="jobs-work-thumb" style="background: linear-gradient(135deg, {{ item.colors.0 }}, {{ item.colors.1 }});">
                         <span>{{ item.company }}</span>
                     </div>
-                    <div class="meta-line">
-                        <small>{{ item.company }}</small>
-                        <span class="status-pill status-pill--danger">{{ item.days_overdue }}d atrasado</span>
+                    <div class="jobs-work-body">
+                        <div class="jobs-work-client">{{ item.company }}</div>
+                        <div class="jobs-work-type">{{ item.service_category }}</div>
+                        <span class="jobs-work-status jobs-work-status--danger">{{ item.days_overdue }}d atrasado</span>
                     </div>
-                    <strong>{{ item.service_category }}</strong>
-                    <div class="job-meta-list">
-                        <span class="chip">{{ item.distribution_text }}</span>
-                        <span class="chip chip--danger">Data prevista {{ item.due_text }}</span>
-                        {% if item.payment_due_text %}
-                            <span class="chip">Pagamento {{ item.payment_due_text }}</span>
-                        {% endif %}
-                        {% if item.meeting_date_text %}
-                            <span class="chip">Reunião {{ item.meeting_date_text }}</span>
-                        {% endif %}
-                        {% if item.image_license_term_text %}
-                            <span class="chip">Uso {{ item.image_license_term_text }}</span>
-                        {% endif %}
-                        {% if item.image_usage_expires_text %}
-                            <span class="chip">Vence {{ item.image_usage_expires_text }}</span>
-                        {% endif %}
-                    </div>
-                    {% if item.note %}
-                        <p class="job-note">{{ item.note }}</p>
-                    {% endif %}
-                    <div class="overdue-actions">
-                        {% if item.contact_url %}
-                            <a class="primary-button small" href="{{ item.contact_url }}" target="_blank" rel="noopener noreferrer">
-                                Contatar cliente
-                            </a>
-                        {% else %}
-                            <a class="primary-button small" href="{% url 'project_edit' item.id %}">
-                                Adicionar contato
-                            </a>
-                        {% endif %}
-                        <form method="post" action="{% url 'project_mark_delivered' item.id %}" class="overdue-actions-form">
-                            {% csrf_token %}
-                            <button type="submit" class="ghost-button small">Marcar como entregue</button>
-                        </form>
-                        {% if item.google_calendar_url %}
-                            <a class="ghost-button small ghost-button--accent" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
-                        {% endif %}
-                    </div>
-                    <div class="card-actions card-actions--secondary">
-                        <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
-                        <form method="post" action="{% url 'project_delete' item.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="danger-button small">Excluir</button>
-                        </form>
+                    <div class="jobs-work-footer">
+                        <span class="jobs-work-value"></span>
+                        <div class="jobs-work-actions">
+                            <a class="wc-btn" href="{% url 'project_edit' item.id %}">Editar</a>
+                            <form method="post" action="{% url 'project_delete' item.id %}">{% csrf_token %}<button type="submit" class="wc-btn wc-btn--danger">Excluir</button></form>
+                        </div>
                     </div>
                 </article>
             {% empty %}
@@ -180,117 +160,61 @@
         </div>
     </article>
 
-    <article class="card" id="jobs-active">
-        <div class="card-header"><div><h3>Trabalhos ativos</h3></div></div>
-        <div class="jobs-grid">
-            {% for item in active %}
-                <article class="job-card">
-                    <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
-                        <span>{{ item.company }}</span>
+    <div class="jobs-section-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        Trabalhos ativos
+    </div>
+    <div class="jobs-cards-grid" id="jobs-active">
+        {% for item in active %}
+            <article class="jobs-work-card">
+                <div class="jobs-work-thumb" style="background: linear-gradient(135deg, {{ item.colors.0 }}, {{ item.colors.1 }});">
+                    <span>{{ item.company }}</span>
+                </div>
+                <div class="jobs-work-body">
+                    <div class="jobs-work-client">{{ item.company }}</div>
+                    <div class="jobs-work-type">{{ item.service_category }}</div>
+                    <span class="jobs-work-status" style="color: {{ item.accent }}; background: {{ item.accent }}1a;">{{ item.status }}</span>
+                </div>
+                <div class="jobs-work-footer">
+                    <span class="jobs-work-value">{{ item.total_value }}</span>
+                    <div class="jobs-work-actions">
+                        <a class="wc-btn" href="{% url 'project_edit' item.id %}">Editar</a>
+                        <form method="post" action="{% url 'project_delete' item.id %}">{% csrf_token %}<button type="submit" class="wc-btn wc-btn--danger">Excluir</button></form>
                     </div>
-                    <div class="meta-line">
-                        <small>{{ item.company }}</small>
-                        <span class="status-pill" style="color: {{ item.accent }}; border-color: {{ item.accent }}44; background: {{ item.accent }}18;">{{ item.status }}</span>
-                    </div>
-                    <strong>{{ item.service_category }}</strong>
-                    <div class="job-meta-list">
-                        <span class="chip">{{ item.distribution_text }}</span>
-                        <span class="chip">Data prevista para entrega {{ item.due_text }}</span>
-                        {% if item.payment_due_text %}
-                            <span class="chip">Pagamento {{ item.payment_due_text }}</span>
-                        {% endif %}
-                        {% if item.meeting_date_text %}
-                            <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
-                        {% endif %}
-                        {% if item.image_license_term_text %}
-                            <span class="chip">Uso {{ item.image_license_term_text }}</span>
-                        {% endif %}
-                        {% if item.image_usage_expires_text %}
-                            <span class="chip">Vence {{ item.image_usage_expires_text }}</span>
-                        {% endif %}
-                    </div>
-                    {% if item.note %}
-                        <p class="job-note">{{ item.note }}</p>
-                    {% endif %}
-                    <div class="meta-line">
-                        <small>{{ item.company }}</small>
-                        <strong>{{ item.total_value }}</strong>
-                    </div>
-                    <div class="progress-track"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
-                    <div class="card-actions">
-                        <div class="card-actions-meta">
-                            {% if item.google_calendar_url %}
-                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
-                            {% endif %}
-                            <span class="muted">{{ item.progress }}%</span>
-                        </div>
-                        <div class="card-actions-group">
-                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
-                            <form method="post" action="{% url 'project_delete' item.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="danger-button small">Excluir</button>
-                            </form>
-                        </div>
-                    </div>
-                </article>
-            {% empty %}
-                <p class="muted">Nenhum trabalho ativo cadastrado ainda.</p>
-            {% endfor %}
-        </div>
-    </article>
+                </div>
+            </article>
+        {% empty %}
+            <p class="muted" style="grid-column: 1 / -1;">Nenhum trabalho ativo cadastrado ainda.</p>
+        {% endfor %}
+    </div>
 
-    <article class="card" id="jobs-delivered">
-        <div class="card-header"><div><h3>Últimas entregas</h3></div></div>
-        <div class="jobs-grid">
+    {% if delivered %}
+        <div class="jobs-section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Últimas entregas
+        </div>
+        <div class="jobs-cards-grid" id="jobs-delivered">
             {% for item in delivered %}
-                <article class="job-card">
-                    <div class="feature-hero feature-hero--small" style="--color-a: {{ item.colors.0 }}; --color-b: {{ item.colors.1 }};">
+                <article class="jobs-work-card jobs-work-card--delivered">
+                    <div class="jobs-work-thumb" style="background: linear-gradient(135deg, {{ item.colors.0 }}, {{ item.colors.1 }});">
                         <span>{{ item.company }}</span>
                     </div>
-                    <strong>{{ item.service_category }}</strong>
-                    <div class="job-meta-list">
-                        <span class="chip">{{ item.distribution_text }}</span>
-                        <span class="chip">Data prevista para entrega {{ item.due_text }}</span>
-                        {% if item.payment_due_text %}
-                            <span class="chip">Pagamento {{ item.payment_due_text }}</span>
-                        {% endif %}
-                        {% if item.meeting_date_text %}
-                            <span class="chip">Reuniao {{ item.meeting_date_text }}</span>
-                        {% endif %}
-                        {% if item.image_license_term_text %}
-                            <span class="chip">Uso {{ item.image_license_term_text }}</span>
-                        {% endif %}
-                        {% if item.image_usage_expires_text %}
-                            <span class="chip">Vence {{ item.image_usage_expires_text }}</span>
-                        {% endif %}
+                    <div class="jobs-work-body">
+                        <div class="jobs-work-client">{{ item.company }}</div>
+                        <div class="jobs-work-type">{{ item.service_category }}</div>
+                        <span class="jobs-work-status jobs-work-status--success">Entregue ✓</span>
                     </div>
-                    {% if item.note %}
-                        <p class="job-note">{{ item.note }}</p>
-                    {% endif %}
-                    <div class="meta-line">
-                        <small>{{ item.company }}</small>
-                        <strong>{{ item.total_value }}</strong>
-                    </div>
-                    <div class="card-actions">
-                        <div class="card-actions-meta">
-                            {% if item.google_calendar_url %}
-                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
-                            {% endif %}
-                        </div>
-                        <div class="card-actions-group">
-                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
-                            <form method="post" action="{% url 'project_delete' item.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="danger-button small">Excluir</button>
-                            </form>
+                    <div class="jobs-work-footer">
+                        <span class="jobs-work-value">{{ item.total_value }}</span>
+                        <div class="jobs-work-actions">
+                            <a class="wc-btn" href="{% url 'project_edit' item.id %}">Editar</a>
+                            <form method="post" action="{% url 'project_delete' item.id %}">{% csrf_token %}<button type="submit" class="wc-btn wc-btn--danger">Excluir</button></form>
                         </div>
                     </div>
                 </article>
-            {% empty %}
-                <p class="muted">Nenhuma entrega registrada ainda.</p>
             {% endfor %}
         </div>
-    </article>
+    {% endif %}
 </section>
 
 <script>

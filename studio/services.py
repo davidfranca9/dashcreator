@@ -1505,10 +1505,10 @@ def empresas_snapshot(
     delivered_count = len(delivered_cards)
     return {
         "stats": [
-            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "modal_id": "jobs-kpi-overdue"},
-            {"title": "Aguardando aprovação", "value": str(len(approval_cards)), "icon_label": "A", "modal_id": "jobs-kpi-approval"},
-            {"title": "Entregas próximas", "value": str(upcoming_deliveries), "icon_label": "P", "modal_id": "jobs-kpi-upcoming"},
-            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "modal_id": "jobs-kpi-delivered"},
+            {"title": "Trabalhos atrasados", "value": str(len(overdue_cards)), "icon_label": "!", "icon": "alert", "tone": "danger", "modal_id": "jobs-kpi-overdue"},
+            {"title": "Aguardando aprovação", "value": str(len(approval_cards)), "icon_label": "A", "icon": "clock", "tone": "info", "modal_id": "jobs-kpi-approval"},
+            {"title": "Entregas próximas", "value": str(upcoming_deliveries), "icon_label": "P", "icon": "calendar", "tone": "warning", "modal_id": "jobs-kpi-upcoming"},
+            {"title": "Finalizado", "value": str(delivered_count), "icon_label": "F", "icon": "check", "tone": "success", "modal_id": "jobs-kpi-delivered"},
         ],
         "stat_lists": [
             {
