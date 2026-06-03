@@ -850,10 +850,47 @@ body.theme-dark .message {
 }
 
 .stat-card {
-    padding: 20px 22px;
-    display: flex;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+        "icon title"
+        ".    value";
+    column-gap: 6px;
+    row-gap: 4px;
+    text-align: left;
     align-items: center;
-    gap: 14px;
+    border-radius: 12px;
+}
+.stat-card > .stat-icon,
+.stat-card > .stat-icon--svg {
+    grid-area: icon;
+    width: auto;
+    height: auto;
+    background: transparent;
+    border-radius: 0;
+    color: #6a7a90;
+    font-size: 11px;
+    font-weight: 500;
+    align-self: center;
+    justify-self: start;
+}
+.stat-card > .stat-icon svg { width: 14px; height: 14px; display: block; }
+.stat-card > div { display: contents; }
+.stat-card > div > p {
+    grid-area: title;
+    margin: 0;
+    font-size: 11px;
+    color: #6a7a90;
+    font-weight: 500;
+    align-self: center;
+}
+.stat-card > div > strong {
+    grid-area: value;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text-primary, #1A1410);
 }
 
 .stat-card-link {
