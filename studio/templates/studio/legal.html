@@ -27,49 +27,39 @@
     {% endfor %}
 </section>
 
-<section class="stack-section">
-    <article class="card">
-        <div class="card-header">
+<section class="legal-grid">
+    <article class="card legal-card">
+        <div class="card-header legal-card-header">
             <div>
                 <h3>Contratos dos trabalhos</h3>
-                <p class="muted">Gere o contrato principal do job com os dados cadastrados no sistema.</p>
+                <p class="muted">Gere o contrato principal de cada job</p>
             </div>
+            <span class="legal-pill">{{ contracts|length }} contrato{{ contracts|length|pluralize:",s" }}</span>
         </div>
         {% if contracts %}
-            <div class="stack-list">
+            <div class="legal-list">
                 {% for item in contracts %}
-                    <article class="soft-card prospect-card">
-                        <div class="prospect-top">
-                            <div class="follow-up-brand">
-                                <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
-                                <div class="follow-up-brand-copy">
+                    <article class="legal-row">
+                        <div class="legal-row-head">
+                            <div class="legal-row-brand">
+                                <span class="legal-avatar" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.company|slice:":1" }}</span>
+                                <div>
                                     <strong>{{ item.company }}</strong>
                                     <span class="muted">{{ item.service_category }}</span>
                                 </div>
                             </div>
-                            <div class="card-actions-group">
-                                <span class="chip">{{ item.amount_text }}</span>
-                                <form method="post" class="icon-button-form" action="{% url 'legal_contract_dismiss' item.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="icon-button icon-button--danger" title="Dispensar contrato" aria-label="Dispensar contrato de {{ item.company }}">&times;</button>
-                                </form>
-                            </div>
+                            <strong class="legal-row-amount">{{ item.amount_text }}</strong>
                         </div>
                         <div class="job-meta-list">
                             <span class="chip" data-contract-status-chip="{{ item.id }}">{{ item.contract_status_text }}</span>
                             <span class="chip">{{ item.distribution }}</span>
                             <span class="chip">Fechamento {{ item.close_text }}</span>
-                            <span class="chip">Data prevista para entrega {{ item.delivery_text }}</span>
+                            <span class="chip">Entrega {{ item.delivery_text }}</span>
                             <span class="chip">{{ item.deliverables_text }}</span>
                         </div>
-                        {% if item.note %}
-                            <p class="muted">{{ item.note }}</p>
-                        {% endif %}
-                        <div class="card-actions">
-                            <div class="card-actions-group">
-                                <button type="button" class="primary-button small" data-contract-modal-open="{{ item.id }}">Gerar contrato</button>
-                                <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar trabalho</a>
-                            </div>
+                        <div class="legal-row-actions">
+                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">✎ Editar trabalho</a>
+                            <button type="button" class="primary-button small" data-contract-modal-open="{{ item.id }}">📄 Gerar contrato</button>
                         </div>
                     </article>
                     <div class="jobs-kpi-backdrop" data-contract-modal="{{ item.id }}" hidden>
@@ -113,43 +103,48 @@
         {% endif %}
     </article>
 
-    <article class="card">
-        <div class="card-header">
+    <article class="card legal-card">
+        <div class="card-header legal-card-header">
             <div>
                 <h3>Direito de uso de imagem</h3>
-                <p class="muted">Licenciamentos monitorados automaticamente para trabalhos marcados como Ads.</p>
+                <p class="muted">Licenciamentos monitorados automaticamente</p>
             </div>
+            <span class="legal-pill">{{ records|length }} licença{{ records|length|pluralize:",s" }}</span>
         </div>
         {% if records %}
-            <div class="stack-list">
+            <div class="legal-list" data-license-list>
                 {% for item in records %}
-                    <article class="soft-card prospect-card">
-                        <div class="prospect-top">
-                            <div class="follow-up-brand">
-                                <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
-                                <div class="follow-up-brand-copy">
+                    <article class="legal-row legal-row--license legal-row--{{ item.urgency }}{% if forloop.counter > 2 %} legal-row--hidden{% endif %}" data-license-item>
+                        <div class="legal-row-head">
+                            <div class="legal-row-brand">
+                                <span class="legal-avatar" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.company|slice:":1" }}</span>
+                                <div>
                                     <strong>{{ item.company }}</strong>
                                     <span class="muted">{{ item.service_category }}</span>
                                 </div>
                             </div>
-                            <span class="chip">{{ item.status_text }}</span>
+                            <span class="legal-status legal-status--{{ item.urgency }}">{{ item.status_text }}</span>
                         </div>
+                        <div class="legal-progress-row">
+                            <small class="muted">Início: {{ item.start_text }}</small>
+                            <small class="muted">{{ item.total_days }} dias · Vence {{ item.expires_text }}</small>
+                        </div>
+                        <div class="legal-progress-bar legal-progress-bar--{{ item.urgency }}"><span style="width: {{ item.progress_pct }}%;"></span></div>
                         <div class="job-meta-list">
                             <span class="chip">{{ item.distribution }}</span>
-                            <span class="chip">Data prevista para entrega {{ item.delivery_text }}</span>
                             <span class="chip">Uso {{ item.term_text }}</span>
-                            <span class="chip">Vence {{ item.expires_text }}</span>
+                            <span class="chip{% if item.urgency == 'urgent' %} chip--warning{% elif item.urgency == 'expired' %} chip--danger{% endif %}">Vence {{ item.expires_text }}</span>
                         </div>
-                        <p class="muted">{{ item.reminder_message }}</p>
-                        <div class="card-actions">
-                            <div class="card-actions-group">
-                                <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">Google Agenda</a>
-                                <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
-                            </div>
+                        <div class="legal-row-actions">
+                            <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">📅 Google Agenda</a>
+                            <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
                         </div>
                     </article>
                 {% endfor %}
             </div>
+            {% if records|length > 2 %}
+                <button type="button" class="legal-show-more" data-license-show-more>Ver mais {{ records|length|add:"-2" }} licença{{ records|length|add:"-2"|pluralize:",s" }} →</button>
+            {% endif %}
         {% else %}
             <p class="muted">Nenhum trabalho com Ads e direito de uso ativo ainda.</p>
         {% endif %}
@@ -262,6 +257,15 @@
         if (event.key === "Escape") {
             closeAllContractModals();
         }
+    });
+})();
+
+(() => {
+    const btn = document.querySelector("[data-license-show-more]");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-license-item].legal-row--hidden").forEach((el) => el.classList.remove("legal-row--hidden"));
+        btn.remove();
     });
 })();
 </script>

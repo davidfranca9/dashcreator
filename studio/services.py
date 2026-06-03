@@ -975,6 +975,15 @@ def legal_usage_items(workspace: Workspace, user: User | None = None) -> list[di
             f'Oi, {display_name} O DIREITO DE USO DE IMAGEM DA MARCA {project.company} ESTÁ VENCENDO HOJE, '
             'QUE TAL MANDAR UMA MENSAGEM PARA VER COMO ESTÁ PERFORMANDO O SEU CRIATIVO?'
         )
+        total_days = project.image_license_term_days or 0
+        elapsed = max(total_days - max(days_until_expiry, 0), 0)
+        progress_pct = round((elapsed / total_days) * 100) if total_days else 0
+        if days_until_expiry < 0:
+            urgency = "expired"
+        elif days_until_expiry <= 30:
+            urgency = "urgent"
+        else:
+            urgency = "ok"
         items.append(
             {
                 "id": project.id,
@@ -985,6 +994,10 @@ def legal_usage_items(workspace: Workspace, user: User | None = None) -> list[di
                 "expires_on": expires_on,
                 "expires_text": short_date(expires_on),
                 "delivery_text": short_date(project.due_date),
+                "start_text": short_date(project.due_date),
+                "total_days": total_days,
+                "progress_pct": progress_pct,
+                "urgency": urgency,
                 "days_until_expiry": days_until_expiry,
                 "status_text": (
                     "Vence hoje"

@@ -4928,5 +4928,55 @@ body.page-finance .workspace-label {
 .stat-card--warning { background: #fffaee; border-color: #f3d784; }
 .stat-card--warning strong { color: #b5811a; }
 
+/* ============ Jurídico cards redesign ============ */
+.legal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+@media (max-width: 980px) { .legal-grid { grid-template-columns: 1fr; } }
+.legal-card { padding: 1.25rem; }
+.legal-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.legal-card-header h3 { margin: 0 0 0.2rem; font-size: 1.05rem; }
+.legal-card-header p { margin: 0; font-size: 0.82rem; }
+.legal-pill {
+    background: rgba(0,0,0,0.04); color: #555; font-size: 0.72rem;
+    padding: 0.35rem 0.75rem; border-radius: 999px; white-space: nowrap;
+}
+.legal-list { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem; }
+.legal-row {
+    background: #fff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 10px;
+    padding: 1rem; display: flex; flex-direction: column; gap: 0.65rem;
+}
+.legal-row--urgent { background: #fffaee; border-color: #f3d784; }
+.legal-row--expired { background: #fdecee; border-color: #f0b7bb; }
+.legal-row--hidden { display: none; }
+.legal-row-head { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.legal-row-brand { display: flex; gap: 0.75rem; align-items: center; }
+.legal-row-brand strong { display: block; font-size: 0.95rem; }
+.legal-row-brand .muted { font-size: 0.78rem; }
+.legal-avatar {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 600; flex: 0 0 auto;
+}
+.legal-row-amount { font-size: 1rem; }
+.legal-status {
+    font-size: 0.72rem; font-weight: 500; padding: 0.3rem 0.7rem; border-radius: 999px;
+    background: #e0f5e8; color: #1f7b46; white-space: nowrap;
+}
+.legal-status--urgent { background: #fef0d7; color: #9a6911; }
+.legal-status--expired { background: #fde2e4; color: #b13540; }
+.legal-progress-row { display: flex; justify-content: space-between; font-size: 0.75rem; }
+.legal-progress-bar {
+    height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;
+}
+.legal-progress-bar span { display: block; height: 100%; background: #20b07a; border-radius: 999px; }
+.legal-progress-bar--urgent span { background: #f0a830; }
+.legal-progress-bar--expired span { background: #c04d57; }
+.legal-row-actions { display: flex; gap: 0.4rem; justify-content: flex-end; flex-wrap: wrap; }
+.legal-show-more {
+    background: transparent; border: none; color: #4d8cff; padding: 0.85rem; margin: 0.5rem auto 0;
+    font-size: 0.85rem; cursor: pointer; display: block;
+}
+.chip--warning { background: #fef0d7; color: #9a6911; }
+.chip--danger { background: #fde2e4; color: #b13540; }
+
 
 
