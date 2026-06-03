@@ -52,9 +52,27 @@ PROSPECT_STAGE_CHOICES = [
     ("Rascunho", "Rascunho"),
     ("Prospeccao", "Prospecção"),
     ("Aguardando retorno", "Aguardando retorno"),
-    ("Negociacao", "Negociação"),
     ("Follow-up", "Follow-up"),
+    ("Negociacao", "Negociação"),
+    ("Fechado", "Fechado"),
 ]
+
+PROSPECT_ARCHIVE_REASON_CHOICES = [
+    ("", "Ativo"),
+    ("sem_retorno", "Sem retorno"),
+    ("nao_tem_interesse", "Não tem interesse"),
+    ("pausado", "Pausado"),
+    ("fechado", "Fechado"),
+]
+
+PROSPECT_ARCHIVE_LABELS = {
+    "sem_retorno": "Sem retorno",
+    "nao_tem_interesse": "Não tem interesse",
+    "pausado": "Pausado",
+    "fechado": "Fechado",
+}
+
+PROSPECT_AUTO_ARCHIVE_DAYS = 30
 
 # 11 tipos padrão de serviço do brief Dash Creator + 'outros' como fallback
 # pra dados legacy. A creator pode usar o ServiceCategory livre como rótulo

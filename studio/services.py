@@ -1236,98 +1236,172 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
     }
 
 
-def prospection_snapshot(workspace: Workspace, month_filter: str | None = None, search: str | None = None) -> dict:
-    month_options = month_options_for_workspace(workspace)
-    selected_month = resolve_selected_month(month_filter, month_options)
-    all_prospects = list(Prospect.objects.filter(workspace=workspace))
-    prospects = [
-        item
-        for item in all_prospects
-        if selected_month is None
-        or (
-            prospect_activity_date(item).year == selected_month.year
-            and prospect_activity_date(item).month == selected_month.month
-        )
-    ]
-    search_term = (search or "").strip()
-    if search_term:
-        normalized_search_term = search_term.casefold()
-        prospects = [
-            item
-            for item in prospects
-            if normalized_search_term in (item.company or "").casefold()
-        ]
-    negotiation_count = sum(1 for item in prospects if item.stage == "Negociacao")
-    follow_up_items = confirmed_follow_up_items(workspace)
-    if search_term:
-        normalized_search_term = search_term.casefold()
-        follow_up_items = [
-            item
-            for item in follow_up_items
-            if normalized_search_term in item["company"].casefold()
-        ]
+PIPELINE_STAGES = [
+    ("Rascunho", "Rascunho", "draft"),
+    ("Prospeccao", "Prospecção", "prospect"),
+    ("Aguardando retorno", "Ag. retorno", "waiting"),
+    ("Negociacao", "Negociação", "negotiation"),
+    ("Fechado", "Fechados ✓", "closed"),
+]
 
-    columns = []
-    stage_titles = {
-        "Rascunho": "Rascunho",
-        "Prospeccao": "Prospecção",
-        "Aguardando retorno": "Aguardando retorno",
-        "Negociacao": "Negociação",
-        "Follow-up": "Follow-up",
+
+def _prospect_last_activity(item: Prospect) -> date:
+    if item.last_activity_at:
+        return item.last_activity_at.date()
+    return item.contact_date or item.updated_at.date() if item.updated_at else item.created_at.date()
+
+
+def auto_archive_stale_prospects(workspace: Workspace, today: date | None = None) -> int:
+    """Move leads em Prospecção/Aguardando retorno parados +30 dias pro Banco
+    de Marcas com status 'Sem retorno'. Roda preguiçosamente toda vez que o
+    usuário abre a página."""
+    from django.utils import timezone as _tz
+    from .constants import PROSPECT_AUTO_ARCHIVE_DAYS
+    today = today or date.today()
+    cutoff = today - timedelta(days=PROSPECT_AUTO_ARCHIVE_DAYS)
+    moved = 0
+    qs = Prospect.objects.filter(
+        workspace=workspace,
+        archive_reason="",
+        stage__in=["Prospeccao", "Aguardando retorno"],
+    )
+    for item in qs:
+        if _prospect_last_activity(item) <= cutoff:
+            item.archive_reason = "sem_retorno"
+            item.archived_at = _tz.now()
+            item.save(update_fields=["archive_reason", "archived_at", "updated_at"])
+            moved += 1
+    return moved
+
+
+def _serialize_pipeline_prospect(item: Prospect) -> dict:
+    today = date.today()
+    last = _prospect_last_activity(item)
+    days_since = (today - last).days
+    color_a, color_b, accent = company_palette(item.company)
+    channel = item.channel or ""
+    if not channel:
+        if item.instagram:
+            channel = "Instagram DM"
+        elif item.email:
+            channel = "Email"
+        elif item.whatsapp:
+            channel = "WhatsApp"
+    return {
+        "id": item.id,
+        "company": item.company,
+        "contact": item.contact,
+        "niche": item.niche.name if item.niche_id else "",
+        "channel": channel,
+        "instagram": item.instagram,
+        "contact_date": short_date(item.contact_date) if item.contact_date else "",
+        "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
+        "note": item.note,
+        "stage": item.stage,
+        "days_since_last": days_since,
+        "is_stale": days_since >= 28 and item.stage in {"Prospeccao", "Aguardando retorno"},
+        "proposal_value": item.proposal_value,
+        "accent": accent,
     }
 
-    def serialize_prospect_item(item: Prospect) -> dict:
-        color_a, color_b, accent = company_palette(item.company)
-        channels = []
-        if item.email:
-            channels.append({"label": "Email", "value": item.email})
-        if item.instagram:
-            channels.append({"label": "Instagram", "value": item.instagram})
-        if item.whatsapp:
-            channels.append({"label": "WhatsApp", "value": item.whatsapp})
 
-        return {
-            "kind": "prospect",
-            "id": item.id,
-            "company": item.company,
-            "contact": item.contact,
-            "contact_type": infer_contact_type(
-                item.contact_type,
-                email=item.email,
-                instagram=item.instagram,
-                whatsapp=item.whatsapp,
-            ),
-            "contact_date": short_date(item.contact_date) if item.contact_date else "",
-            "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
-            "niche": item.niche.name if item.niche_id else "",
-            "note": item.note,
-            "meeting_scheduled": item.meeting_scheduled,
-            "channels": channels,
-            "accent": accent,
-            "colors": (color_a, color_b),
-        }
+def _serialize_archived_prospect(item: Prospect) -> dict:
+    from .constants import PROSPECT_ARCHIVE_LABELS
+    channel = item.channel or ("Instagram DM" if item.instagram else ("Email" if item.email else ""))
+    return {
+        "id": item.id,
+        "company": item.company,
+        "instagram": item.instagram,
+        "niche": item.niche.name if item.niche_id else "",
+        "channel": channel,
+        "last_contact": short_date(item.contact_date) if item.contact_date else (short_date(item.archived_at.date()) if item.archived_at else ""),
+        "status_key": item.archive_reason,
+        "status_label": PROSPECT_ARCHIVE_LABELS.get(item.archive_reason, item.archive_reason),
+    }
 
-    for stage in ("Rascunho", "Prospeccao", "Aguardando retorno", "Negociacao"):
-        items = []
-        for item in [candidate for candidate in prospects if candidate.stage == stage]:
-            items.append(serialize_prospect_item(item))
-        columns.append({"title": stage_titles.get(stage, stage), "items": items})
-    manual_follow_up_items = [serialize_prospect_item(item) for item in prospects if item.stage == "Follow-up"]
-    columns.append({"title": "Follow-up", "items": manual_follow_up_items + follow_up_items})
+
+def prospection_snapshot(workspace: Workspace, month_filter: str | None = None, search: str | None = None) -> dict:
+    auto_archive_stale_prospects(workspace)
+
+    month_options = month_options_for_workspace(workspace)
+    selected_month = resolve_selected_month(month_filter, month_options)
+    search_term = (search or "").strip()
+    normalized_search = search_term.casefold() if search_term else ""
+
+    all_prospects = list(Prospect.objects.filter(workspace=workspace).select_related("niche"))
+
+    def matches_month(item: Prospect) -> bool:
+        if selected_month is None:
+            return True
+        target = _prospect_last_activity(item)
+        return target.year == selected_month.year and target.month == selected_month.month
+
+    def matches_search(company: str) -> bool:
+        return (not normalized_search) or (normalized_search in (company or "").casefold())
+
+    active = [p for p in all_prospects if not p.archive_reason and matches_month(p) and matches_search(p.company)]
+    archived = [p for p in all_prospects if p.archive_reason and matches_search(p.company)]
+
+    # KPIs do pipeline (todos abordados = ativos + arquivados; fechados = arquivo "fechado")
+    total_addressed = len([p for p in all_prospects if matches_search(p.company)])
+    total_closed = len([p for p in all_prospects if p.archive_reason == "fechado" and matches_search(p.company)])
+    total_no_response = len([p for p in all_prospects if p.archive_reason == "sem_retorno" and matches_search(p.company)])
+    conversion_rate = round((total_closed / total_addressed) * 100) if total_addressed else 0
+
+    pipeline_columns = []
+    visible_per_column = 2
+    for stage_key, stage_label, stage_tone in PIPELINE_STAGES:
+        if stage_key == "Fechado":
+            items_raw = [p for p in all_prospects if p.archive_reason == "fechado" and matches_search(p.company)]
+        else:
+            items_raw = [p for p in active if p.stage == stage_key]
+        items_raw.sort(key=lambda p: _prospect_last_activity(p), reverse=True)
+        total = len(items_raw)
+        items = [_serialize_pipeline_prospect(p) for p in items_raw[:visible_per_column]]
+        overflow = max(total - visible_per_column, 0)
+        pipeline_columns.append({
+            "key": stage_key,
+            "title": stage_label,
+            "tone": stage_tone,
+            "count": total,
+            "items": items,
+            "overflow": overflow,
+        })
+
+    stale_alert = [_serialize_pipeline_prospect(p) for p in active if (date.today() - _prospect_last_activity(p)).days >= 28 and p.stage in {"Prospeccao", "Aguardando retorno"}]
+
+    archived_sorted = sorted(archived, key=lambda p: p.archived_at or p.updated_at, reverse=True)
+    archived_rows = [_serialize_archived_prospect(p) for p in archived_sorted]
 
     return {
-        "stats": [
-            {"title": "Rascunho", "value": str(sum(1 for item in prospects if item.stage == "Rascunho")), "icon_label": "R"},
-            {"title": "Prospecção", "value": str(sum(1 for item in prospects if item.stage == "Prospeccao")), "icon_label": "P"},
-            {"title": "Aguardando retorno", "value": str(sum(1 for item in prospects if item.stage == "Aguardando retorno")), "icon_label": "A"},
-            {"title": "Negociação", "value": str(negotiation_count), "icon_label": "N"},
+        "pipeline_stages": [
+            {
+                "key": col["key"],
+                "title": col["title"],
+                "tone": col["tone"],
+                "count": col["count"],
+            }
+            for col in pipeline_columns
         ],
-        "filters": {
-            "search": search_term,
-        },
+        "pipeline_columns": pipeline_columns,
+        "conversion_rate": conversion_rate,
+        "conversion_text": f"{total_closed} fechados de {total_addressed} abordagens",
+        "total_addressed": total_addressed,
+        "total_closed": total_closed,
+        "total_no_response": total_no_response,
+        "stale_alert": stale_alert,
+        "archived_rows": archived_rows,
+        "filters": {"search": search_term},
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
-        "columns": columns,
+        # legados pra não quebrar templates antigos / testes
+        "stats": [
+            {"title": "Rascunho", "value": str(sum(1 for p in active if p.stage == "Rascunho")), "icon_label": "R"},
+            {"title": "Prospecção", "value": str(sum(1 for p in active if p.stage == "Prospeccao")), "icon_label": "P"},
+            {"title": "Aguardando retorno", "value": str(sum(1 for p in active if p.stage == "Aguardando retorno")), "icon_label": "A"},
+            {"title": "Negociação", "value": str(sum(1 for p in active if p.stage == "Negociacao")), "icon_label": "N"},
+        ],
+        "columns": [],  # legado
     }
 
 

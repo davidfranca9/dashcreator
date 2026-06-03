@@ -1084,6 +1084,9 @@ def prospection(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
     search = request.GET.get("search")
+    tab = request.GET.get("tab") or "pipeline"
+    if tab not in {"pipeline", "banco", "logica"}:
+        tab = "pipeline"
     context = shell_context(
         "prospection",
         workspace,
@@ -1095,7 +1098,39 @@ def prospection(request: HttpRequest) -> HttpResponse:
         month_filter=month_filter,
     )
     context.update(prospection_snapshot(workspace, month_filter, search=search))
+    context["active_tab"] = tab
     return render(request, "studio/prospection.html", context)
+
+
+@login_required
+def prospect_export(request: HttpRequest) -> HttpResponse:
+    """Exporta o Banco de Marcas em CSV (compatível com Excel)."""
+    import csv
+    from io import StringIO
+    from .constants import PROSPECT_ARCHIVE_LABELS
+    workspace = _workspace(request)
+    rows = (
+        Prospect.objects.filter(workspace=workspace)
+        .exclude(archive_reason="")
+        .select_related("niche")
+        .order_by("-archived_at")
+    )
+    buffer = StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(["Marca", "Instagram", "Nicho", "Canal", "Último contato", "Status", "Arquivado em"])
+    for item in rows:
+        writer.writerow([
+            item.company,
+            item.instagram,
+            item.niche.name if item.niche_id else "",
+            item.channel,
+            item.contact_date.strftime("%d/%m/%Y") if item.contact_date else "",
+            PROSPECT_ARCHIVE_LABELS.get(item.archive_reason, ""),
+            item.archived_at.strftime("%d/%m/%Y") if item.archived_at else "",
+        ])
+    response = HttpResponse(buffer.getvalue().encode("utf-8-sig"), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="banco-de-marcas.csv"'
+    return response
 
 
 @login_required
@@ -1643,7 +1678,11 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
-        prospect.delete()
+        from django.utils import timezone as _tz
+        prospect.stage = "Fechado"
+        prospect.archive_reason = "fechado"
+        prospect.archived_at = _tz.now()
+        prospect.save(update_fields=["stage", "archive_reason", "archived_at", "updated_at"])
         messages.success(request, "Lead convertido em trabalho.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
@@ -1657,6 +1696,61 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         "installments_formset": installments_formset,
     })
     return render(request, "studio/project_form.html", context)
+
+
+@login_required
+@require_POST
+def prospect_archive(request: HttpRequest, pk: int) -> HttpResponse:
+    """Arquiva um lead no Banco de Marcas com motivo."""
+    from django.utils import timezone as _tz
+    from .constants import PROSPECT_ARCHIVE_LABELS
+    workspace = _workspace(request)
+    prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
+    reason = (request.POST.get("reason") or "").strip()
+    if reason not in PROSPECT_ARCHIVE_LABELS:
+        messages.error(request, "Motivo inválido.")
+        return redirect("prospection")
+    prospect.archive_reason = reason
+    prospect.archived_at = _tz.now()
+    if reason == "fechado":
+        prospect.stage = "Fechado"
+    prospect.save(update_fields=["stage", "archive_reason", "archived_at", "updated_at"])
+    messages.success(request, f"Lead movido para Banco de Marcas como “{PROSPECT_ARCHIVE_LABELS[reason]}”.")
+    return redirect(request.POST.get("next") or "prospection")
+
+
+@login_required
+@require_POST
+def prospect_reactivate(request: HttpRequest, pk: int) -> HttpResponse:
+    """Tira o lead do Banco de Marcas e devolve pro pipeline em Prospecção."""
+    from django.utils import timezone as _tz
+    workspace = _workspace(request)
+    prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
+    prospect.archive_reason = ""
+    prospect.archived_at = None
+    prospect.stage = "Prospeccao"
+    prospect.last_activity_at = _tz.now()
+    prospect.save(update_fields=["stage", "archive_reason", "archived_at", "last_activity_at", "updated_at"])
+    messages.success(request, "Marca reativada no pipeline.")
+    return redirect(f"{reverse('prospection')}?tab=banco")
+
+
+@login_required
+@require_POST
+def prospect_set_stage(request: HttpRequest, pk: int) -> HttpResponse:
+    """Move um lead pra outra etapa do pipeline (ex.: Rascunho → Prospecção)."""
+    from django.utils import timezone as _tz
+    workspace = _workspace(request)
+    prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
+    stage = (request.POST.get("stage") or "").strip()
+    valid_stages = {"Rascunho", "Prospeccao", "Aguardando retorno", "Follow-up", "Negociacao"}
+    if stage not in valid_stages:
+        messages.error(request, "Etapa inválida.")
+        return redirect("prospection")
+    prospect.stage = stage
+    prospect.last_activity_at = _tz.now()
+    prospect.save(update_fields=["stage", "last_activity_at", "updated_at"])
+    return redirect("prospection")
 
 
 def _save_installments_formset(formset, project, workspace) -> None:

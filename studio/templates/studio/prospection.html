@@ -1,213 +1,223 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
-{% if follow_up_alerts %}
-    <article
-        class="banner banner--info follow-up-banner"
-        data-follow-up-banner
-        data-follow-up-banner-key="follow-up-banner-{{ workspace.pk }}-{{ follow_up_alert_date }}"
-    >
-        <div>
-            <strong>Hora de retomar contato com {{ follow_up_alerts|length }} marca{{ follow_up_alerts|length|pluralize }}.</strong>
-            <p class="muted">
-                {% for item in follow_up_alerts|slice:":3" %}
-                    {{ item.company }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-                {% if follow_up_alerts|length > 3 %}
-                    e mais {{ follow_up_alerts|length|add:"-3" }}.
-                {% endif %}
-            </p>
-        </div>
-        <div class="follow-up-banner-actions">
-            <form method="post" action="{% url 'follow_up_confirm' %}" class="follow-up-banner-confirm-form">
-                {% csrf_token %}
-                {% for item in follow_up_alerts %}
-                    <input type="hidden" name="company_keys" value="{{ item.dismiss_key }}">
-                {% endfor %}
-                <button type="submit" class="primary-button small">Ver follow-ups</button>
+<div class="prospection-page" data-prospection-page data-active-tab="{{ active_tab|default:'pipeline' }}">
+
+    <nav class="prospection-tabs" role="tablist">
+        <a class="prospection-tab{% if active_tab == 'pipeline' %} is-active{% endif %}" href="?tab=pipeline" role="tab" data-tab-link="pipeline">Pipeline ativo</a>
+        <a class="prospection-tab{% if active_tab == 'banco' %} is-active{% endif %}" href="?tab=banco" role="tab" data-tab-link="banco">Banco de marcas</a>
+        <a class="prospection-tab{% if active_tab == 'logica' %} is-active{% endif %}" href="?tab=logica" role="tab" data-tab-link="logica">Lógica do sistema</a>
+    </nav>
+
+    {# ===================== PIPELINE ATIVO ===================== #}
+    <section class="tab-pane{% if active_tab == 'pipeline' %} is-active{% endif %}" data-tab-pane="pipeline">
+
+        <article class="card jobs-filter-bar">
+            <form method="get" class="jobs-filter-form" data-prospection-filter-form style="grid-template-columns: minmax(280px, 420px);">
+                <input type="hidden" name="tab" value="pipeline">
+                {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month.value }}">{% endif %}
+                <label class="jobs-filter-search" aria-label="Pesquisar pela marca">
+                    <span>⌕</span>
+                    <input type="search" name="search" value="{{ filters.search }}" placeholder="Pesquise pelo nome da marca">
+                </label>
             </form>
-            <button type="button" class="icon-button" data-follow-up-banner-dismiss aria-label="Dispensar nesta sessão">&times;</button>
-        </div>
-    </article>
-{% endif %}
-<article class="card jobs-filter-bar">
-    <form method="get" class="jobs-filter-form" data-prospection-filter-form style="grid-template-columns: minmax(280px, 420px);">
-        {% if selected_month %}
-            <input type="hidden" name="month" value="{{ selected_month.value }}">
-        {% endif %}
-        <label class="jobs-filter-search" aria-label="Pesquisar pela marca">
-            <span>⌕</span>
-            <input type="search" name="search" value="{{ filters.search }}" placeholder="Pesquise pelo nome da marca">
-        </label>
-    </form>
-</article>
+        </article>
 
-<section class="stats-grid">
-    {% for item in stats %}
-        <article class="stat-card">
-            <span class="stat-icon">{{ item.icon_label }}</span>
-            <div>
-                <p>{{ item.title }}</p>
-                <strong>{{ item.value }}</strong>
+        <section class="pipeline-kpis">
+            {% for stage in pipeline_stages %}
+                <article class="pipeline-kpi pipeline-kpi--{{ stage.tone }}">
+                    <span class="pipeline-kpi-dot"></span>
+                    <strong class="pipeline-kpi-value">{{ stage.count }}</strong>
+                    <span class="pipeline-kpi-label">{{ stage.title }}</span>
+                </article>
+            {% endfor %}
+        </section>
+
+        <article class="card conversion-card">
+            <div class="conversion-card-row">
+                <span class="conversion-label">Taxa de conversão</span>
+                <div class="conversion-bar"><span style="width: {{ conversion_rate }}%;"></span></div>
+                <strong class="conversion-rate">{{ conversion_rate }}%</strong>
+                <span class="conversion-text muted">{{ conversion_text }}</span>
             </div>
         </article>
-    {% endfor %}
-</section>
 
-<section class="board-grid">
-    {% for column in columns %}
-        <article class="card"{% if column.title == "Follow-up" %} id="follow-up-column"{% endif %}>
-            <div class="card-header">
+        {% if stale_alert %}
+            <article class="banner banner--warning stale-alert">
                 <div>
-                    <h3>{{ column.title }}</h3>
+                    <strong>{{ stale_alert|length }} lead{{ stale_alert|length|pluralize:",s" }} sem resposta há +30 dias</strong>
+                    <p class="muted">Serão movidos automaticamente para o Banco de Marcas com status “Sem retorno”.</p>
                 </div>
+                <a class="ghost-button small" href="#stale-list">Ver agora</a>
+            </article>
+        {% endif %}
+
+        <section class="pipeline-board" id="stale-list">
+            {% for column in pipeline_columns %}
+                <article class="pipeline-column pipeline-column--{{ column.tone }}">
+                    <header class="pipeline-column-header">
+                        <span class="pipeline-column-title"><span class="pipeline-column-dot"></span>{{ column.title }}</span>
+                        <span class="pipeline-column-count">{{ column.count }}</span>
+                    </header>
+
+                    {% if column.items %}
+                        {% for item in column.items %}
+                            <article class="pipeline-card{% if item.is_stale %} pipeline-card--stale{% endif %}">
+                                {% if item.is_stale %}<span class="pipeline-card-stale-note">{{ item.days_since_last }}d sem resposta</span>{% endif %}
+                                <div class="pipeline-card-top">
+                                    <div>
+                                        <strong>{{ item.company }}</strong>
+                                        <span class="muted">
+                                            {{ item.niche|default:"" }}{% if item.niche and item.instagram %} · {% endif %}{% if item.instagram %}@{{ item.instagram }}{% endif %}
+                                        </span>
+                                    </div>
+                                    {% if item.channel %}<span class="pipeline-chip">{{ item.channel }}</span>{% endif %}
+                                </div>
+                                <div class="pipeline-card-bottom">
+                                    <small class="muted">{{ item.contact_date|default:"" }}</small>
+                                    <div class="pipeline-card-actions">
+                                        {% if column.key == "Rascunho" %}
+                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Prospeccao"><button class="primary-button xsmall" type="submit">Prospectar</button></form>
+                                        {% elif column.key == "Aguardando retorno" %}
+                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Follow-up"><button class="primary-button xsmall" type="submit">Follow-up</button></form>
+                                        {% elif column.key == "Negociacao" %}
+                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="nao_tem_interesse"><button class="ghost-button xsmall" type="submit">Não fechou</button></form>
+                                            <a class="primary-button xsmall" href="{% url 'prospect_convert' item.id %}">Fechar ✓</a>
+                                        {% elif column.key == "Fechado" %}
+                                            <span class="pipeline-chip pipeline-chip--success">Fechado ✓</span>
+                                        {% else %}
+                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
+                                            <a class="primary-button xsmall" href="{% url 'prospect_convert' item.id %}">Converter</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                        {% if column.overflow %}
+                            <a class="pipeline-overflow" href="?tab=banco&search={{ filters.search|urlencode }}">+ {{ column.overflow }} lead{{ column.overflow|pluralize:",s" }}</a>
+                        {% endif %}
+                    {% else %}
+                        <p class="muted pipeline-empty">Nenhum lead nesta etapa.</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </section>
+    </section>
+
+    {# ===================== BANCO DE MARCAS ===================== #}
+    <section class="tab-pane{% if active_tab == 'banco' %} is-active{% endif %}" data-tab-pane="banco">
+        <article class="card banco-header">
+            <div>
+                <h2>Banco de Marcas</h2>
+                <p class="muted">Histórico de todas as marcas abordadas — ativas e encerradas</p>
             </div>
-            {% if column.items %}
-                <div class="stack-list">
-                    {% for item in column.items %}
-                        <article class="soft-card prospect-card{% if item.kind == 'follow_up' %} prospect-card--follow-up{% endif %}">
-                            <div class="prospect-top">
-                                {% if item.kind == "follow_up" %}
-                                    <div class="follow-up-brand">
-                                        <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
-                                        <div class="follow-up-brand-copy">
-                                            <strong>{{ item.company }}</strong>
-                                            <span class="muted">{{ item.service_category }}</span>
-                                        </div>
-                                    </div>
-                                    <span class="chip">{{ item.days_since_last_job }} dias</span>
-                                {% else %}
-                                    <div class="avatar-badge" style="background: {{ item.accent }};">{{ item.company|slice:":1" }}</div>
-                                    <strong>{{ item.company }}</strong>
-                                {% endif %}
-                            </div>
-                            {% if item.kind == "follow_up" %}
-                                <div class="follow-up-meta">
-                                    <small>Última entrega: {{ item.last_delivery_text }}</small>
-                                    <small>Sem novo trabalho há {{ item.days_since_last_job }} dias</small>
-                                </div>
-                                <p class="muted follow-up-note">{{ item.note }}</p>
-                                <div class="card-actions">
-                                    <div class="card-actions-group">
-                                        <form method="post" action="{% url 'follow_up_start_prospection' %}">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="company_key" value="{{ item.dismiss_key }}">
-                                            <button type="submit" class="primary-button small">Prospecção</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <p class="muted strong">
-                                    {{ item.contact }}
-                                    {% if item.contact_type %}<span class="chip">{{ item.contact_type }}</span>{% endif %}
-                                </p>
-                                <div class="meta-line">
-                                    {% if item.niche %}<small>Nicho: {{ item.niche }}</small>{% endif %}
-                                    {% if item.contact_date %}<small>Data: {{ item.contact_date }}</small>{% endif %}
-                                </div>
-                                {% if item.meeting_scheduled %}
-                                    <div class="meta-line">
-                                        <small>Reunião agendada</small>
-                                        {% if item.meeting_date %}<small>Reunião: {{ item.meeting_date }}</small>{% endif %}
-                                    </div>
-                                {% endif %}
-                                {% if item.channels %}
-                                    <div class="stack-list">
-                                        {% for channel in item.channels %}
-                                            <small class="muted">{{ channel.label }}: {{ channel.value }}</small>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                <p class="muted">{{ item.note|default:"Sem observações ainda." }}</p>
-                                <div class="card-actions">
-                                    <div class="card-actions-group">
-                                        <a class="ghost-button small" href="{% url 'prospect_convert' item.id %}">Converter</a>
-                                        <a class="ghost-button small" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                        <form method="post" action="{% url 'prospect_delete' item.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="danger-button small">Excluir</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="muted">Nenhum lead nesta etapa.</p>
-            {% endif %}
+            <div class="banco-header-actions">
+                <a class="ghost-button" href="{% url 'prospect_export' %}">⤓ Exportar planilha</a>
+                <a class="primary-button" href="{% url 'prospect_create' %}">+ Novo lead</a>
+            </div>
         </article>
-    {% endfor %}
-</section>
+
+        <section class="banco-kpis">
+            <article class="banco-kpi">
+                <strong>{{ total_addressed }}</strong>
+                <span class="muted">Total abordadas</span>
+            </article>
+            <article class="banco-kpi banco-kpi--success">
+                <strong>{{ total_closed }}</strong>
+                <span class="muted">Fechadas ✓</span>
+            </article>
+            <article class="banco-kpi banco-kpi--danger">
+                <strong>{{ total_no_response }}</strong>
+                <span class="muted">Sem retorno</span>
+            </article>
+            <article class="banco-kpi">
+                <strong>{{ conversion_rate }}%</strong>
+                <span class="muted">Taxa de conversão</span>
+            </article>
+        </section>
+
+        <article class="card">
+            <table class="banco-table">
+                <thead><tr><th>Marca</th><th>Nicho</th><th>Canal</th><th>Último contato</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for row in archived_rows %}
+                        <tr>
+                            <td><strong>{{ row.company }}</strong>{% if row.instagram %}<br><span class="muted">@{{ row.instagram }}</span>{% endif %}</td>
+                            <td>{{ row.niche|default:"—" }}</td>
+                            <td>{{ row.channel|default:"—" }}</td>
+                            <td>{{ row.last_contact|default:"—" }}</td>
+                            <td>
+                                <span class="banco-status banco-status--{{ row.status_key }}">{{ row.status_label }}</span>
+                                {% if row.status_key != "fechado" %}
+                                    <form method="post" action="{% url 'prospect_reactivate' row.id %}" class="banco-reactivate-form">
+                                        {% csrf_token %}<button class="ghost-button xsmall" type="submit">↻ Reativar</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="muted" style="text-align:center; padding: 2rem;">Nenhuma marca arquivada ainda.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+    </section>
+
+    {# ===================== LÓGICA DO SISTEMA ===================== #}
+    <section class="tab-pane{% if active_tab == 'logica' %} is-active{% endif %}" data-tab-pane="logica">
+        <article class="card logica-funnel">
+            <h3>⇄ Funil completo — como o lead percorre o sistema</h3>
+            <ol class="logica-steps">
+                <li><span class="logica-num">1</span><div><strong>Rascunho</strong> — Lead criado, ainda não contatado. Você pesquisa a marca, anota contatos, prepara abordagem.</div></li>
+                <li><span class="logica-num">2</span><div><strong>Prospecção</strong> — Primeiro contato enviado. Aguardando resposta inicial.</div></li>
+                <li><span class="logica-num">3</span><div><strong>Aguardando retorno</strong> — A marca respondeu mas ainda não há decisão. Você manda follow-up periodicamente.</div></li>
+                <li><span class="logica-num">★</span><div><strong>Follow-up</strong> — Contato ativo de retomada. Pode ser automático (30d sem resposta) ou manual.</div></li>
+                <li><span class="logica-num">4</span><div><strong>Negociação</strong> — Proposta enviada, valores sendo discutidos. Próximo do fechamento.</div></li>
+                <li><span class="logica-num logica-num--check">✓</span><div><strong>Fechado</strong> → vai para Trabalhos. <strong>Sem retorno (30d)</strong> → vai para Banco de Marcas automaticamente. <strong>Não tem interesse / Pausado</strong> → você decide manualmente.</div></li>
+            </ol>
+        </article>
+
+        <section class="logica-grid">
+            <article class="card logica-tile">
+                <div class="logica-icon">⏱</div>
+                <h4>Regra dos 30 dias</h4>
+                <p class="muted">Se um lead em “Prospecção” ou “Aguardando retorno” ficar 30 dias sem nenhuma interação registrada, o sistema move automaticamente para o Banco de Marcas com status <strong>“Sem retorno”</strong>. Um alerta aparece 2 dias antes para você decidir se quer fazer um follow-up antes.</p>
+            </article>
+            <article class="card logica-tile">
+                <div class="logica-icon">🗂</div>
+                <h4>Banco de Marcas</h4>
+                <p class="muted">Repositório permanente de todas as marcas abordadas. Nunca é excluído. Cada marca tem status: <strong>Sem retorno, Não tem interesse, Pausado ou Fechado</strong>. Exportável como planilha (.csv) a qualquer momento. Qualquer marca pode ser <strong>Reativada</strong> e volta ao pipeline.</p>
+            </article>
+            <article class="card logica-tile">
+                <div class="logica-icon">📊</div>
+                <h4>Taxa de conversão</h4>
+                <p class="muted">Calculada automaticamente: <strong>fechamentos ÷ total de abordagens</strong>. Aparece no topo do Pipeline e no Banco de Marcas. Permite saber de 50 abordagens quantas viraram trabalho — o KPI mais importante da prospecção.</p>
+            </article>
+            <article class="card logica-tile">
+                <div class="logica-icon">♻</div>
+                <h4>Reativar marcas</h4>
+                <p class="muted">Uma marca que foi para o Banco de Marcas pode ser reativada a qualquer momento — voltando ao pipeline como novo lead, com histórico preservado. Ideal para marcas sazonais ou que mudaram de responsável de marketing.</p>
+            </article>
+        </section>
+    </section>
+
+</div>
 
 <script>
     (() => {
         const form = document.querySelector("[data-prospection-filter-form]");
-        if (!form) {
-            return;
-        }
-
-        const searchField = form.querySelector('input[name="search"]');
-        if (!searchField) {
-            return;
-        }
-
-        let timerId = null;
-        searchField.addEventListener("input", () => {
-            window.clearTimeout(timerId);
-            timerId = window.setTimeout(() => form.requestSubmit(), 300);
-        });
-    })();
-
-    (() => {
-        const banner = document.querySelector("[data-follow-up-banner]");
-        if (!banner) {
-            return;
-        }
-        const key = banner.dataset.followUpBannerKey || "";
-        try {
-            if (key && sessionStorage.getItem(key) === "dismissed") {
-                banner.hidden = true;
-                return;
+        if (form) {
+            const searchField = form.querySelector('input[name="search"]');
+            if (searchField) {
+                let timerId = null;
+                searchField.addEventListener("input", () => {
+                    window.clearTimeout(timerId);
+                    timerId = window.setTimeout(() => form.requestSubmit(), 300);
+                });
             }
-        } catch (error) {
         }
-        const dismissButton = banner.querySelector("[data-follow-up-banner-dismiss]");
-        if (dismissButton) {
-            dismissButton.addEventListener("click", () => {
-                banner.hidden = true;
-                if (key) {
-                    try {
-                        sessionStorage.setItem(key, "dismissed");
-                    } catch (error) {
-                    }
-                }
-            });
-        }
-
-    })();
-
-    // Apos o POST de "Ver follow-ups", o backend redireciona para
-    // /prospeccao/#follow-up-column. Detectamos a hash no load para dar
-    // flash visual + scrollIntoView (cobre desktop, mobile e o carrossel
-    // horizontal do kanban). Tambem usado em qualquer navegacao manual
-    // pra essa hash.
-    (() => {
-        if (window.location.hash !== "#follow-up-column") {
-            return;
-        }
-        const target = document.getElementById("follow-up-column");
-        if (!target) {
-            return;
-        }
-        // RAF garante que o layout esta pronto antes do scroll.
-        requestAnimationFrame(() => {
-            target.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
-            target.classList.add("follow-up-column--highlighted");
-            window.setTimeout(() => {
-                target.classList.remove("follow-up-column--highlighted");
-            }, 1600);
-        });
     })();
 </script>
 {% endblock %}

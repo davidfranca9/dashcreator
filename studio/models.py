@@ -14,6 +14,7 @@ from .constants import (
     PROJECT_DISTRIBUTION_CHOICES,
     PROJECT_STAGE_CHOICES,
     PROJECT_STATUS_CHOICES,
+    PROSPECT_ARCHIVE_REASON_CHOICES,
     PROSPECT_STAGE_CHOICES,
     SERVICE_TYPE_CHOICES,
 )
@@ -210,9 +211,22 @@ class Prospect(WorkspaceOwnedModel):
     proposal_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     note = models.TextField(blank=True, default="")
     meeting_scheduled = models.BooleanField(default=False)
+    archive_reason = models.CharField(
+        max_length=30,
+        choices=PROSPECT_ARCHIVE_REASON_CHOICES,
+        blank=True,
+        default="",
+    )
+    archived_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True)
+    channel = models.CharField(max_length=40, blank=True, default="")
 
     class Meta:
         ordering = ["stage", "-updated_at"]
+
+    @property
+    def is_archived(self) -> bool:
+        return bool(self.archive_reason)
 
     def __str__(self) -> str:
         return f"{self.company} - {self.contact}"
