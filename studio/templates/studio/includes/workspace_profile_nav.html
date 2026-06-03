@@ -1,4 +1,5 @@
-<nav class="profile-nav" aria-label="Navegação da conta">
-    <a href="{% url 'profile' %}" class="profile-nav-link{% if page_key == 'profile' %} active{% endif %}">Perfil</a>
-    <a href="{% url 'settings' %}" class="profile-nav-link{% if page_key == 'settings' %} active{% endif %}">Configurações</a>
+<nav class="profile-tabs" aria-label="Navegação da conta">
+    <a href="{% url 'profile' %}" class="profile-tab{% if page_key == 'profile' %} is-active{% endif %}">Perfil</a>
+    <a href="{% url 'settings' %}" class="profile-tab{% if page_key == 'settings' and not request.GET.aba %} is-active{% endif %}">Configurações</a>
+    <a href="{% url 'settings' %}?aba=categorias" class="profile-tab{% if page_key == 'settings' and request.GET.aba == 'categorias' %} is-active{% endif %}">Categorias</a>
 </nav>

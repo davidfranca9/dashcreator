@@ -4,103 +4,101 @@
 <section class="stack-section">
     {% include "studio/includes/workspace_profile_nav.html" %}
 
-    <article class="card profile-hero">
-        <div class="profile-avatar-panel">
-            <div class="profile-avatar-fallback">
-                {{ membership.initials|default:"P" }}
-            </div>
-            <div class="profile-avatar-copy">
-                <h3>Iniciais do perfil</h3>
-                <p class="muted">Identificação gerada automaticamente pelo nome da conta no workspace.</p>
-            </div>
+    <article class="card perfil-hero">
+        <div class="perfil-hero-av">{{ membership.initials|default:"P" }}</div>
+        <div class="perfil-hero-info">
+            <div class="perfil-hero-name">{{ workspace.business_full_name|default:workspace.name }}</div>
+            <div class="perfil-hero-sub">{{ request.user.username|default:"" }} · Workspace ativo</div>
         </div>
+        <span class="perfil-hero-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Conta ativa
+        </span>
     </article>
 
-    <article class="card">
-        <div class="card-header">
-            <div>
-                <h3>Dados empresariais</h3>
-                <p>Cadastre aqui os dados da sua empresa e os links principais do workspace.</p>
-            </div>
+    <article class="card sec-card">
+        <div class="sec-head">
+            <div class="sec-title">Dados empresariais</div>
+            <div class="sec-sub">Cadastre aqui os dados da sua empresa e os links principais do workspace.</div>
         </div>
-        <form method="post" class="form-grid profile-business-form" data-business-form data-zip-lookup-url="{% url 'business_zip_lookup' %}">
-            {% csrf_token %}
-            <input type="hidden" name="profile_action" value="business">
-            <div class="form-field form-field--full">
-                <label for="{{ business_form.business_full_name.id_for_label }}">{{ business_form.business_full_name.label }}</label>
-                {{ business_form.business_full_name }}
-                {{ business_form.business_full_name.errors }}
-            </div>
-            <div class="form-field profile-business-field--zip">
-                <label for="{{ business_form.business_zip_code.id_for_label }}">{{ business_form.business_zip_code.label }}</label>
-                <div class="profile-zip-input">
-                    {{ business_form.business_zip_code }}
-                    <button type="button" class="ghost-button small" data-zip-submit>Buscar CEP</button>
+        <div class="sec-body">
+            <form method="post" class="form-grid profile-business-form" data-business-form data-zip-lookup-url="{% url 'business_zip_lookup' %}">
+                {% csrf_token %}
+                <input type="hidden" name="profile_action" value="business">
+                <div class="form-field form-field--full">
+                    <label for="{{ business_form.business_full_name.id_for_label }}">{{ business_form.business_full_name.label }}</label>
+                    {{ business_form.business_full_name }}
+                    {{ business_form.business_full_name.errors }}
                 </div>
-                <span class="field-help">Digite o CEP para preencher a rua automaticamente.</span>
-                {{ business_form.business_zip_code.errors }}
-            </div>
-            <div class="form-field form-field--full">
-                <label for="{{ business_form.business_street.id_for_label }}">{{ business_form.business_street.label }}</label>
-                {{ business_form.business_street }}
-                {{ business_form.business_street.errors }}
-            </div>
-            <div class="form-field">
-                <label for="{{ business_form.business_number.id_for_label }}">{{ business_form.business_number.label }}</label>
-                {{ business_form.business_number }}
-                {{ business_form.business_number.errors }}
-            </div>
-            <div class="form-field">
-                <label for="{{ business_form.business_complement.id_for_label }}">{{ business_form.business_complement.label }}</label>
-                {{ business_form.business_complement }}
-                {{ business_form.business_complement.errors }}
-            </div>
-            <div class="form-field">
-                <label for="{{ business_form.business_cnpj.id_for_label }}">{{ business_form.business_cnpj.label }}</label>
-                {{ business_form.business_cnpj }}
-                {{ business_form.business_cnpj.errors }}
-            </div>
-            <div class="form-field">
-                <label for="{{ business_form.business_pis.id_for_label }}">{{ business_form.business_pis.label }}</label>
-                {{ business_form.business_pis }}
-                {{ business_form.business_pis.errors }}
-            </div>
-            <div class="form-field">
-                <label for="{{ business_form.instagram_url.id_for_label }}">{{ business_form.instagram_url.label }}</label>
-                {{ business_form.instagram_url }}
-                {{ business_form.instagram_url.errors }}
-            </div>
-            <div class="form-field">
-                <label for="{{ business_form.tiktok_url.id_for_label }}">{{ business_form.tiktok_url.label }}</label>
-                {{ business_form.tiktok_url }}
-                {{ business_form.tiktok_url.errors }}
-            </div>
-            <div class="form-field form-field--full">
-                <label for="{{ business_form.portfolio_url.id_for_label }}">{{ business_form.portfolio_url.label }}</label>
-                {{ business_form.portfolio_url }}
-                {{ business_form.portfolio_url.errors }}
-            </div>
-            <p class="field-help form-field--full profile-business-feedback" data-zip-feedback hidden></p>
-            <div class="form-actions form-field--full">
-                <button type="submit" class="primary-button">Salvar dados empresariais</button>
-            </div>
-        </form>
-    </article>
-
-    <div class="profile-grid">
-        {% for section in profile_sections %}
-            <article class="card">
-                <div class="card-header">
-                    <div>
-                        <h3>{{ section.title }}</h3>
+                <div class="form-field profile-business-field--zip">
+                    <label for="{{ business_form.business_zip_code.id_for_label }}">{{ business_form.business_zip_code.label }}</label>
+                    <div class="profile-zip-input">
+                        {{ business_form.business_zip_code }}
+                        <button type="button" class="ghost-button small" data-zip-submit>Buscar CEP</button>
                     </div>
+                    <span class="field-help">Digite o CEP para preencher a rua automaticamente.</span>
+                    {{ business_form.business_zip_code.errors }}
                 </div>
-                <div class="stack-list">
+                <div class="form-field form-field--full">
+                    <label for="{{ business_form.business_street.id_for_label }}">{{ business_form.business_street.label }}</label>
+                    {{ business_form.business_street }}
+                    {{ business_form.business_street.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.business_number.id_for_label }}">{{ business_form.business_number.label }}</label>
+                    {{ business_form.business_number }}
+                    {{ business_form.business_number.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.business_complement.id_for_label }}">{{ business_form.business_complement.label }}</label>
+                    {{ business_form.business_complement }}
+                    {{ business_form.business_complement.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.business_cnpj.id_for_label }}">{{ business_form.business_cnpj.label }}</label>
+                    {{ business_form.business_cnpj }}
+                    {{ business_form.business_cnpj.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.business_pis.id_for_label }}">{{ business_form.business_pis.label }}</label>
+                    {{ business_form.business_pis }}
+                    {{ business_form.business_pis.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.instagram_url.id_for_label }}">{{ business_form.instagram_url.label }}</label>
+                    {{ business_form.instagram_url }}
+                    {{ business_form.instagram_url.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.tiktok_url.id_for_label }}">{{ business_form.tiktok_url.label }}</label>
+                    {{ business_form.tiktok_url }}
+                    {{ business_form.tiktok_url.errors }}
+                </div>
+                <div class="form-field form-field--full">
+                    <label for="{{ business_form.portfolio_url.id_for_label }}">{{ business_form.portfolio_url.label }}</label>
+                    {{ business_form.portfolio_url }}
+                    {{ business_form.portfolio_url.errors }}
+                </div>
+                <p class="field-help form-field--full profile-business-feedback" data-zip-feedback hidden></p>
+                <div class="form-actions form-field--full">
+                    <button type="submit" class="primary-button">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </article>
+
+    <div class="profile-info-grid">
+        {% for section in profile_sections %}
+            <article class="card sec-card">
+                <div class="sec-head">
+                    <div class="sec-title">{{ section.title }}</div>
+                </div>
+                <div class="sec-body">
                     {% for item in section.items %}
-                        <article class="soft-card profile-item">
-                            <span class="workspace-label">{{ item.label }}</span>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label">{{ item.label }}</span>
                             <strong>{{ item.value }}</strong>
-                        </article>
+                        </div>
                     {% endfor %}
                 </div>
             </article>
@@ -112,71 +110,37 @@
 (() => {
     const form = document.querySelector("[data-business-form]");
     if (!form) return;
-
     const zipInput = form.querySelector("#{{ business_form.business_zip_code.id_for_label }}");
     const streetInput = form.querySelector("#{{ business_form.business_street.id_for_label }}");
     const submitButton = form.querySelector("[data-zip-submit]");
     const feedback = form.querySelector("[data-zip-feedback]");
     const csrfToken = form.querySelector("input[name='csrfmiddlewaretoken']");
     const lookupUrl = form.dataset.zipLookupUrl;
-
     if (!zipInput || !streetInput || !submitButton || !feedback || !csrfToken || !lookupUrl) return;
-
-    const setFeedback = (message, isError = false) => {
-        if (!message) {
-            feedback.hidden = true;
-            feedback.textContent = "";
-            feedback.dataset.state = "";
-            return;
-        }
-        feedback.hidden = false;
-        feedback.textContent = message;
-        feedback.dataset.state = isError ? "error" : "success";
+    const setFeedback = (m, err = false) => {
+        if (!m) { feedback.hidden = true; feedback.textContent = ""; feedback.dataset.state = ""; return; }
+        feedback.hidden = false; feedback.textContent = m; feedback.dataset.state = err ? "error" : "success";
     };
-
-    const lookupZipCode = async () => {
-        const zipCode = zipInput.value.trim();
-        if (!zipCode) {
-            setFeedback("");
-            return;
-        }
-
-        submitButton.disabled = true;
-        setFeedback("Buscando CEP...");
-
+    const lookup = async () => {
+        const z = zipInput.value.trim(); if (!z) { setFeedback(""); return; }
+        submitButton.disabled = true; setFeedback("Buscando CEP...");
         try {
-            const response = await fetch(lookupUrl, {
+            const r = await fetch(lookupUrl, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-                    "X-CSRFToken": csrfToken.value,
-                },
-                body: new URLSearchParams({ cep: zipCode }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "X-CSRFToken": csrfToken.value },
+                body: new URLSearchParams({ cep: z }),
             });
-
-            const payload = await response.json();
-            if (!response.ok || !payload.ok) {
-                setFeedback(payload.error || "Não foi possível buscar esse CEP.", true);
-                return;
-            }
-
-            zipInput.value = payload.zip_code || zipInput.value;
-            if (payload.street) {
-                streetInput.value = payload.street;
-            }
+            const p = await r.json();
+            if (!r.ok || !p.ok) { setFeedback(p.error || "Não foi possível buscar esse CEP.", true); return; }
+            zipInput.value = p.zip_code || zipInput.value;
+            if (p.street) streetInput.value = p.street;
             setFeedback("CEP encontrado.");
-        } catch (error) {
-            setFeedback("Não foi possível buscar esse CEP agora.", true);
-        } finally {
-            submitButton.disabled = false;
-        }
+        } catch (e) { setFeedback("Não foi possível buscar esse CEP agora.", true); }
+        finally { submitButton.disabled = false; }
     };
-
-    submitButton.addEventListener("click", lookupZipCode);
+    submitButton.addEventListener("click", lookup);
     zipInput.addEventListener("blur", () => {
-        if ((zipInput.value || "").replace(/\D/g, "").length === 8) {
-            lookupZipCode();
-        }
+        if ((zipInput.value || "").replace(/\D/g, "").length === 8) lookup();
     });
 })();
 </script>
