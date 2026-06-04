@@ -1184,6 +1184,10 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         normalized_name = normalize_company_name(item.company)
         if normalized_name:
             company_names.add(normalized_name)
+    for prospect in Prospect.objects.filter(workspace=workspace).only("company"):
+        normalized_name = normalize_company_name(prospect.company)
+        if normalized_name:
+            company_names.add(normalized_name)
     clients_portfolio = len(company_names)
     active_company_names = set()
     for item in active_projects:
