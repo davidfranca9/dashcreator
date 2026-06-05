@@ -1925,9 +1925,16 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_collaborators_amount = sum((item.monthly_equivalent() for item in fixed_collaborators), ZERO)
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
     # "Custo fixo coberto" e a barra da caixinha refletem o quanto já foi
-    # PAGO de saídas no mês (não o quanto de receita entrou). A meta é
-    # zerar a lista de itens fixos via registros de saída.
-    fixed_cost_paid = min(outgoing_total, fixed_cost_amount)
+    # PAGO de saídas marcadas com a categoria "fixed_cost" no mês.
+    paid_by_category = {key: ZERO for key, _ in FinanceEntry.CATEGORY_CHOICES}
+    paid_by_cash_box: dict[int, Decimal] = {}
+    for entry in month_entries:
+        if entry.category:
+            paid_by_category[entry.category] = paid_by_category.get(entry.category, ZERO) + Decimal(entry.amount or 0)
+        if entry.cash_box_id:
+            paid_by_cash_box[entry.cash_box_id] = paid_by_cash_box.get(entry.cash_box_id, ZERO) + Decimal(entry.amount or 0)
+    fixed_cost_outgoing = paid_by_category.get(FinanceEntry.CATEGORY_FIXED_COST, ZERO)
+    fixed_cost_paid = min(fixed_cost_outgoing, fixed_cost_amount)
     fixed_cost_remaining = max(fixed_cost_amount - fixed_cost_paid, ZERO)
     fixed_cost_covered = fixed_cost_remaining == ZERO and fixed_cost_amount > ZERO
     pro_labore_available = max(incoming_total - fixed_cost_amount, ZERO)

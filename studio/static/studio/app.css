@@ -5045,6 +5045,18 @@ body.page-finance .workspace-label {
 .fd-confirm-btn-danger:hover { background: #dc2626; }
 .fd-chip-muted { font-size: 11px; color: #94a3b8; background: #f4f5f8; border: .5px solid #dde1ea; border-radius: 99px; padding: 2px 9px; }
 .fd-chip-danger { background: #fef2f2 !important; color: #b13540 !important; border-color: #fca5a5 !important; font-weight: 600; }
+
+.fd-category-hint {
+    font-size: 12px; line-height: 1.45; padding: 10px 12px;
+    border-radius: 8px; background: #f4f5f8; color: #1a2340;
+    border: .5px solid #dde1ea;
+}
+.fd-category-hint.fd-cat-prolabore { background: #f1f5f9; color: #1a2340; border-color: #cbd5e1; }
+.fd-category-hint.fd-cat-fixed { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.fd-category-hint.fd-cat-reserve { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+.fd-category-hint.fd-cat-investment { background: #f3e8ff; color: #6d28d9; border-color: #c4b5fd; }
+.fd-category-hint.fd-cat-free { background: #f0fdf4; color: #065f46; border-color: #bbf7d0; }
+.fd-category-hint.fd-cat-custom { background: #eef5ff; color: #1d4ed8; border-color: #bfdbfe; }
 .fd-text-red { color: #ef4444; font-weight: 600; }
 .fd-dot-red { background: #ef4444; }
 

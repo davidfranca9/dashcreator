@@ -1093,25 +1093,59 @@ class ManagedOptionForm(forms.Form):
         self.fields["name"].help_text = help_text
 
 
+FINANCE_ENTRY_CATEGORY_DESCRIPTIONS = {
+    FinanceEntry.CATEGORY_PROLABORE: "Sua retirada mensal fixa, independente do faturamento. Sai antes de tudo.",
+    FinanceEntry.CATEGORY_FIXED_COST: "Ferramentas e colaboradores fixos do negócio (CapCut, Notion, editor, etc).",
+    FinanceEntry.CATEGORY_RESERVE: "Reserva de emergência: alimenta a meta de 6× pró-labore. Só usar em emergência real.",
+    FinanceEntry.CATEGORY_INVESTMENT: "Investimento no negócio: cursos, equipamentos, mentorias, eventos de networking.",
+    FinanceEntry.CATEGORY_FREE_FLOW: "Gasto livre: lazer, viagem, qualquer coisa que não se encaixe nas demais caixinhas.",
+    FinanceEntry.CATEGORY_CUSTOM: "Caixinha personalizada criada por você. Acompanhe a evolução nas Caixinhas.",
+}
+
+
 class FinanceEntryForm(forms.ModelForm):
     class Meta:
         model = FinanceEntry
-        fields = ["amount", "occurred_on", "description"]
+        fields = ["amount", "occurred_on", "category", "cash_box", "description"]
         labels = {
             "amount": "Valor",
             "occurred_on": "Data",
-            "description": "Descrição",
+            "category": "Caixinha",
+            "cash_box": "Qual caixinha personalizada?",
+            "description": "Descrição (opcional)",
         }
         widgets = {
             "occurred_on": forms.DateInput(attrs={"type": "date"}),
-            "description": forms.TextInput(attrs={"placeholder": "Ex.: cliente pagou entrada / impulsionamento / editor"}),
+            "description": forms.TextInput(attrs={"placeholder": "Ex.: pagamento Letícia · junho"}),
+            "category": forms.Select(attrs={"data-finance-category": True}),
+            "cash_box": forms.Select(attrs={"data-finance-cashbox": True}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.workspace = workspace
         self.fields["amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal"})
         self.fields["occurred_on"].input_formats = ["%Y-%m-%d"]
         self.fields["occurred_on"].widget.format = "%Y-%m-%d"
+        self.fields["category"].required = False
+        self.fields["cash_box"].required = False
+        if workspace is not None:
+            self.fields["cash_box"].queryset = CashBox.objects.filter(workspace=workspace).order_by("name")
+        else:
+            self.fields["cash_box"].queryset = CashBox.objects.none()
+        self.fields["cash_box"].empty_label = "Selecione uma caixinha..."
+        # Adiciona a opção em branco como primeiro item da categoria.
+        self.fields["category"].choices = [("", "Selecione uma caixinha...")] + list(FinanceEntry.CATEGORY_CHOICES)
+
+    def clean(self):
+        cleaned = super().clean()
+        category = cleaned.get("category") or ""
+        cash_box = cleaned.get("cash_box")
+        if category == FinanceEntry.CATEGORY_CUSTOM and cash_box is None:
+            self.add_error("cash_box", "Escolha qual caixinha personalizada esta saída pertence.")
+        if category != FinanceEntry.CATEGORY_CUSTOM:
+            cleaned["cash_box"] = None
+        return cleaned
 
 
 class FixedCostForm(forms.ModelForm):

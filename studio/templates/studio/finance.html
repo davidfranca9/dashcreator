@@ -484,11 +484,14 @@
                 <input type="hidden" name="outgoing_entry_id" value="{{ editing_entry.id }}">
             {% endif %}
             {% for field in outgoing_form %}
-                <label class="fd-form-field{% if field.name == 'description' %} fd-form-field-full{% endif %}">
+                <label class="fd-form-field{% if field.name == 'description' or field.name == 'category' or field.name == 'cash_box' %} fd-form-field-full{% endif %}"{% if field.name == 'cash_box' %} data-cash-box-wrapper hidden{% endif %}>
                     <span>{{ field.label }}</span>
                     {{ field }}
                     {{ field.errors }}
                 </label>
+                {% if field.name == 'category' %}
+                    <div class="fd-form-field-full fd-category-hint" data-category-hint hidden></div>
+                {% endif %}
             {% endfor %}
             <div class="fd-modal-actions">
                 {% if editing_entry %}
@@ -710,6 +713,45 @@
             syncFixedCostDueMonth();
             recurrenceField.addEventListener("change", syncFixedCostDueMonth);
         }
+    })();
+
+    /* Modal "Registrar saída" — categoria + dica + cashbox */
+    (() => {
+        const categorySelect = document.querySelector("[data-finance-category]");
+        const cashBoxWrapper = document.querySelector("[data-cash-box-wrapper]");
+        const hintBox = document.querySelector("[data-category-hint]");
+        if (!categorySelect) return;
+        const HINTS = {
+            "prolabore": "Sua retirada mensal fixa, independente do faturamento. Sai antes de tudo.",
+            "fixed_cost": "Ferramentas e colaboradores fixos do negócio (CapCut, Notion, editor, etc).",
+            "reserve": "Reserva de emergência: alimenta a meta de 6× pró-labore. Só usar em emergência real.",
+            "investment": "Investimento no negócio: cursos, equipamentos, mentorias, eventos de networking.",
+            "free_flow": "Gasto livre: lazer, viagem, qualquer coisa que não se encaixe nas demais caixinhas.",
+            "custom": "Caixinha personalizada criada por você. Acompanhe a evolução na aba Caixinhas.",
+        };
+        const TONES = {
+            "prolabore": "fd-cat-prolabore",
+            "fixed_cost": "fd-cat-fixed",
+            "reserve": "fd-cat-reserve",
+            "investment": "fd-cat-investment",
+            "free_flow": "fd-cat-free",
+            "custom": "fd-cat-custom",
+        };
+        const sync = () => {
+            const value = categorySelect.value;
+            if (cashBoxWrapper) cashBoxWrapper.hidden = value !== "custom";
+            if (hintBox) {
+                if (value && HINTS[value]) {
+                    hintBox.textContent = HINTS[value];
+                    hintBox.className = "fd-form-field-full fd-category-hint " + (TONES[value] || "");
+                    hintBox.hidden = false;
+                } else {
+                    hintBox.hidden = true;
+                }
+            }
+        };
+        categorySelect.addEventListener("change", sync);
+        sync();
     })();
 
     /* Modal "Nova caixinha" — toggle % vs valor fixo */

@@ -348,11 +348,29 @@ class FinanceEntry(WorkspaceOwnedModel):
         (KIND_INCOMING, "Entrada"),
         (KIND_OUTGOING, "Saida"),
     ]
+    CATEGORY_PROLABORE = "prolabore"
+    CATEGORY_FIXED_COST = "fixed_cost"
+    CATEGORY_RESERVE = "reserve"
+    CATEGORY_INVESTMENT = "investment"
+    CATEGORY_FREE_FLOW = "free_flow"
+    CATEGORY_CUSTOM = "custom"
+    CATEGORY_CHOICES = [
+        (CATEGORY_PROLABORE, "Pró-labore"),
+        (CATEGORY_FIXED_COST, "Custo fixo"),
+        (CATEGORY_RESERVE, "Reserva de emergência"),
+        (CATEGORY_INVESTMENT, "Investimento no negócio"),
+        (CATEGORY_FREE_FLOW, "Fluxo livre"),
+        (CATEGORY_CUSTOM, "Caixinha personalizada"),
+    ]
 
     kind = models.CharField(max_length=20, choices=KIND_CHOICES)
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     occurred_on = models.DateField()
     description = models.CharField(max_length=180, blank=True, default="")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, blank=True, default="")
+    cash_box = models.ForeignKey(
+        "CashBox", on_delete=models.SET_NULL, null=True, blank=True, related_name="finance_entries"
+    )
 
     class Meta:
         ordering = ["-occurred_on", "-updated_at"]

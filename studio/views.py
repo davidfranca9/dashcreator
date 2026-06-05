@@ -1232,7 +1232,7 @@ def finance(request: HttpRequest) -> HttpResponse:
         if selected_month is None or (selected_month.year == today.year and selected_month.month == today.month)
         else selected_month
     )
-    outgoing_form_kwargs = {"prefix": "outgoing"}
+    outgoing_form_kwargs = {"prefix": "outgoing", "workspace": workspace}
     if editing_entry is not None:
         outgoing_form_kwargs["instance"] = editing_entry
     else:
