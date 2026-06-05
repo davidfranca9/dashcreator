@@ -285,14 +285,27 @@
                 if (overflow) col.insertBefore(card, overflow);
                 else col.appendChild(card);
                 card.dataset.currentStage = targetStage;
-                // Remove ações/labels específicos da coluna anterior
-                // (ex.: chip "Fechado ✓") pra não confundir o usuário até
-                // a próxima renderização.
-                card.querySelectorAll(".pipeline-chip--success, .pipeline-card-actions").forEach((el) => el.remove());
+                // Substitui as ações específicas da coluna antiga por um
+                // botão Editar genérico — assim não sobra chip "Fechado ✓"
+                // de cartão arquivado nem fica sem nenhuma ação visível.
+                const id = card.dataset.prospectId;
+                const actionsBox = card.querySelector(".pipeline-card-actions");
+                const editHref = "/prospeccao/" + id + "/editar/";
+                if (actionsBox) {
+                    actionsBox.innerHTML = '<a class="ghost-button xsmall" href="' + editHref + '">Editar</a>';
+                } else {
+                    const bottom = card.querySelector(".pipeline-card-bottom");
+                    if (bottom) {
+                        const wrap = document.createElement("div");
+                        wrap.className = "pipeline-card-actions";
+                        wrap.innerHTML = '<a class="ghost-button xsmall" href="' + editHref + '">Editar</a>';
+                        bottom.appendChild(wrap);
+                    }
+                }
+                card.querySelectorAll(".pipeline-chip--success").forEach((el) => el.remove());
                 bumpCount(sourceColumn, -1);
                 bumpCount(col, +1);
 
-                const id = card.dataset.prospectId;
                 const url = config.url.replace("/0/", "/" + id + "/");
                 const fd = new FormData();
                 Object.entries(config.body).forEach(([k, v]) => fd.append(k, v));
