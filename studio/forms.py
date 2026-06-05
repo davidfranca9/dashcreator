@@ -865,9 +865,13 @@ class ProjectForm(forms.ModelForm):
             # mesmo que o JS tenha calculado um valor padrão.
             entry_value = 0
             cleaned_data["entry_value"] = 0
-        if service_type_value in ENTRY_RECEIPT_SERVICE_TYPES:
-            received_value = entry_value
-            cleaned_data["received_value"] = entry_value
+        # Antes: entry_value era copiado para received_value, marcando o
+        # trabalho como "recebido" automaticamente. Agora a entrada vira
+        # apenas uma previsão — só vira recebido quando confirmado de
+        # fato. Preserva received_value já existente em edições.
+        if service_type_value in ENTRY_RECEIPT_SERVICE_TYPES and not self.instance.pk:
+            received_value = 0
+            cleaned_data["received_value"] = 0
         if entry_value > total_value:
             self.add_error("entry_value", "A entrada não pode ser maior que o valor total.")
         if is_ugc_manager and management_value > 0 and entry_value > management_value:

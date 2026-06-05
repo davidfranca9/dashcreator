@@ -1760,29 +1760,34 @@ def _project_finance_events(project: Project) -> list[dict]:
         return events
 
     payment_date = payment_reference_date(project)
+    entry_date = project.entry_due_date or payment_date
     total_amount = _project_cash_value(project)
+    entry_amount = min(Decimal(project.entry_value or 0), total_amount)
+    balance_amount = max(total_amount - entry_amount, ZERO)
     received_amount = min(Decimal(project.received_value or 0), total_amount)
-    outstanding_amount = max(total_amount - received_amount, ZERO)
-    if received_amount > ZERO:
+    entry_received = min(received_amount, entry_amount)
+    balance_received = max(received_amount - entry_amount, ZERO)
+
+    if entry_amount > ZERO:
         events.append(
             {
                 "project": project,
                 "kind": "Entrada",
-                "amount": received_amount,
-                "due_date": payment_date,
-                "paid": True,
-                "paid_on": payment_date,
+                "amount": entry_amount,
+                "due_date": entry_date,
+                "paid": entry_received >= entry_amount and entry_amount > ZERO,
+                "paid_on": entry_date if entry_received >= entry_amount else None,
             }
         )
-    if outstanding_amount > ZERO:
+    if balance_amount > ZERO:
         events.append(
             {
                 "project": project,
-                "kind": "Saldo" if received_amount > ZERO else "Entrada",
-                "amount": outstanding_amount,
+                "kind": "Saldo" if entry_amount > ZERO else "Entrada",
+                "amount": balance_amount,
                 "due_date": payment_date,
-                "paid": False,
-                "paid_on": None,
+                "paid": balance_received >= balance_amount and balance_amount > ZERO,
+                "paid_on": payment_date if balance_received >= balance_amount else None,
             }
         )
     return events
