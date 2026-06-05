@@ -637,6 +637,7 @@
         const hasEntryWrapper = form.querySelector(".has-entry-field");
         const hasInstallmentsWrapper = form.querySelector(".has-installments-field");
         const entryValueWrapper = form.querySelector(".entry-value-field");
+        const paymentRecurrenceWrapper = form.querySelector(".payment-recurrence-field");
         const totalValueLabel = form.querySelector('label[for="id_total_value"]');
         const dueDateLabel = form.querySelector('label[for="id_due_date"]');
         const paymentDueDateLabel = form.querySelector('label[for="id_payment_due_date"]');
@@ -655,7 +656,7 @@
         };
 
         const syncServiceLabels = (isRecurring, isUgcManager, isPaymentRecurring, paymentDateMode) => {
-            setFieldLabel(totalValueLabel, isRecurring ? "recurringLabel" : (isUgcManager ? "ugcManagerLabel" : "defaultLabel"));
+            setFieldLabel(totalValueLabel, (isRecurring || isPaymentRecurring) ? "recurringLabel" : (isUgcManager ? "ugcManagerLabel" : "defaultLabel"));
             setFieldLabel(dueDateLabel, isRecurring ? "recurringLabel" : "defaultLabel");
             if (paymentDateMode === "dayMonth") {
                 setFieldLabel(paymentDueDateLabel, "dayMonthLabel");
@@ -719,12 +720,18 @@
             if (hasInstallmentsWrapper) {
                 hasInstallmentsWrapper.hidden = !supportsInstallments;
             }
+            if (paymentRecurrenceWrapper) {
+                paymentRecurrenceWrapper.hidden = isPaymentRecurring;
+            }
             if ((isSimplifiedPayment || isCommission) && entryValueWrapper) {
                 entryValueWrapper.hidden = true;
                 if (entryField) {
                     entryField.value = "0.00";
                     entryWasEdited = false;
                 }
+            }
+            if ((isSimplifiedPayment || isCommission || isPaymentRecurring) && entryDueDateWrapper) {
+                entryDueDateWrapper.hidden = true;
             }
             if (isCommission && wrappersByName.total_value) {
                 wrappersByName.total_value.hidden = true;
