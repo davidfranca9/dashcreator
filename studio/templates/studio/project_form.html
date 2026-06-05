@@ -515,9 +515,13 @@
                             if (yearVal) monthSelect.dataset.autoYear = yearVal;
                         }
                         // Sempre que o usuário interagir com o select, marca
-                        // como editado pra preservar a escolha.
+                        // como editado pra preservar a escolha. Em seguida
+                        // re-roda o auto-fill: se for a parcela 0, o chain
+                        // recalcula as próximas; se for outra, autoFill
+                        // respeita userEdited e não mexe nessa.
                         monthSelect.addEventListener("change", () => {
                             monthSelect.dataset.userEdited = "true";
+                            autoFillSocialMediaParcelaMonths();
                         });
                     }
                     return;
@@ -568,21 +572,41 @@
         const autoFillSocialMediaParcelaMonths = () => {
             if (!installmentsBlock) return;
             const closeIso = closeDateField ? closeDateField.value : "";
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) return;
-            const startYear = parseInt(closeIso.slice(0, 4), 10);
-            const startMonth = parseInt(closeIso.slice(5, 7), 10); // 1-12
-            const rows = installmentsBlock.querySelectorAll(".installment-row");
+            const rows = Array.from(installmentsBlock.querySelectorAll(".installment-row"));
+            if (!rows.length) return;
+            const firstMonthSelect = rows[0].querySelector("[data-installment-month]");
+            if (!firstMonthSelect) return;
+
+            // Determina o mês BASE (parcela 0).
+            // Se o usuário já escolheu, usa o valor dele.
+            // Senão, default = mês SEGUINTE ao close_date.
+            let baseMonth = parseInt(firstMonthSelect.value, 10);
+            let baseYear = parseInt(firstMonthSelect.dataset.autoYear || "", 10);
+            if (!Number.isFinite(baseMonth) || baseMonth < 1 || baseMonth > 12) {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) return;
+                const closeMonth = parseInt(closeIso.slice(5, 7), 10);
+                const closeYear = parseInt(closeIso.slice(0, 4), 10);
+                const offset = closeMonth; // parcela 0 = closeMonth + 1 → offset=closeMonth, +1 abaixo
+                baseMonth = (offset % 12) + 1;
+                baseYear = closeYear + Math.floor(offset / 12);
+                firstMonthSelect.value = String(baseMonth);
+                firstMonthSelect.dataset.autoYear = String(baseYear);
+            } else if (!Number.isFinite(baseYear)) {
+                // Sem auto-year salvo → usa o ano do close_date como referência
+                baseYear = /^\d{4}-/.test(closeIso) ? parseInt(closeIso.slice(0, 4), 10) : new Date().getFullYear();
+                firstMonthSelect.dataset.autoYear = String(baseYear);
+            }
+
+            // Encadeia parcelas 1+ a partir da base (parcela 0).
             rows.forEach((row, idx) => {
+                if (idx === 0) return; // parcela 0 já tratada acima
                 const monthSelect = row.querySelector("[data-installment-month]");
                 if (!monthSelect) return;
-                // Se o usuário marcou como editada manualmente, deixa.
+                // Se o usuário editou manualmente essa parcela específica, respeita.
                 if (monthSelect.dataset.userEdited === "true") return;
-                // Primeira parcela = mês SEGUINTE ao close_date (padrão de
-                // contrato: assina hoje, paga no mês que vem). Cliente
-                // fechou em Abril → primeira parcela Mai, depois Jun, Jul.
-                const monthOffset = startMonth + idx; // sem -1: parcela 0 = startMonth + 1
+                const monthOffset = (baseMonth - 1) + idx; // baseMonth-indexed em 0
                 const newMonth = (monthOffset % 12) + 1;
-                const newYear = startYear + Math.floor(monthOffset / 12);
+                const newYear = baseYear + Math.floor(monthOffset / 12);
                 monthSelect.value = String(newMonth);
                 monthSelect.dataset.autoYear = String(newYear);
                 // Marca como auto pra distinguir de edição manual.
