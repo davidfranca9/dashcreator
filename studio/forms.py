@@ -830,8 +830,15 @@ class ProjectForm(forms.ModelForm):
                 cleaned_data["payment_due_day"] = payment_due_day
             if payment_due_day:
                 cleaned_data["payment_due_date"] = _date_from_payment_day(cleaned_data.get("close_date"), payment_due_day)
+            # Em Social Media com parcelas manuais (has_installments=Yes),
+            # cada parcela já tem sua due_date — não precisamos exigir
+            # payment_due_day. Usa close_date como referência só pra
+            # satisfazer o NOT NULL do payment_due_date no modelo.
             if not cleaned_data.get("payment_due_date"):
-                self.add_error("payment_due_day", "Informe o dia do pagamento.")
+                if is_social_media and has_installments == HAS_INSTALLMENTS_YES:
+                    cleaned_data["payment_due_date"] = cleaned_data.get("close_date")
+                else:
+                    self.add_error("payment_due_day", "Informe o dia do pagamento.")
         elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
             cleaned_data["due_date"] = cleaned_data.get("close_date")
         else:
