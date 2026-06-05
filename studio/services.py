@@ -1924,8 +1924,12 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     fixed_tools_amount = sum((item.monthly_equivalent() for item in fixed_tools), ZERO)
     fixed_collaborators_amount = sum((item.monthly_equivalent() for item in fixed_collaborators), ZERO)
     fixed_cost_amount = fixed_tools_amount + fixed_collaborators_amount
-    fixed_cost_remaining = max(fixed_cost_amount - incoming_total, ZERO)
-    fixed_cost_covered = fixed_cost_remaining == ZERO
+    # "Custo fixo coberto" e a barra da caixinha refletem o quanto já foi
+    # PAGO de saídas no mês (não o quanto de receita entrou). A meta é
+    # zerar a lista de itens fixos via registros de saída.
+    fixed_cost_paid = min(outgoing_total, fixed_cost_amount)
+    fixed_cost_remaining = max(fixed_cost_amount - fixed_cost_paid, ZERO)
+    fixed_cost_covered = fixed_cost_remaining == ZERO and fixed_cost_amount > ZERO
     pro_labore_available = max(incoming_total - fixed_cost_amount, ZERO)
     pro_labore_remaining = max(pro_labore_amount - pro_labore_available, ZERO)
     pro_labore_covered = pro_labore_remaining == ZERO
@@ -1984,7 +1988,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     # Progresso (% preenchido) de cada caixinha fixa, pra barrinhas mostrarem
     # o quanto cada objetivo foi efetivamente coberto pela receita do mês.
     pro_labore_progress = min(100, int(round((pro_labore_available / pro_labore_amount) * 100))) if pro_labore_amount > ZERO else 0
-    fixed_cost_progress = min(100, int(round((incoming_total / fixed_cost_amount) * 100))) if fixed_cost_amount > ZERO else 0
+    fixed_cost_progress = min(100, int(round((fixed_cost_paid / fixed_cost_amount) * 100))) if fixed_cost_amount > ZERO else 0
     investment_goal_monthly = (distribution_base * investment_percentage / Decimal("100")).quantize(Decimal("0.01")) if distribution_base > ZERO else ZERO
     investment_progress = 100 if investment_goal_monthly > ZERO and investment_amount > ZERO else 0
     free_flow_progress = min(100, int(round((free_flow_amount / incoming_total) * 100))) if incoming_total > ZERO else 0
