@@ -668,7 +668,7 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.payment_due_date, date.today().replace(day=payment_due_day))
 
-    def test_recurring_contract_with_installments_does_not_require_single_payment_day(self):
+    def test_recurring_contract_with_installments_requires_payment_due_day(self):
         form = ProjectForm(
             data={
                 "company": "Insider",
@@ -693,43 +693,8 @@ class DashboardSmokeTest(TestCase):
             workspace=self.workspace,
         )
 
-        self.assertTrue(form.is_valid(), form.errors)
-        project = form.save(commit=False)
-
-        self.assertIsNone(project.payment_due_date)
-
-    def test_recurring_contract_without_installments_preserves_payment_day_and_month(self):
-        close_date = date(2026, 5, 20)
-        payment_due_date = date(2026, 7, 15)
-        form = ProjectForm(
-            data={
-                "company": "Insider",
-                "service_type": "social_media",
-                "closing_source": "Networking",
-                "content_distribution": "Organico",
-                "niche": self.niche.pk,
-                "stage": "Fechado",
-                "status": "Briefing",
-                "total_value": "2500",
-                "has_entry": "yes",
-                "entry_value": "1250",
-                "received_value": "0",
-                "has_installments": "no",
-                "close_date": close_date.isoformat(),
-                "due_date": date(2026, 11, 20).isoformat(),
-                "payment_due_date": payment_due_date.isoformat(),
-                "contract_duration_months": "6",
-                "posts_per_month": "12",
-                "videos_per_month": "4",
-                "profile_managed": "@insider",
-            },
-            workspace=self.workspace,
-        )
-
-        self.assertTrue(form.is_valid(), form.errors)
-        project = form.save(commit=False)
-
-        self.assertEqual(project.payment_due_date, payment_due_date)
+        self.assertFalse(form.is_valid())
+        self.assertIn("payment_due_day", form.errors)
 
     def test_social_media_manual_installments_are_payment_splits(self):
         self.client.force_login(self.user)
@@ -944,84 +909,6 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(project.entry_value, Decimal("0"))
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.stage, "Fechado")
-
-    def test_publicidade_monthly_with_manual_installments_keeps_payment_splits(self):
-        self.client.force_login(self.user)
-        close_date = date(2026, 5, 21)
-        response = self.client.post(
-            reverse("project_create"),
-            {
-                "company": "Reserva Manual",
-                "service_type": "publicidade",
-                "closing_source": "Inbound",
-                "content_distribution": "Nao se aplica",
-                "niche": self.niche.pk,
-                "stage": "Fechado",
-                "status": "Briefing",
-                "total_value": "1000",
-                "payment_recurrence": "monthly",
-                "deliverables_count": "3",
-                "contract_duration_months": "3",
-                "publication_date": (close_date + timedelta(days=15)).isoformat(),
-                "close_date": close_date.isoformat(),
-                "due_date": date(2026, 8, 21).isoformat(),
-                "has_installments": "yes",
-                "installments-TOTAL_FORMS": "2",
-                "installments-INITIAL_FORMS": "0",
-                "installments-MIN_NUM_FORMS": "0",
-                "installments-MAX_NUM_FORMS": "1000",
-                "installments-0-due_date": date(2026, 5, 10).isoformat(),
-                "installments-0-amount": "500",
-                "installments-0-paid": "on",
-                "installments-1-due_date": date(2026, 5, 25).isoformat(),
-                "installments-1-amount": "500",
-            },
-        )
-
-        self.assertRedirects(response, reverse("jobs"))
-        project = Project.objects.get(workspace=self.workspace, company="Reserva Manual")
-        installments = list(project.installments.order_by("due_date"))
-        self.assertEqual([item.due_date for item in installments], [date(2026, 5, 10), date(2026, 5, 25)])
-        self.assertEqual([item.amount for item in installments], [Decimal("500.00"), Decimal("500.00")])
-        self.assertTrue(installments[0].paid)
-        self.assertFalse(installments[1].paid)
-
-    def test_publicidade_single_with_manual_installments_keeps_full_dates(self):
-        self.client.force_login(self.user)
-        close_date = date(2026, 5, 21)
-        response = self.client.post(
-            reverse("project_create"),
-            {
-                "company": "Reserva Unica Parcelada",
-                "service_type": "publicidade",
-                "closing_source": "Inbound",
-                "content_distribution": "Nao se aplica",
-                "niche": self.niche.pk,
-                "stage": "Fechado",
-                "status": "Briefing",
-                "total_value": "1000",
-                "payment_recurrence": "single",
-                "deliverables_count": "2",
-                "publication_date": (close_date + timedelta(days=10)).isoformat(),
-                "close_date": close_date.isoformat(),
-                "due_date": date(2026, 6, 21).isoformat(),
-                "has_installments": "yes",
-                "installments-TOTAL_FORMS": "2",
-                "installments-INITIAL_FORMS": "0",
-                "installments-MIN_NUM_FORMS": "0",
-                "installments-MAX_NUM_FORMS": "1000",
-                "installments-0-due_date": date(2026, 6, 10).isoformat(),
-                "installments-0-amount": "400",
-                "installments-1-due_date": date(2026, 7, 10).isoformat(),
-                "installments-1-amount": "600",
-            },
-        )
-
-        self.assertRedirects(response, reverse("jobs"))
-        project = Project.objects.get(workspace=self.workspace, company="Reserva Unica Parcelada")
-        installments = list(project.installments.order_by("due_date"))
-        self.assertEqual([item.due_date for item in installments], [date(2026, 6, 10), date(2026, 7, 10)])
-        self.assertEqual([item.amount for item in installments], [Decimal("400.00"), Decimal("600.00")])
 
     def test_publicidade_form_with_single_month_does_not_create_installments(self):
         self.client.force_login(self.user)

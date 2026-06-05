@@ -1812,8 +1812,6 @@ def _sync_auto_monthly_installments(
     duration = int(project.contract_duration_months or 0)
     base_date = project.payment_due_date or project.close_date
     is_publicidade = project.service_type == "publicidade"
-    if has_installments_yes:
-        return
     if not is_publicidade:
         if not has_installments_yes:
             project.installments.all().delete()
