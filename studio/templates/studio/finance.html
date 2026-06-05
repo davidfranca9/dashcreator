@@ -491,13 +491,36 @@
                 <input type="hidden" name="outgoing_entry_id" value="{{ editing_entry.id }}">
             {% endif %}
             {% for field in outgoing_form %}
-                <label class="fd-form-field{% if field.name == 'description' or field.name == 'category' or field.name == 'cash_box' %} fd-form-field-full{% endif %}"{% if field.name == 'cash_box' %} data-cash-box-wrapper hidden{% endif %}>
+                <label class="fd-form-field{% if field.name == 'description' or field.name == 'category' or field.name == 'cash_box' %} fd-form-field-full{% endif %}"{% if field.name == 'cash_box' %} data-cash-box-wrapper hidden{% endif %}{% if field.name == 'description' %} data-description-wrapper{% endif %}>
                     <span>{{ field.label }}</span>
                     {{ field }}
                     {{ field.errors }}
                 </label>
                 {% if field.name == 'category' %}
                     <div class="fd-form-field-full fd-category-hint" data-category-hint hidden></div>
+                {% endif %}
+                {% if field.name == 'description' %}
+                    <label class="fd-form-field fd-form-field-full" data-fixed-cost-wrapper hidden>
+                        <span>Qual custo fixo está pagando?</span>
+                        <select data-fixed-cost-select>
+                            <option value="">Selecione...</option>
+                            {% if finance_desktop.fixed_tools %}
+                                <optgroup label="Ferramentas">
+                                    {% for item in finance_desktop.fixed_tools %}
+                                        <option value="{{ item.name }}">{{ item.name }} · {{ item.amount }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endif %}
+                            {% if finance_desktop.fixed_collaborators %}
+                                <optgroup label="Colaboradores">
+                                    {% for item in finance_desktop.fixed_collaborators %}
+                                        <option value="{{ item.name }}">{{ item.name }} · {{ item.amount }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endif %}
+                        </select>
+                        <small class="field-help">Selecione um item cadastrado em Custo fixo.</small>
+                    </label>
                 {% endif %}
             {% endfor %}
             <div class="fd-modal-actions">
@@ -722,11 +745,20 @@
         }
     })();
 
-    /* Modal "Registrar saída" — categoria + dica + cashbox */
+    /* Modal "Registrar saída" — categoria + dica + cashbox + custo fixo */
     (() => {
         const categorySelect = document.querySelector("[data-finance-category]");
         const cashBoxWrapper = document.querySelector("[data-cash-box-wrapper]");
         const hintBox = document.querySelector("[data-category-hint]");
+        const descriptionWrapper = document.querySelector("[data-description-wrapper]");
+        const fixedCostWrapper = document.querySelector("[data-fixed-cost-wrapper]");
+        const fixedCostSelect = document.querySelector("[data-fixed-cost-select]");
+        const descriptionInput = descriptionWrapper ? descriptionWrapper.querySelector("input, textarea") : null;
+        if (fixedCostSelect && descriptionInput) {
+            fixedCostSelect.addEventListener("change", () => {
+                if (fixedCostSelect.value) descriptionInput.value = fixedCostSelect.value;
+            });
+        }
         if (!categorySelect) return;
         const HINTS = {
             "prolabore": "Sua retirada mensal fixa, independente do faturamento. Sai antes de tudo.",
@@ -747,6 +779,12 @@
         const sync = () => {
             const value = categorySelect.value;
             if (cashBoxWrapper) cashBoxWrapper.hidden = value !== "custom";
+            // Custo fixo: troca descrição por seletor de itens fixos cadastrados.
+            if (fixedCostWrapper && descriptionWrapper) {
+                const isFixedCost = value === "fixed_cost";
+                fixedCostWrapper.hidden = !isFixedCost;
+                descriptionWrapper.hidden = isFixedCost;
+            }
             if (hintBox) {
                 if (value && HINTS[value]) {
                     hintBox.textContent = HINTS[value];
