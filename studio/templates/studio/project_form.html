@@ -577,7 +577,10 @@
                 if (!monthSelect) return;
                 // Se o usuário marcou como editada manualmente, deixa.
                 if (monthSelect.dataset.userEdited === "true") return;
-                const monthOffset = startMonth + idx - 1;
+                // Primeira parcela = mês SEGUINTE ao close_date (padrão de
+                // contrato: assina hoje, paga no mês que vem). Cliente
+                // fechou em Abril → primeira parcela Mai, depois Jun, Jul.
+                const monthOffset = startMonth + idx; // sem -1: parcela 0 = startMonth + 1
                 const newMonth = (monthOffset % 12) + 1;
                 const newYear = startYear + Math.floor(monthOffset / 12);
                 monthSelect.value = String(newMonth);
@@ -998,6 +1001,18 @@
         // Expõe pra applyServiceTypeVisibility usar quando Social Media
         // mudar duração ou ativar has_installments (criação automática).
         window.__ensureSocialMediaRowCount = ensureSocialMediaRowCount;
+
+        // Quando o form já vem com Social Media pré-selecionado (edição),
+        // a primeira chamada de applyServiceTypeVisibility rodou ANTES das
+        // helpers de installments ficarem disponíveis. Re-dispara agora
+        // pra criar parcelas faltantes e auto-preencher meses.
+        if (serviceTypeField && serviceTypeField.value === "social_media") {
+            ensureSocialMediaRowCount();
+            // Re-sync os widgets pras novas linhas (se houver)
+            syncInstallmentDateInputs(true, true);
+            autoFillSocialMediaParcelaMonths();
+            recomputeInstallmentsTotal();
+        }
     })();
 </script>
 {% endblock %}
