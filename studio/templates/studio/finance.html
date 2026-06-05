@@ -779,8 +779,8 @@
         sync();
     })();
 
-    /* Modal "Confirmar recebimento" */
-    (() => {
+    /* Modal "Confirmar recebimento" — espera o DOM montar pra achar o overlay */
+    const bindConfirmModal = () => {
         const overlay = document.querySelector("[data-confirm-overlay]");
         if (!overlay) return;
         const form = overlay.querySelector("form");
@@ -802,7 +802,12 @@
         document.querySelectorAll("[data-confirm-open]").forEach((btn) => btn.addEventListener("click", () => open(btn)));
         overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
         overlay.querySelectorAll("[data-confirm-cancel]").forEach((b) => b.addEventListener("click", close));
-    })();
+    };
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bindConfirmModal);
+    } else {
+        bindConfirmModal();
+    }
 </script>
 
 <div class="fd-confirm-overlay" data-confirm-overlay>
