@@ -1711,7 +1711,6 @@ def installment_confirm(request: HttpRequest, pk: int) -> HttpResponse:
     installment.paid = True
     installment.paid_on = paid_on
     installment.save(update_fields=["paid", "paid_on", "updated_at"])
-    messages.success(request, f"Recebimento confirmado em {paid_on.strftime('%d/%m/%Y')}.")
     next_url = request.POST.get("next") or reverse("finance")
     return redirect(next_url)
 
