@@ -1965,7 +1965,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
 
     # Progresso (% preenchido) de cada caixinha fixa, pra barrinhas mostrarem
     # o quanto cada objetivo foi efetivamente coberto pela receita do mês.
-    pro_labore_progress = min(100, int(round((incoming_total / pro_labore_amount) * 100))) if pro_labore_amount > ZERO else 0
+    pro_labore_progress = min(100, int(round((pro_labore_available / pro_labore_amount) * 100))) if pro_labore_amount > ZERO else 0
     fixed_cost_progress = min(100, int(round((incoming_total / fixed_cost_amount) * 100))) if fixed_cost_amount > ZERO else 0
     investment_goal_monthly = (distribution_base * investment_percentage / Decimal("100")).quantize(Decimal("0.01")) if distribution_base > ZERO else ZERO
     investment_progress = 100 if investment_goal_monthly > ZERO and investment_amount > ZERO else 0
