@@ -972,6 +972,7 @@ class ProjectForm(forms.ModelForm):
         }
         widgets = {
             "payment_due_date": forms.DateInput(attrs={"type": "date"}),
+            "entry_due_date": forms.DateInput(attrs={"type": "date"}),
             "meeting_date": forms.DateInput(attrs={"type": "date"}),
             "close_date": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
