@@ -1874,15 +1874,25 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         _serialize_receivable(item)
         for item in sorted(receivable_events, key=lambda event: (event["due_date"], event["project"].company.casefold()))
     ]
-    month_schedule = [
-        item for item in schedule
-        if selected_month is None
-        or (item["due_date"].year == selected_month.year and item["due_date"].month == selected_month.month)
-    ] if selected_month else schedule
     overdue_list = [
         _serialize_receivable(item)
         for item in sorted(overdue_events, key=lambda event: (event["due_date"], event["project"].company.casefold()))
     ]
+    # "A receber" do mês mistura recebíveis futuros + vencidos cujo
+    # vencimento cai dentro do mês selecionado. Tagueia o atraso com
+    # overdue_days; o template renderiza chip vermelho.
+    month_schedule_raw = schedule + overdue_list if selected_month else schedule
+    if selected_month:
+        month_schedule = sorted(
+            [
+                item for item in month_schedule_raw
+                if item["due_date"].year == selected_month.year
+                and item["due_date"].month == selected_month.month
+            ],
+            key=lambda item: item["due_date"],
+        )
+    else:
+        month_schedule = schedule
 
     ledger = [
         {
