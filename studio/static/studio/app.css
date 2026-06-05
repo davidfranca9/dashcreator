@@ -5189,6 +5189,8 @@ body.page-finance .workspace-label {
 .fd-bar-blue { background: var(--fdm-blue); }
 .fd-bar-purple { background: var(--fdm-purple); }
 .fd-bar-green { background: var(--fdm-green); }
+.fd-bar-brand { background: var(--fdm-brand); }
+.fd-bar { transition: width .4s ease; }
 .fd-box-free { border-color: var(--fdm-green-b) !important; }
 .fd-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
 .fd-tag-ok { background: var(--fdm-green-bg); color: var(--fdm-green-t); }

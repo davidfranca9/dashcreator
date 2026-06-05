@@ -184,6 +184,7 @@
                         <span class="fd-box-name fd-brand"><i class="ti ti-home"></i> Pró-labore</span>
                         <strong>{{ finance_desktop.pro_labore }}</strong>
                     </div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-brand" style="width: {{ finance_desktop.pro_labore_progress }}%"></span></div>
                     <div class="fd-box-meta">
                         <span>valor fixo · sai primeiro</span>
                         {% if finance_desktop.pro_labore_covered %}
@@ -208,7 +209,7 @@
                         <span class="fd-box-name fd-purple"><i class="ti ti-rocket"></i> Investimento</span>
                         <strong>{{ finance_desktop.investment }}</strong>
                     </div>
-                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-purple" style="width: 100%"></span></div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-purple" style="width: {{ finance_desktop.investment_progress }}%"></span></div>
                     <div class="fd-box-meta"><span>{{ finance_desktop.investment_percentage }} do restante</span><strong class="fd-purple">Editar</strong></div>
                     <p>Equipamentos, cursos, mentorias, eventos de networking.</p>
                 </a>
@@ -239,7 +240,7 @@
                         <span class="fd-box-name fd-blue"><i class="ti ti-tool"></i> Custo fixo</span>
                         <strong>{{ finance_desktop.fixed_cost }}</strong>
                     </div>
-                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-blue" style="width: 100%"></span></div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-blue" style="width: {{ finance_desktop.fixed_cost_progress }}%"></span></div>
                     <div class="fd-box-meta"><span>valor fixo · 4 itens</span><strong class="fd-text-green">Quitado ✓</strong></div>
                     <p>Ferramentas e colaboradores fixos do negócio.</p>
                 </article>
@@ -248,7 +249,7 @@
                         <span class="fd-box-name fd-text-green"><i class="ti ti-wallet"></i> Fluxo livre</span>
                         <strong class="fd-text-green">{{ finance_desktop.free_flow }}</strong>
                     </div>
-                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-green" style="width: 100%"></span></div>
+                    <div class="fd-bar-wrap"><span class="fd-bar fd-bar-green" style="width: {{ finance_desktop.free_flow_progress }}%"></span></div>
                     <div class="fd-box-meta"><span>o que sobrou</span><strong class="fd-text-green">Acumulando</strong></div>
                     <p>Disponível. Crie caixinhas extras para objetivos específicos.</p>
                 </article>
