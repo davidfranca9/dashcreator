@@ -660,14 +660,17 @@ def _project_dashboard_single_revenue(project: Project) -> Decimal:
 
 
 def _project_dashboard_revenue_for_month(project: Project, selected_month: date | None) -> Decimal:
+    # Mantém a mesma medida do gráfico anual: usa o valor total do
+    # contrato (faturado), não o que já entrou em caixa. Pra contratos
+    # multi-mês, conta o valor mensal em cada mês de pagamento.
     if selected_month is None:
         if _project_contract_month_count(project) > 1:
             return _project_monthly_contract_value(project) * _project_contract_month_count(project)
-        return _project_dashboard_single_revenue(project)
+        return _project_cash_value(project)
     if _project_contract_month_count(project) > 1:
         return _project_monthly_contract_value(project) if _project_matches_recurring_payment_month(project, selected_month) else ZERO
     if project.close_date.year == selected_month.year and project.close_date.month == selected_month.month:
-        return _project_dashboard_single_revenue(project)
+        return _project_cash_value(project)
     return ZERO
 
 
