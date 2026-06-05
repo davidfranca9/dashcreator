@@ -324,8 +324,8 @@
                     {% endfor %}
                 </article>
                 <article class="fd-card">
-                    <div class="fd-card-header"><span class="fd-card-title">A receber</span><span class="fd-chip-muted">{{ schedule|length }} entradas</span></div>
-                    {% for item in schedule %}
+                    <div class="fd-card-header"><span class="fd-card-title">A receber em {{ selected_month.label }}</span><span class="fd-chip-muted">{{ month_schedule|length }} entradas</span></div>
+                    {% for item in month_schedule %}
                         <div class="fd-row{% if item.overdue_days %} fd-row-overdue{% endif %}">
                             <div class="fd-row-left">
                                 <span class="fd-row-dot {% if item.overdue_days %}fd-dot-red{% else %}fd-dot-blue{% endif %}"></span>

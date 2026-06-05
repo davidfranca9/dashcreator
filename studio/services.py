@@ -1871,6 +1871,11 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         _serialize_receivable(item)
         for item in sorted(receivable_events, key=lambda event: (event["due_date"], event["project"].company.casefold()))
     ]
+    month_schedule = [
+        item for item in schedule
+        if selected_month is None
+        or (item["due_date"].year == selected_month.year and item["due_date"].month == selected_month.month)
+    ] if selected_month else schedule
     overdue_list = [
         _serialize_receivable(item)
         for item in sorted(overdue_events, key=lambda event: (event["due_date"], event["project"].company.casefold()))
@@ -2033,6 +2038,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             {"title": "Saldo", "value": currency(cash_balance), "icon_label": "$"},
         ],
         "schedule": schedule,
+        "month_schedule": month_schedule,
         "overdue_list": overdue_list,
         "overdue_total": currency(overdue_balance),
         "ledger": ledger,
