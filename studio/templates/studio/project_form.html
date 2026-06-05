@@ -100,7 +100,7 @@
                         <div hidden>{{ field }}</div>
                     {% else %}
                         <div class="form-field{% if field.name == 'note' or field.name == 'briefing' %} form-field--full{% endif %}{% if field.name == 'meeting_date' %} meeting-date-field{% endif %}{% if field.name == 'image_license_term_days' %} license-term-field{% endif %}{% if field.name == 'entry_value' %} entry-value-field{% endif %}{% if field.name == 'has_entry' %} has-entry-field{% endif %}{% if field.name == 'has_installments' %} has-installments-field{% endif %}{% if field.name == 'payment_recurrence' %} payment-recurrence-field{% endif %}{% if field.name == 'payment_due_day' %} payment-due-day-field{% endif %}{% if field.name == 'payment_due_date' %} payment-due-date-field{% endif %}{% if field.name == 'contract_duration_months' %} contract-duration-months-field{% endif %}{% if field.name == 'total_value' %} total-value-field{% endif %}{% if field.name == 'received_value' %} received-value-field{% endif %}{% if field.name == 'due_date' %} due-date-field{% endif %}{% if field.name == 'meeting_scheduled' %} meeting-scheduled-field{% endif %}{% if field.name == 'entry_due_date' %} entry-due-date-field{% endif %}"{% if field.name in form.recurring_contract_hidden_fields %} data-hide-for-recurring-contract{% endif %}{% if field.name in form.social_media_hidden_fields %} data-hide-for-social-media{% endif %}{% if field.name in form.entry_receipt_hidden_fields %} data-hide-for-entry-receipt{% endif %}{% if field.name in form.field_visibility_by_type %} data-show-for-type="{% for tp in form.field_visibility_by_type|get_item:field.name %}{{ tp }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}{% if field.name == 'meeting_date' and not form.meeting_scheduled.value %} hidden{% endif %}{% if field.name == 'image_license_term_days' and form.content_distribution.value != 'Ads' %} hidden{% endif %}{% if field.name == 'entry_value' and form.has_entry.value == 'no' %} hidden{% endif %}{% if field.name == 'entry_due_date' and form.has_entry.value == 'no' %} hidden{% endif %}>
-                            <label for="{{ field.id_for_label }}"{% if field.name == 'total_value' %} data-default-label="{{ field.label }}" data-recurring-label="Valor mensal do contrato" data-ugc-manager-label="Valor total de contrato"{% endif %}{% if field.name == 'due_date' %} data-default-label="{{ field.label }}" data-recurring-label="Data de finalização do contrato"{% endif %}{% if field.name == 'payment_due_date' %} data-default-label="{{ field.label }}" data-no-entry-label="Data de recebimento" data-payment-recurring-label="Primeiro pagamento da recorrência" data-day-month-label="Dia e mês do pagamento"{% endif %}{% if field.name == 'close_date' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Início do contrato"{% endif %}{% if field.name == 'contract_duration_months' %} data-default-label="{{ field.label }}" data-payment-recurring-label="Duração da recorrência"{% endif %}{% if field.name == 'monthly_value' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Valor do gerenciamento"{% endif %}>{{ field.label }}</label>
+                            <label for="{{ field.id_for_label }}"{% if field.name == 'total_value' %} data-default-label="{{ field.label }}" data-recurring-label="Valor mensal do contrato" data-ugc-manager-label="Valor total de contrato"{% endif %}{% if field.name == 'due_date' %} data-default-label="{{ field.label }}" data-recurring-label="Data de finalização do contrato"{% endif %}{% if field.name == 'payment_due_date' %} data-default-label="{{ field.label }}" data-no-entry-label="Data de recebimento" data-payment-recurring-label="Primeiro pagamento da recorrência"{% endif %}{% if field.name == 'close_date' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Início do contrato"{% endif %}{% if field.name == 'contract_duration_months' %} data-default-label="{{ field.label }}" data-payment-recurring-label="Duração da recorrência"{% endif %}{% if field.name == 'monthly_value' %} data-default-label="{{ field.label }}" data-ugc-manager-label="Valor do gerenciamento"{% endif %}>{{ field.label }}</label>
                             {% if field.name == "has_entry" or field.name == "has_installments" or field.name == "payment_recurrence" %}
                                 <div class="segmented-control" data-entry-mode>
                                     {% for choice in field %}
@@ -470,66 +470,41 @@
         const wizardActionsBlock = form.querySelector('[data-form-actions]');
         const installmentsBlock = form.querySelector('[data-installments-block]');
 
-        // Em recorrencia sem parcelas, mostra apenas dia/mes e converte
-        // de volta para yyyy-mm-dd antes de enviar ao Django.
+        // Em contrato recorrente, troca o "Primeiro pagamento da
+        // recorrência" pelo dia do mês (number 1-31). Pareado com a
+        // mesma lógica de parcelas abaixo.
         const paymentDueDateField = document.getElementById("id_payment_due_date");
-        const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
-        const getCloseYear = () => {
-            if (closeDateField && isoDatePattern.test(closeDateField.value || "")) {
-                return closeDateField.value.slice(0, 4);
-            }
-            return String(new Date().getFullYear());
-        };
-        const isoToDayMonth = (value) => {
-            if (!isoDatePattern.test(value || "")) return "";
-            return `${value.slice(8, 10)}/${value.slice(5, 7)}`;
-        };
-        const dayMonthToDate = (value) => {
-            const match = String(value || "").trim().match(/^(\d{1,2})\/(\d{1,2})$/);
-            if (!match) return null;
-            const day = Number.parseInt(match[1], 10);
-            const month = Number.parseInt(match[2], 10);
-            if (!Number.isFinite(day) || !Number.isFinite(month) || day < 1 || month < 1 || month > 12) {
-                return null;
-            }
-            const year = getCloseYear();
-            const candidate = new Date(Number(year), month - 1, day);
-            if (candidate.getFullYear() !== Number(year) || candidate.getMonth() !== month - 1 || candidate.getDate() !== day) {
-                return null;
-            }
-            return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        };
-        const syncPaymentDueDateInput = (mode) => {
+        const syncPaymentDueDateInput = (isRecurring) => {
             if (!paymentDueDateField) return;
-            if (mode === "dayMonth") {
-                if (paymentDueDateField.dataset.paymentDateMode !== "dayMonth") {
+            if (isRecurring) {
+                if (paymentDueDateField.type !== "number") {
                     const isoValue = paymentDueDateField.value;
-                    if (isoDatePattern.test(isoValue || "")) {
-                        paymentDueDateField.dataset.originalIso = isoValue;
+                    let day = "";
+                    if (isoValue && /^\d{4}-\d{2}-\d{2}$/.test(isoValue)) {
+                        day = parseInt(isoValue.slice(8, 10), 10).toString();
                     }
-                    paymentDueDateField.type = "text";
-                    paymentDueDateField.inputMode = "numeric";
-                    paymentDueDateField.placeholder = "dd/mm";
-                    paymentDueDateField.pattern = "\\d{1,2}/\\d{1,2}";
-                    paymentDueDateField.value = isoToDayMonth(isoValue) || isoToDayMonth(paymentDueDateField.dataset.originalIso || "");
-                    paymentDueDateField.dataset.paymentDateMode = "dayMonth";
+                    paymentDueDateField.dataset.originalIso = isoValue;
+                    paymentDueDateField.type = "number";
+                    paymentDueDateField.min = "1";
+                    paymentDueDateField.max = "31";
+                    paymentDueDateField.step = "1";
+                    paymentDueDateField.value = day;
                 }
-                return;
-            }
-            if (paymentDueDateField.dataset.paymentDateMode === "dayMonth") {
-                const converted = dayMonthToDate(paymentDueDateField.value);
+            } else if (paymentDueDateField.type === "number") {
+                const day = parseInt(paymentDueDateField.value, 10);
+                const original = paymentDueDateField.dataset.originalIso || "";
                 paymentDueDateField.type = "date";
-                paymentDueDateField.removeAttribute("inputmode");
-                paymentDueDateField.removeAttribute("placeholder");
-                paymentDueDateField.removeAttribute("pattern");
                 paymentDueDateField.removeAttribute("min");
                 paymentDueDateField.removeAttribute("max");
                 paymentDueDateField.removeAttribute("step");
-                paymentDueDateField.value = converted || paymentDueDateField.dataset.originalIso || "";
-                paymentDueDateField.dataset.paymentDateMode = "full";
-            } else if (paymentDueDateField.type !== "date") {
-                paymentDueDateField.type = "date";
-                paymentDueDateField.dataset.paymentDateMode = "full";
+                if (original) {
+                    paymentDueDateField.value = original;
+                } else if (Number.isFinite(day) && day >= 1 && day <= 31 && closeDateField && closeDateField.value) {
+                    const closeIso = closeDateField.value;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) {
+                        paymentDueDateField.value = `${closeIso.slice(0, 7)}-${String(day).padStart(2, "0")}`;
+                    }
+                }
             }
         };
 
@@ -582,7 +557,7 @@
 
         form.addEventListener("submit", () => {
             const closeIso = closeDateField ? closeDateField.value : "";
-            const yearMonth = isoDatePattern.test(closeIso) ? closeIso.slice(0, 7) : "";
+            const yearMonth = /^\d{4}-\d{2}-\d{2}$/.test(closeIso) ? closeIso.slice(0, 7) : "";
             const dayToDate = (value) => {
                 const day = parseInt(value, 10);
                 if (!Number.isFinite(day) || day < 1 || day > 31 || !yearMonth) return null;
@@ -599,13 +574,7 @@
                     }
                 });
             }
-            if (paymentDueDateField && paymentDueDateField.dataset.paymentDateMode === "dayMonth") {
-                const newDate = dayMonthToDate(paymentDueDateField.value);
-                if (newDate) {
-                    paymentDueDateField.type = "date";
-                    paymentDueDateField.value = newDate;
-                }
-            } else if (paymentDueDateField && paymentDueDateField.type === "number") {
+            if (paymentDueDateField && paymentDueDateField.type === "number") {
                 const newDate = dayToDate(paymentDueDateField.value);
                 if (newDate) {
                     paymentDueDateField.type = "date";
@@ -654,14 +623,10 @@
             }
         };
 
-        const syncServiceLabels = (isRecurring, isUgcManager, isPaymentRecurring, paymentDateMode) => {
+        const syncServiceLabels = (isRecurring, isUgcManager, isPaymentRecurring) => {
             setFieldLabel(totalValueLabel, isRecurring ? "recurringLabel" : (isUgcManager ? "ugcManagerLabel" : "defaultLabel"));
             setFieldLabel(dueDateLabel, isRecurring ? "recurringLabel" : "defaultLabel");
-            if (paymentDateMode === "dayMonth") {
-                setFieldLabel(paymentDueDateLabel, "dayMonthLabel");
-            } else {
-                setFieldLabel(paymentDueDateLabel, isPaymentRecurring ? "paymentRecurringLabel" : "defaultLabel");
-            }
+            setFieldLabel(paymentDueDateLabel, isPaymentRecurring ? "paymentRecurringLabel" : "defaultLabel");
             setFieldLabel(closeDateLabel, isUgcManager ? "ugcManagerLabel" : "defaultLabel");
             setFieldLabel(contractDurationLabel, isPaymentRecurring ? "paymentRecurringLabel" : "defaultLabel");
             setFieldLabel(managementValueLabel, isUgcManager ? "ugcManagerLabel" : "defaultLabel");
@@ -677,11 +642,7 @@
             const isEntryReceipt = entryReceiptTypes.includes(selected);
             const isUgcManager = selected === "ugc_manager";
             const isPaymentRecurring = selected === "publicidade" && hasPaymentRecurrence();
-            const supportsInstallments = installmentsTypes.includes(selected);
-            const isManualInstallments = supportsInstallments && hasInstallments();
-            const isRecurringPaymentPlan = isRecurringContract || isPaymentRecurring;
-            const hasGeneratedInstallments = selected === "publicidade" && isPaymentRecurring && !isManualInstallments;
-            const paymentDateMode = isRecurringPaymentPlan && !isManualInstallments ? "dayMonth" : "full";
+            const hasGeneratedInstallments = selected === "publicidade" && isPaymentRecurring;
 
             ["total_value", "received_value", "payment_due_day", "payment_due_date", "due_date", "meeting_scheduled"].forEach((name) => {
                 if (wrappersByName[name]) {
@@ -717,7 +678,7 @@
                 hasEntryWrapper.hidden = isSimplifiedPayment || isCommission;
             }
             if (hasInstallmentsWrapper) {
-                hasInstallmentsWrapper.hidden = !supportsInstallments;
+                hasInstallmentsWrapper.hidden = !isRecurringContract;
             }
             if ((isSimplifiedPayment || isCommission) && entryValueWrapper) {
                 entryValueWrapper.hidden = true;
@@ -766,7 +727,7 @@
                 }
             }
             if (installmentsBlock) {
-                installmentsBlock.hidden = !isManualInstallments;
+                installmentsBlock.hidden = !(installmentsTypes.includes(selected) && hasInstallments());
                 const addButton = installmentsBlock.querySelector("[data-installment-add]");
                 if (addButton) {
                     addButton.hidden = hasGeneratedInstallments;
@@ -781,18 +742,15 @@
                 // Em contrato recorrente, parcela é só o "dia que cai" do mês.
                 // Troca inputs de date por number 1-31; mantemos a data
                 // completa em um input hidden gerada via close_date.
-                syncInstallmentDateInputs(isRecurringPaymentPlan);
+                syncInstallmentDateInputs(isRecurringContract);
             }
-            // Sem parcelas, recorrente usa dia/mes; contrato unico usa
-            // data completa. Com parcelas, as linhas definem as datas.
-            syncPaymentDueDateInput(paymentDateMode);
-            if (wrappersByName.payment_due_day) {
-                wrappersByName.payment_due_day.hidden = true;
-            }
-            if (wrappersByName.payment_due_date && supportsInstallments && isManualInstallments) {
+            // Mesmo padrão pro "Primeiro pagamento da recorrência":
+            // recorrente = dia 1-31, único = data completa.
+            syncPaymentDueDateInput(isPaymentRecurring);
+            if (wrappersByName.payment_due_date && isRecurringContract) {
                 wrappersByName.payment_due_date.hidden = true;
             }
-            syncServiceLabels(isRecurringContract, isUgcManager, isPaymentRecurring, paymentDateMode);
+            syncServiceLabels(isRecurringContract, isUgcManager, isPaymentRecurring);
             if (!isRecurringContract && !isSimplifiedPayment && !isCommission) {
                 syncEntryValue();
             }
@@ -906,8 +864,6 @@
                 const newRow = wrapper.firstElementChild;
                 installmentsList.appendChild(newRow);
                 totalFormsField.value = String(currentIndex + 1);
-                const selected = serviceTypeField ? serviceTypeField.value || "" : "";
-                syncInstallmentDateInputs(recurringContractTypes.includes(selected) || (selected === "publicidade" && hasPaymentRecurrence()));
                 newRow.querySelectorAll("input").forEach((input) => {
                     input.addEventListener("input", recomputeInstallmentsTotal);
                     input.addEventListener("change", recomputeInstallmentsTotal);
