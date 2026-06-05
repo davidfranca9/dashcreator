@@ -812,10 +812,21 @@
                 // Troca inputs de date por number 1-31; mantemos a data
                 // completa em um input hidden gerada via close_date.
                 syncInstallmentDateInputs(isRecurringContract, isSocialMedia);
-                // Social Media: auto-preenche meses sequenciais conforme
-                // close_date + contract_duration. Respeita parcelas que o
-                // usuário tenha editado manualmente.
-                if (isSocialMedia) autoFillSocialMediaParcelaMonths();
+                // Social Media: cria as parcelas faltantes pra cobrir a
+                // duração do contrato, depois auto-preenche meses sequenciais
+                // conforme close_date + índice. Respeita parcelas editadas
+                // manualmente. (Window check: ensureSocialMediaRowCount é
+                // definida depois desta função no IIFE; quando applyService
+                // roda na primeira passada, ainda não existe — OK porque
+                // o formset já tá renderizado com as parcelas existentes.)
+                if (isSocialMedia) {
+                    if (window.__ensureSocialMediaRowCount) {
+                        window.__ensureSocialMediaRowCount();
+                        // Após criar linhas, sincroniza inputs nelas.
+                        syncInstallmentDateInputs(isRecurringContract, isSocialMedia);
+                    }
+                    autoFillSocialMediaParcelaMonths();
+                }
             }
             // Mesmo padrão pro "Primeiro pagamento da recorrência":
             // recorrente = dia 1-31, único = data completa.
@@ -932,22 +943,43 @@
             installmentsTotalNode.textContent = `R$${formatMoneyPreview(total)}`;
         };
 
+        // Adiciona uma linha de parcela ao DOM. Extraído pra ser reusado
+        // pelo botão "+" e pela criação automática em Social Media.
+        const addInstallmentRow = () => {
+            const currentIndex = Number(totalFormsField.value || installmentsList.querySelectorAll("[data-installment-row]").length);
+            const fragment = installmentsTemplate.content.cloneNode(true);
+            const html = fragment.firstElementChild.outerHTML.replace(/__INDEX__/g, String(currentIndex));
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = html;
+            const newRow = wrapper.firstElementChild;
+            installmentsList.appendChild(newRow);
+            totalFormsField.value = String(currentIndex + 1);
+            newRow.querySelectorAll("input").forEach((input) => {
+                input.addEventListener("input", recomputeInstallmentsTotal);
+                input.addEventListener("change", recomputeInstallmentsTotal);
+            });
+            return newRow;
+        };
+
+        // Garante que existam tantas parcelas quanto a duração do contrato
+        // em Social Media. Cria as faltantes via addInstallmentRow.
+        const ensureSocialMediaRowCount = () => {
+            const selected = serviceTypeField ? serviceTypeField.value : "";
+            if (selected !== "social_media") return;
+            const duration = parseInt(contractDurationField ? contractDurationField.value : "", 10);
+            if (!Number.isFinite(duration) || duration <= 0) return;
+            // Conta linhas não-deletadas
+            const currentRows = Array.from(installmentsList.querySelectorAll("[data-installment-row]")).filter((row) => {
+                const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                return !(del && del.checked);
+            }).length;
+            const toAdd = duration - currentRows;
+            for (let i = 0; i < toAdd; i++) addInstallmentRow();
+        };
+
         if (installmentsList && installmentsTemplate && installmentsAddButton && totalFormsField) {
             installmentsAddButton.addEventListener("click", () => {
-                const currentIndex = Number(totalFormsField.value || installmentsList.querySelectorAll("[data-installment-row]").length);
-                const fragment = installmentsTemplate.content.cloneNode(true);
-                const html = fragment.firstElementChild.outerHTML.replace(/__INDEX__/g, String(currentIndex));
-                const wrapper = document.createElement("div");
-                wrapper.innerHTML = html;
-                const newRow = wrapper.firstElementChild;
-                installmentsList.appendChild(newRow);
-                totalFormsField.value = String(currentIndex + 1);
-                newRow.querySelectorAll("input").forEach((input) => {
-                    input.addEventListener("input", recomputeInstallmentsTotal);
-                    input.addEventListener("change", recomputeInstallmentsTotal);
-                });
-                // Re-sincroniza a nova linha (Social Media: mês+dia,
-                // outros recorrentes: só dia) e auto-fill do mês.
+                addInstallmentRow();
                 const selectedType = serviceTypeField ? serviceTypeField.value : "";
                 const isRecurringNow = recurringContractTypes.includes(selectedType);
                 const isSocialMediaNow = selectedType === "social_media";
@@ -962,6 +994,10 @@
             });
             recomputeInstallmentsTotal();
         }
+
+        // Expõe pra applyServiceTypeVisibility usar quando Social Media
+        // mudar duração ou ativar has_installments (criação automática).
+        window.__ensureSocialMediaRowCount = ensureSocialMediaRowCount;
     })();
 </script>
 {% endblock %}
