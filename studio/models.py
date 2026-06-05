@@ -410,8 +410,16 @@ class FixedCost(WorkspaceOwnedModel):
 
 
 class CashBox(WorkspaceOwnedModel):
+    ALLOCATION_PERCENTAGE = "percentage"
+    ALLOCATION_FIXED = "fixed"
+    ALLOCATION_CHOICES = [
+        (ALLOCATION_PERCENTAGE, "% do fluxo livre"),
+        (ALLOCATION_FIXED, "Valor fixo (R$)"),
+    ]
     name = models.CharField(max_length=120)
+    allocation_mode = models.CharField(max_length=12, choices=ALLOCATION_CHOICES, default=ALLOCATION_PERCENTAGE)
     allocation_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    allocation_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     description = models.CharField(max_length=220, blank=True, default="")
     icon = models.CharField(max_length=60, blank=True, default="ti-pig-money")
 

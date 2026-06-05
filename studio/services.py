@@ -1944,19 +1944,27 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     custom_boxes_total = ZERO
     custom_box_items = []
     for box in cash_boxes:
-        percentage = Decimal(box.allocation_percentage or 0)
-        amount = (free_flow_base * percentage / Decimal("100")).quantize(Decimal("0.01"))
-        percentage_text = f"{int(percentage)}%" if percentage == percentage.to_integral() else f"{percentage}%"
+        is_fixed = box.allocation_mode == "fixed"
+        if is_fixed:
+            amount = Decimal(box.allocation_amount or 0).quantize(Decimal("0.01"))
+            amount = min(amount, free_flow_base)
+            mode_text = f"valor fixo · {currency(box.allocation_amount or 0)}"
+            progress = 100 if amount > ZERO and Decimal(box.allocation_amount or 0) > ZERO and amount >= Decimal(box.allocation_amount or 0) else (int(round((amount / Decimal(box.allocation_amount or 0)) * 100)) if Decimal(box.allocation_amount or 0) > ZERO else 0)
+        else:
+            percentage = Decimal(box.allocation_percentage or 0)
+            amount = (free_flow_base * percentage / Decimal("100")).quantize(Decimal("0.01"))
+            mode_text = f"{int(percentage)}% do fluxo livre" if percentage == percentage.to_integral() else f"{percentage}% do fluxo livre"
+            progress = min(100, int(round(percentage)))
         custom_boxes_total += amount
         custom_box_items.append(
             {
                 "id": box.pk,
                 "name": box.name,
                 "icon": box.icon or "ti-pig-money",
-                "description": box.description or f"{percentage_text} do fluxo livre",
-                "percentage": percentage_text,
+                "description": box.description or mode_text,
+                "percentage": mode_text,
                 "amount": currency(amount),
-                "progress": min(100, int(round(percentage))),
+                "progress": progress,
             }
         )
     free_flow_amount = max(free_flow_base - custom_boxes_total, ZERO)

@@ -1185,39 +1185,51 @@ class CashBoxAllocationForm(forms.Form):
 class CashBoxForm(forms.ModelForm):
     class Meta:
         model = CashBox
-        fields = ["name", "allocation_percentage", "description"]
+        fields = ["name", "allocation_mode", "allocation_percentage", "allocation_amount", "description"]
         labels = {
             "name": "Nome da caixinha",
+            "allocation_mode": "Tipo de alocação",
             "allocation_percentage": "% do fluxo livre",
+            "allocation_amount": "Valor fixo (R$)",
             "description": "Descrição",
         }
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "Ex.: Impostos, viagem, equipamento"}),
             "description": forms.TextInput(attrs={"placeholder": "Ex.: Separar para troca de câmera"}),
+            "allocation_mode": forms.Select(attrs={"data-cashbox-mode": True}),
         }
 
     def __init__(self, *args, workspace: Workspace | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace = workspace
-        self.fields["allocation_percentage"].widget.attrs.update({"step": "0.01", "min": "0.01", "max": "100", "inputmode": "decimal"})
-        self.fields["allocation_percentage"].help_text = "Percentual calculado sobre o valor que sobra depois de pró-labore, custo fixo, reserva e investimento."
-
-    def clean_allocation_percentage(self):
-        value = self.cleaned_data.get("allocation_percentage")
-        if value is None or value <= 0:
-            raise forms.ValidationError("Informe um percentual maior que zero.")
-        if value > 100:
-            raise forms.ValidationError("O percentual não pode passar de 100%.")
-        return value
+        self.fields["allocation_percentage"].required = False
+        self.fields["allocation_amount"].required = False
+        self.fields["allocation_percentage"].widget.attrs.update({"step": "0.01", "min": "0", "max": "100", "inputmode": "decimal", "data-cashbox-pct": True})
+        self.fields["allocation_amount"].widget.attrs.update({"step": "0.01", "min": "0", "inputmode": "decimal", "data-cashbox-amount": True})
+        self.fields["allocation_percentage"].help_text = "% sobre o fluxo livre (após pró-labore, custo fixo, reserva e investimento)."
+        self.fields["allocation_amount"].help_text = "Valor fixo separado do fluxo livre todo mês."
 
     def clean(self):
         cleaned_data = super().clean()
-        percentage = cleaned_data.get("allocation_percentage")
-        if self.workspace is None or percentage is None:
-            return cleaned_data
-        existing_total = CashBox.objects.filter(workspace=self.workspace).exclude(pk=getattr(self.instance, "pk", None)).aggregate(
-            total=Sum("allocation_percentage")
-        )["total"] or 0
-        if existing_total + percentage > 100:
-            self.add_error("allocation_percentage", "A soma das caixinhas extras não pode passar de 100% do fluxo livre.")
+        mode = cleaned_data.get("allocation_mode") or CashBox.ALLOCATION_PERCENTAGE
+        percentage = cleaned_data.get("allocation_percentage") or 0
+        amount = cleaned_data.get("allocation_amount") or 0
+        if mode == CashBox.ALLOCATION_PERCENTAGE:
+            if percentage is None or percentage <= 0:
+                self.add_error("allocation_percentage", "Informe um percentual maior que zero.")
+            elif percentage > 100:
+                self.add_error("allocation_percentage", "O percentual não pode passar de 100%.")
+            cleaned_data["allocation_amount"] = 0
+        else:
+            if amount is None or amount <= 0:
+                self.add_error("allocation_amount", "Informe um valor maior que zero.")
+            cleaned_data["allocation_percentage"] = 0
+        if self.workspace is not None and mode == CashBox.ALLOCATION_PERCENTAGE and percentage:
+            existing_total = CashBox.objects.filter(
+                workspace=self.workspace, allocation_mode=CashBox.ALLOCATION_PERCENTAGE
+            ).exclude(pk=getattr(self.instance, "pk", None)).aggregate(
+                total=Sum("allocation_percentage")
+            )["total"] or 0
+            if existing_total + percentage > 100:
+                self.add_error("allocation_percentage", "A soma das caixinhas com % não pode passar de 100% do fluxo livre.")
         return cleaned_data

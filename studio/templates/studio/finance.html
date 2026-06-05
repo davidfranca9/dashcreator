@@ -712,6 +712,24 @@
         }
     })();
 
+    /* Modal "Nova caixinha" — toggle % vs valor fixo */
+    (() => {
+        const modeSelect = document.querySelector("[data-cashbox-mode]");
+        if (!modeSelect) return;
+        const pctField = document.querySelector("[data-cashbox-pct]");
+        const amountField = document.querySelector("[data-cashbox-amount]");
+        if (!pctField || !amountField) return;
+        const pctLabel = pctField.closest(".fd-form-field");
+        const amountLabel = amountField.closest(".fd-form-field");
+        const sync = () => {
+            const isFixed = modeSelect.value === "fixed";
+            if (pctLabel) pctLabel.style.display = isFixed ? "none" : "";
+            if (amountLabel) amountLabel.style.display = isFixed ? "" : "none";
+        };
+        modeSelect.addEventListener("change", sync);
+        sync();
+    })();
+
     /* Modal "Confirmar recebimento" */
     (() => {
         const overlay = document.querySelector("[data-confirm-overlay]");
