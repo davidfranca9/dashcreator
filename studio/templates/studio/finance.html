@@ -223,14 +223,14 @@
                         <p>{{ item.description }}</p>
                     </a>
                 {% empty %}
-                    <article class="fd-box fd-box-muted">
+                    <a class="fd-box fd-box-muted fd-box-link" href="{% url 'finance' %}?add_cash_box=1{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                         <div class="fd-box-head">
                             <span class="fd-box-name fd-blue"><i class="ti ti-plus"></i> Nova caixinha</span>
                             <strong>R$0</strong>
                         </div>
                         <div class="fd-box-meta"><span>objetivo extra</span><strong class="fd-blue">0%</strong></div>
                         <p>Adicione uma caixinha para separar parte do fluxo livre automaticamente.</p>
-                    </article>
+                    </a>
                 {% endfor %}
             </div>
             <div class="fd-two-col">
