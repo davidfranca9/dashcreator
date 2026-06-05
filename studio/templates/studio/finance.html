@@ -288,17 +288,27 @@
                     {% endfor %}
                 </article>
                 <article class="fd-card">
-                    <div class="fd-card-header"><span class="fd-card-title">A receber</span></div>
+                    <div class="fd-card-header"><span class="fd-card-title">A receber</span><span class="fd-chip-muted">{{ schedule|length }} entradas</span></div>
                     {% for item in schedule %}
-                        <div class="fd-row">
+                        <div class="fd-row{% if item.overdue_days %} fd-row-overdue{% endif %}">
                             <div class="fd-row-left">
-                                <span class="fd-row-dot fd-dot-blue"></span>
+                                <span class="fd-row-dot {% if item.overdue_days %}fd-dot-red{% else %}fd-dot-blue{% endif %}"></span>
                                 <span class="fd-row-info">
                                     <strong>{{ item.company }}</strong>
-                                    <small>Vence {{ item.due }} · {{ item.kind }} · {{ item.amount }}</small>
+                                    <small>Vence {{ item.due }} · {{ item.kind }} · {{ item.amount }}{% if item.overdue_days %} · <span class="fd-text-red">{{ item.overdue_days }}d em atraso</span>{% endif %}</small>
                                 </span>
                             </div>
-                            <span class="fd-tag fd-tag-blue">Pendente</span>
+                            <div class="fd-row-actions-inline">
+                                {% if item.installment_id %}
+                                    <button type="button" class="fd-confirm-btn{% if item.overdue_days %} fd-confirm-btn-danger{% endif %}"
+                                            data-confirm-open
+                                            data-confirm-installment="{{ item.installment_id }}"
+                                            data-confirm-name="{{ item.company }} · {{ item.kind }}"
+                                            data-confirm-amount="{{ item.amount }}">Confirmar</button>
+                                {% else %}
+                                    <span class="fd-tag fd-tag-blue">Pendente</span>
+                                {% endif %}
+                            </div>
                         </div>
                     {% empty %}
                         <p class="fd-empty">Nenhum recebimento pendente em {{ selected_month.label|lower }}.</p>
@@ -665,5 +675,58 @@
             recurrenceField.addEventListener("change", syncFixedCostDueMonth);
         }
     })();
+
+    /* Modal "Confirmar recebimento" */
+    (() => {
+        const overlay = document.querySelector("[data-confirm-overlay]");
+        if (!overlay) return;
+        const form = overlay.querySelector("form");
+        const nameInput = overlay.querySelector("[data-confirm-field-name]");
+        const amountInput = overlay.querySelector("[data-confirm-field-amount]");
+        const dateInput = overlay.querySelector("[data-confirm-field-date]");
+        const baseAction = form.dataset.actionTemplate;
+        const open = (btn) => {
+            const id = btn.dataset.confirmInstallment;
+            form.action = baseAction.replace("/0/", `/${id}/`);
+            nameInput.value = btn.dataset.confirmName || "";
+            amountInput.value = btn.dataset.confirmAmount || "";
+            const today = new Date();
+            const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+            dateInput.value = iso;
+            overlay.classList.add("show");
+        };
+        const close = () => overlay.classList.remove("show");
+        document.querySelectorAll("[data-confirm-open]").forEach((btn) => btn.addEventListener("click", () => open(btn)));
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+        overlay.querySelectorAll("[data-confirm-cancel]").forEach((b) => b.addEventListener("click", close));
+    })();
 </script>
+
+<div class="fd-confirm-overlay" data-confirm-overlay>
+    <div class="fd-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="fd-confirm-title">
+        <h3 id="fd-confirm-title">Confirmar recebimento</h3>
+        <p class="fd-confirm-sub">Informe quando o dinheiro entrou de fato. O valor só entra no faturamento após confirmação.</p>
+        <form method="post" data-action-template="{% url 'installment_confirm' 0 %}">
+            {% csrf_token %}
+            <label class="fd-confirm-field">
+                <span>Entrada</span>
+                <input type="text" data-confirm-field-name readonly>
+            </label>
+            <div class="fd-confirm-row">
+                <label class="fd-confirm-field">
+                    <span>Valor recebido</span>
+                    <input type="text" data-confirm-field-amount readonly>
+                </label>
+                <label class="fd-confirm-field">
+                    <span>Data em que entrou</span>
+                    <input type="date" name="paid_on" data-confirm-field-date required>
+                </label>
+            </div>
+            <div class="fd-confirm-actions">
+                <button type="button" class="fd-cancel-button" data-confirm-cancel>Cancelar</button>
+                <button type="submit" class="fd-submit-button fd-submit-button-green">Confirmar recebimento</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

@@ -1698,6 +1698,26 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 @require_POST
+def installment_confirm(request: HttpRequest, pk: int) -> HttpResponse:
+    """Marca uma parcela como recebida na data informada."""
+    from datetime import date as _date
+    workspace = _workspace(request)
+    installment = get_object_or_404(ProjectInstallment, pk=pk, workspace=workspace)
+    raw_date = (request.POST.get("paid_on") or "").strip()
+    try:
+        paid_on = _date.fromisoformat(raw_date) if raw_date else _date.today()
+    except ValueError:
+        paid_on = _date.today()
+    installment.paid = True
+    installment.paid_on = paid_on
+    installment.save(update_fields=["paid", "paid_on", "updated_at"])
+    messages.success(request, f"Recebimento confirmado em {paid_on.strftime('%d/%m/%Y')}.")
+    next_url = request.POST.get("next") or reverse("finance")
+    return redirect(next_url)
+
+
+@login_required
+@require_POST
 def prospect_archive(request: HttpRequest, pk: int) -> HttpResponse:
     """Arquiva um lead no Banco de Marcas com motivo."""
     from django.utils import timezone as _tz

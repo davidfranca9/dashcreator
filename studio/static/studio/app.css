@@ -5024,6 +5024,52 @@ body.page-finance .workspace-label {
 .chip--warning { background: #fef0d7; color: #9a6911; }
 .chip--danger { background: #fde2e4; color: #b13540; }
 
+/* ============ Financeiro — Confirmar recebimento + polimento ============ */
+.fd-row-overdue { background: #fef2f2; border-radius: 8px; padding: 8px 10px; margin: 0 -4px; }
+.fd-row-overdue + .fd-row { margin-top: 4px; }
+.fd-row-actions-inline { display: flex; align-items: center; gap: 8px; }
+.fd-confirm-btn {
+    background: #1a2340; color: #fff; border: none; border-radius: 6px;
+    padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+    transition: background .12s;
+}
+.fd-confirm-btn:hover { background: #243050; }
+.fd-confirm-btn-danger { background: #ef4444; }
+.fd-confirm-btn-danger:hover { background: #dc2626; }
+.fd-chip-muted { font-size: 11px; color: #94a3b8; background: #f4f5f8; border: .5px solid #dde1ea; border-radius: 99px; padding: 2px 9px; }
+.fd-text-red { color: #ef4444; font-weight: 600; }
+.fd-dot-red { background: #ef4444; }
+
+.fd-confirm-overlay {
+    position: fixed; inset: 0; background: rgba(26,35,64,.45); z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+.fd-confirm-overlay.show { opacity: 1; pointer-events: all; }
+.fd-confirm-modal {
+    background: #fff; border-radius: 16px; padding: 24px; width: 440px; max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(26,35,64,.2);
+    transform: translateY(8px); transition: transform .18s;
+}
+.fd-confirm-overlay.show .fd-confirm-modal { transform: translateY(0); }
+.fd-confirm-modal h3 { font-size: 16px; font-weight: 600; color: #1a2340; margin: 0 0 4px; }
+.fd-confirm-sub { font-size: 12px; color: #94a3b8; margin-bottom: 18px; }
+.fd-confirm-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 13px; }
+.fd-confirm-field span { font-size: 11px; font-weight: 600; color: #64748b; }
+.fd-confirm-field input {
+    border: .5px solid #dde1ea; border-radius: 8px; padding: 9px 12px;
+    font-size: 13px; color: #1a2340; background: #f4f5f8; font-family: inherit;
+}
+.fd-confirm-field input:focus { outline: none; border-color: #3b82f6; background: #fff; }
+.fd-confirm-field input[readonly] { color: #64748b; }
+.fd-confirm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fd-confirm-actions {
+    display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;
+    padding-top: 14px; border-top: .5px solid #e8eaf0;
+}
+.fd-submit-button-green { background: #10b981 !important; }
+.fd-submit-button-green:hover { background: #059669 !important; }
+
 /* ============ Trabalhos redesign ============ */
 .jobs-counters {
     display: grid;

@@ -1722,6 +1722,7 @@ def _project_finance_events(project: Project) -> list[dict]:
                 "due_date": item.due_date,
                 "paid": item.paid,
                 "paid_on": item.paid_on or item.due_date,
+                "installment_id": item.pk,
             }
             for item in installments
             if Decimal(item.amount or 0) > ZERO
@@ -1842,14 +1843,19 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     for item in sorted(receivable_events, key=lambda event: (event["due_date"], event["project"].company.casefold())):
         project = item["project"]
         _, _, accent = company_palette(project.company)
+        days_overdue = (date.today() - item["due_date"]).days
         schedule.append(
             {
                 "company": project.company,
                 "kind": item["kind"],
                 "due": short_date(item["due_date"]),
+                "due_date": item["due_date"],
                 "amount": currency(item["amount"]),
+                "amount_raw": item["amount"],
                 "status": "Previsto",
                 "accent": accent,
+                "installment_id": item.get("installment_id"),
+                "overdue_days": days_overdue if days_overdue > 0 else 0,
             }
         )
 
