@@ -1836,28 +1836,40 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         for item in finance_events
         if not item["paid"] and item["due_date"] >= date.today()
     ]
+    overdue_events = [
+        item
+        for item in finance_events
+        if not item["paid"] and item["due_date"] < date.today()
+    ]
     receivable_balance = sum_money(item["amount"] for item in receivable_events)
+    overdue_balance = sum_money(item["amount"] for item in overdue_events)
     cash_balance = incoming_total - outgoing_total
 
-    schedule = []
-    for item in sorted(receivable_events, key=lambda event: (event["due_date"], event["project"].company.casefold())):
+    def _serialize_receivable(item: dict) -> dict:
         project = item["project"]
         _, _, accent = company_palette(project.company)
         days_overdue = (date.today() - item["due_date"]).days
-        schedule.append(
-            {
-                "company": project.company,
-                "kind": item["kind"],
-                "due": short_date(item["due_date"]),
-                "due_date": item["due_date"],
-                "amount": currency(item["amount"]),
-                "amount_raw": item["amount"],
-                "status": "Previsto",
-                "accent": accent,
-                "installment_id": item.get("installment_id"),
-                "overdue_days": days_overdue if days_overdue > 0 else 0,
-            }
-        )
+        return {
+            "company": project.company,
+            "kind": item["kind"],
+            "due": short_date(item["due_date"]),
+            "due_date": item["due_date"],
+            "amount": currency(item["amount"]),
+            "amount_raw": item["amount"],
+            "status": "Previsto",
+            "accent": accent,
+            "installment_id": item.get("installment_id"),
+            "overdue_days": days_overdue if days_overdue > 0 else 0,
+        }
+
+    schedule = [
+        _serialize_receivable(item)
+        for item in sorted(receivable_events, key=lambda event: (event["due_date"], event["project"].company.casefold()))
+    ]
+    overdue_list = [
+        _serialize_receivable(item)
+        for item in sorted(overdue_events, key=lambda event: (event["due_date"], event["project"].company.casefold()))
+    ]
 
     ledger = [
         {
@@ -2008,6 +2020,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             {"title": "Saldo", "value": currency(cash_balance), "icon_label": "$"},
         ],
         "schedule": schedule,
+        "overdue_list": overdue_list,
+        "overdue_total": currency(overdue_balance),
         "ledger": ledger,
         "finance_desktop": {
             "revenue_total": currency(incoming_total),

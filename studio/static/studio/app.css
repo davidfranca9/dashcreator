@@ -5037,6 +5037,7 @@ body.page-finance .workspace-label {
 .fd-confirm-btn-danger { background: #ef4444; }
 .fd-confirm-btn-danger:hover { background: #dc2626; }
 .fd-chip-muted { font-size: 11px; color: #94a3b8; background: #f4f5f8; border: .5px solid #dde1ea; border-radius: 99px; padding: 2px 9px; }
+.fd-chip-danger { background: #fef2f2 !important; color: #b13540 !important; border-color: #fca5a5 !important; font-weight: 600; }
 .fd-text-red { color: #ef4444; font-weight: 600; }
 .fd-dot-red { background: #ef4444; }
 

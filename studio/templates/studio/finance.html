@@ -68,7 +68,6 @@
                         <div class="fd-prolabore-copy">
                             <div class="fd-prolabore-label"><i class="ti ti-home"></i> Pró-labore fixo</div>
                             <div class="fd-prolabore-value">{{ finance_desktop.pro_labore }}</div>
-                            <div class="fd-prolabore-sub">retirado primeiro · todo mês · independente do faturamento</div>
                         </div>
                         {% if finance_desktop.pro_labore_covered %}
                             <span class="fd-pill fd-pill-ok"><i class="ti ti-check"></i> Coberto</span>
@@ -135,6 +134,33 @@
                         {% endfor %}
                     </article>
 
+                    {% if finance_desktop.overdue_list %}
+                        <article class="fd-card">
+                            <div class="fd-card-header"><span class="fd-card-title">Vencidos</span><span class="fd-chip-muted fd-chip-danger">{{ finance_desktop.overdue_list|length }} · {{ finance_desktop.overdue_total }}</span></div>
+                            {% for item in finance_desktop.overdue_list %}
+                                <div class="fd-row fd-row-overdue">
+                                    <div class="fd-row-left">
+                                        <span class="fd-row-dot fd-dot-red"></span>
+                                        <span class="fd-row-info">
+                                            <strong>{{ item.company }}</strong>
+                                            <small>Venceu {{ item.due }} · {{ item.kind }} · <span class="fd-text-red">{{ item.overdue_days }}d em atraso</span></small>
+                                        </span>
+                                    </div>
+                                    <div class="fd-row-actions-inline">
+                                        <span class="fd-row-value fd-value-red">{{ item.amount }}</span>
+                                        {% if item.installment_id %}
+                                            <button type="button" class="fd-confirm-btn fd-confirm-btn-danger"
+                                                    data-confirm-open
+                                                    data-confirm-installment="{{ item.installment_id }}"
+                                                    data-confirm-name="{{ item.company }} · {{ item.kind }}"
+                                                    data-confirm-amount="{{ item.amount }}">Confirmar</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </article>
+                    {% endif %}
+
                     <article class="fd-card">
                         <div class="fd-card-header"><span class="fd-card-title">A receber</span></div>
                         {% for item in schedule|slice:":3" %}
@@ -146,7 +172,16 @@
                                         <small>Vence {{ item.due }} · {{ item.kind }}</small>
                                     </span>
                                 </div>
-                                <span class="fd-row-value fd-value-blue">{{ item.amount }}</span>
+                                <div class="fd-row-actions-inline">
+                                    <span class="fd-row-value fd-value-blue">{{ item.amount }}</span>
+                                    {% if item.installment_id %}
+                                        <button type="button" class="fd-confirm-btn"
+                                                data-confirm-open
+                                                data-confirm-installment="{{ item.installment_id }}"
+                                                data-confirm-name="{{ item.company }} · {{ item.kind }}"
+                                                data-confirm-amount="{{ item.amount }}">Confirmar</button>
+                                    {% endif %}
+                                </div>
                             </div>
                         {% empty %}
                             <p class="fd-empty">Nenhum recebimento pendente em {{ selected_month.label|lower }}.</p>
