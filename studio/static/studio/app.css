@@ -1188,6 +1188,28 @@ body.theme-dark .stat-card p {
     color: #c0303d;
 }
 
+.installment-delete-wrap {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+}
+.installment-delete-btn {
+    background: transparent;
+    border: 1px solid #fca5a5;
+    color: #c0303d;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+}
+.installment-delete-btn:hover {
+    background: #fef2f2;
+    border-color: #c0303d;
+}
+
 .installments-summary {
     display: flex;
     align-items: center;

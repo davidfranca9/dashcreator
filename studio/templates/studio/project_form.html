@@ -1019,6 +1019,29 @@
                 input.addEventListener("input", recomputeInstallmentsTotal);
                 input.addEventListener("change", recomputeInstallmentsTotal);
             });
+            // Delegação: clica em "× Remover" → marca DELETE no checkbox
+            // oculto e some com a linha. Se for nova (sem id no banco),
+            // remove do DOM e decrementa o TOTAL_FORMS. Se já existe no
+            // banco, mantém com DELETE=true pro Django apagar no save.
+            installmentsList.addEventListener("click", (e) => {
+                const btn = e.target.closest("[data-installment-remove]");
+                if (!btn) return;
+                e.preventDefault();
+                const row = btn.closest("[data-installment-row]");
+                if (!row) return;
+                const idInput = row.querySelector('input[name$="-id"]');
+                const isPersisted = idInput && idInput.value;
+                const deleteBox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                if (isPersisted) {
+                    if (deleteBox) deleteBox.checked = true;
+                    row.hidden = true;
+                } else {
+                    row.remove();
+                    const totalFormsVal = parseInt(totalFormsField.value, 10) || 0;
+                    if (totalFormsVal > 0) totalFormsField.value = String(totalFormsVal - 1);
+                }
+                recomputeInstallmentsTotal();
+            });
             recomputeInstallmentsTotal();
         }
 

@@ -23,10 +23,12 @@
                         <span>Pago</span>
                     </label>
                     {% if installments_formset.can_delete %}
-                        <label class="installment-delete">
-                            {{ installment_form.DELETE }}
-                            <span>Remover</span>
-                        </label>
+                        <span class="installment-delete-wrap">
+                            <span hidden>{{ installment_form.DELETE }}</span>
+                            <button type="button" class="installment-delete-btn" data-installment-remove aria-label="Remover parcela" title="Remover parcela">
+                                &times; Remover
+                            </button>
+                        </span>
                     {% endif %}
                     {% if installment_form.errors %}
                         <div class="installment-errors">{{ installment_form.errors }}</div>
@@ -54,10 +56,12 @@
                     <input type="checkbox" name="installments-__INDEX__-paid" id="id_installments-__INDEX__-paid">
                     <span>Pago</span>
                 </label>
-                <label class="installment-delete">
-                    <input type="checkbox" name="installments-__INDEX__-DELETE" id="id_installments-__INDEX__-DELETE">
-                    <span>Remover</span>
-                </label>
+                <span class="installment-delete-wrap">
+                    <span hidden><input type="checkbox" name="installments-__INDEX__-DELETE" id="id_installments-__INDEX__-DELETE"></span>
+                    <button type="button" class="installment-delete-btn" data-installment-remove aria-label="Remover parcela" title="Remover parcela">
+                        &times; Remover
+                    </button>
+                </span>
             </div>
         </template>
     </div>
