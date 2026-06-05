@@ -837,6 +837,11 @@
             field.addEventListener("change", applyServiceTypeVisibility);
         });
 
+        // Mudar a duração do contrato também rerolha parcelas em Social Media.
+        if (contractDurationField) {
+            contractDurationField.addEventListener("change", applyServiceTypeVisibility);
+        }
+
         const wizardCategoryFor = (serviceType) => {
             const pill = wizardPills.find((p) => p.dataset.servicePill === serviceType);
             return pill ? pill.dataset.serviceCategory : null;
@@ -941,6 +946,13 @@
                     input.addEventListener("input", recomputeInstallmentsTotal);
                     input.addEventListener("change", recomputeInstallmentsTotal);
                 });
+                // Re-sincroniza a nova linha (Social Media: mês+dia,
+                // outros recorrentes: só dia) e auto-fill do mês.
+                const selectedType = serviceTypeField ? serviceTypeField.value : "";
+                const isRecurringNow = recurringContractTypes.includes(selectedType);
+                const isSocialMediaNow = selectedType === "social_media";
+                syncInstallmentDateInputs(isRecurringNow, isSocialMediaNow);
+                if (isSocialMediaNow) autoFillSocialMediaParcelaMonths();
                 recomputeInstallmentsTotal();
             });
 
