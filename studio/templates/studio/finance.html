@@ -754,8 +754,13 @@
         const fixedCostWrapper = document.querySelector("[data-fixed-cost-wrapper]");
         const fixedCostSelect = document.querySelector("[data-fixed-cost-select]");
         const descriptionInput = descriptionWrapper ? descriptionWrapper.querySelector("input, textarea") : null;
-        // Procura o input de Valor (amount) do form de saída pelo name suffix.
-        const amountInput = document.querySelector('input[name$="-amount"]');
+        // Scope: limita queries ao form de saída pra não pegar inputs de
+        // outros modais (cash_box, fixed_cost, etc.) que também têm
+        // campos chamados *-amount.
+        const outgoingForm = categorySelect ? categorySelect.closest("form") : null;
+        const amountInput = outgoingForm
+            ? outgoingForm.querySelector('input[name="outgoing-amount"]')
+            : null;
         if (fixedCostSelect && descriptionInput) {
             fixedCostSelect.addEventListener("change", () => {
                 if (!fixedCostSelect.value) return;
@@ -766,8 +771,6 @@
                 const amountRaw = opt && opt.dataset ? opt.dataset.amount : "";
                 if (amountRaw && amountInput) {
                     amountInput.value = amountRaw;
-                    // Dispara input/change pra rodar qualquer handler dependente
-                    amountInput.dispatchEvent(new Event("input", { bubbles: true }));
                 }
             });
         }
@@ -820,7 +823,7 @@
             && descriptionInput
             && descriptionInput.value
         ) {
-            const target = descriptionInput.value;
+            const target = descriptionInput.value.trim();
             const hasMatch = Array.from(fixedCostSelect.options).some(
                 (opt) => opt.value === target
             );
