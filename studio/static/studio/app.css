@@ -5057,6 +5057,13 @@ body.page-finance .workspace-label {
 .fd-category-hint.fd-cat-investment { background: #f3e8ff; color: #6d28d9; border-color: #c4b5fd; }
 .fd-category-hint.fd-cat-free { background: #f0fdf4; color: #065f46; border-color: #bbf7d0; }
 .fd-category-hint.fd-cat-custom { background: #eef5ff; color: #1d4ed8; border-color: #bfdbfe; }
+
+.fd-box-pill {
+    font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 99px;
+    background: #fef2f2; color: #b13540; letter-spacing: .04em; text-transform: uppercase;
+    margin-left: 6px; vertical-align: middle;
+}
+.fd-box-of { font-size: 12px; font-weight: 500; color: #94a3b8; }
 .fd-text-red { color: #ef4444; font-weight: 600; }
 .fd-dot-red { background: #ef4444; }
 

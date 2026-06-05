@@ -272,12 +272,19 @@
             <div class="fd-two-col">
                 <article class="fd-box">
                     <div class="fd-box-head">
-                        <span class="fd-box-name fd-blue"><i class="ti ti-tool"></i> Custo fixo</span>
-                        <strong>{{ finance_desktop.fixed_cost }}</strong>
+                        <span class="fd-box-name fd-blue"><i class="ti ti-tool"></i> Custo fixo <span class="fd-box-pill">saída</span></span>
+                        <strong>{{ finance_desktop.fixed_cost_paid }} <span class="fd-box-of">de {{ finance_desktop.fixed_cost }}</span></strong>
                     </div>
                     <div class="fd-bar-wrap"><span class="fd-bar fd-bar-blue" style="width: {{ finance_desktop.fixed_cost_progress }}%"></span></div>
-                    <div class="fd-box-meta"><span>valor fixo · 4 itens</span><strong class="fd-text-green">Quitado ✓</strong></div>
-                    <p>Ferramentas e colaboradores fixos do negócio.</p>
+                    <div class="fd-box-meta">
+                        <span>{{ finance_desktop.fixed_cost_items_count }} {{ finance_desktop.fixed_cost_items_count|pluralize:"item,itens" }} cadastrados</span>
+                        {% if finance_desktop.fixed_cost_covered %}
+                            <strong class="fd-text-green">Quitado ✓</strong>
+                        {% else %}
+                            <strong class="fd-text-warn">Faltam {{ finance_desktop.fixed_cost_remaining }}</strong>
+                        {% endif %}
+                    </div>
+                    <p>Registre as saídas com categoria "Custo fixo" pra encher essa caixinha.</p>
                 </article>
                 <article class="fd-box fd-box-free">
                     <div class="fd-box-head">
