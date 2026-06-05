@@ -160,11 +160,11 @@ SIMPLIFIED_PAYMENT_TYPES = POST_PRODUCTION_PAYMENT_TYPES | COMMISSION_PAYMENT_TY
 # Tipos sem reunião nem data de entrega (brief: Afiliação).
 NO_DELIVERY_TYPES = COMMISSION_PAYMENT_TYPES
 
-# Tipos cujo bloco "Parcelas de pagamento" faz sentido: contratos longos /
-# recorrentes onde o cliente paga em parcelas previsiveis. UGC e similares
-# (job unico com entrada + saldo) usam apenas has_entry / entry_value /
-# payment_due_date e nao mostram a lista de parcelas.
-INSTALLMENTS_TYPES = RECURRING_CONTRACT_TYPES
+# Tipos cujo bloco "Parcelas de pagamento" faz sentido. Contratos
+# recorrentes usam as parcelas como dias fixos do mes; Publicidade tambem
+# pode ser parcelada manualmente quando o pagamento unico ou recorrente for
+# dividido em datas/valores diferentes.
+INSTALLMENTS_TYPES = RECURRING_CONTRACT_TYPES + [PUBLICIDADE_SERVICE_TYPE]
 
 CONTRACT_DURATION_CHOICES = [
     (1, "1 mês"),
@@ -813,16 +813,17 @@ class ProjectForm(forms.ModelForm):
             cleaned_data["monthly_value"] = 0
             if is_social_media:
                 cleaned_data["deliverables_count"] = deliverables_count
-            # Parcelas mensais agora são geradas automaticamente; o
-            # payment_due_date define o dia fixo de cobrança em todos os
-            # meses do contrato.
+            # Sem parcelas manuais, payment_due_date guarda o dia/mes em
+            # que a mensalidade comeca. Com parcelas, cada linha do formset
+            # informa seu proprio dia de pagamento.
+            posted_payment_due_date = cleaned_data.get("payment_due_date")
             payment_due_day = cleaned_data.get("payment_due_day")
-            if not payment_due_day and cleaned_data.get("payment_due_date"):
-                payment_due_day = cleaned_data["payment_due_date"].day
+            if not payment_due_day and posted_payment_due_date:
+                payment_due_day = posted_payment_due_date.day
                 cleaned_data["payment_due_day"] = payment_due_day
-            if payment_due_day:
+            if payment_due_day and not posted_payment_due_date:
                 cleaned_data["payment_due_date"] = _date_from_payment_day(cleaned_data.get("close_date"), payment_due_day)
-            if not cleaned_data.get("payment_due_date"):
+            if has_installments != HAS_INSTALLMENTS_YES and not cleaned_data.get("payment_due_date"):
                 self.add_error("payment_due_day", "Informe o dia do pagamento.")
         elif service_type_value in NO_DELIVERY_TYPES and not cleaned_data.get("due_date"):
             cleaned_data["due_date"] = cleaned_data.get("close_date")
