@@ -237,6 +237,14 @@
 
         let dragged = null;
 
+        const bumpCount = (col, delta) => {
+            if (!col) return;
+            const el = col.querySelector(".pipeline-column-count");
+            if (!el) return;
+            const current = parseInt(el.textContent, 10) || 0;
+            el.textContent = String(Math.max(0, current + delta));
+        };
+
         board.querySelectorAll("[data-pipeline-card]").forEach((card) => {
             card.addEventListener("dragstart", (e) => {
                 dragged = card;
@@ -258,31 +266,43 @@
                 col.classList.add("pipeline-column--dropping");
             });
             col.addEventListener("dragleave", () => col.classList.remove("pipeline-column--dropping"));
-            col.addEventListener("drop", async (e) => {
+            col.addEventListener("drop", (e) => {
                 e.preventDefault();
                 col.classList.remove("pipeline-column--dropping");
                 if (!dragged) return;
+                const card = dragged;
                 const targetStage = col.dataset.pipelineColumn;
-                const currentStage = dragged.dataset.currentStage;
+                const currentStage = card.dataset.currentStage;
+                const sourceColumn = card.closest("[data-pipeline-column]");
                 if (targetStage === currentStage) return;
                 const config = STAGE_ENDPOINTS[targetStage];
                 if (!config) return;
-                const id = dragged.dataset.prospectId;
+
+                // Update otimista: move o card já no DOM antes da resposta.
+                const header = col.querySelector(".pipeline-column-header");
+                const overflow = col.querySelector(".pipeline-overflow");
+                const emptyMsg = col.querySelector(".pipeline-empty");
+                if (emptyMsg) emptyMsg.remove();
+                if (overflow) col.insertBefore(card, overflow);
+                else col.appendChild(card);
+                card.dataset.currentStage = targetStage;
+                bumpCount(sourceColumn, -1);
+                bumpCount(col, +1);
+
+                const id = card.dataset.prospectId;
                 const url = config.url.replace("/0/", "/" + id + "/");
                 const fd = new FormData();
                 Object.entries(config.body).forEach(([k, v]) => fd.append(k, v));
-                try {
-                    await fetch(url, {
-                        method: "POST",
-                        headers: { "X-CSRFToken": csrf },
-                        body: fd,
-                        credentials: "same-origin",
-                    });
-                    window.location.reload();
-                } catch (err) {
+                fetch(url, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrf },
+                    body: fd,
+                    credentials: "same-origin",
+                }).catch((err) => {
                     console.error(err);
-                    alert("Não foi possível mover o lead. Tente recarregar.");
-                }
+                    alert("Não foi possível mover o lead. Recarregando…");
+                    window.location.reload();
+                });
             });
         });
     })();
