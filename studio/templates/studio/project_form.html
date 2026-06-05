@@ -470,44 +470,6 @@
         const wizardActionsBlock = form.querySelector('[data-form-actions]');
         const installmentsBlock = form.querySelector('[data-installments-block]');
 
-        // Em contrato recorrente, troca o "Primeiro pagamento da
-        // recorrência" pelo dia do mês (number 1-31). Pareado com a
-        // mesma lógica de parcelas abaixo.
-        const paymentDueDateField = document.getElementById("id_payment_due_date");
-        const syncPaymentDueDateInput = (isRecurring) => {
-            if (!paymentDueDateField) return;
-            if (isRecurring) {
-                if (paymentDueDateField.type !== "number") {
-                    const isoValue = paymentDueDateField.value;
-                    let day = "";
-                    if (isoValue && /^\d{4}-\d{2}-\d{2}$/.test(isoValue)) {
-                        day = parseInt(isoValue.slice(8, 10), 10).toString();
-                    }
-                    paymentDueDateField.dataset.originalIso = isoValue;
-                    paymentDueDateField.type = "number";
-                    paymentDueDateField.min = "1";
-                    paymentDueDateField.max = "31";
-                    paymentDueDateField.step = "1";
-                    paymentDueDateField.value = day;
-                }
-            } else if (paymentDueDateField.type === "number") {
-                const day = parseInt(paymentDueDateField.value, 10);
-                const original = paymentDueDateField.dataset.originalIso || "";
-                paymentDueDateField.type = "date";
-                paymentDueDateField.removeAttribute("min");
-                paymentDueDateField.removeAttribute("max");
-                paymentDueDateField.removeAttribute("step");
-                if (original) {
-                    paymentDueDateField.value = original;
-                } else if (Number.isFinite(day) && day >= 1 && day <= 31 && closeDateField && closeDateField.value) {
-                    const closeIso = closeDateField.value;
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) {
-                        paymentDueDateField.value = `${closeIso.slice(0, 7)}-${String(day).padStart(2, "0")}`;
-                    }
-                }
-            }
-        };
-
         // Em contrato recorrente, troca inputs de data das parcelas por
         // "dia do mês" (number 1-31). Antes do submit, reconstrói o
         // yyyy-mm-dd usando o close_date.
@@ -573,13 +535,6 @@
                         dateInput.value = newDate;
                     }
                 });
-            }
-            if (paymentDueDateField && paymentDueDateField.type === "number") {
-                const newDate = dayToDate(paymentDueDateField.value);
-                if (newDate) {
-                    paymentDueDateField.type = "date";
-                    paymentDueDateField.value = newDate;
-                }
             }
         });
 
@@ -744,9 +699,15 @@
                 // completa em um input hidden gerada via close_date.
                 syncInstallmentDateInputs(isRecurringContract);
             }
-            // Mesmo padrão pro "Primeiro pagamento da recorrência":
-            // recorrente = dia 1-31, único = data completa.
-            syncPaymentDueDateInput(isPaymentRecurring);
+            // Recorrente já tem "Dia do pagamento" (payment_due_day) que
+            // captura o dia. Esconde "Primeiro pagamento da recorrência"
+            // (payment_due_date) nesse caso pra não duplicar a informação.
+            if (wrappersByName.payment_due_date) {
+                wrappersByName.payment_due_date.hidden = isPaymentRecurring;
+            }
+            if (wrappersByName.payment_due_day) {
+                wrappersByName.payment_due_day.hidden = !isPaymentRecurring;
+            }
             if (wrappersByName.payment_due_date && isRecurringContract) {
                 wrappersByName.payment_due_date.hidden = true;
             }
