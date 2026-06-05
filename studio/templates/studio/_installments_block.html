@@ -1,0 +1,64 @@
+{% if installments_formset %}
+    <div class="form-field--full installments-block" data-installments-block hidden>
+        <div class="installments-block-header">
+            <h4>Parcelas de pagamento</h4>
+            <p class="muted">Adicione cada parcela com data e valor; o total é calculado em tempo real.</p>
+            <p class="muted installments-auto-hint" data-installments-auto-hint hidden>Use quando o pagamento for dividido em datas e valores diferentes.</p>
+        </div>
+        {{ installments_formset.management_form }}
+        <div class="installments-list" data-installments-list>
+            {% for installment_form in installments_formset %}
+                <div class="installment-row" data-installment-row>
+                    {% for hidden in installment_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <label class="installment-field">
+                        <span>Data</span>
+                        {{ installment_form.due_date }}
+                    </label>
+                    <label class="installment-field">
+                        <span>Valor</span>
+                        {{ installment_form.amount }}
+                    </label>
+                    <label class="installment-field installment-field--paid">
+                        {{ installment_form.paid }}
+                        <span>Pago</span>
+                    </label>
+                    {% if installments_formset.can_delete %}
+                        <label class="installment-delete">
+                            {{ installment_form.DELETE }}
+                            <span>Remover</span>
+                        </label>
+                    {% endif %}
+                    {% if installment_form.errors %}
+                        <div class="installment-errors">{{ installment_form.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="installments-summary">
+            <button type="button" class="ghost-button small" data-installment-add>+ Adicionar parcela</button>
+            <span class="installments-total">Total das parcelas: <strong data-installments-total>R$0,00</strong></span>
+        </div>
+        <template data-installment-template>
+            <div class="installment-row" data-installment-row>
+                <input type="hidden" name="installments-__INDEX__-id" id="id_installments-__INDEX__-id">
+                <input type="hidden" name="installments-__INDEX__-project" id="id_installments-__INDEX__-project">
+                <label class="installment-field">
+                    <span>Data</span>
+                    <input type="date" name="installments-__INDEX__-due_date" id="id_installments-__INDEX__-due_date">
+                </label>
+                <label class="installment-field">
+                    <span>Valor</span>
+                    <input type="number" step="0.01" min="0" inputmode="decimal" name="installments-__INDEX__-amount" id="id_installments-__INDEX__-amount" value="0">
+                </label>
+                <label class="installment-field installment-field--paid">
+                    <input type="checkbox" name="installments-__INDEX__-paid" id="id_installments-__INDEX__-paid">
+                    <span>Pago</span>
+                </label>
+                <label class="installment-delete">
+                    <input type="checkbox" name="installments-__INDEX__-DELETE" id="id_installments-__INDEX__-DELETE">
+                    <span>Remover</span>
+                </label>
+            </div>
+        </template>
+    </div>
+{% endif %}

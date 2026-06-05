@@ -73,6 +73,8 @@ RECURRING_CONTRACT_HIDDEN_FIELDS = [
 ]
 SOCIAL_MEDIA_HIDDEN_FIELDS = [
     "deliverables_count",
+    "payment_due_day",
+    "entry_due_date",
 ]
 # UGC/Freelancer/Editora/Captação/Publicidade: o campo "Recebido" é
 # calculado automaticamente (mirror da entrada ou via parcelas pagas),

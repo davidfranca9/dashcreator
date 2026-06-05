@@ -86,6 +86,7 @@
                         </div>
                     {% endif %}
                     {% if field.name == "note" %}
+                        {% include "studio/_installments_block.html" %}
                         <div class="form-field--full project-form-section" data-form-section="notes">
                             <span class="project-form-section-label">Observações</span>
                         </div>
@@ -128,71 +129,6 @@
                 {% endfor %}
             </div>
         </div>
-
-        {% if installments_formset %}
-            <div class="form-field--full installments-block" data-installments-block hidden>
-                <div class="installments-block-header">
-                    <h4>Parcelas de pagamento</h4>
-                    <p class="muted">Adicione cada parcela com data e valor; o total é calculado em tempo real.</p>
-                    <p class="muted installments-auto-hint" data-installments-auto-hint hidden>Use quando o pagamento for dividido em datas e valores diferentes.</p>
-                </div>
-                {{ installments_formset.management_form }}
-                <div class="installments-list" data-installments-list>
-                    {% for installment_form in installments_formset %}
-                        <div class="installment-row" data-installment-row>
-                            {% for hidden in installment_form.hidden_fields %}{{ hidden }}{% endfor %}
-                            <label class="installment-field">
-                                <span>Data</span>
-                                {{ installment_form.due_date }}
-                            </label>
-                            <label class="installment-field">
-                                <span>Valor</span>
-                                {{ installment_form.amount }}
-                            </label>
-                            <label class="installment-field installment-field--paid">
-                                {{ installment_form.paid }}
-                                <span>Pago</span>
-                            </label>
-                            {% if installments_formset.can_delete %}
-                                <label class="installment-delete">
-                                    {{ installment_form.DELETE }}
-                                    <span>Remover</span>
-                                </label>
-                            {% endif %}
-                            {% if installment_form.errors %}
-                                <div class="installment-errors">{{ installment_form.errors }}</div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="installments-summary">
-                    <button type="button" class="ghost-button small" data-installment-add>+ Adicionar parcela</button>
-                    <span class="installments-total">Total das parcelas: <strong data-installments-total>R$0,00</strong></span>
-                </div>
-                <template data-installment-template>
-                    <div class="installment-row" data-installment-row>
-                        <input type="hidden" name="installments-__INDEX__-id" id="id_installments-__INDEX__-id">
-                        <input type="hidden" name="installments-__INDEX__-project" id="id_installments-__INDEX__-project">
-                        <label class="installment-field">
-                            <span>Data</span>
-                            <input type="date" name="installments-__INDEX__-due_date" id="id_installments-__INDEX__-due_date">
-                        </label>
-                        <label class="installment-field">
-                            <span>Valor</span>
-                            <input type="number" step="0.01" min="0" inputmode="decimal" name="installments-__INDEX__-amount" id="id_installments-__INDEX__-amount" value="0">
-                        </label>
-                        <label class="installment-field installment-field--paid">
-                            <input type="checkbox" name="installments-__INDEX__-paid" id="id_installments-__INDEX__-paid">
-                            <span>Pago</span>
-                        </label>
-                        <label class="installment-delete">
-                            <input type="checkbox" name="installments-__INDEX__-DELETE" id="id_installments-__INDEX__-DELETE">
-                            <span>Remover</span>
-                        </label>
-                    </div>
-                </template>
-            </div>
-        {% endif %}
 
         <div class="form-actions form-field--full project-form-actions" data-form-actions hidden>
             <button type="submit" class="primary-button">Salvar trabalho</button>
@@ -508,15 +444,72 @@
             }
         };
 
-        // Em contrato recorrente, troca inputs de data das parcelas por
-        // "dia do mês" (number 1-31). Antes do submit, reconstrói o
-        // yyyy-mm-dd usando o close_date.
-        const syncInstallmentDateInputs = (isRecurring) => {
+        const MONTH_NAMES = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+        ];
+
+        // Social Media: cada parcela vira "Mês + Dia" (dois selects).
+        // Recorrente sem ser Social Media: número 1-31 (dia).
+        // Único: input date completo.
+        const syncInstallmentDateInputs = (isRecurring, isSocialMedia) => {
             if (!installmentsBlock) return;
             installmentsBlock.querySelectorAll(".installment-row").forEach((row) => {
                 const dateInput = row.querySelector('input[name$="-due_date"]');
                 if (!dateInput) return;
+                const field = dateInput.closest(".installment-field");
+                const label = field?.querySelector("span");
+                let monthDayWrap = row.querySelector("[data-installment-month-day]");
+
+                // Modo SOCIAL MEDIA → mês+dia
+                if (isSocialMedia) {
+                    if (!monthDayWrap) {
+                        // Extrai mês/dia do valor atual
+                        const isoValue = dateInput.value;
+                        let monthVal = "", dayVal = "";
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue)) {
+                            monthVal = parseInt(isoValue.slice(5, 7), 10).toString();
+                            dayVal = parseInt(isoValue.slice(8, 10), 10).toString();
+                        }
+                        dateInput.dataset.originalIso = isoValue;
+                        dateInput.type = "hidden";
+                        monthDayWrap = document.createElement("div");
+                        monthDayWrap.dataset.installmentMonthDay = "";
+                        monthDayWrap.style.display = "grid";
+                        monthDayWrap.style.gridTemplateColumns = "1fr 1fr";
+                        monthDayWrap.style.gap = "6px";
+                        const monthSelect = document.createElement("select");
+                        monthSelect.dataset.installmentMonth = "";
+                        const placeholderM = document.createElement("option");
+                        placeholderM.value = "";
+                        placeholderM.textContent = "Mês";
+                        monthSelect.appendChild(placeholderM);
+                        for (let i = 1; i <= 12; i++) {
+                            const opt = document.createElement("option");
+                            opt.value = i;
+                            opt.textContent = MONTH_NAMES[i - 1];
+                            if (String(i) === monthVal) opt.selected = true;
+                            monthSelect.appendChild(opt);
+                        }
+                        const dayInput = document.createElement("input");
+                        dayInput.type = "number";
+                        dayInput.min = "1";
+                        dayInput.max = "31";
+                        dayInput.step = "1";
+                        dayInput.placeholder = "Dia";
+                        dayInput.value = dayVal;
+                        dayInput.dataset.installmentDay = "";
+                        monthDayWrap.appendChild(monthSelect);
+                        monthDayWrap.appendChild(dayInput);
+                        field.appendChild(monthDayWrap);
+                        if (label) label.textContent = "Mês e dia do pagamento";
+                    }
+                    return;
+                }
+
+                // Modo recorrente (não Social Media) → só dia
                 if (isRecurring) {
+                    if (monthDayWrap) { monthDayWrap.remove(); }
                     if (dateInput.type !== "number") {
                         const isoValue = dateInput.value;
                         let day = "";
@@ -529,28 +522,29 @@
                         dateInput.max = "31";
                         dateInput.step = "1";
                         dateInput.value = day;
-                        const label = dateInput.closest(".installment-field")?.querySelector("span");
                         if (label) label.textContent = "Dia do pagamento";
                     }
-                } else {
-                    if (dateInput.type === "number") {
-                        const day = parseInt(dateInput.value, 10);
-                        const original = dateInput.dataset.originalIso || "";
-                        dateInput.type = "date";
-                        dateInput.removeAttribute("min");
-                        dateInput.removeAttribute("max");
-                        dateInput.removeAttribute("step");
-                        if (original) {
-                            dateInput.value = original;
-                        } else if (Number.isFinite(day) && day >= 1 && day <= 31 && closeDateField && closeDateField.value) {
-                            const closeIso = closeDateField.value;
-                            if (/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) {
-                                dateInput.value = `${closeIso.slice(0, 7)}-${String(day).padStart(2, "0")}`;
-                            }
+                    return;
+                }
+
+                // Modo único → date completo
+                if (monthDayWrap) { monthDayWrap.remove(); }
+                if (dateInput.type !== "date") {
+                    const day = parseInt(dateInput.value, 10);
+                    const original = dateInput.dataset.originalIso || "";
+                    dateInput.type = "date";
+                    dateInput.removeAttribute("min");
+                    dateInput.removeAttribute("max");
+                    dateInput.removeAttribute("step");
+                    if (original) {
+                        dateInput.value = original;
+                    } else if (Number.isFinite(day) && day >= 1 && day <= 31 && closeDateField && closeDateField.value) {
+                        const closeIso = closeDateField.value;
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) {
+                            dateInput.value = `${closeIso.slice(0, 7)}-${String(day).padStart(2, "0")}`;
                         }
-                        const label = dateInput.closest(".installment-field")?.querySelector("span");
-                        if (label) label.textContent = "Data";
                     }
+                    if (label) label.textContent = "Data";
                 }
             });
         };
@@ -564,13 +558,28 @@
                 return `${yearMonth}-${String(day).padStart(2, "0")}`;
             };
             if (installmentsBlock) {
+                const year = /^\d{4}-\d{2}-\d{2}$/.test(closeIso) ? closeIso.slice(0, 4) : new Date().getFullYear().toString();
                 installmentsBlock.querySelectorAll(".installment-row").forEach((row) => {
                     const dateInput = row.querySelector('input[name$="-due_date"]');
-                    if (!dateInput || dateInput.type !== "number") return;
-                    const newDate = dayToDate(dateInput.value);
-                    if (newDate) {
-                        dateInput.type = "date";
-                        dateInput.value = newDate;
+                    if (!dateInput) return;
+                    // Modo Social Media: monta yyyy-mm-dd a partir de mês+dia
+                    const monthSelect = row.querySelector("[data-installment-month]");
+                    const dayInput = row.querySelector("[data-installment-day]");
+                    if (monthSelect && dayInput) {
+                        const m = parseInt(monthSelect.value, 10);
+                        const d = parseInt(dayInput.value, 10);
+                        if (Number.isFinite(m) && m >= 1 && m <= 12 && Number.isFinite(d) && d >= 1 && d <= 31) {
+                            dateInput.value = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+                        }
+                        return;
+                    }
+                    // Modo recorrente comum: só dia → usa yearMonth
+                    if (dateInput.type === "number") {
+                        const newDate = dayToDate(dateInput.value);
+                        if (newDate) {
+                            dateInput.type = "date";
+                            dateInput.value = newDate;
+                        }
                     }
                 });
             }
@@ -749,7 +758,7 @@
                 // Em contrato recorrente, parcela é só o "dia que cai" do mês.
                 // Troca inputs de date por number 1-31; mantemos a data
                 // completa em um input hidden gerada via close_date.
-                syncInstallmentDateInputs(isRecurringContract);
+                syncInstallmentDateInputs(isRecurringContract, isSocialMedia);
             }
             // Mesmo padrão pro "Primeiro pagamento da recorrência":
             // recorrente = dia 1-31, único = data completa.
