@@ -908,11 +908,11 @@ class DashboardSmokeTest(TestCase):
                 "niche": self.niche.pk,
                 "stage": "Fechado",
                 "status": "Briefing",
-                "total_value": "3000",
+                "total_value": "9000",
                 # Browser-side JS still calcula entrada padrão (50%) mesmo
                 # com o wrapper escondido. O servidor precisa zerar.
                 "has_entry": "yes",
-                "entry_value": "1500",
+                "entry_value": "4500",
                 "payment_recurrence": "monthly",
                 "deliverables_count": "3",
                 "contract_duration_months": "3",
