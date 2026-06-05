@@ -155,7 +155,7 @@ FIELD_VISIBILITY_BY_SERVICE_TYPE = {
 
 # Tipos cujo bloco de pagamento é "valor único pós-produção": esconde
 # has_entry / entry_value e mantém apenas total_value + payment_due_date.
-SIMPLIFIED_PAYMENT_TYPES = POST_PRODUCTION_PAYMENT_TYPES | COMMISSION_PAYMENT_TYPES
+SIMPLIFIED_PAYMENT_TYPES = (POST_PRODUCTION_PAYMENT_TYPES - {PUBLICIDADE_SERVICE_TYPE}) | COMMISSION_PAYMENT_TYPES
 
 # Tipos sem reunião nem data de entrega (brief: Afiliação).
 NO_DELIVERY_TYPES = COMMISSION_PAYMENT_TYPES
@@ -574,6 +574,12 @@ class ProjectForm(forms.ModelForm):
         self.fields["has_entry"].help_text = "Marque Não quando o cliente pagar o valor total de uma vez."
         self.fields["has_installments"].help_text = "Marque Sim para cadastrar as parcelas com data e valor."
         self.fields["payment_recurrence"].help_text = "Use mensal recorrente quando o pagamento de publicidade se repetir por mais de um mês."
+        self.fields["payment_recurrence"].label = "Esse contrato tem recorr\u00eancia?"
+        self.fields["payment_recurrence"].choices = [
+            (PAYMENT_RECURRENCE_MONTHLY, "Sim"),
+            (PAYMENT_RECURRENCE_SINGLE, "N\u00e3o"),
+        ]
+        self.fields["payment_recurrence"].help_text = "Marque Sim quando o pagamento de publicidade se repetir por mais de um m\u00eas."
         self.fields["entry_value"].help_text = (
             f"Preenchido automaticamente com {self.default_entry_rate}% do valor total. "
             "Você pode ajustar manualmente se quiser."
@@ -841,10 +847,23 @@ class ProjectForm(forms.ModelForm):
                 if payment_recurrence == PAYMENT_RECURRENCE_MONTHLY:
                     if not duration_months or duration_months <= 1:
                         self.add_error("contract_duration_months", "Informe a duração da recorrência de pagamento.")
-                    elif not cleaned_data.get("payment_due_date"):
-                        cleaned_data["payment_due_date"] = cleaned_data.get("close_date")
+                    payment_due_day = cleaned_data.get("payment_due_day")
+                    if not payment_due_day and cleaned_data.get("payment_due_date"):
+                        payment_due_day = cleaned_data["payment_due_date"].day
+                        cleaned_data["payment_due_day"] = payment_due_day
+                    if payment_due_day:
+                        cleaned_data["payment_due_date"] = _date_from_payment_day(cleaned_data.get("close_date"), payment_due_day)
+                    if not cleaned_data.get("payment_due_date"):
+                        self.add_error("payment_due_day", "Informe o dia do pagamento.")
+                    entry_value = 0
+                    received_value = 0
+                    cleaned_data["entry_value"] = 0
+                    cleaned_data["received_value"] = 0
                 else:
                     cleaned_data["contract_duration_months"] = None
+                    if has_entry == HAS_ENTRY_YES and entry_value <= 0 and total_value > 0:
+                        entry_value = (Decimal(total_value) * Decimal(self.default_entry_rate) / Decimal(100)).quantize(Decimal("0.01"))
+                        cleaned_data["entry_value"] = entry_value
 
         management_value = cleaned_data.get("monthly_value") or 0
         if is_ugc_manager:
@@ -855,7 +874,11 @@ class ProjectForm(forms.ModelForm):
             if not cleaned_data.get("managed_creators_count"):
                 self.add_error("managed_creators_count", "Informe a quantidade de creators.")
 
-        if not is_recurring_contract and has_entry == HAS_ENTRY_NO:
+        if (
+            not is_recurring_contract
+            and has_entry == HAS_ENTRY_NO
+            and not (service_type_value == PUBLICIDADE_SERVICE_TYPE and payment_recurrence == PAYMENT_RECURRENCE_MONTHLY)
+        ):
             no_entry_value = management_value if is_ugc_manager and management_value > 0 else total_value
             entry_value = no_entry_value
             cleaned_data["entry_value"] = no_entry_value

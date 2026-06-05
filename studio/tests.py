@@ -585,7 +585,7 @@ class DashboardSmokeTest(TestCase):
         self.assertIn("has_installments", form.fields)
         self.assertIn("payment_recurrence", form.fields)
         self.assertIn("payment_due_day", form.fields)
-        self.assertEqual(form.fields["payment_recurrence"].label, "Recorrência de pagamento")
+        self.assertEqual(form.fields["payment_recurrence"].label, "Esse contrato tem recorrência?")
         self.assertIn("social_media", form.recurring_contract_types)
         self.assertIn("consultoria_marketing", form.recurring_contract_types)
         self.assertIn("new_service_category", form.fields)
@@ -873,9 +873,9 @@ class DashboardSmokeTest(TestCase):
                 "niche": self.niche.pk,
                 "stage": "Fechado",
                 "status": "Briefing",
-                "total_value": "9000",
+                "total_value": "3000",
                 # Browser-side JS still calcula entrada padrão (50%) mesmo
-                # com o wrapper escondido. O servidor precisa zerar.
+                # com o wrapper escondido em recorrencia. O servidor precisa zerar.
                 "has_entry": "yes",
                 "entry_value": "4500",
                 "payment_recurrence": "monthly",
@@ -904,8 +904,7 @@ class DashboardSmokeTest(TestCase):
         for installment in installments:
             self.assertEqual(installment.amount, Decimal("3000.00"))
             self.assertFalse(installment.paid)
-        # Publicidade não tem entrada nem recebido — servidor ignora o que
-        # o navegador mandou em entry_value para o tipo simplificado.
+        # Publicidade recorrente não tem entrada; o valor informado é mensal.
         self.assertEqual(project.entry_value, Decimal("0"))
         self.assertEqual(project.received_value, Decimal("0"))
         self.assertEqual(project.stage, "Fechado")
@@ -941,6 +940,7 @@ class DashboardSmokeTest(TestCase):
         self.assertRedirects(response, reverse("jobs"))
         project = Project.objects.get(workspace=self.workspace, company="Reserva")
         self.assertEqual(project.installments.count(), 0)
+        self.assertEqual(project.entry_value, Decimal("750.00"))
 
     def test_publicidade_form_without_contract_duration_defaults_to_single_job(self):
         form = ProjectForm(
@@ -967,7 +967,36 @@ class DashboardSmokeTest(TestCase):
         project = form.save(commit=False)
 
         self.assertIsNone(project.contract_duration_months)
-        self.assertEqual(project.entry_value, Decimal("0"))
+        self.assertEqual(project.entry_value, Decimal("750.00"))
+        self.assertEqual(project.received_value, Decimal("0"))
+
+    def test_publicidade_single_payment_without_entry_sets_full_value(self):
+        form = ProjectForm(
+            data={
+                "company": "Reserva",
+                "service_type": "publicidade",
+                "closing_source": "Inbound",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "1500",
+                "payment_recurrence": "single",
+                "has_entry": "no",
+                "deliverables_count": "2",
+                "publication_date": date.today().isoformat(),
+                "close_date": date.today().isoformat(),
+                "due_date": (date.today() + timedelta(days=30)).isoformat(),
+                "payment_due_date": (date.today() + timedelta(days=30)).isoformat(),
+                "has_installments": "no",
+            },
+            workspace=self.workspace,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        project = form.save(commit=False)
+
+        self.assertIsNone(project.contract_duration_months)
+        self.assertEqual(project.entry_value, Decimal("1500"))
         self.assertEqual(project.received_value, Decimal("0"))
 
     def test_publicidade_single_payment_recurrence_ignores_stale_contract_duration(self):
@@ -1029,12 +1058,10 @@ class DashboardSmokeTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("contract_duration_months", form.errors)
 
-    def test_publicidade_multi_month_without_payment_date_uses_close_date(self):
-        self.client.force_login(self.user)
+    def test_publicidade_monthly_recurrence_requires_payment_day(self):
         close_date = date(2026, 5, 21)
-        response = self.client.post(
-            reverse("project_create"),
-            {
+        form = ProjectForm(
+            data={
                 "company": "Reserva Sem Dia Fixo",
                 "service_type": "publicidade",
                 "closing_source": "Inbound",
@@ -1058,18 +1085,11 @@ class DashboardSmokeTest(TestCase):
                 "installments-MIN_NUM_FORMS": "0",
                 "installments-MAX_NUM_FORMS": "1000",
             },
+            workspace=self.workspace,
         )
-        self.assertRedirects(response, reverse("jobs"))
-        project = Project.objects.get(workspace=self.workspace, company="Reserva Sem Dia Fixo")
-        installments = list(project.installments.order_by("due_date"))
 
-        self.assertEqual(project.payment_due_date, close_date)
-        self.assertEqual(project.entry_value, Decimal("0"))
-        self.assertEqual([item.due_date for item in installments], [
-            date(2026, 5, 21),
-            date(2026, 6, 21),
-            date(2026, 7, 21),
-        ])
+        self.assertFalse(form.is_valid())
+        self.assertIn("payment_due_day", form.errors)
 
     def test_project_form_without_entry_sets_entry_to_total_value(self):
         form = ProjectForm(
@@ -1350,7 +1370,7 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, 'data-entry-receipt-service-types="ugc_creator,freelancer,editora_video,videomaker,storymaker,ugc_manager,publicidade"', html=False)
         self.assertContains(response, 'data-show-for-type="storymaker,videomaker"', html=False)
         self.assertContains(response, 'data-show-for-type="ugc_manager"', html=False)
-        self.assertContains(response, 'Recorrência de pagamento', html=False)
+        self.assertContains(response, 'Esse contrato tem recorrência?', html=False)
         self.assertContains(response, 'data-show-for-type="publicidade"', html=False)
         self.assertContains(response, 'data-payment-recurring-label="Duração da recorrência"', html=False)
         self.assertContains(response, 'data-ugc-manager-label="Valor total de contrato"', html=False)

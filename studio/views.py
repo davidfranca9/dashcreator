@@ -1800,7 +1800,7 @@ def _sync_auto_monthly_installments(
     com mesmo dia do mês baseado em payment_due_date.
 
     O valor de cada parcela depende do tipo:
-    - Publicidade: total_value é o valor total → divide por duration.
+    - Publicidade recorrente: total_value é o valor mensal do contrato.
     - Contratos recorrentes: total_value é "Valor mensal do contrato" → usa
       como está (parcela = total_value).
 
@@ -1821,10 +1821,7 @@ def _sync_auto_monthly_installments(
     if not should_generate:
         return
     total = Decimal(project.total_value or 0)
-    if is_publicidade:
-        amount_per_month = (total / Decimal(duration)).quantize(Decimal("0.01"))
-    else:
-        amount_per_month = total.quantize(Decimal("0.01"))
+    amount_per_month = total.quantize(Decimal("0.01"))
     base_day = base_date.day
     for index in range(duration):
         month_index = base_date.month - 1 + index

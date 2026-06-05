@@ -630,6 +630,10 @@
             setFieldLabel(closeDateLabel, isUgcManager ? "ugcManagerLabel" : "defaultLabel");
             setFieldLabel(contractDurationLabel, isPaymentRecurring ? "paymentRecurringLabel" : "defaultLabel");
             setFieldLabel(managementValueLabel, isUgcManager ? "ugcManagerLabel" : "defaultLabel");
+            if (isPaymentRecurring) {
+                if (totalValueLabel) totalValueLabel.textContent = "Valor mensal do contrato";
+                if (paymentDueDateLabel) paymentDueDateLabel.textContent = "Dia do pagamento";
+            }
         };
 
         const applyServiceTypeVisibility = () => {
@@ -675,17 +679,20 @@
             });
 
             if (hasEntryWrapper) {
-                hasEntryWrapper.hidden = isSimplifiedPayment || isCommission;
+                hasEntryWrapper.hidden = isSimplifiedPayment || isCommission || isPaymentRecurring;
             }
             if (hasInstallmentsWrapper) {
                 hasInstallmentsWrapper.hidden = !isRecurringContract;
             }
-            if ((isSimplifiedPayment || isCommission) && entryValueWrapper) {
+            if ((isSimplifiedPayment || isCommission || isPaymentRecurring) && entryValueWrapper) {
                 entryValueWrapper.hidden = true;
                 if (entryField) {
                     entryField.value = "0.00";
                     entryWasEdited = false;
                 }
+            }
+            if (isPaymentRecurring && entryDueDateWrapper) {
+                entryDueDateWrapper.hidden = true;
             }
             if (isCommission && wrappersByName.total_value) {
                 wrappersByName.total_value.hidden = true;
@@ -751,7 +758,7 @@
                 wrappersByName.payment_due_date.hidden = true;
             }
             syncServiceLabels(isRecurringContract, isUgcManager, isPaymentRecurring);
-            if (!isRecurringContract && !isSimplifiedPayment && !isCommission) {
+            if (!isRecurringContract && !isSimplifiedPayment && !isCommission && !isPaymentRecurring) {
                 syncEntryValue();
             }
         };
