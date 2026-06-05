@@ -274,6 +274,7 @@ class Project(WorkspaceOwnedModel):
     deliverables_count = models.PositiveIntegerField(default=1)
     progress = models.PositiveSmallIntegerField(default=0)
     payment_due_date = models.DateField(null=True, blank=True)
+    entry_due_date = models.DateField(null=True, blank=True)
     meeting_scheduled = models.BooleanField(default=False)
     meeting_date = models.DateField(null=True, blank=True)
     note = models.TextField(blank=True, default="")

@@ -528,6 +528,11 @@ class ProjectForm(forms.ModelForm):
         self.fields["due_date"].input_formats = ["%Y-%m-%d"]
         self.fields["payment_due_date"].widget.format = "%Y-%m-%d"
         self.fields["payment_due_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["entry_due_date"].widget.format = "%Y-%m-%d"
+        self.fields["entry_due_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["entry_due_date"].label = "Data de recebimento da entrada"
+        self.fields["entry_due_date"].help_text = "Quando você espera receber o valor da entrada."
+        self.fields["entry_due_date"].required = False
         if not self.is_bound:
             payment_due_date = self.initial.get("payment_due_date") or getattr(self.instance, "payment_due_date", None)
             if isinstance(payment_due_date, date):
@@ -575,6 +580,7 @@ class ProjectForm(forms.ModelForm):
         )
         self.fields["stage"].help_text = "A etapa acompanha o status automaticamente."
         self.fields["payment_due_date"].help_text = "Use quando não houver parcelas cadastradas."
+        self.fields["payment_due_date"].label = "Data de recebimento do restante"
         self.fields["payment_due_day"].help_text = "Dia fixo em que o pagamento mensal acontece."
         self.fields["meeting_date"].help_text = "Defina a data da reunião para gerar o atalho do Google Agenda."
         self.fields["note"].help_text = "Campo livre para anotações extras desse job."
@@ -713,6 +719,7 @@ class ProjectForm(forms.ModelForm):
                 "has_installments",
                 "payment_recurrence",
                 "payment_due_day",
+                "entry_due_date",
                 "payment_due_date",
                 # --- Observações no final ---
                 "note",
@@ -904,6 +911,7 @@ class ProjectForm(forms.ModelForm):
             "entry_value",
             "received_value",
             "deliverables_count",
+            "entry_due_date",
             "payment_due_date",
             "meeting_scheduled",
             "meeting_date",
