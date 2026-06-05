@@ -467,9 +467,11 @@
                         // Extrai mês/dia do valor atual
                         const isoValue = dateInput.value;
                         let monthVal = "", dayVal = "";
+                        let hadValue = false;
                         if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue)) {
                             monthVal = parseInt(isoValue.slice(5, 7), 10).toString();
                             dayVal = parseInt(isoValue.slice(8, 10), 10).toString();
+                            hadValue = true;
                         }
                         dateInput.dataset.originalIso = isoValue;
                         dateInput.type = "hidden";
@@ -503,6 +505,20 @@
                         monthDayWrap.appendChild(dayInput);
                         field.appendChild(monthDayWrap);
                         if (label) label.textContent = "Mês e dia do pagamento";
+                        // Se a parcela veio do servidor com data (criar/editar
+                        // com erro de validação reprocessado), preserva o
+                        // valor pra autoFill não sobrescrever, e guarda o ano
+                        // original pra submit reconstruir corretamente.
+                        if (hadValue) {
+                            monthSelect.dataset.userEdited = "true";
+                            const yearVal = isoValue.slice(0, 4);
+                            if (yearVal) monthSelect.dataset.autoYear = yearVal;
+                        }
+                        // Sempre que o usuário interagir com o select, marca
+                        // como editado pra preservar a escolha.
+                        monthSelect.addEventListener("change", () => {
+                            monthSelect.dataset.userEdited = "true";
+                        });
                     }
                     return;
                 }
