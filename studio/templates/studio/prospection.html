@@ -279,13 +279,16 @@
                 if (!config) return;
 
                 // Update otimista: move o card já no DOM antes da resposta.
-                const header = col.querySelector(".pipeline-column-header");
                 const overflow = col.querySelector(".pipeline-overflow");
                 const emptyMsg = col.querySelector(".pipeline-empty");
                 if (emptyMsg) emptyMsg.remove();
                 if (overflow) col.insertBefore(card, overflow);
                 else col.appendChild(card);
                 card.dataset.currentStage = targetStage;
+                // Remove ações/labels específicos da coluna anterior
+                // (ex.: chip "Fechado ✓") pra não confundir o usuário até
+                // a próxima renderização.
+                card.querySelectorAll(".pipeline-chip--success, .pipeline-card-actions").forEach((el) => el.remove());
                 bumpCount(sourceColumn, -1);
                 bumpCount(col, +1);
 
