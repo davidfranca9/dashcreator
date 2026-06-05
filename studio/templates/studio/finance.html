@@ -232,30 +232,30 @@
                 </article>
                 <a class="fd-box fd-box-link" href="{% url 'finance' %}?edit_cash_box_rule=reserve{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                     <div class="fd-box-head">
-                        <span class="fd-box-name fd-warn"><i class="ti ti-shield"></i> Reserva</span>
-                        <strong>{{ finance_desktop.reserve }}</strong>
+                        <span class="fd-box-name fd-warn"><i class="ti ti-shield"></i> Reserva <span class="fd-box-pill">saída</span></span>
+                        <strong>{{ finance_desktop.reserve }} <span class="fd-box-of">de {{ finance_desktop.reserve_target }}</span></strong>
                     </div>
                     <div class="fd-bar-wrap"><span class="fd-bar fd-bar-warn" style="width: {{ finance_desktop.reserve_progress }}%"></span></div>
-                    <div class="fd-box-meta"><span>{{ finance_desktop.reserve_percentage }} do restante</span><strong class="fd-warn">Editar</strong></div>
-                    <p>Meta: R$30.000 (6× pró-labore). Só usar em emergência real.</p>
+                    <div class="fd-box-meta"><span>meta {{ finance_desktop.reserve_percentage }} do restante</span><strong class="fd-warn">Editar</strong></div>
+                    <p>Registre saídas com categoria "Reserva" pra encher essa caixinha. Meta: R$30.000 (6× pró-labore).</p>
                 </a>
                 <a class="fd-box fd-box-link" href="{% url 'finance' %}?edit_cash_box_rule=investment{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                     <div class="fd-box-head">
-                        <span class="fd-box-name fd-purple"><i class="ti ti-rocket"></i> Investimento</span>
-                        <strong>{{ finance_desktop.investment }}</strong>
+                        <span class="fd-box-name fd-purple"><i class="ti ti-rocket"></i> Investimento <span class="fd-box-pill">saída</span></span>
+                        <strong>{{ finance_desktop.investment }} <span class="fd-box-of">de {{ finance_desktop.investment_target }}</span></strong>
                     </div>
                     <div class="fd-bar-wrap"><span class="fd-bar fd-bar-purple" style="width: {{ finance_desktop.investment_progress }}%"></span></div>
-                    <div class="fd-box-meta"><span>{{ finance_desktop.investment_percentage }} do restante</span><strong class="fd-purple">Editar</strong></div>
-                    <p>Equipamentos, cursos, mentorias, eventos de networking.</p>
+                    <div class="fd-box-meta"><span>meta {{ finance_desktop.investment_percentage }} do restante</span><strong class="fd-purple">Editar</strong></div>
+                    <p>Registre saídas com categoria "Investimento" pra encher. Equipamentos, cursos, mentorias, networking.</p>
                 </a>
                 {% for item in finance_desktop.custom_boxes %}
                     <a class="fd-box fd-box-link fd-box-custom" href="{% url 'finance' %}?edit_cash_box={{ item.id }}{% if selected_month.value %}&month={{ selected_month.value }}{% endif %}">
                         <div class="fd-box-head">
-                            <span class="fd-box-name fd-text-green"><i class="ti {{ item.icon }}"></i> {{ item.name }}</span>
-                            <strong>{{ item.amount }}</strong>
+                            <span class="fd-box-name fd-text-green"><i class="ti {{ item.icon }}"></i> {{ item.name }} <span class="fd-box-pill">saída</span></span>
+                            <strong>{{ item.amount }} <span class="fd-box-of">de {{ item.target }}</span></strong>
                         </div>
                         <div class="fd-bar-wrap"><span class="fd-bar fd-bar-green" style="width: {{ item.progress }}%"></span></div>
-                        <div class="fd-box-meta"><span>{{ item.percentage }} do fluxo livre</span><strong class="fd-text-green">Editável</strong></div>
+                        <div class="fd-box-meta"><span>meta {{ item.percentage }}</span><strong class="fd-text-green">Editável</strong></div>
                         <p>{{ item.description }}</p>
                     </a>
                 {% empty %}

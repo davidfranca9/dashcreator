@@ -1972,24 +1972,35 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         investment_config["key"],
         Decimal(investment_config["default"]),
     )
-    reserve_amount = (distribution_base * reserve_percentage / Decimal("100")).quantize(Decimal("0.01"))
-    investment_amount = (distribution_base * investment_percentage / Decimal("100")).quantize(Decimal("0.01"))
-    free_flow_base = max(distribution_base - reserve_amount - investment_amount, ZERO)
+    reserve_target = (distribution_base * reserve_percentage / Decimal("100")).quantize(Decimal("0.01"))
+    investment_target = (distribution_base * investment_percentage / Decimal("100")).quantize(Decimal("0.01"))
+    # Reserva e Investimento agora refletem o que de fato foi registrado
+    # como saída (categoria=reserve / investment). Os valores calculados
+    # acima continuam disponíveis como "meta" pra UI.
+    reserve_amount = paid_by_category.get(FinanceEntry.CATEGORY_RESERVE, ZERO)
+    investment_amount = paid_by_category.get(FinanceEntry.CATEGORY_INVESTMENT, ZERO)
+    # Fluxo livre permanece automático = receita - pró-labore - custo fixo
+    # - reserva planejada - investimento planejado. Não considera as saídas
+    # reservas/investimento registradas (pra não duplicar a dedução).
+    free_flow_base = max(distribution_base - reserve_target - investment_target, ZERO)
     custom_boxes_total = ZERO
     custom_box_items = []
     for box in cash_boxes:
         is_fixed = box.allocation_mode == "fixed"
         if is_fixed:
-            amount = Decimal(box.allocation_amount or 0).quantize(Decimal("0.01"))
-            amount = min(amount, free_flow_base)
+            target = Decimal(box.allocation_amount or 0).quantize(Decimal("0.01"))
+            target_for_freeflow = min(target, free_flow_base)
             mode_text = f"valor fixo · {currency(box.allocation_amount or 0)}"
-            progress = 100 if amount > ZERO and Decimal(box.allocation_amount or 0) > ZERO and amount >= Decimal(box.allocation_amount or 0) else (int(round((amount / Decimal(box.allocation_amount or 0)) * 100)) if Decimal(box.allocation_amount or 0) > ZERO else 0)
         else:
             percentage = Decimal(box.allocation_percentage or 0)
-            amount = (free_flow_base * percentage / Decimal("100")).quantize(Decimal("0.01"))
+            target = (free_flow_base * percentage / Decimal("100")).quantize(Decimal("0.01"))
+            target_for_freeflow = target
             mode_text = f"{int(percentage)}% do fluxo livre" if percentage == percentage.to_integral() else f"{percentage}% do fluxo livre"
-            progress = min(100, int(round(percentage)))
-        custom_boxes_total += amount
+        # Manual: o valor exibido é o que foi registrado via saídas com
+        # cash_box=esta. A meta calculada acima vira "alvo" mostrado em texto.
+        actual_amount = paid_by_cash_box.get(box.pk, ZERO)
+        progress = min(100, int(round((actual_amount / target) * 100))) if target > ZERO else 0
+        custom_boxes_total += target_for_freeflow
         custom_box_items.append(
             {
                 "id": box.pk,
@@ -1997,20 +2008,21 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                 "icon": box.icon or "ti-pig-money",
                 "description": box.description or mode_text,
                 "percentage": mode_text,
-                "amount": currency(amount),
+                "amount": currency(actual_amount),
+                "target": currency(target),
                 "progress": progress,
             }
         )
     free_flow_amount = max(free_flow_base - custom_boxes_total, ZERO)
-    reserve_goal = Decimal("30000")
-    reserve_progress = min(100, round((reserve_amount / reserve_goal) * 100)) if reserve_goal and reserve_amount else 0
 
     # Progresso (% preenchido) de cada caixinha fixa, pra barrinhas mostrarem
-    # o quanto cada objetivo foi efetivamente coberto pela receita do mês.
+    # o quanto cada objetivo foi efetivamente coberto.
     pro_labore_progress = min(100, int(round((pro_labore_available / pro_labore_amount) * 100))) if pro_labore_amount > ZERO else 0
     fixed_cost_progress = min(100, int(round((fixed_cost_paid / fixed_cost_amount) * 100))) if fixed_cost_amount > ZERO else 0
-    investment_goal_monthly = (distribution_base * investment_percentage / Decimal("100")).quantize(Decimal("0.01")) if distribution_base > ZERO else ZERO
-    investment_progress = 100 if investment_goal_monthly > ZERO and investment_amount > ZERO else 0
+    # Reserva e Investimento: progresso é o quanto foi registrado vs meta calculada
+    reserve_progress = min(100, int(round((reserve_amount / reserve_target) * 100))) if reserve_target > ZERO else 0
+    investment_progress = min(100, int(round((investment_amount / investment_target) * 100))) if investment_target > ZERO else 0
+    # Fluxo livre: continua automático
     free_flow_progress = min(100, int(round((free_flow_amount / incoming_total) * 100))) if incoming_total > ZERO else 0
 
     incoming_items = [
@@ -2085,6 +2097,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "distribution_pending_text": distribution_pending_text,
             "distribution_base": currency(distribution_base),
             "reserve": currency(reserve_amount),
+            "reserve_target": currency(reserve_target),
             "reserve_percentage": _percentage_text(reserve_percentage),
             "reserve_progress": reserve_progress,
             "pro_labore_progress": pro_labore_progress,
@@ -2092,6 +2105,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "investment_progress": investment_progress,
             "free_flow_progress": free_flow_progress,
             "investment": currency(investment_amount),
+            "investment_target": currency(investment_target),
             "investment_percentage": _percentage_text(investment_percentage),
             "custom_boxes": custom_box_items,
             "custom_boxes_total": currency(custom_boxes_total),
