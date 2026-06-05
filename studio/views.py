@@ -1756,7 +1756,8 @@ def prospect_reactivate(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 @require_POST
 def prospect_set_stage(request: HttpRequest, pk: int) -> HttpResponse:
-    """Move um lead pra outra etapa do pipeline (ex.: Rascunho → Prospecção)."""
+    """Move um lead pra outra etapa do pipeline (ex.: Rascunho → Prospecção).
+    Se vinha do Banco de Marcas (archive_reason setado), reativa também."""
     from django.utils import timezone as _tz
     workspace = _workspace(request)
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
@@ -1767,7 +1768,9 @@ def prospect_set_stage(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("prospection")
     prospect.stage = stage
     prospect.last_activity_at = _tz.now()
-    prospect.save(update_fields=["stage", "last_activity_at", "updated_at"])
+    prospect.archive_reason = ""
+    prospect.archived_at = None
+    prospect.save(update_fields=["stage", "archive_reason", "archived_at", "last_activity_at", "updated_at"])
     return redirect("prospection")
 
 
