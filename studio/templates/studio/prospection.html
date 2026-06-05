@@ -52,9 +52,9 @@
             </article>
         {% endif %}
 
-        <section class="pipeline-board" id="stale-list">
+        <section class="pipeline-board" id="stale-list" data-pipeline-board>
             {% for column in pipeline_columns %}
-                <article class="pipeline-column pipeline-column--{{ column.tone }}">
+                <article class="pipeline-column pipeline-column--{{ column.tone }}" data-pipeline-column="{{ column.key }}">
                     <header class="pipeline-column-header">
                         <span class="pipeline-column-title"><span class="pipeline-column-dot"></span>{{ column.title }}</span>
                         <span class="pipeline-column-count">{{ column.count }}</span>
@@ -62,7 +62,7 @@
 
                     {% if column.items %}
                         {% for item in column.items %}
-                            <article class="pipeline-card{% if item.is_stale %} pipeline-card--stale{% endif %}">
+                            <article class="pipeline-card{% if item.is_stale %} pipeline-card--stale{% endif %}" draggable="true" data-pipeline-card data-prospect-id="{{ item.id }}" data-current-stage="{{ item.stage }}">
                                 {% if item.is_stale %}<span class="pipeline-card-stale-note">{{ item.days_since_last }}d sem resposta</span>{% endif %}
                                 <div class="pipeline-card-top">
                                     <div>
@@ -218,6 +218,73 @@
                 });
             }
         }
+    })();
+
+    /* Drag-and-drop entre colunas do pipeline */
+    (() => {
+        const board = document.querySelector("[data-pipeline-board]");
+        if (!board) return;
+        const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value
+            || (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || "";
+
+        const STAGE_ENDPOINTS = {
+            "Rascunho":             { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Rascunho" } },
+            "Prospeccao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Prospeccao" } },
+            "Aguardando retorno":   { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Aguardando retorno" } },
+            "Negociacao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Negociacao" } },
+            "Fechado":              { url: "{% url 'prospect_archive' 0 %}",   body: { reason: "fechado" } },
+        };
+
+        let dragged = null;
+
+        board.querySelectorAll("[data-pipeline-card]").forEach((card) => {
+            card.addEventListener("dragstart", (e) => {
+                dragged = card;
+                card.classList.add("pipeline-card--dragging");
+                e.dataTransfer.effectAllowed = "move";
+            });
+            card.addEventListener("dragend", () => {
+                if (dragged) dragged.classList.remove("pipeline-card--dragging");
+                dragged = null;
+                board.querySelectorAll(".pipeline-column--dropping").forEach((c) => c.classList.remove("pipeline-column--dropping"));
+            });
+        });
+
+        board.querySelectorAll("[data-pipeline-column]").forEach((col) => {
+            col.addEventListener("dragover", (e) => {
+                if (!dragged) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                col.classList.add("pipeline-column--dropping");
+            });
+            col.addEventListener("dragleave", () => col.classList.remove("pipeline-column--dropping"));
+            col.addEventListener("drop", async (e) => {
+                e.preventDefault();
+                col.classList.remove("pipeline-column--dropping");
+                if (!dragged) return;
+                const targetStage = col.dataset.pipelineColumn;
+                const currentStage = dragged.dataset.currentStage;
+                if (targetStage === currentStage) return;
+                const config = STAGE_ENDPOINTS[targetStage];
+                if (!config) return;
+                const id = dragged.dataset.prospectId;
+                const url = config.url.replace("/0/", "/" + id + "/");
+                const fd = new FormData();
+                Object.entries(config.body).forEach(([k, v]) => fd.append(k, v));
+                try {
+                    await fetch(url, {
+                        method: "POST",
+                        headers: { "X-CSRFToken": csrf },
+                        body: fd,
+                        credentials: "same-origin",
+                    });
+                    window.location.reload();
+                } catch (err) {
+                    console.error(err);
+                    alert("Não foi possível mover o lead. Tente recarregar.");
+                }
+            });
+        });
     })();
 </script>
 {% endblock %}
