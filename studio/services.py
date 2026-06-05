@@ -2107,6 +2107,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                     "name": item.name,
                     "due": _fixed_cost_due_text(item),
                     "amount": currency(item.amount),
+                    "amount_raw": f"{Decimal(item.amount or 0):.2f}",
                     "recurrence_label": item.get_recurrence_display(),
                 }
                 for item in fixed_tools
@@ -2118,6 +2119,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                     "name": item.name,
                     "due": _fixed_cost_due_text(item),
                     "amount": currency(item.amount),
+                    "amount_raw": f"{Decimal(item.amount or 0):.2f}",
                     "recurrence_label": item.get_recurrence_display(),
                 }
                 for item in fixed_collaborators

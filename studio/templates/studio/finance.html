@@ -507,14 +507,14 @@
                             {% if finance_desktop.fixed_tools %}
                                 <optgroup label="Ferramentas">
                                     {% for item in finance_desktop.fixed_tools %}
-                                        <option value="{{ item.name }}">{{ item.name }} · {{ item.amount }}</option>
+                                        <option value="{{ item.name }}" data-amount="{{ item.amount_raw }}">{{ item.name }} · {{ item.amount }}</option>
                                     {% endfor %}
                                 </optgroup>
                             {% endif %}
                             {% if finance_desktop.fixed_collaborators %}
                                 <optgroup label="Colaboradores">
                                     {% for item in finance_desktop.fixed_collaborators %}
-                                        <option value="{{ item.name }}">{{ item.name }} · {{ item.amount }}</option>
+                                        <option value="{{ item.name }}" data-amount="{{ item.amount_raw }}">{{ item.name }} · {{ item.amount }}</option>
                                     {% endfor %}
                                 </optgroup>
                             {% endif %}
@@ -754,9 +754,21 @@
         const fixedCostWrapper = document.querySelector("[data-fixed-cost-wrapper]");
         const fixedCostSelect = document.querySelector("[data-fixed-cost-select]");
         const descriptionInput = descriptionWrapper ? descriptionWrapper.querySelector("input, textarea") : null;
+        // Procura o input de Valor (amount) do form de saída pelo name suffix.
+        const amountInput = document.querySelector('input[name$="-amount"]');
         if (fixedCostSelect && descriptionInput) {
             fixedCostSelect.addEventListener("change", () => {
-                if (fixedCostSelect.value) descriptionInput.value = fixedCostSelect.value;
+                if (!fixedCostSelect.value) return;
+                // 1) Copia o nome do item pra description (hidden) que vai no save
+                descriptionInput.value = fixedCostSelect.value;
+                // 2) Auto-preenche o input de Valor com o valor do custo fixo
+                const opt = fixedCostSelect.options[fixedCostSelect.selectedIndex];
+                const amountRaw = opt && opt.dataset ? opt.dataset.amount : "";
+                if (amountRaw && amountInput) {
+                    amountInput.value = amountRaw;
+                    // Dispara input/change pra rodar qualquer handler dependente
+                    amountInput.dispatchEvent(new Event("input", { bubbles: true }));
+                }
             });
         }
         if (!categorySelect) return;
@@ -797,6 +809,23 @@
         };
         categorySelect.addEventListener("change", sync);
         sync();
+
+        // Edição: se a saída salva era de Custo fixo, pré-seleciona o item
+        // no dropdown casando pelo nome guardado em description. Se o item
+        // foi renomeado ou apagado, o select fica sem seleção e o
+        // description (oculto) preserva o nome original.
+        if (
+            categorySelect.value === "fixed_cost"
+            && fixedCostSelect
+            && descriptionInput
+            && descriptionInput.value
+        ) {
+            const target = descriptionInput.value;
+            const hasMatch = Array.from(fixedCostSelect.options).some(
+                (opt) => opt.value === target
+            );
+            if (hasMatch) fixedCostSelect.value = target;
+        }
     })();
 
     /* Modal "Nova caixinha" — toggle % vs valor fixo */
