@@ -141,16 +141,16 @@
                 </div>
             </header>
 
-            {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                        <div class="message">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
             {% block content %}{% endblock %}
         </main>
+
+        {% if messages %}
+            <div class="toast-stack" data-toast-stack>
+                {% for message in messages %}
+                    <div class="toast" data-toast>{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <nav class="bottom-nav" aria-label="Navegação principal">
             {% for item in nav_items %}
@@ -346,6 +346,18 @@
 
             overlay.querySelectorAll("a.bottom-nav-popover-link").forEach((link) => {
                 link.addEventListener("click", closeOverlay);
+            });
+        })();
+
+        // Toasts: auto-dismiss em 4s, ou click pra fechar imediato.
+        (() => {
+            document.querySelectorAll("[data-toast]").forEach((toast) => {
+                const hide = () => {
+                    toast.classList.add("is-hiding");
+                    toast.addEventListener("animationend", () => toast.remove(), { once: true });
+                };
+                toast.addEventListener("click", hide);
+                window.setTimeout(hide, 4000);
             });
         })();
     </script>

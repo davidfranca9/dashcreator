@@ -5064,6 +5064,36 @@ body.page-finance .workspace-label {
     margin-left: 6px; vertical-align: middle;
 }
 .fd-box-of { font-size: 12px; font-weight: 500; color: #94a3b8; }
+
+/* ============ Toasts flutuantes (Django messages) ============ */
+.toast-stack {
+    position: fixed; right: 20px; bottom: 20px; z-index: 300;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    pointer-events: none;
+}
+.toast {
+    pointer-events: auto;
+    background: #1a2340; color: #fff;
+    padding: 11px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 10px 30px rgba(26,35,64,.18);
+    animation: toast-in .25s ease-out;
+    max-width: 340px;
+    cursor: pointer;
+}
+.toast.is-hiding { animation: toast-out .25s ease-in forwards; }
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(8px); }
+}
+@media (max-width: 640px) {
+    .toast-stack { left: 12px; right: 12px; bottom: 80px; }
+    .toast { max-width: 100%; }
+}
 .fd-text-red { color: #ef4444; font-weight: 600; }
 .fd-dot-red { background: #ef4444; }
 
