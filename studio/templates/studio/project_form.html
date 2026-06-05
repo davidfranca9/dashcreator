@@ -549,6 +549,38 @@
             });
         };
 
+        const autoFillSocialMediaParcelaMonths = () => {
+            if (!installmentsBlock) return;
+            const closeIso = closeDateField ? closeDateField.value : "";
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) return;
+            const startYear = parseInt(closeIso.slice(0, 4), 10);
+            const startMonth = parseInt(closeIso.slice(5, 7), 10); // 1-12
+            const rows = installmentsBlock.querySelectorAll(".installment-row");
+            rows.forEach((row, idx) => {
+                const monthSelect = row.querySelector("[data-installment-month]");
+                if (!monthSelect) return;
+                // Se o usuário marcou como editada manualmente, deixa.
+                if (monthSelect.dataset.userEdited === "true") return;
+                const monthOffset = startMonth + idx - 1;
+                const newMonth = (monthOffset % 12) + 1;
+                const newYear = startYear + Math.floor(monthOffset / 12);
+                monthSelect.value = String(newMonth);
+                monthSelect.dataset.autoYear = String(newYear);
+                // Marca como auto pra distinguir de edição manual.
+                if (!monthSelect.dataset.changeBound) {
+                    monthSelect.dataset.changeBound = "true";
+                    monthSelect.addEventListener("change", () => {
+                        monthSelect.dataset.userEdited = "true";
+                    });
+                }
+            });
+        };
+
+        if (closeDateField) closeDateField.addEventListener("change", () => {
+            const selected = serviceTypeField ? serviceTypeField.value : "";
+            if (selected === "social_media") autoFillSocialMediaParcelaMonths();
+        });
+
         form.addEventListener("submit", () => {
             const closeIso = closeDateField ? closeDateField.value : "";
             const yearMonth = /^\d{4}-\d{2}-\d{2}$/.test(closeIso) ? closeIso.slice(0, 7) : "";
@@ -558,7 +590,7 @@
                 return `${yearMonth}-${String(day).padStart(2, "0")}`;
             };
             if (installmentsBlock) {
-                const year = /^\d{4}-\d{2}-\d{2}$/.test(closeIso) ? closeIso.slice(0, 4) : new Date().getFullYear().toString();
+                const closeYear = /^\d{4}-\d{2}-\d{2}$/.test(closeIso) ? closeIso.slice(0, 4) : new Date().getFullYear().toString();
                 installmentsBlock.querySelectorAll(".installment-row").forEach((row) => {
                     const dateInput = row.querySelector('input[name$="-due_date"]');
                     if (!dateInput) return;
@@ -568,6 +600,11 @@
                     if (monthSelect && dayInput) {
                         const m = parseInt(monthSelect.value, 10);
                         const d = parseInt(dayInput.value, 10);
+                        // Usa o ano gerado automaticamente pra essa parcela
+                        // (que respeita transição de ano quando o contrato
+                        // ultrapassa Dez). Cai pro ano do close_date se
+                        // não houver auto-year (parcela manualmente editada).
+                        const year = monthSelect.dataset.autoYear || closeYear;
                         if (Number.isFinite(m) && m >= 1 && m <= 12 && Number.isFinite(d) && d >= 1 && d <= 31) {
                             dateInput.value = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
                         }
@@ -759,6 +796,10 @@
                 // Troca inputs de date por number 1-31; mantemos a data
                 // completa em um input hidden gerada via close_date.
                 syncInstallmentDateInputs(isRecurringContract, isSocialMedia);
+                // Social Media: auto-preenche meses sequenciais conforme
+                // close_date + contract_duration. Respeita parcelas que o
+                // usuário tenha editado manualmente.
+                if (isSocialMedia) autoFillSocialMediaParcelaMonths();
             }
             // Mesmo padrão pro "Primeiro pagamento da recorrência":
             // recorrente = dia 1-31, único = data completa.
