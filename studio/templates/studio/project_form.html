@@ -470,69 +470,6 @@
         const wizardActionsBlock = form.querySelector('[data-form-actions]');
         const installmentsBlock = form.querySelector('[data-installments-block]');
 
-        // Em contrato recorrente, troca inputs de data das parcelas por
-        // "dia do mês" (number 1-31). Antes do submit, reconstrói o
-        // yyyy-mm-dd usando o close_date.
-        const syncInstallmentDateInputs = (isRecurring) => {
-            if (!installmentsBlock) return;
-            installmentsBlock.querySelectorAll(".installment-row").forEach((row) => {
-                const dateInput = row.querySelector('input[name$="-due_date"]');
-                if (!dateInput) return;
-                if (isRecurring) {
-                    if (dateInput.type !== "number") {
-                        const isoValue = dateInput.value;
-                        let day = "";
-                        if (isoValue && /^\d{4}-\d{2}-\d{2}$/.test(isoValue)) {
-                            day = parseInt(isoValue.slice(8, 10), 10).toString();
-                        }
-                        dateInput.dataset.originalIso = isoValue;
-                        dateInput.type = "number";
-                        dateInput.min = "1";
-                        dateInput.max = "31";
-                        dateInput.step = "1";
-                        dateInput.value = day;
-                        const label = dateInput.closest(".installment-field")?.querySelector("span");
-                        if (label) label.textContent = "Dia do pagamento";
-                    }
-                } else {
-                    if (dateInput.type === "number") {
-                        const day = parseInt(dateInput.value, 10);
-                        const original = dateInput.dataset.originalIso || "";
-                        dateInput.type = "date";
-                        dateInput.removeAttribute("min");
-                        dateInput.removeAttribute("max");
-                        dateInput.removeAttribute("step");
-                        if (original) {
-                            dateInput.value = original;
-                        } else if (Number.isFinite(day) && day >= 1 && day <= 31 && closeDateField && closeDateField.value) {
-                            const closeIso = closeDateField.value;
-                            if (/^\d{4}-\d{2}-\d{2}$/.test(closeIso)) {
-                                dateInput.value = `${closeIso.slice(0, 7)}-${String(day).padStart(2, "0")}`;
-                            }
-                        }
-                        const label = dateInput.closest(".installment-field")?.querySelector("span");
-                        if (label) label.textContent = "Data";
-                    }
-                }
-            });
-        };
-
-        form.addEventListener("submit", () => {
-            if (!installmentsBlock) return;
-            const closeIso = closeDateField ? closeDateField.value : "";
-            const yearMonth = /^\d{4}-\d{2}-\d{2}$/.test(closeIso) ? closeIso.slice(0, 7) : "";
-            installmentsBlock.querySelectorAll(".installment-row").forEach((row) => {
-                const dateInput = row.querySelector('input[name$="-due_date"]');
-                if (!dateInput || dateInput.type !== "number") return;
-                const day = parseInt(dateInput.value, 10);
-                if (Number.isFinite(day) && day >= 1 && day <= 31 && yearMonth) {
-                    const newDate = `${yearMonth}-${String(day).padStart(2, "0")}`;
-                    dateInput.type = "date";
-                    dateInput.value = newDate;
-                }
-            });
-        });
-
         const csv = (raw) => String(raw || "").split(",").map((item) => item.trim()).filter(Boolean);
         const simplifiedTypes = csv(form.dataset.simplifiedPaymentTypes);
         const commissionTypes = csv(form.dataset.commissionPaymentTypes);
@@ -689,10 +626,6 @@
                 if (autoHint) {
                     autoHint.hidden = hasGeneratedInstallments;
                 }
-                // Em contrato recorrente, parcela é só o "dia que cai" do mês.
-                // Troca inputs de date por number 1-31; mantemos a data
-                // completa em um input hidden gerada via close_date.
-                syncInstallmentDateInputs(isRecurringContract);
             }
             if (wrappersByName.payment_due_date && isRecurringContract) {
                 wrappersByName.payment_due_date.hidden = true;
