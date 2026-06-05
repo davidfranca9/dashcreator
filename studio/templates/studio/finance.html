@@ -654,14 +654,27 @@
     (() => {
         const tabs = Array.from(document.querySelectorAll("[data-fd-tab]"));
         const views = Array.from(document.querySelectorAll(".fd-view"));
-        const activate = (index) => {
+        const STORAGE_KEY = "fd-active-tab";
+        const activate = (index, persist = true) => {
             tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.fdTab === String(index)));
             views.forEach((view, viewIndex) => view.classList.toggle("is-active", viewIndex === Number(index)));
+            if (persist) {
+                try { localStorage.setItem(STORAGE_KEY, String(index)); } catch (e) {}
+            }
         };
         tabs.forEach((tab) => tab.addEventListener("click", () => activate(tab.dataset.fdTab)));
         document.querySelectorAll("[data-fd-jump]").forEach((button) => {
             button.addEventListener("click", () => activate(button.dataset.fdJump));
         });
+        // Restaura a última aba ativa após qualquer reload do form (registrar
+        // saída, editar caixinha, etc.). Se houver editing_entry, mantém o
+        // padrão (modal já abre na Visão geral).
+        try {
+            const savedTab = localStorage.getItem(STORAGE_KEY);
+            if (savedTab !== null && tabs.some((t) => t.dataset.fdTab === savedTab)) {
+                activate(savedTab, false);
+            }
+        } catch (e) {}
 
         const modal = document.querySelector("[data-finance-modal]");
         const openers = document.querySelectorAll("[data-finance-modal-open]");
