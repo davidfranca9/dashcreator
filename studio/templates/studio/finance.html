@@ -153,7 +153,8 @@
                                                     data-confirm-open
                                                     data-confirm-installment="{{ item.installment_id }}"
                                                     data-confirm-name="{{ item.company }} · {{ item.kind }}"
-                                                    data-confirm-amount="{{ item.amount }}">Confirmar</button>
+                                                    data-confirm-amount="{{ item.amount }}"
+                                                    data-confirm-due-date="{{ item.due_date|date:'Y-m-d' }}">Confirmar</button>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -179,7 +180,8 @@
                                                 data-confirm-open
                                                 data-confirm-installment="{{ item.installment_id }}"
                                                 data-confirm-name="{{ item.company }} · {{ item.kind }}"
-                                                data-confirm-amount="{{ item.amount }}">Confirmar</button>
+                                                data-confirm-amount="{{ item.amount }}"
+                                                data-confirm-due-date="{{ item.due_date|date:'Y-m-d' }}">Confirmar</button>
                                     {% endif %}
                                 </div>
                             </div>
@@ -347,7 +349,8 @@
                                             data-confirm-open
                                             data-confirm-installment="{{ item.installment_id }}"
                                             data-confirm-name="{{ item.company }} · {{ item.kind }}"
-                                            data-confirm-amount="{{ item.amount }}">Confirmar</button>
+                                            data-confirm-amount="{{ item.amount }}"
+                                            data-confirm-due-date="{{ item.due_date|date:'Y-m-d' }}">Confirmar</button>
                                 {% else %}
                                     <span class="fd-tag fd-tag-blue">Pendente</span>
                                 {% endif %}
@@ -878,7 +881,7 @@
             amountInput.value = btn.dataset.confirmAmount || "";
             const today = new Date();
             const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-            dateInput.value = iso;
+            dateInput.value = btn.dataset.confirmDueDate || iso;
             overlay.classList.add("show");
         };
         const close = () => overlay.classList.remove("show");

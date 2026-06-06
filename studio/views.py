@@ -1792,6 +1792,52 @@ def _installments_payload_present(request: HttpRequest) -> bool:
     return "installments-TOTAL_FORMS" in request.POST
 
 
+def _shift_month_start(month_start: date, months: int) -> date:
+    month_index = (month_start.year * 12) + (month_start.month - 1) + months
+    year = month_index // 12
+    month = month_index % 12 + 1
+    return date(year, month, 1)
+
+
+def _repeat_installment_date(source_due_date: date, target_month: date) -> date:
+    last_day = calendar.monthrange(target_month.year, target_month.month)[1]
+    return date(target_month.year, target_month.month, min(source_due_date.day, last_day))
+
+
+def _sync_repeating_manual_installments(project: Project, workspace) -> None:
+    duration = int(project.contract_duration_months or 0)
+    if duration <= 1:
+        return
+
+    installments = list(project.installments.all().order_by("due_date", "pk"))
+    if not installments:
+        return
+
+    base_month = min(item.due_date.replace(day=1) for item in installments)
+    base_pattern = [
+        item
+        for item in installments
+        if item.due_date.replace(day=1) == base_month and Decimal(item.amount or 0) > 0
+    ]
+    if not base_pattern:
+        return
+
+    occupied_months = {item.due_date.replace(day=1) for item in installments}
+    for month_offset in range(1, duration):
+        target_month = _shift_month_start(base_month, month_offset)
+        if target_month in occupied_months:
+            continue
+        for source in base_pattern:
+            ProjectInstallment.objects.create(
+                project=project,
+                workspace=workspace,
+                due_date=_repeat_installment_date(source.due_date, target_month),
+                amount=source.amount,
+                paid=False,
+                paid_on=None,
+            )
+
+
 def _sync_auto_monthly_installments(
     project: Project, workspace, has_installments_yes: bool = True
 ) -> None:
@@ -1813,7 +1859,9 @@ def _sync_auto_monthly_installments(
     base_date = project.payment_due_date or project.close_date
     is_publicidade = project.service_type == "publicidade"
     if not is_publicidade:
-        if not has_installments_yes:
+        if has_installments_yes:
+            _sync_repeating_manual_installments(project, workspace)
+        else:
             project.installments.all().delete()
         return
     project.installments.all().delete()

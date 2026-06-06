@@ -736,15 +736,209 @@ class DashboardSmokeTest(TestCase):
         )
         self.assertRedirects(response, reverse("jobs"))
         project = Project.objects.get(workspace=self.workspace, company="Insider")
-        installments = list(project.installments.order_by("due_date"))
-        self.assertEqual(len(installments), 2)
+        installments = list(project.installments.order_by("due_date", "pk"))
+        self.assertEqual(len(installments), 6)
         self.assertEqual([i.due_date for i in installments], [
             date(2026, 5, 5),
             date(2026, 5, 20),
+            date(2026, 6, 5),
+            date(2026, 6, 20),
+            date(2026, 7, 5),
+            date(2026, 7, 20),
         ])
-        self.assertEqual([i.amount for i in installments], [Decimal("200.00"), Decimal("300.00")])
+        self.assertEqual(
+            [i.amount for i in installments],
+            [
+                Decimal("200.00"),
+                Decimal("300.00"),
+                Decimal("200.00"),
+                Decimal("300.00"),
+                Decimal("200.00"),
+                Decimal("300.00"),
+            ],
+        )
         self.assertTrue(installments[0].paid)
         self.assertFalse(installments[1].paid)
+        self.assertFalse(installments[2].paid)
+        self.assertFalse(installments[3].paid)
+        self.assertFalse(installments[4].paid)
+        self.assertFalse(installments[5].paid)
+
+    def test_manual_installment_repetition_preserves_custom_months(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 4, 20)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Maria Tavares",
+                "service_type": "social_media",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "1000",
+                "has_entry": "yes",
+                "entry_value": "0",
+                "received_value": "0",
+                "has_installments": "yes",
+                "close_date": close_date.isoformat(),
+                "due_date": date(2026, 7, 20).isoformat(),
+                "payment_due_day": "10",
+                "contract_duration_months": "3",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@maria",
+                "installments-TOTAL_FORMS": "4",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+                "installments-0-due_date": date(2026, 5, 10).isoformat(),
+                "installments-0-amount": "500",
+                "installments-1-due_date": date(2026, 5, 25).isoformat(),
+                "installments-1-amount": "500",
+                "installments-2-due_date": date(2026, 6, 12).isoformat(),
+                "installments-2-amount": "600",
+                "installments-3-due_date": date(2026, 6, 28).isoformat(),
+                "installments-3-amount": "400",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Maria Tavares")
+
+        installments = list(project.installments.order_by("due_date", "pk"))
+
+        self.assertEqual([item.due_date for item in installments], [
+            date(2026, 5, 10),
+            date(2026, 5, 25),
+            date(2026, 6, 12),
+            date(2026, 6, 28),
+            date(2026, 7, 10),
+            date(2026, 7, 25),
+        ])
+        self.assertEqual([item.amount for item in installments], [
+            Decimal("500.00"),
+            Decimal("500.00"),
+            Decimal("600.00"),
+            Decimal("400.00"),
+            Decimal("500.00"),
+            Decimal("500.00"),
+        ])
+
+    def test_marketing_consulting_manual_installments_repeat_across_duration(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 6, 1)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Reserva",
+                "service_type": "consultoria_marketing",
+                "closing_source": "Networking",
+                "content_distribution": "Nao se aplica",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "800",
+                "has_entry": "yes",
+                "entry_value": "0",
+                "received_value": "0",
+                "has_installments": "yes",
+                "close_date": close_date.isoformat(),
+                "due_date": date(2026, 8, 31).isoformat(),
+                "payment_due_day": "7",
+                "contract_duration_months": "3",
+                "briefing": "Consultoria mensal",
+                "installments-TOTAL_FORMS": "2",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+                "installments-0-due_date": date(2026, 6, 7).isoformat(),
+                "installments-0-amount": "400",
+                "installments-1-due_date": date(2026, 6, 21).isoformat(),
+                "installments-1-amount": "400",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Reserva")
+
+        installments = list(project.installments.order_by("due_date", "pk"))
+
+        self.assertEqual([item.due_date for item in installments], [
+            date(2026, 6, 7),
+            date(2026, 6, 21),
+            date(2026, 7, 7),
+            date(2026, 7, 21),
+            date(2026, 8, 7),
+            date(2026, 8, 21),
+        ])
+        self.assertEqual([item.amount for item in installments], [
+            Decimal("400.00"),
+            Decimal("400.00"),
+            Decimal("400.00"),
+            Decimal("400.00"),
+            Decimal("400.00"),
+            Decimal("400.00"),
+        ])
+
+    def test_deleted_installment_row_is_ignored_without_renumbering_formset(self):
+        self.client.force_login(self.user)
+        close_date = date(2026, 4, 20)
+        response = self.client.post(
+            reverse("project_create"),
+            {
+                "company": "Insider",
+                "service_type": "social_media",
+                "closing_source": "Indicacao",
+                "content_distribution": "Organico",
+                "niche": self.niche.pk,
+                "stage": "Fechado",
+                "status": "Briefing",
+                "total_value": "1000",
+                "has_entry": "yes",
+                "entry_value": "0",
+                "received_value": "0",
+                "has_installments": "yes",
+                "close_date": close_date.isoformat(),
+                "due_date": date(2026, 7, 20).isoformat(),
+                "payment_due_day": "10",
+                "contract_duration_months": "3",
+                "posts_per_month": "12",
+                "videos_per_month": "4",
+                "profile_managed": "@insider",
+                "installments-TOTAL_FORMS": "3",
+                "installments-INITIAL_FORMS": "0",
+                "installments-MIN_NUM_FORMS": "0",
+                "installments-MAX_NUM_FORMS": "1000",
+                "installments-0-due_date": date(2026, 5, 10).isoformat(),
+                "installments-0-amount": "500",
+                "installments-1-due_date": date(2026, 5, 15).isoformat(),
+                "installments-1-amount": "250",
+                "installments-1-DELETE": "on",
+                "installments-2-due_date": date(2026, 5, 25).isoformat(),
+                "installments-2-amount": "500",
+            },
+        )
+        self.assertRedirects(response, reverse("jobs"))
+        project = Project.objects.get(workspace=self.workspace, company="Insider")
+
+        installments = list(project.installments.order_by("due_date", "pk"))
+
+        self.assertEqual([item.due_date for item in installments], [
+            date(2026, 5, 10),
+            date(2026, 5, 25),
+            date(2026, 6, 10),
+            date(2026, 6, 25),
+            date(2026, 7, 10),
+            date(2026, 7, 25),
+        ])
+        self.assertEqual([item.amount for item in installments], [
+            Decimal("500.00"),
+            Decimal("500.00"),
+            Decimal("500.00"),
+            Decimal("500.00"),
+            Decimal("500.00"),
+            Decimal("500.00"),
+        ])
 
     def test_social_media_with_has_installments_no_does_not_generate(self):
         self.client.force_login(self.user)

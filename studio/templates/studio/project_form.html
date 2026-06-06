@@ -828,7 +828,7 @@
                 if (addButton) {
                     addButton.hidden = hasGeneratedInstallments;
                 }
-                installmentsBlock.querySelectorAll(".installment-delete").forEach((node) => {
+                installmentsBlock.querySelectorAll(".installment-delete-wrap").forEach((node) => {
                     node.hidden = hasGeneratedInstallments;
                 });
                 const autoHint = installmentsBlock.querySelector("[data-installments-auto-hint]");
@@ -1029,16 +1029,13 @@
                 e.preventDefault();
                 const row = btn.closest("[data-installment-row]");
                 if (!row) return;
-                const idInput = row.querySelector('input[name$="-id"]');
-                const isPersisted = idInput && idInput.value;
                 const deleteBox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-                if (isPersisted) {
-                    if (deleteBox) deleteBox.checked = true;
+                if (deleteBox) {
+                    deleteBox.checked = true;
+                    deleteBox.dispatchEvent(new Event("change", { bubbles: true }));
                     row.hidden = true;
                 } else {
                     row.remove();
-                    const totalFormsVal = parseInt(totalFormsField.value, 10) || 0;
-                    if (totalFormsVal > 0) totalFormsField.value = String(totalFormsVal - 1);
                 }
                 recomputeInstallmentsTotal();
             });
