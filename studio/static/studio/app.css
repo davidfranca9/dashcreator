@@ -5087,6 +5087,44 @@ body.page-finance .workspace-label {
 }
 .fd-box-of { font-size: 12px; font-weight: 500; color: #94a3b8; }
 
+/* ============ Botão olhinho — ocultar valores R$ ============ */
+.money-toggle {
+    background: transparent;
+    border: 1px solid var(--border, rgba(0,0,0,0.08));
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.money-toggle:hover { background: #f4f5f8; color: #1a2340; border-color: rgba(0,0,0,0.16); }
+.money-toggle-icon--closed { display: none; }
+body.money-hidden .money-toggle-icon--open { display: none; }
+body.money-hidden .money-toggle-icon--closed { display: inline-block; }
+
+/* Elementos com valor em R$ que devem ser blurrados quando body.money-hidden */
+body.money-hidden .fd-metric-value,
+body.money-hidden .fd-prolabore-value,
+body.money-hidden .fd-dist-value,
+body.money-hidden .fd-dist-total-value,
+body.money-hidden .fd-row-value,
+body.money-hidden .fd-box-head strong,
+body.money-hidden .fd-fixed-total strong,
+body.money-hidden .fd-fixed-total div,
+body.money-hidden .cf-val,
+body.money-hidden .stat-card > div > strong,
+body.money-hidden .pipeline-amount,
+body.money-hidden .chart-lbl-val,
+body.money-hidden .conversion-rate,
+body.money-hidden .pipeline-card-bottom strong,
+body.money-hidden .installments-total strong,
+body.money-hidden .activity-percent {
+    filter: blur(6px);
+    user-select: none;
+    transition: filter .15s ease;
+}
+
 /* ============ Toasts flutuantes (Django messages) ============ */
 .toast-stack {
     position: fixed; right: 20px; bottom: 20px; z-index: 300;
