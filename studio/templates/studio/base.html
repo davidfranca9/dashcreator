@@ -366,23 +366,61 @@
         })();
 
         // Ocultar/mostrar valores em R$ (estilo apps de banco).
+        // Substitui o texto por "*****" e esconde o gráfico inteiro.
         // Persiste em localStorage; vale pra todas as páginas.
         (() => {
             const STORAGE_KEY = "money-hidden";
+            const PLACEHOLDER = "******";
+            const SELECTORS = [
+                ".fd-metric-value",
+                ".fd-prolabore-value",
+                ".fd-dist-value",
+                ".fd-dist-total-value",
+                ".fd-row-value",
+                ".fd-box-head strong",
+                ".fd-fixed-total strong",
+                ".fd-fixed-total div",
+                ".cf-val",
+                ".stat-card > div > strong",
+                ".pipeline-amount",
+                ".chart-lbl-val",
+                ".conversion-rate",
+                ".pipeline-card-bottom strong",
+                ".installments-total strong",
+                ".activity-percent",
+                ".chart-svg text",
+                ".fd-text-green",
+                ".fd-text-warn",
+                ".fd-text-red",
+            ];
+            const hideAll = () => {
+                document.querySelectorAll(SELECTORS.join(",")).forEach((el) => {
+                    if (el.dataset.moneyOriginal === undefined) {
+                        el.dataset.moneyOriginal = el.textContent;
+                    }
+                    el.textContent = PLACEHOLDER;
+                });
+            };
+            const showAll = () => {
+                document.querySelectorAll("[data-money-original]").forEach((el) => {
+                    el.textContent = el.dataset.moneyOriginal;
+                    delete el.dataset.moneyOriginal;
+                });
+            };
             const apply = (hidden) => {
                 document.body.classList.toggle("money-hidden", hidden);
+                if (hidden) hideAll(); else showAll();
             };
             try {
                 apply(localStorage.getItem(STORAGE_KEY) === "1");
             } catch (e) {}
-            const btn = document.querySelector("[data-money-toggle]");
-            if (btn) {
+            document.querySelectorAll("[data-money-toggle]").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const next = !document.body.classList.contains("money-hidden");
                     apply(next);
                     try { localStorage.setItem(STORAGE_KEY, next ? "1" : "0"); } catch (e) {}
                 });
-            }
+            });
         })();
     </script>
 </body>

@@ -5103,27 +5103,19 @@ body.page-finance .workspace-label {
 body.money-hidden .money-toggle-icon--open { display: none; }
 body.money-hidden .money-toggle-icon--closed { display: inline-block; }
 
-/* Elementos com valor em R$ que devem ser blurrados quando body.money-hidden */
-body.money-hidden .fd-metric-value,
-body.money-hidden .fd-prolabore-value,
-body.money-hidden .fd-dist-value,
-body.money-hidden .fd-dist-total-value,
-body.money-hidden .fd-row-value,
-body.money-hidden .fd-box-head strong,
-body.money-hidden .fd-fixed-total strong,
-body.money-hidden .fd-fixed-total div,
-body.money-hidden .cf-val,
-body.money-hidden .stat-card > div > strong,
-body.money-hidden .pipeline-amount,
-body.money-hidden .chart-lbl-val,
-body.money-hidden .conversion-rate,
-body.money-hidden .pipeline-card-bottom strong,
-body.money-hidden .installments-total strong,
-body.money-hidden .activity-percent {
-    filter: blur(6px);
-    user-select: none;
-    transition: filter .15s ease;
+/* Gráfico do dashboard fica escondido visualmente quando body.money-hidden
+   — o texto dos valores é substituído por ****** via JS, mas a linha do
+   gráfico, pontos, área e gridlines também precisam sumir pra não revelar
+   tendência. */
+body.money-hidden .chart-line,
+body.money-hidden .chart-area,
+body.money-hidden .chart-svg circle,
+body.money-hidden .chart-svg path,
+body.money-hidden .chart-svg line:not(.chart-gridline),
+body.money-hidden .chart-svg rect {
+    opacity: 0;
 }
+body.money-hidden .chart-svg .chart-gridline { opacity: 0.4; }
 
 /* ============ Toasts flutuantes (Django messages) ============ */
 .toast-stack {
