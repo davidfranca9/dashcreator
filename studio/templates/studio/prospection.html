@@ -80,9 +80,11 @@
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Prospeccao"><button class="primary-button xsmall" type="submit">Prospectar</button></form>
                                         {% elif column.key == "Aguardando retorno" %}
+                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
                                             <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Follow-up"><button class="primary-button xsmall" type="submit">Follow-up</button></form>
                                         {% elif column.key == "Negociacao" %}
+                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="nao_tem_interesse"><button class="ghost-button xsmall" type="submit">Não fechou</button></form>
                                             <a class="primary-button xsmall" href="{% url 'prospect_convert' item.id %}">Fechar ✓</a>
                                         {% elif column.key == "Fechado" %}
