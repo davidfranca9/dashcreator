@@ -140,6 +140,34 @@
             </article>
         </section>
 
+        <article class="card jobs-filter-bar">
+            <form method="get" class="jobs-filter-form" data-banco-filter-form>
+                <input type="hidden" name="tab" value="banco">
+                <select name="banco_niche" aria-label="Filtrar por nicho">
+                    <option value="">Filtrar por Nicho</option>
+                    {% for item in filters.banco_niches %}
+                        <option value="{{ item.value }}" {% if filters.banco_niche == item.value %}selected{% endif %}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+                <select name="banco_channel" aria-label="Filtrar por canal">
+                    <option value="">Filtrar por Canal</option>
+                    {% for item in filters.banco_channels %}
+                        <option value="{{ item.value }}" {% if filters.banco_channel == item.value %}selected{% endif %}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+                <select name="banco_status" aria-label="Filtrar por status">
+                    <option value="">Filtrar por Status</option>
+                    {% for item in filters.banco_statuses %}
+                        <option value="{{ item.value }}" {% if filters.banco_status == item.value %}selected{% endif %}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+                <label class="jobs-filter-search" aria-label="Pesquisar pela marca">
+                    <span>⌕</span>
+                    <input type="search" name="search" value="{{ filters.search }}" placeholder="Pesquise pela marca">
+                </label>
+            </form>
+        </article>
+
         <article class="card">
             <table class="banco-table">
                 <thead><tr><th>Marca</th><th>Nicho</th><th>Canal</th><th>Último contato</th><th>Status</th></tr></thead>
@@ -169,12 +197,12 @@
                 <div class="banco-pagination">
                     <span class="banco-pagination-count">{{ banco_page.start_index }}–{{ banco_page.end_index }} de {{ banco_page.paginator.count }}</span>
                     {% if banco_page.has_previous %}
-                        <a class="banco-pagination-btn" href="?tab=banco&amp;search={{ filters.search|urlencode }}&amp;page={{ banco_page.previous_page_number }}" aria-label="Página anterior">‹</a>
+                        <a class="banco-pagination-btn" href="?{{ banco_query }}&amp;page={{ banco_page.previous_page_number }}" aria-label="Página anterior">‹</a>
                     {% else %}
                         <span class="banco-pagination-btn is-disabled" aria-disabled="true">‹</span>
                     {% endif %}
                     {% if banco_page.has_next %}
-                        <a class="banco-pagination-btn" href="?tab=banco&amp;search={{ filters.search|urlencode }}&amp;page={{ banco_page.next_page_number }}" aria-label="Próxima página">›</a>
+                        <a class="banco-pagination-btn" href="?{{ banco_query }}&amp;page={{ banco_page.next_page_number }}" aria-label="Próxima página">›</a>
                     {% else %}
                         <span class="banco-pagination-btn is-disabled" aria-disabled="true">›</span>
                     {% endif %}
@@ -225,8 +253,11 @@
 
 <script>
     (() => {
-        const form = document.querySelector("[data-prospection-filter-form]");
-        if (form) {
+        const forms = document.querySelectorAll("[data-prospection-filter-form], [data-banco-filter-form]");
+        forms.forEach((form) => {
+            form.querySelectorAll("select").forEach((field) => {
+                field.addEventListener("change", () => form.requestSubmit());
+            });
             const searchField = form.querySelector('input[name="search"]');
             if (searchField) {
                 let timerId = null;
@@ -235,7 +266,7 @@
                     timerId = window.setTimeout(() => form.requestSubmit(), 300);
                 });
             }
-        }
+        });
     })();
 
     /* Drag-and-drop entre colunas do pipeline */

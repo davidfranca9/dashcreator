@@ -20,6 +20,7 @@ from .constants import (
     LEGACY_DEFAULT_NICHE_NAMES,
     NAV_GROUPS,
     NAV_ITEMS,
+    PROSPECT_ARCHIVE_LABELS,
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
@@ -1340,7 +1341,14 @@ def _serialize_archived_prospect(item: Prospect) -> dict:
     }
 
 
-def prospection_snapshot(workspace: Workspace, month_filter: str | None = None, search: str | None = None) -> dict:
+def prospection_snapshot(
+    workspace: Workspace,
+    month_filter: str | None = None,
+    search: str | None = None,
+    banco_niche: str | None = None,
+    banco_channel: str | None = None,
+    banco_status: str | None = None,
+) -> dict:
     auto_archive_stale_prospects(workspace)
 
     month_options = month_options_for_workspace(workspace)
@@ -1391,7 +1399,26 @@ def prospection_snapshot(workspace: Workspace, month_filter: str | None = None, 
     stale_alert = [_serialize_pipeline_prospect(p) for p in active if (date.today() - _prospect_last_activity(p)).days >= 28 and p.stage in {"Prospeccao", "Aguardando retorno"}]
 
     archived_sorted = sorted(archived, key=lambda p: p.archived_at or p.updated_at, reverse=True)
-    archived_rows = [_serialize_archived_prospect(p) for p in archived_sorted]
+    archived_all = [_serialize_archived_prospect(p) for p in archived_sorted]
+
+    # Opções dos filtros do Banco de Marcas (a partir de todo o conjunto arquivado,
+    # para que as opções não desapareçam ao aplicar um filtro).
+    banco_niche_options = sorted({r["niche"] for r in archived_all if r["niche"]})
+    banco_channel_options = sorted({r["channel"] for r in archived_all if r["channel"]})
+    banco_status_options = [
+        {"value": key, "label": label} for key, label in PROSPECT_ARCHIVE_LABELS.items()
+    ]
+
+    niche_filter = (banco_niche or "").strip()
+    channel_filter = (banco_channel or "").strip()
+    status_filter = (banco_status or "").strip()
+    archived_rows = [
+        r
+        for r in archived_all
+        if (not niche_filter or r["niche"] == niche_filter)
+        and (not channel_filter or r["channel"] == channel_filter)
+        and (not status_filter or r["status_key"] == status_filter)
+    ]
 
     return {
         "pipeline_stages": [
@@ -1411,7 +1438,15 @@ def prospection_snapshot(workspace: Workspace, month_filter: str | None = None, 
         "total_no_response": total_no_response,
         "stale_alert": stale_alert,
         "archived_rows": archived_rows,
-        "filters": {"search": search_term},
+        "filters": {
+            "search": search_term,
+            "banco_niche": niche_filter,
+            "banco_channel": channel_filter,
+            "banco_status": status_filter,
+            "banco_niches": [{"value": n, "label": n} for n in banco_niche_options],
+            "banco_channels": [{"value": c, "label": c} for c in banco_channel_options],
+            "banco_statuses": banco_status_options,
+        },
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
         # legados pra não quebrar templates antigos / testes

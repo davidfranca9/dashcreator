@@ -10,6 +10,7 @@ from html import escape, unescape
 from pathlib import Path
 from io import BytesIO
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from django.conf import settings as django_settings
@@ -1096,7 +1097,17 @@ def prospection(request: HttpRequest) -> HttpResponse:
         action_url="prospect_create",
         month_filter=month_filter,
     )
-    context.update(prospection_snapshot(workspace, month_filter, search=search))
+    banco_niche = request.GET.get("banco_niche")
+    banco_channel = request.GET.get("banco_channel")
+    banco_status = request.GET.get("banco_status")
+    context.update(prospection_snapshot(
+        workspace,
+        month_filter,
+        search=search,
+        banco_niche=banco_niche,
+        banco_channel=banco_channel,
+        banco_status=banco_status,
+    ))
     context["active_tab"] = tab
 
     # Paginação do Banco de Marcas (estilo Gmail: 20 por página, com ‹ ›)
@@ -1104,6 +1115,14 @@ def prospection(request: HttpRequest) -> HttpResponse:
     banco_page = banco_paginator.get_page(request.GET.get("page"))
     context["archived_rows"] = banco_page.object_list
     context["banco_page"] = banco_page
+
+    # Querystring dos filtros do Banco de Marcas (sem 'page'), para os links de paginação.
+    banco_params = {"tab": "banco"}
+    for key in ("search", "banco_niche", "banco_channel", "banco_status"):
+        value = request.GET.get(key)
+        if value:
+            banco_params[key] = value
+    context["banco_query"] = urlencode(banco_params)
 
     return render(request, "studio/prospection.html", context)
 
