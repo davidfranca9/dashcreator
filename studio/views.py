@@ -17,6 +17,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
+from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1097,6 +1098,13 @@ def prospection(request: HttpRequest) -> HttpResponse:
     )
     context.update(prospection_snapshot(workspace, month_filter, search=search))
     context["active_tab"] = tab
+
+    # Paginação do Banco de Marcas (estilo Gmail: 20 por página, com ‹ ›)
+    banco_paginator = Paginator(context.get("archived_rows", []), 20)
+    banco_page = banco_paginator.get_page(request.GET.get("page"))
+    context["archived_rows"] = banco_page.object_list
+    context["banco_page"] = banco_page
+
     return render(request, "studio/prospection.html", context)
 
 

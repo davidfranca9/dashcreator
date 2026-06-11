@@ -164,6 +164,22 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            {% if banco_page.paginator.count %}
+                <div class="banco-pagination">
+                    <span class="banco-pagination-count">{{ banco_page.start_index }}–{{ banco_page.end_index }} de {{ banco_page.paginator.count }}</span>
+                    {% if banco_page.has_previous %}
+                        <a class="banco-pagination-btn" href="?tab=banco&amp;search={{ filters.search|urlencode }}&amp;page={{ banco_page.previous_page_number }}" aria-label="Página anterior">‹</a>
+                    {% else %}
+                        <span class="banco-pagination-btn is-disabled" aria-disabled="true">‹</span>
+                    {% endif %}
+                    {% if banco_page.has_next %}
+                        <a class="banco-pagination-btn" href="?tab=banco&amp;search={{ filters.search|urlencode }}&amp;page={{ banco_page.next_page_number }}" aria-label="Próxima página">›</a>
+                    {% else %}
+                        <span class="banco-pagination-btn is-disabled" aria-disabled="true">›</span>
+                    {% endif %}
+                </div>
+            {% endif %}
         </article>
     </section>
 

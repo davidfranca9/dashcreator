@@ -4923,6 +4923,20 @@ body.page-finance .workspace-label {
 .banco-status--fechado { background: #e0f5e8; color: #1f7b46; }
 .banco-reactivate-form { display: inline; margin-top: 0.35rem; }
 
+.banco-pagination {
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;
+    padding: 0.85rem 0.75rem 0.25rem; font-size: 0.85rem; color: #666;
+}
+.banco-pagination-count { margin-right: 0.25rem; }
+.banco-pagination-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 0.5px solid rgba(0,0,0,0.12); background: #fff; color: #1A1410;
+    font-size: 1.05rem; line-height: 1; text-decoration: none; transition: background 0.15s;
+}
+.banco-pagination-btn:hover:not(.is-disabled) { background: #f1f1ee; }
+.banco-pagination-btn.is-disabled { color: #c4c4c0; cursor: default; background: #fafafa; }
+
 .logica-funnel ol { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.85rem; }
 .logica-funnel li { display: flex; gap: 0.85rem; align-items: flex-start; font-size: 0.9rem; line-height: 1.5; }
 .logica-num {
