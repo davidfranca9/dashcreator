@@ -1476,6 +1476,15 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         for item in projects
         if item.stage in {"Fechado", "Entregue"}
     )
+    # Soma também a receita de infoprodutos do mês (vendas confirmadas).
+    monthly_revenue += sum_money(
+        Decimal(sale.amount or 0)
+        for sale in infoproduct_sales
+        if sale.sale_date and (
+            selected_month is None
+            or (sale.sale_date.year == selected_month.year and sale.sale_date.month == selected_month.month)
+        )
+    )
     total_closed = sum_money(_project_cash_value(item) for item in active_projects)
 
     open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
