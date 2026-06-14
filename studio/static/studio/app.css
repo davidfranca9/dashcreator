@@ -5776,6 +5776,7 @@ body.money-hidden .money-toggle-icon--closed { display: inline-block; }
 .ip-product-actions button, .ip-product-actions a { flex: 1; border: .5px solid #dde1ea; background: transparent; color: #64748b; border-radius: 8px; padding: 7px; font-size: 11px; font-weight: 500; cursor: pointer; text-align: center; text-decoration: none; }
 .ip-product-actions button:hover, .ip-product-actions a:hover { background: #f4f5f8; }
 .ip-product-actions .is-primary { background: #1a2340; border-color: #1a2340; color: #fff; }
+.ip-modal input.is-locked { background: #f1f1f4; color: #8a8a8a; cursor: not-allowed; }
 .ip-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) 180px 170px 160px auto; gap: 8px; align-items: center; }
 .ip-filter-row--buyers { grid-template-columns: minmax(220px, 1fr) 190px 160px auto; }
 .ip-search { background: #fff; border: .5px solid #dde1ea; border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; min-width: 0; }

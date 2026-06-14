@@ -1296,21 +1296,17 @@ class InfoProductSaleForm(forms.ModelForm):
 
     class Meta:
         model = InfoProductSale
-        fields = ["product", "buyer_name", "buyer_email", "platform", "amount", "sale_date", "status", "progress"]
+        fields = ["product", "buyer_name", "platform", "amount", "sale_date", "status"]
         labels = {
             "product": "Produto",
             "buyer_name": "Comprador",
-            "buyer_email": "E-mail",
             "platform": "Plataforma",
             "sale_date": "Data da venda",
             "status": "Status",
-            "progress": "Progresso (%)",
         }
         widgets = {
             "buyer_name": forms.TextInput(attrs={"placeholder": "Nome do comprador"}),
-            "buyer_email": forms.EmailInput(attrs={"placeholder": "email@exemplo.com"}),
             "sale_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "progress": forms.NumberInput(attrs={"min": "0", "max": "100", "placeholder": "0"}),
         }
 
     def __init__(self, *args, workspace=None, **kwargs):
@@ -1321,15 +1317,10 @@ class InfoProductSaleForm(forms.ModelForm):
             qs = qs.filter(workspace=workspace)
         self.fields["product"].queryset = qs.order_by("name")
         self.fields["product"].empty_label = "Selecione um produto"
-        self.fields["buyer_email"].required = False
-        self.fields["progress"].required = False
         self.fields["sale_date"].input_formats = ["%Y-%m-%d"]
 
     def clean_amount(self):
         return _parse_brl(self.cleaned_data.get("amount"))
-
-    def clean_progress(self):
-        return self.cleaned_data.get("progress") or 0
 
 
 def _decimal_from_setting(raw_value, default: str):

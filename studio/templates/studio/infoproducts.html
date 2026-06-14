@@ -289,11 +289,10 @@
             <label class="form-field"><span>{{ sale_form.buyer_name.label }}</span>{{ sale_form.buyer_name }}{{ sale_form.buyer_name.errors }}</label>
             <label class="form-field"><span>{{ sale_form.product.label }}</span>{{ sale_form.product }}{{ sale_form.product.errors }}</label>
             <label class="form-field"><span>{{ sale_form.platform.label }}</span>{{ sale_form.platform }}{{ sale_form.platform.errors }}</label>
-            <label class="form-field"><span>{{ sale_form.amount.label }}</span>{{ sale_form.amount }}{{ sale_form.amount.errors }}</label>
             <label class="form-field"><span>{{ sale_form.sale_date.label }}</span>{{ sale_form.sale_date }}{{ sale_form.sale_date.errors }}</label>
             <label class="form-field"><span>{{ sale_form.status.label }}</span>{{ sale_form.status }}{{ sale_form.status.errors }}</label>
-            <label class="form-field"><span>{{ sale_form.buyer_email.label }}</span>{{ sale_form.buyer_email }}{{ sale_form.buyer_email.errors }}</label>
-            <label class="form-field"><span>{{ sale_form.progress.label }}</span>{{ sale_form.progress }}{{ sale_form.progress.errors }}</label>
+            <label class="form-field form-field--checkbox"><input type="checkbox" data-ip-promo-toggle><span>Valor promocional?</span></label>
+            <label class="form-field"><span>{{ sale_form.amount.label }}</span>{{ sale_form.amount }}{{ sale_form.amount.errors }}</label>
         </div>
         <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">Registrar entrada</button></div>
     </form>
@@ -405,14 +404,30 @@
     const saleForm = document.querySelector("[data-ip-sale-form]");
     if (saleForm) {
         const productSelect = saleForm.querySelector("[name=product]");
+        const platform = saleForm.querySelector("[name=platform]");
+        const amount = saleForm.querySelector("[name=amount]");
+        const promo = saleForm.querySelector("[data-ip-promo-toggle]");
+        const productPrice = () => (autofill[productSelect && productSelect.value] || {}).price || "";
+
+        const applyPromoState = () => {
+            if (!amount) return;
+            const editable = !!(promo && promo.checked);
+            amount.readOnly = !editable;
+            amount.classList.toggle("is-locked", !editable);
+            // sem promoção: valor fixo no preço do produto
+            if (!editable) {
+                const price = productPrice();
+                if (price) amount.value = price;
+            }
+        };
         productSelect?.addEventListener("change", () => {
             const data = autofill[productSelect.value];
-            if (!data) return;
-            const platform = saleForm.querySelector("[name=platform]");
-            const amount = saleForm.querySelector("[name=amount]");
-            if (platform && data.platform) platform.value = data.platform;
-            if (amount && (!amount.value.trim() || amount.value.trim() === "0,00")) amount.value = data.price;
+            if (data && platform && data.platform) platform.value = data.platform;
+            applyPromoState();
+            if (promo && promo.checked && amount && !amount.value.trim() && data) amount.value = data.price;
         });
+        promo?.addEventListener("change", applyPromoState);
+        applyPromoState();
     }
 })();
 </script>
