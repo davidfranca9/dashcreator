@@ -1233,7 +1233,7 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
         editing_product = get_object_or_404(InfoProduct, pk=int(edit_id), workspace=workspace)
 
     product_form = InfoProductForm(instance=editing_product, workspace=workspace)
-    sale_form = InfoProductSaleForm(workspace=workspace)
+    sale_form = InfoProductSaleForm(workspace=workspace, initial={"sale_date": date.today()})
     open_product_modal = editing_product is not None
     open_entry_modal = False
     open_buyer_modal = False

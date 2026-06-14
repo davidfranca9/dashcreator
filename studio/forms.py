@@ -1318,9 +1318,13 @@ class InfoProductSaleForm(forms.ModelForm):
         self.fields["product"].queryset = qs.order_by("name")
         self.fields["product"].empty_label = "Selecione um produto"
         self.fields["sale_date"].input_formats = ["%Y-%m-%d"]
+        self.fields["sale_date"].required = False
 
     def clean_amount(self):
         return _parse_brl(self.cleaned_data.get("amount"))
+
+    def clean_sale_date(self):
+        return self.cleaned_data.get("sale_date") or date.today()
 
 
 def _decimal_from_setting(raw_value, default: str):
