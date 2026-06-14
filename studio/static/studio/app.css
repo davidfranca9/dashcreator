@@ -5787,6 +5787,9 @@ body.money-hidden .money-toggle-icon--closed { display: inline-block; }
 .ip-table { background: #fff; border: .5px solid #e8eaf0; border-radius: 12px; overflow: hidden; }
 .ip-table-head, .ip-table-row { display: grid; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: .5px solid #e8eaf0; min-width: 900px; }
 .ip-table-head { background: #f4f5f8; padding-top: 9px; padding-bottom: 9px; }
+.ip-row-clickable { cursor: pointer; transition: background .12s; }
+.ip-row-clickable:hover { background: #f7f8fb; }
+.ip-modal-actions .ip-danger { color: #c0392b; margin-right: auto; }
 .ip-table-head span { color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
 .ip-table-row:last-child { border-bottom: 0; }
 .ip-table-row:hover { background: #f4f5f8; }

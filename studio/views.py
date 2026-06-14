@@ -1232,15 +1232,33 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
             raise Http404("Produto nao encontrado.")
         editing_product = get_object_or_404(InfoProduct, pk=int(edit_id), workspace=workspace)
 
+    # Venda/entrada sendo editada.
+    editing_sale = None
+    edit_sale_id = request.POST.get("sale_id") if request.method == "POST" else request.GET.get("edit_sale")
+    if edit_sale_id:
+        if not str(edit_sale_id).isdigit():
+            raise Http404("Entrada nao encontrada.")
+        editing_sale = get_object_or_404(InfoProductSale, pk=int(edit_sale_id), workspace=workspace)
+
     product_form = InfoProductForm(instance=editing_product, workspace=workspace)
-    sale_form = InfoProductSaleForm(workspace=workspace, initial={"sale_date": date.today()})
+    sale_initial = {} if editing_sale else {"sale_date": date.today()}
+    sale_form = InfoProductSaleForm(instance=editing_sale, workspace=workspace, initial=sale_initial)
     open_product_modal = editing_product is not None
-    open_entry_modal = False
+    open_entry_modal = editing_sale is not None
     open_buyer_modal = False
 
     if request.method == "POST":
         action = request.POST.get("infoproduct_action")
-        if action in {"create_product", "update_product"}:
+        delete_target = request.POST.get("ip_delete")
+        if delete_target == "product" and editing_product is not None:
+            editing_product.delete()
+            messages.success(request, "Produto excluído.")
+            return redirect("infoproducts")
+        elif delete_target == "sale" and editing_sale is not None:
+            editing_sale.delete()
+            messages.success(request, "Entrada excluída.")
+            return redirect("infoproducts")
+        elif action in {"create_product", "update_product"}:
             product_form = InfoProductForm(request.POST, instance=editing_product, workspace=workspace)
             if product_form.is_valid():
                 product = product_form.save(commit=False)
@@ -1249,20 +1267,21 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
                 messages.success(request, "Produto atualizado." if editing_product else "Produto cadastrado.")
                 return redirect("infoproducts")
             open_product_modal = True
-        elif action == "product_delete" and editing_product is not None:
-            editing_product.delete()
-            messages.success(request, "Produto excluído.")
-            return redirect("infoproducts")
-        elif action in {"create_sale", "create_buyer"}:
-            sale_form = InfoProductSaleForm(request.POST, workspace=workspace)
+        elif action in {"create_sale", "update_sale", "create_buyer"}:
+            sale_form = InfoProductSaleForm(request.POST, instance=editing_sale, workspace=workspace)
             if sale_form.is_valid():
                 sale = sale_form.save(commit=False)
                 sale.workspace = workspace
                 sale.save()
-                messages.success(request, "Aluna/comprador adicionado." if action == "create_buyer" else "Entrada registrada.")
+                if editing_sale:
+                    messages.success(request, "Entrada atualizada.")
+                else:
+                    messages.success(request, "Aluna/comprador adicionado." if action == "create_buyer" else "Entrada registrada.")
                 return redirect("infoproducts")
-            open_entry_modal = action == "create_sale"
+            open_entry_modal = action in {"create_sale", "update_sale"}
             open_buyer_modal = action == "create_buyer"
+
+    sale_is_promo = bool(editing_sale and Decimal(editing_sale.amount or 0) != Decimal(editing_sale.product.price or 0))
 
     context = shell_context(
         "infoproducts",
@@ -1276,6 +1295,8 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
     context["product_form"] = product_form
     context["sale_form"] = sale_form
     context["editing_product"] = editing_product
+    context["editing_sale"] = editing_sale
+    context["sale_is_promo"] = sale_is_promo
     context["open_product_modal"] = open_product_modal
     context["open_entry_modal"] = open_entry_modal
     context["open_buyer_modal"] = open_buyer_modal

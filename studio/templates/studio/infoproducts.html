@@ -118,7 +118,7 @@
                 <span>Comprador</span><span>Produto</span><span>Plataforma</span><span>Valor</span><span>Data</span><span>Status</span>
             </div>
             {% for entry in entries %}
-                <div class="ip-table-row ip-table-row--entries">
+                <div class="ip-table-row ip-table-row--entries ip-row-clickable" data-ip-edit-sale="{{ entry.id }}" title="Clique para editar">
                     <div class="ip-person">
                         <span class="ip-avatar ip-avatar--{{ entry.avatar_class }}">{{ entry.initials }}</span>
                         <div><strong>{{ entry.name }}</strong><small>{{ entry.sub }}</small></div>
@@ -162,7 +162,7 @@
                 <span>Aluna / Comprador</span><span>Produto</span><span>Plataforma</span><span>Prazo / Acesso</span><span>Progresso</span><span>Status</span>
             </div>
             {% for buyer in buyers %}
-                <div class="ip-table-row ip-table-row--buyers {% if buyer.row_class %}ip-row--{{ buyer.row_class }}{% endif %}">
+                <div class="ip-table-row ip-table-row--buyers ip-row-clickable {% if buyer.row_class %}ip-row--{{ buyer.row_class }}{% endif %}" data-ip-edit-sale="{{ buyer.id }}" title="Clique para editar">
                     <div class="ip-person">
                         <span class="ip-avatar ip-avatar--{{ buyer.avatar_class }}">{{ buyer.initials }}</span>
                         <div><strong>{{ buyer.name }}</strong><small>{{ buyer.sub }}</small></div>
@@ -274,16 +274,23 @@
             <label class="form-field"><span>{{ product_form.access_duration.label }}</span>{{ product_form.access_duration }}{{ product_form.access_duration.errors }}</label>
             <label class="form-field form-field--checkbox">{{ product_form.track_progress }}<span>{{ product_form.track_progress.label }}</span>{{ product_form.track_progress.errors }}</label>
         </div>
-        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">{% if editing_product %}Salvar alterações{% else %}Cadastrar produto{% endif %}</button></div>
+        <div class="ip-modal-actions">
+            {% if editing_product %}
+                <button type="submit" class="ghost-button ip-danger" name="ip_delete" value="product" formnovalidate data-ip-confirm="Excluir este produto? As vendas ligadas a ele também serão removidas.">Excluir</button>
+            {% endif %}
+            <button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button>
+            <button type="submit" class="primary-button">{% if editing_product %}Salvar alterações{% else %}Cadastrar produto{% endif %}</button>
+        </div>
     </form>
 </div>
 
 <div class="ip-modal-backdrop" data-infoproduct-modal="entry"{% if not open_entry_modal %} hidden{% endif %}>
-    <form method="post" class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Registrar entrada" data-ip-sale-form>
+    <form method="post" class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Registrar entrada" data-ip-sale-form{% if sale_is_promo %} data-ip-sale-promo{% endif %}>
         {% csrf_token %}
-        <input type="hidden" name="infoproduct_action" value="create_sale">
+        <input type="hidden" name="infoproduct_action" value="{% if editing_sale %}update_sale{% else %}create_sale{% endif %}">
+        {% if editing_sale %}<input type="hidden" name="sale_id" value="{{ editing_sale.id }}">{% endif %}
         <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
-        <h3>Registrar entrada</h3>
+        <h3>{% if editing_sale %}Editar entrada{% else %}Registrar entrada{% endif %}</h3>
         <p>Registre uma venda. Ao escolher o produto, a plataforma e o valor são preenchidos.</p>
         <div class="form-grid">
             <label class="form-field"><span>{{ sale_form.buyer_name.label }}</span>{{ sale_form.buyer_name }}{{ sale_form.buyer_name.errors }}</label>
@@ -291,10 +298,17 @@
             <label class="form-field"><span>{{ sale_form.platform.label }}</span>{{ sale_form.platform }}{{ sale_form.platform.errors }}</label>
             <label class="form-field"><span>{{ sale_form.sale_date.label }}</span>{{ sale_form.sale_date }}{{ sale_form.sale_date.errors }}</label>
             <label class="form-field"><span>{{ sale_form.status.label }}</span>{{ sale_form.status }}{{ sale_form.status.errors }}</label>
-            <label class="form-field form-field--checkbox"><input type="checkbox" data-ip-promo-toggle><span>Valor promocional?</span></label>
+            <label class="form-field form-field--checkbox"><input type="checkbox" data-ip-promo-toggle{% if sale_is_promo %} checked{% endif %}><span>Valor promocional?</span></label>
             <label class="form-field"><span>{{ sale_form.amount.label }}</span>{{ sale_form.amount }}{{ sale_form.amount.errors }}</label>
+            <label class="form-field" data-ip-progress-field hidden><span>{{ sale_form.progress.label }}</span>{{ sale_form.progress }}{{ sale_form.progress.errors }}</label>
         </div>
-        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">Registrar entrada</button></div>
+        <div class="ip-modal-actions">
+            {% if editing_sale %}
+                <button type="submit" class="ghost-button ip-danger" name="ip_delete" value="sale" formnovalidate data-ip-confirm="Excluir esta entrada?">Excluir</button>
+            {% endif %}
+            <button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button>
+            <button type="submit" class="primary-button">{% if editing_sale %}Salvar alterações{% else %}Registrar entrada{% endif %}</button>
+        </div>
     </form>
 </div>
 
@@ -407,7 +421,9 @@
         const platform = saleForm.querySelector("[name=platform]");
         const amount = saleForm.querySelector("[name=amount]");
         const promo = saleForm.querySelector("[data-ip-promo-toggle]");
-        const productPrice = () => (autofill[productSelect && productSelect.value] || {}).price || "";
+        const progressField = saleForm.querySelector("[data-ip-progress-field]");
+        const productData = () => autofill[productSelect && productSelect.value] || null;
+        const productPrice = () => (productData() || {}).price || "";
 
         const applyPromoState = () => {
             if (!amount) return;
@@ -420,15 +436,36 @@
                 if (price) amount.value = price;
             }
         };
+        const applyProgressVisibility = () => {
+            if (!progressField) return;
+            const data = productData();
+            progressField.hidden = !(data && data.track_progress);
+        };
         productSelect?.addEventListener("change", () => {
-            const data = autofill[productSelect.value];
+            const data = productData();
             if (data && platform && data.platform) platform.value = data.platform;
             applyPromoState();
+            applyProgressVisibility();
             if (promo && promo.checked && amount && !amount.value.trim() && data) amount.value = data.price;
         });
         promo?.addEventListener("change", applyPromoState);
         applyPromoState();
+        applyProgressVisibility();
     }
+
+    // Clique na linha de Entradas/Alunas abre a entrada para editar.
+    document.querySelectorAll("[data-ip-edit-sale]").forEach((row) => {
+        row.addEventListener("click", () => {
+            window.location.href = "?edit_sale=" + row.dataset.ipEditSale;
+        });
+    });
+
+    // Confirmação antes de excluir.
+    document.querySelectorAll("[data-ip-confirm]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+            if (!window.confirm(button.dataset.ipConfirm)) event.preventDefault();
+        });
+    });
 })();
 </script>
 {% endblock %}

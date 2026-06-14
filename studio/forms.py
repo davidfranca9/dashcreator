@@ -1296,17 +1296,19 @@ class InfoProductSaleForm(forms.ModelForm):
 
     class Meta:
         model = InfoProductSale
-        fields = ["product", "buyer_name", "platform", "amount", "sale_date", "status"]
+        fields = ["product", "buyer_name", "platform", "amount", "sale_date", "status", "progress"]
         labels = {
             "product": "Produto",
             "buyer_name": "Comprador",
             "platform": "Plataforma",
             "sale_date": "Data da venda",
             "status": "Status",
+            "progress": "Progresso (%)",
         }
         widgets = {
             "buyer_name": forms.TextInput(attrs={"placeholder": "Nome do comprador"}),
             "sale_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "progress": forms.NumberInput(attrs={"min": "0", "max": "100", "placeholder": "0"}),
         }
 
     def __init__(self, *args, workspace=None, **kwargs):
@@ -1319,12 +1321,16 @@ class InfoProductSaleForm(forms.ModelForm):
         self.fields["product"].empty_label = "Selecione um produto"
         self.fields["sale_date"].input_formats = ["%Y-%m-%d"]
         self.fields["sale_date"].required = False
+        self.fields["progress"].required = False
 
     def clean_amount(self):
         return _parse_brl(self.cleaned_data.get("amount"))
 
     def clean_sale_date(self):
         return self.cleaned_data.get("sale_date") or date.today()
+
+    def clean_progress(self):
+        return self.cleaned_data.get("progress") or 0
 
 
 def _decimal_from_setting(raw_value, default: str):

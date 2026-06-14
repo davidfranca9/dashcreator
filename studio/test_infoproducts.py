@@ -81,3 +81,61 @@ class InfoproductsTest(TestCase):
         resp = self.client.get(reverse("infoproducts"))
         self.assertIn("month_choices", resp.context)
         self.assertIn("selected_month", resp.context)
+
+    def test_autofill_has_track_progress(self):
+        resp = self.client.get(reverse("infoproducts"))
+        self.assertTrue(resp.context["product_autofill"][str(self.product.id)]["track_progress"])
+
+    def _make_sale(self, amount="697.00", progress=0):
+        return InfoProductSale.objects.create(
+            workspace=self.workspace, product=self.product, buyer_name="Ana",
+            platform="Hubla", amount=amount, sale_date=date.today(),
+            status=InfoProductSale.STATUS_CONFIRMED, progress=progress,
+        )
+
+    def test_edit_sale_prefills_modal(self):
+        sale = self._make_sale()
+        resp = self.client.get(reverse("infoproducts"), {"edit_sale": sale.id})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context["open_entry_modal"])
+        self.assertEqual(resp.context["editing_sale"], sale)
+        self.assertEqual(resp.context["sale_form"]["buyer_name"].value(), "Ana")
+
+    def test_update_sale_saves(self):
+        sale = self._make_sale()
+        resp = self.client.post(reverse("infoproducts"), {
+            "infoproduct_action": "update_sale",
+            "sale_id": sale.id,
+            "product": self.product.id,
+            "buyer_name": "Ana Paula",
+            "platform": "Hubla",
+            "amount": "597,00",
+            "sale_date": date.today().isoformat(),
+            "status": InfoProductSale.STATUS_CONFIRMED,
+            "progress": "50",
+        })
+        self.assertRedirects(resp, reverse("infoproducts"))
+        sale.refresh_from_db()
+        self.assertEqual(sale.buyer_name, "Ana Paula")
+        self.assertEqual(str(sale.amount), "597.00")
+        self.assertEqual(sale.progress, 50)
+
+    def test_delete_sale(self):
+        sale = self._make_sale()
+        resp = self.client.post(reverse("infoproducts"), {
+            "ip_delete": "sale", "sale_id": sale.id,
+        })
+        self.assertRedirects(resp, reverse("infoproducts"))
+        self.assertFalse(InfoProductSale.objects.filter(pk=sale.id).exists())
+
+    def test_delete_product(self):
+        resp = self.client.post(reverse("infoproducts"), {
+            "ip_delete": "product", "product_id": self.product.id,
+        })
+        self.assertRedirects(resp, reverse("infoproducts"))
+        self.assertFalse(InfoProduct.objects.filter(pk=self.product.id).exists())
+
+    def test_sale_is_promo_flag(self):
+        sale = self._make_sale(amount="500.00")  # produto custa 697 -> promo
+        resp = self.client.get(reverse("infoproducts"), {"edit_sale": sale.id})
+        self.assertTrue(resp.context["sale_is_promo"])

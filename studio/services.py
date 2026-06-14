@@ -727,6 +727,7 @@ def infoproducts_snapshot(workspace: Workspace, month_filter: str | None = None)
         str(item.id): {
             "platform": item.platform,
             "price": f"{Decimal(item.price or 0):.2f}".replace(".", ","),
+            "track_progress": bool(item.track_progress),
         }
         for item in products_queryset
     }
