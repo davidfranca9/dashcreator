@@ -110,7 +110,7 @@
                 <option>Pendente</option>
                 <option>Reembolsado</option>
             </select>
-            <button type="button" class="primary-button small" data-infoproduct-modal-open="entry">Registrar entrada</button>
+            <button type="button" class="primary-button small" data-infoproduct-modal-open="entry" data-infoproduct-return-tab="entries">Registrar entrada</button>
         </div>
 
         <article class="ip-table">
@@ -118,7 +118,7 @@
                 <span>Comprador</span><span>Produto</span><span>Plataforma</span><span>Valor</span><span>Data</span><span>Status</span>
             </div>
             {% for entry in entries %}
-                <div class="ip-table-row ip-table-row--entries ip-row-clickable" data-ip-edit-sale="{{ entry.id }}" title="Clique para editar">
+                <div class="ip-table-row ip-table-row--entries ip-row-clickable" data-ip-edit-sale="{{ entry.id }}" data-ip-edit-tab="entries" title="Clique para editar">
                     <div class="ip-person">
                         <span class="ip-avatar ip-avatar--{{ entry.avatar_class }}">{{ entry.initials }}</span>
                         <div><strong>{{ entry.name }}</strong><small>{{ entry.sub }}</small></div>
@@ -154,7 +154,7 @@
                 <option>Vencendo</option>
                 <option>Pausado</option>
             </select>
-            <button type="button" class="primary-button small" data-infoproduct-modal-open="entry">Adicionar aluna</button>
+            <button type="button" class="primary-button small" data-infoproduct-modal-open="entry" data-infoproduct-return-tab="buyers">Adicionar aluna</button>
         </div>
 
         <article class="ip-table">
@@ -162,7 +162,7 @@
                 <span>Aluna / Comprador</span><span>Produto</span><span>Plataforma</span><span>Prazo / Acesso</span><span>Progresso</span><span>Status</span>
             </div>
             {% for buyer in buyers %}
-                <div class="ip-table-row ip-table-row--buyers ip-row-clickable {% if buyer.row_class %}ip-row--{{ buyer.row_class }}{% endif %}" data-ip-edit-sale="{{ buyer.id }}" title="Clique para editar">
+                <div class="ip-table-row ip-table-row--buyers ip-row-clickable {% if buyer.row_class %}ip-row--{{ buyer.row_class }}{% endif %}" data-ip-edit-sale="{{ buyer.id }}" data-ip-edit-tab="buyers" title="Clique para editar">
                     <div class="ip-person">
                         <span class="ip-avatar ip-avatar--{{ buyer.avatar_class }}">{{ buyer.initials }}</span>
                         <div><strong>{{ buyer.name }}</strong><small>{{ buyer.sub }}</small></div>
@@ -288,6 +288,7 @@
     <form method="post" class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Registrar entrada" data-ip-sale-form{% if sale_is_promo %} data-ip-sale-promo{% endif %}>
         {% csrf_token %}
         <input type="hidden" name="infoproduct_action" value="{% if editing_sale %}update_sale{% else %}create_sale{% endif %}">
+        <input type="hidden" name="return_tab" value="{{ active_subtab|default:'entries' }}" data-ip-return-tab>
         {% if editing_sale %}<input type="hidden" name="sale_id" value="{{ editing_sale.id }}">{% endif %}
         <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
         <h3>{% if editing_sale %}Editar entrada{% else %}Registrar entrada{% endif %}</h3>
@@ -333,6 +334,9 @@
     page.querySelectorAll("[data-infoproduct-go-tab]").forEach((button) => {
         button.addEventListener("click", () => activate(button.dataset.infoproductGoTab));
     });
+    // Mantém a aba ao recarregar (?tab=entries|buyers).
+    const urlTab = new URLSearchParams(window.location.search).get("tab");
+    if (urlTab === "entries" || urlTab === "buyers") activate(urlTab);
 
     const listOverlay = document.querySelector("[data-infoproduct-list-overlay]");
     const listPanels = document.querySelectorAll("[data-infoproduct-list-panel]");
@@ -392,7 +396,14 @@
         }
     };
     document.querySelectorAll("[data-infoproduct-modal-open]").forEach((button) => {
-        button.addEventListener("click", () => openModal(button.dataset.infoproductModalOpen));
+        button.addEventListener("click", () => {
+            const tab = button.dataset.infoproductReturnTab;
+            if (tab) {
+                const field = document.querySelector("[data-ip-return-tab]");
+                if (field) field.value = tab;
+            }
+            openModal(button.dataset.infoproductModalOpen);
+        });
     });
     document.querySelectorAll(".ip-modal-backdrop").forEach((modal) => {
         modal.addEventListener("click", (event) => {
@@ -456,7 +467,8 @@
     // Clique na linha de Entradas/Alunas abre a entrada para editar.
     document.querySelectorAll("[data-ip-edit-sale]").forEach((row) => {
         row.addEventListener("click", () => {
-            window.location.href = "?edit_sale=" + row.dataset.ipEditSale;
+            const tab = row.dataset.ipEditTab || "entries";
+            window.location.href = "?edit_sale=" + row.dataset.ipEditSale + "&tab=" + tab;
         });
     });
 

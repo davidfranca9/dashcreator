@@ -44,7 +44,7 @@ class InfoproductsTest(TestCase):
             "status": InfoProductSale.STATUS_CONFIRMED,
             "progress": "0",
         })
-        self.assertRedirects(resp, reverse("infoproducts"))
+        self.assertRedirects(resp, reverse("infoproducts") + "?tab=entries")
         sale = InfoProductSale.objects.get(workspace=self.workspace, buyer_name="Maria Silva")
         self.assertEqual(str(sale.amount), "697.00")
         # aparece nas entradas e na receita
@@ -113,8 +113,9 @@ class InfoproductsTest(TestCase):
             "sale_date": date.today().isoformat(),
             "status": InfoProductSale.STATUS_CONFIRMED,
             "progress": "50",
+            "return_tab": "buyers",
         })
-        self.assertRedirects(resp, reverse("infoproducts"))
+        self.assertRedirects(resp, reverse("infoproducts") + "?tab=buyers")
         sale.refresh_from_db()
         self.assertEqual(sale.buyer_name, "Ana Paula")
         self.assertEqual(str(sale.amount), "597.00")

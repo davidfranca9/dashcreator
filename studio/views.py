@@ -1277,11 +1277,15 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
                     messages.success(request, "Entrada atualizada.")
                 else:
                     messages.success(request, "Aluna/comprador adicionado." if action == "create_buyer" else "Entrada registrada.")
-                return redirect("infoproducts")
+                return_tab = request.POST.get("return_tab")
+                if return_tab not in {"entries", "buyers"}:
+                    return_tab = "entries"
+                return redirect(f"{reverse('infoproducts')}?tab={return_tab}")
             open_entry_modal = action in {"create_sale", "update_sale"}
             open_buyer_modal = action == "create_buyer"
 
     sale_is_promo = bool(editing_sale and Decimal(editing_sale.amount or 0) != Decimal(editing_sale.product.price or 0))
+    active_subtab = request.GET.get("tab") if request.GET.get("tab") in {"entries", "buyers"} else ""
 
     context = shell_context(
         "infoproducts",
@@ -1297,6 +1301,7 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
     context["editing_product"] = editing_product
     context["editing_sale"] = editing_sale
     context["sale_is_promo"] = sale_is_promo
+    context["active_subtab"] = active_subtab
     context["open_product_modal"] = open_product_modal
     context["open_entry_modal"] = open_entry_modal
     context["open_buyer_modal"] = open_buyer_modal
