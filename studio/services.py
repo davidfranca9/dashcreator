@@ -2360,6 +2360,20 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     )
     confirmed_incoming_events = [item for item in month_events if item["paid"]]
     incoming_total = sum_money(item["amount"] for item in confirmed_incoming_events)
+    # Entradas de infoprodutos (vendas confirmadas) entram no faturamento.
+    infoproduct_sales = []
+    if workspace_has_infoproducts_access(workspace):
+        infoproduct_sales = list(
+            InfoProductSale.objects.filter(workspace=workspace, status=InfoProductSale.STATUS_CONFIRMED).select_related("product")
+        )
+    infoproduct_month_sales = [
+        sale for sale in infoproduct_sales
+        if sale.sale_date and (
+            selected_month is None
+            or (sale.sale_date.year == selected_month.year and sale.sale_date.month == selected_month.month)
+        )
+    ]
+    incoming_total += sum_money(Decimal(sale.amount or 0) for sale in infoproduct_month_sales)
     outgoing_total = sum_money(item.amount for item in month_entries)
     # "A receber" abrange todos os recebíveis futuros (em qualquer mês),
     # não apenas o mês filtrado, para refletir o caixa que ainda vai
@@ -2446,6 +2460,20 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "sort_date": item.occurred_on,
         }
         for item in month_entries
+    )
+    ledger.extend(
+        {
+            "label": "Entrada",
+            "description": f"Infoproduto · {sale.buyer_name}",
+            "date_text": short_date(sale.sale_date),
+            "amount_text": currency(sale.amount),
+            "accent": "#20b7a7",
+            "kind": "incoming",
+            "entry_id": None,
+            "can_edit": False,
+            "sort_date": sale.sale_date,
+        }
+        for sale in infoproduct_month_sales
     )
     ledger.sort(key=lambda item: item["sort_date"], reverse=True)
     for item in ledger:
@@ -2559,6 +2587,15 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         }
         for item in confirmed_incoming_events
     ]
+    incoming_items.extend(
+        {
+            "company": sale.product.name,
+            "detail": f"{short_date(sale.sale_date)} · Infoproduto · {sale.buyer_name}",
+            "amount_text": f"+{currency(sale.amount)}",
+            "status": "Recebido",
+        }
+        for sale in infoproduct_month_sales
+    )
     outgoing_items = [
         {
             "id": item.pk,

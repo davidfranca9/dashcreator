@@ -43,6 +43,11 @@ body {
     font-family: "Segoe UI", "Trebuchet MS", sans-serif;
 }
 
+/* Títulos usam a mesma fonte do Financeiro (sistema) em todas as páginas. */
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 body.has-popup-open {
     overflow: hidden;
 }
