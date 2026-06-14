@@ -4,6 +4,7 @@ import calendar
 import json
 import re
 import unicodedata
+from collections import Counter
 from urllib.parse import urlencode
 from datetime import date, timedelta
 from decimal import Decimal
@@ -1823,11 +1824,14 @@ def _compute_project_schedule(project: Project) -> list[dict]:
     entry_received = min(received_amount, entry_amount)
     balance_received = max(received_amount - entry_amount, ZERO)
 
+    # "Entrada"/"Saldo" só quando há entrada E saldo (pagamento dividido).
+    # Pagamento único (só entrada, ou só saldo) é rotulado "Pagamento".
+    split_payment = entry_amount > ZERO and balance_amount > ZERO
     if entry_amount > ZERO:
         entry_paid = entry_received >= entry_amount and entry_amount > ZERO
         schedule.append(
             {
-                "label": "Entrada",
+                "label": "Entrada" if split_payment else "Pagamento",
                 "amount": entry_amount,
                 "due_date": entry_date,
                 "paid": entry_paid,
@@ -1838,7 +1842,7 @@ def _compute_project_schedule(project: Project) -> list[dict]:
         balance_paid = balance_received >= balance_amount and balance_amount > ZERO
         schedule.append(
             {
-                "label": "Saldo" if entry_amount > ZERO else "Entrada",
+                "label": "Saldo" if split_payment else "Pagamento",
                 "amount": balance_amount,
                 "due_date": payment_date,
                 "paid": balance_paid,
@@ -1852,6 +1856,29 @@ def _compute_project_schedule(project: Project) -> list[dict]:
 # auto-gera N parcelas; parcelas manuais são editadas pelo usuário). Para esses
 # NÃO materializamos a partir do cronograma calculado.
 _AUTO_INSTALLMENT_SERVICE_TYPES = {"publicidade"}
+
+
+def _invalidate_installment_cache(project: Project) -> None:
+    """Limpa o cache de prefetch das parcelas para que o mesmo request enxergue
+    as alterações feitas no banco."""
+    cache = getattr(project, "_prefetched_objects_cache", None)
+    if cache is not None:
+        cache.pop("installments", None)
+
+
+def _apply_schedule_labels(existing: list, desired: list) -> None:
+    """Atribui os rótulos do cronograma (Pagamento/Entrada/Saldo/Mensalidade N)
+    a parcelas sem rótulo, casando por valor. Só altera o `label` — preserva
+    valor, data e status de pago."""
+    remaining = list(desired)
+    for inst in sorted(existing, key=lambda i: (i.due_date, i.pk)):
+        for idx, entry in enumerate(remaining):
+            if Decimal(entry["amount"]) == Decimal(inst.amount or 0):
+                if inst.label != entry["label"]:
+                    inst.label = entry["label"]
+                    inst.save(update_fields=["label", "updated_at"])
+                remaining.pop(idx)
+                break
 
 
 def reconcile_computed_installments(project: Project) -> None:
@@ -1873,8 +1900,20 @@ def reconcile_computed_installments(project: Project) -> None:
 
     desired = _compute_project_schedule(project)
     existing = list(project.installments.all())
-    # Se já existem parcelas manuais (sem label), respeita e não materializa.
-    if existing and any(not item.label for item in existing):
+
+    unlabeled = [item for item in existing if not item.label]
+    if unlabeled:
+        # Parcelas sem rótulo vêm do backfill antigo (migration 0020 dividiu todo
+        # trabalho em Entrada/Saldo, sem o campo label) OU de uma divisão manual
+        # feita pelo usuário. Só re-rotulamos quando o CONJUNTO de valores bate
+        # exatamente com o cronograma calculado — aí é seguramente pagamento
+        # único/recorrente e o "Parcela" genérico vira Entrada/Saldo/Mensalidade.
+        # Se os valores não baterem, é divisão manual de propósito → preserva.
+        existing_amounts = Counter(Decimal(item.amount or 0) for item in existing)
+        desired_amounts = Counter(Decimal(entry["amount"]) for entry in desired)
+        if desired and len(existing) == len(desired) and existing_amounts == desired_amounts:
+            _apply_schedule_labels(existing, desired)
+            _invalidate_installment_cache(project)
         return
 
     existing_by_key = {}
@@ -1912,18 +1951,18 @@ def reconcile_computed_installments(project: Project) -> None:
         if (item.label, item.due_date) not in desired_keys and item.label and not item.paid:
             item.delete()
 
-    # Invalida o cache de prefetch para que o mesmo request enxergue as parcelas.
-    cache = getattr(project, "_prefetched_objects_cache", None)
-    if cache is not None:
-        cache.pop("installments", None)
+    _invalidate_installment_cache(project)
 
 
 def ensure_computed_installments(project: Project) -> None:
-    """Backfill on-read: materializa o cronograma uma única vez para trabalhos
-    que ainda não têm nenhuma parcela. Barato — vira no-op depois da 1ª vez."""
+    """Backfill on-read: materializa o cronograma para trabalhos sem parcelas e
+    re-rotula as parcelas sem rótulo (legado do backfill antigo) para
+    Pagamento/Entrada/Saldo/Mensalidade. Barato — vira no-op quando todas as
+    parcelas já têm rótulo."""
     if project.service_type in _AUTO_INSTALLMENT_SERVICE_TYPES:
         return
-    if _project_installment_list(project):
+    existing = _project_installment_list(project)
+    if existing and all(item.label for item in existing):
         return
     reconcile_computed_installments(project)
 

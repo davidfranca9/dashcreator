@@ -147,6 +147,66 @@ class InstallmentMaterializationTest(TestCase):
         saldo.refresh_from_db()
         self.assertTrue(saldo.paid)
 
+    def _full_payment_project(self, total=250):
+        # Pagamento único (sem entrada/saldo): total cheio numa data só.
+        return Project.objects.create(
+            workspace=self.workspace,
+            company="Ilike",
+            closing_source="Instagram",
+            niche=self.niche,
+            service_category=self.category,
+            service_type="ugc_creator",
+            project_name="Pacote",
+            content_type="",
+            stage="Fechado",
+            status="Briefing",
+            total_value=total,
+            entry_value=0,
+            received_value=0,
+            deliverables_count=1,
+            progress=20,
+            close_date=date.today() - timedelta(days=37),
+            payment_due_date=date.today() - timedelta(days=37),
+            due_date=date.today() + timedelta(days=10),
+        )
+
+    def test_full_payment_labeled_pagamento_not_parcela(self):
+        project = self._full_payment_project(total=250)
+        ensure_computed_installments(project)
+        labels = list(project.installments.values_list("label", flat=True))
+        self.assertEqual(labels, ["Pagamento"])
+        kinds = [e["kind"] for e in _project_finance_events(project)]
+        self.assertEqual(kinds, ["Pagamento"])
+        self.assertNotIn("Parcela", kinds)
+        self.assertNotIn("Entrada", kinds)
+
+    def test_relabels_legacy_unlabeled_full_payment(self):
+        # Simula o backfill antigo: parcela sem rótulo que casa com o pagamento.
+        project = self._full_payment_project(total=250)
+        ProjectInstallment.objects.create(
+            workspace=self.workspace, project=project, label="",
+            amount=250, due_date=date.today() - timedelta(days=37), paid=False,
+        )
+        ensure_computed_installments(project)
+        project.refresh_from_db()
+        self.assertEqual(list(project.installments.values_list("label", flat=True)), ["Pagamento"])
+
+    def test_does_not_relabel_genuine_manual_split(self):
+        # Divisão manual de propósito (3x 300) não bate com o cronograma
+        # calculado (Pagamento 900) → preserva como "Parcela".
+        project = self._full_payment_project(total=900)
+        for _ in range(3):
+            ProjectInstallment.objects.create(
+                workspace=self.workspace, project=project, label="",
+                amount=300, due_date=date.today() - timedelta(days=10), paid=False,
+            )
+        ensure_computed_installments(project)
+        project.refresh_from_db()
+        labels = set(project.installments.values_list("label", flat=True))
+        self.assertEqual(labels, {""})  # nada re-rotulado
+        kinds = {e["kind"] for e in _project_finance_events(project)}
+        self.assertEqual(kinds, {"Parcela"})
+
     def test_reconcile_preserves_confirmed_parcela(self):
         """Editar/recalcular não pode apagar nem desfazer uma confirmação."""
         project = self._single_payment_project()
