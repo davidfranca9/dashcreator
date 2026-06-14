@@ -6187,5 +6187,20 @@ body.page-finance .brand-block::after {
     }
 }
 
+/* ===================================================================
+   BETA — ajustes visíveis só no workspace de teste (body.is-beta).
+   Quando aprovado, mover para as regras base (vale pra todos).
+   =================================================================== */
+
+/* Logo do sidebar menor e centralizada */
+body.is-beta .brand-block {
+    justify-content: center;
+}
+body.is-beta .sidebar .brand-logo {
+    width: min(70%, 180px);
+    max-width: 180px;
+    transform: none;
+    margin: 0 auto;
+}
 
 
