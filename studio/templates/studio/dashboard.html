@@ -40,7 +40,7 @@
         <div class="chart-grid">
             <div class="chart-axis">
                 {% for step in revenue.steps %}
-                    <span>{{ step.label }}</span>
+                    <span class="chart-money-value">{{ step.label }}</span>
                 {% endfor %}
             </div>
             <div class="chart-visual">
@@ -55,7 +55,7 @@
                 <div class="chart-labels">
                     {% for point in revenue.points %}
                         <div class="chart-label">
-                            <strong>{{ point.amount|money }}</strong>
+                            <strong class="chart-money-value">{{ point.amount|money }}</strong>
                             <span>{{ point.label }}</span>
                         </div>
                     {% endfor %}

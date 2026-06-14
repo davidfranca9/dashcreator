@@ -179,8 +179,8 @@
                             <td>{{ row.channel|default:"—" }}</td>
                             <td>{{ row.last_contact|default:"—" }}</td>
                             <td>
-                                <span class="banco-status banco-status--{{ row.status_key }}">{{ row.status_label }}</span>
-                                {% if row.status_key != "fechado" %}
+                                <span class="banco-status banco-status--{{ row.status_class }}">{{ row.status_label }}</span>
+                                {% if row.is_archived and row.status_key != "fechado" %}
                                     <form method="post" action="{% url 'prospect_reactivate' row.id %}" class="banco-reactivate-form">
                                         {% csrf_token %}<button class="ghost-button xsmall" type="submit">↻ Reativar</button>
                                     </form>
@@ -188,7 +188,7 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="5" class="muted" style="text-align:center; padding: 2rem;">Nenhuma marca arquivada ainda.</td></tr>
+                        <tr><td colspan="5" class="muted" style="text-align:center; padding: 2rem;">Nenhuma marca cadastrada ainda.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

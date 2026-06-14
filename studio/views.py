@@ -62,6 +62,7 @@ from .services import (
     legal_snapshot,
     parse_month_value,
     prospection_snapshot,
+    reconcile_computed_installments,
     reports_snapshot,
     save_settings,
     settings_map,
@@ -1136,9 +1137,8 @@ def prospect_export(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     rows = (
         Prospect.objects.filter(workspace=workspace)
-        .exclude(archive_reason="")
         .select_related("niche")
-        .order_by("-archived_at")
+        .order_by("-updated_at")
     )
     buffer = StringIO()
     writer = csv.writer(buffer, delimiter=";")
@@ -1150,7 +1150,7 @@ def prospect_export(request: HttpRequest) -> HttpResponse:
             item.niche.name if item.niche_id else "",
             item.channel,
             item.contact_date.strftime("%d/%m/%Y") if item.contact_date else "",
-            PROSPECT_ARCHIVE_LABELS.get(item.archive_reason, ""),
+            PROSPECT_ARCHIVE_LABELS.get(item.archive_reason, "") if item.archive_reason else item.get_stage_display(),
             item.archived_at.strftime("%d/%m/%Y") if item.archived_at else "",
         ])
     response = HttpResponse(buffer.getvalue().encode("utf-8-sig"), content_type="text/csv; charset=utf-8")
@@ -1703,6 +1703,8 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
+        if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
+            reconcile_computed_installments(project)
         from django.utils import timezone as _tz
         prospect.stage = "Fechado"
         prospect.archive_reason = "fechado"
@@ -1889,7 +1891,10 @@ def _sync_auto_monthly_installments(
         if has_installments_yes:
             _sync_repeating_manual_installments(project, workspace)
         else:
-            project.installments.all().delete()
+            # Limpa parcelas manuais não confirmadas; as confirmadas (paid) são
+            # preservadas e o cronograma calculado é materializado depois
+            # (reconcile_computed_installments) para ficar confirmável.
+            project.installments.filter(paid=False).delete()
         return
     project.installments.all().delete()
     should_generate = duration > 1 and base_date is not None
@@ -1936,6 +1941,8 @@ def project_create(request: HttpRequest) -> HttpResponse:
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
+        if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
+            reconcile_computed_installments(project)
         messages.success(request, "Trabalho salvo com sucesso.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
@@ -1971,12 +1978,15 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
             form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES
             and project.service_type not in AUTO_MONTHLY_INSTALLMENT_TYPES
         ):
-            project.installments.all().delete()
+            # Preserva as parcelas já confirmadas; reconcile reconstrói o resto.
+            project.installments.filter(paid=False).delete()
         _sync_auto_monthly_installments(
             project,
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
+        if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
+            reconcile_computed_installments(project)
         messages.success(request, "Trabalho atualizado.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")

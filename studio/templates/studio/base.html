@@ -366,7 +366,7 @@
         })();
 
         // Ocultar/mostrar valores em R$ (estilo apps de banco).
-        // Substitui o texto por "*****" e esconde o gráfico inteiro.
+        // Substitui textos sensiveis por "*****" sem esconder os graficos.
         // Persiste em localStorage; vale pra todas as páginas.
         (() => {
             const STORAGE_KEY = "money-hidden";
@@ -383,12 +383,11 @@
                 ".cf-val",
                 ".stat-card > div > strong",
                 ".pipeline-amount",
-                ".chart-label strong",
+                ".chart-money-value",
                 ".conversion-rate",
                 ".pipeline-card-bottom strong",
                 ".installments-total strong",
                 ".activity-percent",
-                ".chart-svg text",
                 ".fd-text-green",
                 ".fd-text-warn",
                 ".fd-text-red",

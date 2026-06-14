@@ -21,6 +21,7 @@ from .constants import (
     NAV_GROUPS,
     NAV_ITEMS,
     PROSPECT_ARCHIVE_LABELS,
+    PROSPECT_STAGE_CHOICES,
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
@@ -1266,6 +1267,17 @@ PIPELINE_STAGES = [
 ]
 
 
+PROSPECT_STAGE_LABELS = dict(PROSPECT_STAGE_CHOICES)
+PROSPECT_STAGE_STATUS_CLASSES = {
+    "Rascunho": "draft",
+    "Prospeccao": "prospect",
+    "Aguardando retorno": "waiting",
+    "Follow-up": "follow-up",
+    "Negociacao": "negotiation",
+    "Fechado": "closed",
+}
+
+
 def _prospect_last_activity(item: Prospect) -> date:
     if item.last_activity_at:
         return item.last_activity_at.date()
@@ -1326,9 +1338,16 @@ def _serialize_pipeline_prospect(item: Prospect) -> dict:
     }
 
 
-def _serialize_archived_prospect(item: Prospect) -> dict:
-    from .constants import PROSPECT_ARCHIVE_LABELS
+def _serialize_banco_prospect(item: Prospect) -> dict:
     channel = item.channel or ("Instagram DM" if item.instagram else ("Email" if item.email else ""))
+    is_archived = bool(item.archive_reason)
+    status_key = item.archive_reason if is_archived else item.stage
+    status_label = (
+        PROSPECT_ARCHIVE_LABELS.get(item.archive_reason, item.archive_reason)
+        if is_archived
+        else PROSPECT_STAGE_LABELS.get(item.stage, item.stage)
+    )
+    status_class = item.archive_reason if is_archived else PROSPECT_STAGE_STATUS_CLASSES.get(item.stage, "active")
     return {
         "id": item.id,
         "company": item.company,
@@ -1336,8 +1355,10 @@ def _serialize_archived_prospect(item: Prospect) -> dict:
         "niche": item.niche.name if item.niche_id else "",
         "channel": channel,
         "last_contact": short_date(item.contact_date) if item.contact_date else (short_date(item.archived_at.date()) if item.archived_at else ""),
-        "status_key": item.archive_reason,
-        "status_label": PROSPECT_ARCHIVE_LABELS.get(item.archive_reason, item.archive_reason),
+        "status_key": status_key,
+        "status_label": status_label,
+        "status_class": status_class,
+        "is_archived": is_archived,
     }
 
 
@@ -1368,7 +1389,7 @@ def prospection_snapshot(
         return (not normalized_search) or (normalized_search in (company or "").casefold())
 
     active = [p for p in all_prospects if not p.archive_reason and matches_month(p) and matches_search(p.company)]
-    archived = [p for p in all_prospects if p.archive_reason and matches_search(p.company)]
+    banco_prospects = [p for p in all_prospects if matches_search(p.company)]
 
     # KPIs do pipeline (todos abordados = ativos + arquivados; fechados = arquivo "fechado")
     total_addressed = len([p for p in all_prospects if matches_search(p.company)])
@@ -1398,14 +1419,20 @@ def prospection_snapshot(
 
     stale_alert = [_serialize_pipeline_prospect(p) for p in active if (date.today() - _prospect_last_activity(p)).days >= 28 and p.stage in {"Prospeccao", "Aguardando retorno"}]
 
-    archived_sorted = sorted(archived, key=lambda p: p.archived_at or p.updated_at, reverse=True)
-    archived_all = [_serialize_archived_prospect(p) for p in archived_sorted]
+    banco_sorted = sorted(
+        banco_prospects,
+        key=lambda p: p.archived_at or p.updated_at or p.created_at,
+        reverse=True,
+    )
+    banco_all = [_serialize_banco_prospect(p) for p in banco_sorted]
 
-    # Opções dos filtros do Banco de Marcas (a partir de todo o conjunto arquivado,
+    # Opções dos filtros do Banco de Marcas (a partir de todo o conjunto,
     # para que as opções não desapareçam ao aplicar um filtro).
-    banco_niche_options = sorted({r["niche"] for r in archived_all if r["niche"]})
-    banco_channel_options = sorted({r["channel"] for r in archived_all if r["channel"]})
+    banco_niche_options = sorted({r["niche"] for r in banco_all if r["niche"]})
+    banco_channel_options = sorted({r["channel"] for r in banco_all if r["channel"]})
     banco_status_options = [
+        {"value": key, "label": label} for key, label in PROSPECT_STAGE_CHOICES
+    ] + [
         {"value": key, "label": label} for key, label in PROSPECT_ARCHIVE_LABELS.items()
     ]
 
@@ -1414,7 +1441,7 @@ def prospection_snapshot(
     status_filter = (banco_status or "").strip()
     archived_rows = [
         r
-        for r in archived_all
+        for r in banco_all
         if (not niche_filter or r["niche"] == niche_filter)
         and (not channel_filter or r["channel"] == channel_filter)
         and (not status_filter or r["status_key"] == status_filter)
@@ -1749,53 +1776,33 @@ def _project_installment_list(project: Project) -> list[ProjectInstallment]:
     return list(project.installments.all())
 
 
-def _project_finance_events(project: Project) -> list[dict]:
-    installments = _project_installment_list(project)
-    if installments:
-        return [
-            {
-                "project": project,
-                "kind": "Parcela",
-                "amount": Decimal(item.amount or 0),
-                "due_date": item.due_date,
-                "paid": item.paid,
-                "paid_on": item.paid_on or item.due_date,
-                "installment_id": item.pk,
-            }
-            for item in installments
-            if Decimal(item.amount or 0) > ZERO
-        ]
+def _compute_project_schedule(project: Project) -> list[dict]:
+    """Cronograma de recebíveis *calculado* de um trabalho que ainda não tem
+    parcelas registradas: Entrada/Saldo (pagamento único) ou Mensalidade N
+    (contrato recorrente). É a fonte de verdade tanto para os eventos virtuais
+    do financeiro quanto para a materialização em ProjectInstallment, então os
+    valores/datas/status de pago batem exatamente — o faturamento não muda ao
+    materializar.
 
-    events = []
+    Cada item: {label, amount, due_date, paid, paid_on}.
+    """
+    schedule: list[dict] = []
     if _project_contract_month_count(project) > 1:
         monthly_amount = _project_monthly_contract_value(project)
         if monthly_amount <= ZERO:
-            return events
+            return schedule
         for index, payment_date in enumerate(_project_recurring_payment_dates(project), start=1):
             is_paid = payment_date <= date.today()
-            if is_paid:
-                events.append(
-                    {
-                        "project": project,
-                        "kind": f"Mensalidade {index}",
-                        "amount": monthly_amount,
-                        "due_date": payment_date,
-                        "paid": True,
-                        "paid_on": payment_date,
-                    }
-                )
-            else:
-                events.append(
-                    {
-                        "project": project,
-                        "kind": f"Mensalidade {index}",
-                        "amount": monthly_amount,
-                        "due_date": payment_date,
-                        "paid": False,
-                        "paid_on": None,
-                    }
-                )
-        return events
+            schedule.append(
+                {
+                    "label": f"Mensalidade {index}",
+                    "amount": monthly_amount,
+                    "due_date": payment_date,
+                    "paid": is_paid,
+                    "paid_on": payment_date if is_paid else None,
+                }
+            )
+        return schedule
 
     payment_date = payment_reference_date(project)
     entry_date = project.entry_due_date or payment_date
@@ -1807,28 +1814,138 @@ def _project_finance_events(project: Project) -> list[dict]:
     balance_received = max(received_amount - entry_amount, ZERO)
 
     if entry_amount > ZERO:
-        events.append(
+        entry_paid = entry_received >= entry_amount and entry_amount > ZERO
+        schedule.append(
             {
-                "project": project,
-                "kind": "Entrada",
+                "label": "Entrada",
                 "amount": entry_amount,
                 "due_date": entry_date,
-                "paid": entry_received >= entry_amount and entry_amount > ZERO,
-                "paid_on": entry_date if entry_received >= entry_amount else None,
+                "paid": entry_paid,
+                "paid_on": entry_date if entry_paid else None,
             }
         )
     if balance_amount > ZERO:
-        events.append(
+        balance_paid = balance_received >= balance_amount and balance_amount > ZERO
+        schedule.append(
             {
-                "project": project,
-                "kind": "Saldo" if entry_amount > ZERO else "Entrada",
+                "label": "Saldo" if entry_amount > ZERO else "Entrada",
                 "amount": balance_amount,
                 "due_date": payment_date,
-                "paid": balance_received >= balance_amount and balance_amount > ZERO,
-                "paid_on": payment_date if balance_received >= balance_amount else None,
+                "paid": balance_paid,
+                "paid_on": payment_date if balance_paid else None,
             }
         )
-    return events
+    return schedule
+
+
+# Tipos de contrato cujas parcelas são geridas por outro caminho (publicidade
+# auto-gera N parcelas; parcelas manuais são editadas pelo usuário). Para esses
+# NÃO materializamos a partir do cronograma calculado.
+_AUTO_INSTALLMENT_SERVICE_TYPES = {"publicidade"}
+
+
+def reconcile_computed_installments(project: Project) -> None:
+    """Materializa o cronograma calculado (Entrada/Saldo/Mensalidade) como
+    parcelas reais (ProjectInstallment), tornando-as confirmáveis. Idempotente:
+    - cria as parcelas que faltam;
+    - sincroniza o valor das já existentes;
+    - marca como paga quem o cálculo considera paga e ainda não foi confirmada;
+    - **nunca apaga uma parcela já confirmada (paid=True)** — preserva o que o
+      usuário marcou como recebido;
+    - só remove parcelas computadas (com label) que sumiram do cronograma e que
+      ainda não foram pagas.
+
+    Não toca em projetos de publicidade (auto-gerados) nem em parcelas manuais
+    sem label.
+    """
+    if project.service_type in _AUTO_INSTALLMENT_SERVICE_TYPES:
+        return
+
+    desired = _compute_project_schedule(project)
+    existing = list(project.installments.all())
+    # Se já existem parcelas manuais (sem label), respeita e não materializa.
+    if existing and any(not item.label for item in existing):
+        return
+
+    existing_by_key = {}
+    for item in existing:
+        existing_by_key.setdefault((item.label, item.due_date), item)
+
+    desired_keys = set()
+    for entry in desired:
+        key = (entry["label"], entry["due_date"])
+        desired_keys.add(key)
+        current = existing_by_key.get(key)
+        if current is None:
+            ProjectInstallment.objects.create(
+                project=project,
+                workspace_id=project.workspace_id,
+                label=entry["label"],
+                amount=entry["amount"],
+                due_date=entry["due_date"],
+                paid=entry["paid"],
+                paid_on=entry["paid_on"],
+            )
+            continue
+        update_fields = []
+        if Decimal(current.amount or 0) != Decimal(entry["amount"]):
+            current.amount = entry["amount"]
+            update_fields.append("amount")
+        if not current.paid and entry["paid"]:
+            current.paid = True
+            current.paid_on = entry["paid_on"]
+            update_fields.extend(["paid", "paid_on"])
+        if update_fields:
+            current.save(update_fields=update_fields + ["updated_at"])
+
+    for item in existing:
+        if (item.label, item.due_date) not in desired_keys and item.label and not item.paid:
+            item.delete()
+
+    # Invalida o cache de prefetch para que o mesmo request enxergue as parcelas.
+    cache = getattr(project, "_prefetched_objects_cache", None)
+    if cache is not None:
+        cache.pop("installments", None)
+
+
+def ensure_computed_installments(project: Project) -> None:
+    """Backfill on-read: materializa o cronograma uma única vez para trabalhos
+    que ainda não têm nenhuma parcela. Barato — vira no-op depois da 1ª vez."""
+    if project.service_type in _AUTO_INSTALLMENT_SERVICE_TYPES:
+        return
+    if _project_installment_list(project):
+        return
+    reconcile_computed_installments(project)
+
+
+def _project_finance_events(project: Project) -> list[dict]:
+    installments = _project_installment_list(project)
+    if installments:
+        return [
+            {
+                "project": project,
+                "kind": item.label or "Parcela",
+                "amount": Decimal(item.amount or 0),
+                "due_date": item.due_date,
+                "paid": item.paid,
+                "paid_on": item.paid_on or item.due_date,
+                "installment_id": item.pk,
+            }
+            for item in installments
+            if Decimal(item.amount or 0) > ZERO
+        ]
+
+    return [
+        {
+            "project": project,
+            "kind": event["label"],
+            "amount": event["amount"],
+            "due_date": event["due_date"],
+            "paid": event["paid"],
+            "paid_on": event["paid_on"],
+        }
+        for event in _compute_project_schedule(project)
+    ]
 
 
 def _finance_event_reference_date(event: dict) -> date:
@@ -1850,6 +1967,10 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     )
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
+    # Backfill: materializa o cronograma calculado como parcelas reais para que
+    # Entrada/Saldo/Mensalidade fiquem confirmáveis. Roda uma vez por trabalho.
+    for project in projects:
+        ensure_computed_installments(project)
     finance_events = [event for project in projects for event in _project_finance_events(project)]
     month_events = (
         finance_events

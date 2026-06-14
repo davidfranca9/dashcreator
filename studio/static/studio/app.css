@@ -4876,17 +4876,19 @@ body.page-finance .workspace-label {
 .pipeline-column { transition: background .15s; }
 .pipeline-column--dropping { background: #f0f6ff; }
 .pipeline-card-stale-note { position: absolute; top: 0.5rem; right: 0.6rem; font-size: 0.7rem; color: #c04d57; font-weight: 500; }
-.pipeline-card-top { display: flex; justify-content: space-between; gap: 0.5rem; }
-.pipeline-card-top strong { display: block; font-size: 0.92rem; }
-.pipeline-card-top .muted { font-size: 0.75rem; }
+.pipeline-card-top { display: flex; justify-content: space-between; gap: 0.5rem; min-width: 0; }
+.pipeline-card-top > div { min-width: 0; }
+.pipeline-card-top strong { display: block; font-size: 0.92rem; overflow-wrap: anywhere; }
+.pipeline-card-top .muted { display: block; font-size: 0.75rem; overflow-wrap: anywhere; }
 .pipeline-chip {
     background: #e6efff; color: #2961c7; font-size: 0.68rem; padding: 0.2rem 0.55rem; border-radius: 999px;
-    font-weight: 500; white-space: nowrap; align-self: flex-start;
+    font-weight: 500; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: flex-start; flex: 0 1 auto;
 }
 .pipeline-chip--success { background: #e0f5e8; color: #1f7b46; }
-.pipeline-card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-.pipeline-card-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-.pipeline-card-actions form { display: inline; margin: 0; }
+.pipeline-card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
+.pipeline-card-actions { display: flex; gap: 0.35rem; flex: 1 1 190px; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.pipeline-card-actions form { display: inline-flex; margin: 0; min-width: 0; }
+.pipeline-card-actions .xsmall { flex: 0 1 auto; min-width: 0; white-space: nowrap; }
 .xsmall { font-size: 0.72rem; padding: 0.4rem 0.7rem; border-radius: 6px; }
 .pipeline-overflow {
     text-align: center; color: #4d8cff; font-size: 0.8rem; text-decoration: none;
@@ -4921,6 +4923,12 @@ body.page-finance .workspace-label {
 .banco-status--nao_tem_interesse { background: #f1f1ee; color: #6b6b66; }
 .banco-status--pausado { background: #fef0d7; color: #9a6911; }
 .banco-status--fechado { background: #e0f5e8; color: #1f7b46; }
+.banco-status--draft { background: #f1f1ee; color: #6b6b66; }
+.banco-status--prospect { background: #e6efff; color: #2961c7; }
+.banco-status--waiting { background: #fff0dc; color: #995b11; }
+.banco-status--follow-up { background: #ecebff; color: #5d55d6; }
+.banco-status--negotiation { background: #ecebff; color: #5d55d6; }
+.banco-status--closed { background: #e0f5e8; color: #1f7b46; }
 .banco-reactivate-form { display: inline; margin-top: 0.35rem; }
 
 .banco-pagination {
@@ -5116,20 +5124,6 @@ body.page-finance .workspace-label {
 .money-toggle-icon--closed { display: none; }
 body.money-hidden .money-toggle-icon--open { display: none; }
 body.money-hidden .money-toggle-icon--closed { display: inline-block; }
-
-/* Gráfico do dashboard fica escondido visualmente quando body.money-hidden
-   — o texto dos valores é substituído por ****** via JS, mas a linha do
-   gráfico, pontos, área e gridlines também precisam sumir pra não revelar
-   tendência. */
-body.money-hidden .chart-line,
-body.money-hidden .chart-area,
-body.money-hidden .chart-svg circle,
-body.money-hidden .chart-svg path,
-body.money-hidden .chart-svg line:not(.chart-gridline),
-body.money-hidden .chart-svg rect {
-    opacity: 0;
-}
-body.money-hidden .chart-svg .chart-gridline { opacity: 0.4; }
 
 /* ============ Toasts flutuantes (Django messages) ============ */
 .toast-stack {

@@ -333,6 +333,10 @@ class ProjectInstallment(WorkspaceOwnedModel):
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     paid = models.BooleanField(default=False)
     paid_on = models.DateField(null=True, blank=True)
+    # Rótulo do recebível quando a parcela foi materializada a partir do
+    # cronograma calculado (Entrada / Saldo / Mensalidade N). Vazio para
+    # parcelas manuais/publicidade, que exibem "Parcela".
+    label = models.CharField(max_length=40, blank=True, default="")
 
     class Meta:
         ordering = ["due_date", "pk"]

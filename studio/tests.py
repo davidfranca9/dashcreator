@@ -165,6 +165,26 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'value="{prospect.contact_date.isoformat()}"', html=False)
 
+    def test_banco_de_marcas_includes_active_prospects(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"), {"tab": "banco"})
+
+        self.assertEqual(response.status_code, 200)
+        nike_row = next(row for row in response.context["archived_rows"] if row["company"] == "Nike")
+        self.assertEqual(nike_row["status_key"], "Prospeccao")
+        self.assertEqual(nike_row["status_label"], "Prospecção")
+        self.assertFalse(nike_row["is_archived"])
+
+    def test_banco_de_marcas_filters_active_statuses(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"), {"tab": "banco", "banco_status": "Prospeccao"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["archived_rows"])
+        self.assertTrue(all(row["status_key"] == "Prospeccao" for row in response.context["archived_rows"]))
+
     def test_prospect_form_hides_estimated_value_until_conversion(self):
         form = ProspectForm(workspace=self.workspace)
 
@@ -940,7 +960,10 @@ class DashboardSmokeTest(TestCase):
             Decimal("500.00"),
         ])
 
-    def test_social_media_with_has_installments_no_does_not_generate(self):
+    def test_social_media_with_has_installments_no_materializes_monthly_schedule(self):
+        # Antes não gerava parcelas (mensalidades virtuais). Agora o cronograma
+        # recorrente é materializado como parcelas reais "Mensalidade N" para
+        # que fiquem confirmáveis no Financeiro.
         self.client.force_login(self.user)
         close_date = date(2026, 5, 20)
         response = self.client.post(
@@ -973,7 +996,8 @@ class DashboardSmokeTest(TestCase):
         )
         self.assertRedirects(response, reverse("jobs"))
         project = Project.objects.get(workspace=self.workspace, company="Insider")
-        self.assertEqual(project.installments.count(), 0)
+        self.assertEqual(project.installments.count(), 3)
+        self.assertTrue(all(i.label.startswith("Mensalidade") for i in project.installments.all()))
 
     def test_recurring_contract_without_manual_installments_enters_on_payment_day(self):
         self.client.force_login(self.user)
