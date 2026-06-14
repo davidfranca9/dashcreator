@@ -41,6 +41,7 @@ from .forms import (
     FinanceEntryForm,
     FixedCostForm,
     HAS_INSTALLMENTS_YES,
+    InfoProductForm,
     ManagedOptionForm,
     ProjectForm,
     ProjectInstallmentFormSet,
@@ -1220,6 +1221,15 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     if not workspace_has_infoproducts_access(workspace, request.user):
         raise Http404("Pagina nao encontrada.")
+    product_form = InfoProductForm(workspace=workspace)
+    if request.method == "POST" and request.POST.get("infoproduct_action") == "create_product":
+        product_form = InfoProductForm(request.POST, workspace=workspace)
+        if product_form.is_valid():
+            product = product_form.save(commit=False)
+            product.workspace = workspace
+            product.save()
+            messages.success(request, "Produto cadastrado.")
+            return redirect("infoproducts")
     context = shell_context(
         "infoproducts",
         workspace,
@@ -1227,7 +1237,9 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
         "Produtos digitais, entradas, alunas e prazos.",
         user=request.user,
     )
-    context.update(infoproducts_snapshot())
+    context.update(infoproducts_snapshot(workspace))
+    context["product_form"] = product_form
+    context["open_product_modal"] = request.method == "POST" and product_form.errors
     return render(request, "studio/infoproducts.html", context)
 
 

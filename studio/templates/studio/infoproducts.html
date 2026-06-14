@@ -256,24 +256,26 @@
     </section>
 </div>
 
-<div class="ip-modal-backdrop" data-infoproduct-modal="product" hidden>
-    <div class="ip-modal" role="dialog" aria-modal="true" aria-label="Cadastrar produto">
+<div class="ip-modal-backdrop" data-infoproduct-modal="product"{% if not open_product_modal %} hidden{% endif %}>
+    <form method="post" class="ip-modal" role="dialog" aria-modal="true" aria-label="Cadastrar produto">
+        {% csrf_token %}
+        <input type="hidden" name="infoproduct_action" value="create_product">
         <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
         <h3>Cadastrar produto</h3>
         <p>Preencha o nome e a plataforma. O sistema se adapta ao seu negócio.</p>
         <div class="form-grid">
-            <label class="form-field form-field--full"><span>Nome do produto</span><input type="text" placeholder="Ex: Mentoria Creator, Planner Digital, Curso de UGC"></label>
-            <label class="form-field"><span>Tipo</span><select><option>Mentoria em grupo</option><option>Acompanhamento 1:1</option><option>Curso gravado</option><option>Planner / Template</option><option>SaaS / Plataforma</option></select></label>
-            <label class="form-field"><span>Status</span><select><option>Ativo</option><option>Em breve</option><option>Pausado</option><option>Encerrado</option></select></label>
-            <label class="form-field"><span>Preço (R$)</span><input type="text" placeholder="0,00"></label>
-            <label class="form-field"><span>Vagas</span><input type="number" placeholder="0"></label>
-            <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Hotmart</option><option>Kiwify</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
-            <label class="form-field"><span>Link de vendas</span><input type="text" placeholder="hubla.com.br/seuproduto"></label>
-            <label class="form-field"><span>Duração do acesso</span><select><option>Sem prazo</option><option>1 mês</option><option>3 meses</option><option>6 meses</option><option>12 meses</option></select></label>
-            <label class="form-field"><span>Controle de progresso?</span><select><option>Sim</option><option>Não</option></select></label>
+            <label class="form-field form-field--full"><span>{{ product_form.name.label }}</span>{{ product_form.name }}{{ product_form.name.errors }}</label>
+            <label class="form-field"><span>{{ product_form.product_type.label }}</span>{{ product_form.product_type }}{{ product_form.product_type.errors }}</label>
+            <label class="form-field"><span>{{ product_form.status.label }}</span>{{ product_form.status }}{{ product_form.status.errors }}</label>
+            <label class="form-field"><span>{{ product_form.price.label }}</span>{{ product_form.price }}{{ product_form.price.errors }}</label>
+            <label class="form-field"><span>{{ product_form.seats.label }}</span>{{ product_form.seats }}{{ product_form.seats.errors }}</label>
+            <label class="form-field"><span>{{ product_form.platform.label }}</span>{{ product_form.platform }}{{ product_form.platform.errors }}</label>
+            <label class="form-field"><span>{{ product_form.sales_link.label }}</span>{{ product_form.sales_link }}{{ product_form.sales_link.errors }}</label>
+            <label class="form-field"><span>{{ product_form.access_duration.label }}</span>{{ product_form.access_duration }}{{ product_form.access_duration.errors }}</label>
+            <label class="form-field form-field--checkbox">{{ product_form.track_progress }}<span>{{ product_form.track_progress.label }}</span>{{ product_form.track_progress.errors }}</label>
         </div>
-        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Cadastrar produto</button></div>
-    </div>
+        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">Cadastrar produto</button></div>
+    </form>
 </div>
 
 <div class="ip-modal-backdrop" data-infoproduct-modal="buyer" hidden>

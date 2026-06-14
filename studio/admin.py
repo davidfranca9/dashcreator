@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import AccessCode, ActiveUserSession, InfoProduct, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -50,6 +50,13 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "workspace", "updated_at")
     list_filter = ("workspace",)
     search_fields = ("name",)
+
+
+@admin.register(InfoProduct)
+class InfoProductAdmin(admin.ModelAdmin):
+    list_display = ("name", "product_type", "status", "price", "platform", "workspace", "updated_at")
+    list_filter = ("workspace", "status", "product_type", "platform")
+    search_fields = ("name", "sales_link")
 
 
 @admin.register(Niche)

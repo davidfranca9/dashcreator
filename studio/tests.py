@@ -18,7 +18,7 @@ from django.urls import reverse
 from .constants import DEFAULT_NICHE_NAMES
 from .checkout import get_product
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
-from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
+from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
 from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 from .checkout_views import _approve_purchase
@@ -99,6 +99,27 @@ class DashboardSmokeTest(TestCase):
         self.assertNotContains(response, 'data-infoproduct-list-open="entries"', html=False)
         self.assertContains(response, 'href="/infoprodutos/"', html=False)
         self.assertContains(jobs_response, 'href="/infoprodutos/"', html=False)
+
+        create_response = self.client.post(reverse("infoproducts"), {
+            "infoproduct_action": "create_product",
+            "name": "Curso Creator",
+            "product_type": InfoProduct.TYPE_COURSE,
+            "status": InfoProduct.STATUS_ACTIVE,
+            "price": "197,00",
+            "seats": "20",
+            "platform": "Hubla",
+            "sales_link": "https://hubla.com.br/curso-creator",
+            "access_duration": "6_months",
+            "track_progress": "on",
+        })
+        self.assertRedirects(create_response, reverse("infoproducts"))
+        product = InfoProduct.objects.get(workspace=get_or_create_workspace_for_user(layfe), name="Curso Creator")
+        self.assertEqual(product.price, Decimal("197.00"))
+
+        response = self.client.get(reverse("infoproducts"))
+        self.assertContains(response, "Curso Creator")
+        self.assertContains(response, "R$197")
+        self.assertContains(response, "1 ativos")
 
     def test_workspace_uses_default_niches_and_can_create_reusable_service_category_from_settings(self):
         self.client.force_login(self.user)

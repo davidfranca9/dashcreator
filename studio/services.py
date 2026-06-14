@@ -26,7 +26,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -555,16 +555,64 @@ def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:
     }
 
 
-def infoproducts_snapshot() -> dict:
+def infoproducts_snapshot(workspace: Workspace) -> dict:
+    products_queryset = list(InfoProduct.objects.filter(workspace=workspace).order_by("name"))
+    active_count = sum(1 for item in products_queryset if item.status == InfoProduct.STATUS_ACTIVE)
+    coming_soon_count = sum(1 for item in products_queryset if item.status == InfoProduct.STATUS_COMING_SOON)
+    type_classes = {
+        InfoProduct.TYPE_TEMPLATE: "orange",
+        InfoProduct.TYPE_MENTORSHIP: "pink",
+        InfoProduct.TYPE_COURSE: "blue",
+        InfoProduct.TYPE_ONE_TO_ONE: "purple",
+        InfoProduct.TYPE_SAAS: "blue",
+    }
+    status_classes = {
+        InfoProduct.STATUS_ACTIVE: "active",
+        InfoProduct.STATUS_COMING_SOON: "warn",
+        InfoProduct.STATUS_PAUSED: "warn",
+        InfoProduct.STATUS_CLOSED: "grey",
+    }
+    platform_colors = {
+        "Hubla": "#ff6b35",
+        "Hotmart": "#ff4d00",
+        "Kiwify": "#17c964",
+        "Mercado Pago": "#009ee3",
+        "Link Nubank": "#820ad1",
+        "Pix direto": "#10b981",
+    }
+    products = []
+    for item in products_queryset:
+        initials = "".join(part[0] for part in item.name.split()[:2]).upper() or "IP"
+        products.append({
+            "name": item.name,
+            "kind": f"{item.get_product_type_display()} · {item.get_platform_display()}",
+            "status": item.get_status_display(),
+            "status_class": status_classes.get(item.status, "grey"),
+            "icon": initials[:2],
+            "icon_bg": "#dbeafe",
+            "platform": item.get_platform_display(),
+            "platform_color": platform_colors.get(item.platform, "#3b82f6"),
+            "type_label": item.get_product_type_display(),
+            "type_class": type_classes.get(item.product_type, "blue"),
+            "link_label": item.sales_link or "sem link",
+            "stats": [("Vendas", "0", ""), ("Preço", currency(item.price), ""), ("Receita", currency(0), "success")],
+            "capacity_label": "Vagas" if item.seats else "Sem limite de vagas",
+            "capacity_note": f"0 / {item.seats}" if item.seats else "produto sem limite",
+            "capacity_tone": "" if item.seats else "success",
+            "progress": 0 if item.seats else None,
+            "progress_color": "#3b82f6",
+            "primary_action": "Ver alunas" if item.track_progress else "Compradores",
+        })
+
     return {
         "kpis": [
-            {"label": "Produtos cadastrados", "value": "0", "sub": "nenhum produto cadastrado", "tone": ""},
+            {"label": "Produtos cadastrados", "value": str(len(products_queryset)), "sub": f"{active_count} ativos · {coming_soon_count} em breve", "tone": ""},
             {"label": "Receita total", "value": "R$0", "sub": "sem entradas registradas", "tone": "success"},
             {"label": "Alunas / compradores", "value": "0", "sub": "nenhuma pessoa cadastrada", "tone": ""},
             {"label": "Prazos vencendo", "value": "0", "sub": "nenhum prazo vencendo", "tone": "warning"},
         ],
         "deadline_alert": None,
-        "products": [],
+        "products": products,
         "entries": [],
         "buyers": [],
         "more_entries": [],

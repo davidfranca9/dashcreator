@@ -434,6 +434,63 @@ class FixedCost(WorkspaceOwnedModel):
         return _Decimal(self.amount or 0)
 
 
+class InfoProduct(WorkspaceOwnedModel):
+    TYPE_TEMPLATE = "template"
+    TYPE_MENTORSHIP = "mentorship"
+    TYPE_COURSE = "course"
+    TYPE_ONE_TO_ONE = "one_to_one"
+    TYPE_SAAS = "saas"
+    TYPE_CHOICES = [
+        (TYPE_MENTORSHIP, "Mentoria em grupo"),
+        (TYPE_ONE_TO_ONE, "Acompanhamento 1:1"),
+        (TYPE_COURSE, "Curso gravado"),
+        (TYPE_TEMPLATE, "Planner / Template"),
+        (TYPE_SAAS, "SaaS / Plataforma"),
+    ]
+    STATUS_ACTIVE = "active"
+    STATUS_COMING_SOON = "coming_soon"
+    STATUS_PAUSED = "paused"
+    STATUS_CLOSED = "closed"
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, "Ativo"),
+        (STATUS_COMING_SOON, "Em breve"),
+        (STATUS_PAUSED, "Pausado"),
+        (STATUS_CLOSED, "Encerrado"),
+    ]
+    PLATFORM_CHOICES = [
+        ("Hubla", "Hubla"),
+        ("Hotmart", "Hotmart"),
+        ("Kiwify", "Kiwify"),
+        ("Mercado Pago", "Mercado Pago"),
+        ("Link Nubank", "Link Nubank"),
+        ("Pix direto", "Pix direto"),
+    ]
+    ACCESS_CHOICES = [
+        ("unlimited", "Sem prazo"),
+        ("1_month", "1 mês"),
+        ("3_months", "3 meses"),
+        ("6_months", "6 meses"),
+        ("12_months", "12 meses"),
+    ]
+
+    name = models.CharField(max_length=180)
+    product_type = models.CharField(max_length=30, choices=TYPE_CHOICES, default=TYPE_MENTORSHIP)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    seats = models.PositiveIntegerField(null=True, blank=True)
+    platform = models.CharField(max_length=40, choices=PLATFORM_CHOICES, default="Hubla")
+    sales_link = models.CharField(max_length=255, blank=True, default="")
+    access_duration = models.CharField(max_length=20, choices=ACCESS_CHOICES, default="unlimited")
+    track_progress = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = [("workspace", "name")]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class CashBox(WorkspaceOwnedModel):
     ALLOCATION_PERCENTAGE = "percentage"
     ALLOCATION_FIXED = "fixed"

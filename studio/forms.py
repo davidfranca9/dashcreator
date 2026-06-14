@@ -24,7 +24,7 @@ from .constants import (
     SERVICE_TYPE_TO_CATEGORY,
     SETTINGS_GROUPS,
 )
-from .models import AccessCode, CashBox, FinanceEntry, FixedCost, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
+from .models import AccessCode, CashBox, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
@@ -1210,6 +1210,66 @@ class FixedCostForm(forms.ModelForm):
         if value < 1 or value > 31:
             raise forms.ValidationError("Informe um dia entre 1 e 31.")
         return value
+
+
+class InfoProductForm(forms.ModelForm):
+    price = forms.CharField(label="Preço (R$)", required=False, widget=forms.TextInput(attrs={"placeholder": "0,00", "inputmode": "decimal"}))
+
+    class Meta:
+        model = InfoProduct
+        fields = [
+            "name",
+            "product_type",
+            "status",
+            "price",
+            "seats",
+            "platform",
+            "sales_link",
+            "access_duration",
+            "track_progress",
+        ]
+        labels = {
+            "name": "Nome do produto",
+            "product_type": "Tipo",
+            "status": "Status",
+            "seats": "Vagas",
+            "platform": "Plataforma",
+            "sales_link": "Link de vendas",
+            "access_duration": "Duração do acesso",
+            "track_progress": "Controle de progresso?",
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Ex: Mentoria Creator, Planner Digital, Curso de UGC"}),
+            "seats": forms.NumberInput(attrs={"min": "0", "placeholder": "0"}),
+            "sales_link": forms.TextInput(attrs={"placeholder": "hubla.com.br/seuproduto"}),
+        }
+
+    def __init__(self, *args, workspace=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workspace = workspace
+
+    def clean_name(self):
+        name = (self.cleaned_data.get("name") or "").strip()
+        if self.workspace and InfoProduct.objects.filter(workspace=self.workspace, name__iexact=name).exists():
+            raise forms.ValidationError("Já existe um produto com esse nome.")
+        return name
+
+    def clean_price(self):
+        raw_text = str(self.cleaned_data.get("price") or "0").strip()
+        raw_text = raw_text.replace("R$", "").replace(" ", "")
+        if "," in raw_text:
+            raw_text = raw_text.replace(".", "").replace(",", ".")
+        try:
+            value = Decimal(raw_text)
+        except Exception:
+            raise forms.ValidationError("Informe um preço válido.")
+        if value < 0:
+            raise forms.ValidationError("O preço não pode ser negativo.")
+        return value
+
+    def clean_seats(self):
+        seats = self.cleaned_data.get("seats")
+        return seats or None
 
 
 def _decimal_from_setting(raw_value, default: str):
