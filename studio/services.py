@@ -1262,6 +1262,7 @@ PIPELINE_STAGES = [
     ("Rascunho", "Rascunho", "draft"),
     ("Prospeccao", "Prospecção", "prospect"),
     ("Aguardando retorno", "Ag. retorno", "waiting"),
+    ("Follow-up", "Follow-up", "follow-up"),
     ("Negociacao", "Negociação", "negotiation"),
     ("Fechado", "Fechados ✓", "closed"),
 ]
@@ -1406,7 +1407,11 @@ def prospection_snapshot(
             items_raw = [p for p in active if p.stage == stage_key]
         items_raw.sort(key=lambda p: _prospect_last_activity(p), reverse=True)
         total = len(items_raw)
-        items = [_serialize_pipeline_prospect(p) for p in items_raw[:visible_per_column]]
+        items = []
+        for index, prospect in enumerate(items_raw):
+            item = _serialize_pipeline_prospect(prospect)
+            item["is_overflow"] = index >= visible_per_column
+            items.append(item)
         overflow = max(total - visible_per_column, 0)
         pipeline_columns.append({
             "key": stage_key,
@@ -1430,8 +1435,13 @@ def prospection_snapshot(
     # para que as opções não desapareçam ao aplicar um filtro).
     banco_niche_options = sorted({r["niche"] for r in banco_all if r["niche"]})
     banco_channel_options = sorted({r["channel"] for r in banco_all if r["channel"]})
+    # Etapas ativas (Follow-up incluso) + status de arquivo (Sem retorno etc.).
+    # "Fechado" só existe arquivado (status_key "fechado"), então a etapa
+    # homônima é omitida para não duplicar a opção no filtro.
     banco_status_options = [
-        {"value": key, "label": label} for key, label in PROSPECT_STAGE_CHOICES
+        {"value": key, "label": label}
+        for key, label in PROSPECT_STAGE_CHOICES
+        if key != "Fechado"
     ] + [
         {"value": key, "label": label} for key, label in PROSPECT_ARCHIVE_LABELS.items()
     ]

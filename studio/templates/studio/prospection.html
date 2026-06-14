@@ -83,6 +83,10 @@
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
                                             <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Follow-up"><button class="primary-button xsmall" type="submit">Follow-up</button></form>
+                                        {% elif column.key == "Follow-up" %}
+                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
+                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Negociacao"><button class="primary-button xsmall" type="submit">Negociar</button></form>
                                         {% elif column.key == "Negociacao" %}
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="nao_tem_interesse"><button class="ghost-button xsmall" type="submit">Não fechou</button></form>
@@ -280,6 +284,7 @@
             "Rascunho":             { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Rascunho" } },
             "Prospeccao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Prospeccao" } },
             "Aguardando retorno":   { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Aguardando retorno" } },
+            "Follow-up":            { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Follow-up" } },
             "Negociacao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Negociacao" } },
             "Fechado":              { url: "{% url 'prospect_archive' 0 %}",   body: { reason: "fechado" } },
         };

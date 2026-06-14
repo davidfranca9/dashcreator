@@ -4831,6 +4831,7 @@ body.page-finance .workspace-label {
 .pipeline-kpi--draft .pipeline-kpi-dot { background: #9a9a9a; }
 .pipeline-kpi--prospect .pipeline-kpi-dot { background: #4d8cff; }
 .pipeline-kpi--waiting .pipeline-kpi-dot { background: #f59a3d; }
+.pipeline-kpi--follow-up .pipeline-kpi-dot { background: #d96fa8; }
 .pipeline-kpi--negotiation .pipeline-kpi-dot { background: #7f6fff; }
 .pipeline-kpi--closed .pipeline-kpi-dot { background: #20b07a; }
 .pipeline-kpi--closed { background: #effbf3; border-color: #cdebd9; }
@@ -4861,6 +4862,7 @@ body.page-finance .workspace-label {
 .pipeline-column--draft .pipeline-column-dot { background: #9a9a9a; }
 .pipeline-column--prospect .pipeline-column-dot { background: #4d8cff; }
 .pipeline-column--waiting .pipeline-column-dot { background: #f59a3d; }
+.pipeline-column--follow-up .pipeline-column-dot { background: #d96fa8; }
 .pipeline-column--negotiation .pipeline-column-dot { background: #7f6fff; }
 .pipeline-column--closed .pipeline-column-dot { background: #20b07a; }
 .pipeline-column-count { font-size: 0.75rem; background: rgba(0,0,0,0.06); padding: 0.15rem 0.5rem; border-radius: 999px; color: #555; }
