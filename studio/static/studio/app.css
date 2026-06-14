@@ -365,7 +365,8 @@ textarea {
 }
 
 .page-header h2 {
-    font-size: 34px;
+    font-size: 22px;
+    font-weight: 500;
 }
 
 .page-header-tools,
@@ -3089,7 +3090,7 @@ body.theme-dark .danger-button {
     }
 
     .page-header h2 {
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .page-header p,
@@ -3466,7 +3467,7 @@ body.theme-dark .danger-button {
     }
 
     .page-header h2 {
-        font-size: 21px;
+        font-size: 19px;
     }
 
     .stat-card strong {
