@@ -2,7 +2,7 @@
 
 {% block content %}
 <section class="infoproducts-page" data-infoproducts-page>
-    {% include "studio/includes/workspace_profile_nav.html" %}
+    {{ product_autofill|json_script:"ip-product-autofill" }}
 
     <div class="infoproducts-toolbar">
         <nav class="subtabs infoproducts-tabs" aria-label="Infoprodutos">
@@ -10,8 +10,7 @@
             <button type="button" class="subtab" data-infoproduct-tab="entries">Entradas</button>
             <button type="button" class="subtab" data-infoproduct-tab="buyers">Alunas / Compradores</button>
         </nav>
-        <div class="infoproducts-actions">
-            <button type="button" class="ghost-button small">Exportar</button>
+        <div class="infoproducts-actions" data-infoproduct-overview-actions>
             <button type="button" class="primary-button small" data-infoproduct-modal-open="product">Novo produto</button>
         </div>
     </div>
@@ -76,7 +75,7 @@
                         {% endif %}
                         <div class="ip-product-actions">
                             <button type="button" data-infoproduct-go-tab="entries">Ver entradas</button>
-                            <button type="button" data-infoproduct-modal-open="product">Editar</button>
+                            <a href="?edit={{ product.id }}" class="ip-product-edit">Editar</a>
                             <button type="button" class="is-primary" data-infoproduct-go-tab="buyers">{{ product.primary_action }}</button>
                         </div>
                     </div>
@@ -155,7 +154,7 @@
                 <option>Vencendo</option>
                 <option>Pausado</option>
             </select>
-            <button type="button" class="primary-button small" data-infoproduct-modal-open="buyer">Adicionar aluna</button>
+            <button type="button" class="primary-button small" data-infoproduct-modal-open="entry">Adicionar aluna</button>
         </div>
 
         <article class="ip-table">
@@ -259,9 +258,10 @@
 <div class="ip-modal-backdrop" data-infoproduct-modal="product"{% if not open_product_modal %} hidden{% endif %}>
     <form method="post" class="ip-modal" role="dialog" aria-modal="true" aria-label="Cadastrar produto">
         {% csrf_token %}
-        <input type="hidden" name="infoproduct_action" value="create_product">
+        <input type="hidden" name="infoproduct_action" value="{% if editing_product %}update_product{% else %}create_product{% endif %}">
+        {% if editing_product %}<input type="hidden" name="product_id" value="{{ editing_product.id }}">{% endif %}
         <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
-        <h3>Cadastrar produto</h3>
+        <h3>{% if editing_product %}Editar produto{% else %}Cadastrar produto{% endif %}</h3>
         <p>Preencha o nome e a plataforma. O sistema se adapta ao seu negócio.</p>
         <div class="form-grid">
             <label class="form-field form-field--full"><span>{{ product_form.name.label }}</span>{{ product_form.name }}{{ product_form.name.errors }}</label>
@@ -274,43 +274,29 @@
             <label class="form-field"><span>{{ product_form.access_duration.label }}</span>{{ product_form.access_duration }}{{ product_form.access_duration.errors }}</label>
             <label class="form-field form-field--checkbox">{{ product_form.track_progress }}<span>{{ product_form.track_progress.label }}</span>{{ product_form.track_progress.errors }}</label>
         </div>
-        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">Cadastrar produto</button></div>
+        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">{% if editing_product %}Salvar alterações{% else %}Cadastrar produto{% endif %}</button></div>
     </form>
 </div>
 
-<div class="ip-modal-backdrop" data-infoproduct-modal="buyer" hidden>
-    <div class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Adicionar aluna">
-        <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
-        <h3>Adicionar aluna / comprador</h3>
-        <p>Registre quem comprou e o sistema calcula o prazo automaticamente.</p>
-        <div class="form-grid">
-            <label class="form-field"><span>Nome completo</span><input type="text" placeholder="Maria da Silva"></label>
-            <label class="form-field"><span>E-mail</span><input type="email" placeholder="maria@email.com"></label>
-            <label class="form-field"><span>Produto</span><select><option>Nenhum produto cadastrado</option></select></label>
-            <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
-            <label class="form-field"><span>Data da compra</span><input type="date"></label>
-            <label class="form-field"><span>Valor pago (R$)</span><input type="text" placeholder="0,00"></label>
-            <label class="form-field form-field--full"><span>Prazo de acesso</span><select><option>Usar padrão do produto</option><option>Personalizado</option><option>Sem prazo</option></select></label>
-        </div>
-        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Adicionar aluna</button></div>
-    </div>
-</div>
-
-<div class="ip-modal-backdrop" data-infoproduct-modal="entry" hidden>
-    <div class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Registrar entrada">
+<div class="ip-modal-backdrop" data-infoproduct-modal="entry"{% if not open_entry_modal %} hidden{% endif %}>
+    <form method="post" class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Registrar entrada" data-ip-sale-form>
+        {% csrf_token %}
+        <input type="hidden" name="infoproduct_action" value="create_sale">
         <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
         <h3>Registrar entrada</h3>
-        <p>Registre manualmente uma venda de infoproduto.</p>
+        <p>Registre uma venda. Ao escolher o produto, a plataforma e o valor são preenchidos.</p>
         <div class="form-grid">
-            <label class="form-field"><span>Comprador</span><input type="text" placeholder="Nome do comprador"></label>
-            <label class="form-field"><span>Produto</span><select><option>Nenhum produto cadastrado</option></select></label>
-            <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
-            <label class="form-field"><span>Valor (R$)</span><input type="text" placeholder="0,00"></label>
-            <label class="form-field"><span>Data da venda</span><input type="date"></label>
-            <label class="form-field"><span>Status</span><select><option>Confirmado</option><option>Pendente</option><option>Reembolsado</option></select></label>
+            <label class="form-field"><span>{{ sale_form.buyer_name.label }}</span>{{ sale_form.buyer_name }}{{ sale_form.buyer_name.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.product.label }}</span>{{ sale_form.product }}{{ sale_form.product.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.platform.label }}</span>{{ sale_form.platform }}{{ sale_form.platform.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.amount.label }}</span>{{ sale_form.amount }}{{ sale_form.amount.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.sale_date.label }}</span>{{ sale_form.sale_date }}{{ sale_form.sale_date.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.status.label }}</span>{{ sale_form.status }}{{ sale_form.status.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.buyer_email.label }}</span>{{ sale_form.buyer_email }}{{ sale_form.buyer_email.errors }}</label>
+            <label class="form-field"><span>{{ sale_form.progress.label }}</span>{{ sale_form.progress }}{{ sale_form.progress.errors }}</label>
         </div>
-        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Registrar entrada</button></div>
-    </div>
+        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="submit" class="primary-button">Registrar entrada</button></div>
+    </form>
 </div>
 
 <script>
@@ -327,6 +313,8 @@
             else tab.removeAttribute("aria-current");
         });
         panels.forEach((panel) => panel.classList.toggle("is-active", panel.dataset.infoproductPanel === key));
+        const overviewActions = page.querySelector("[data-infoproduct-overview-actions]");
+        if (overviewActions) overviewActions.hidden = key !== "overview";
     };
     tabs.forEach((tab) => tab.addEventListener("click", () => activate(tab.dataset.infoproductTab)));
     page.querySelectorAll("[data-infoproduct-go-tab]").forEach((button) => {
@@ -407,6 +395,25 @@
             document.querySelectorAll(".ip-modal-backdrop:not([hidden])").forEach(closeModal);
         }
     });
+
+    // Autopreenche plataforma e valor ao escolher o produto na entrada.
+    let autofill = {};
+    const autofillEl = document.getElementById("ip-product-autofill");
+    if (autofillEl) {
+        try { autofill = JSON.parse(autofillEl.textContent); } catch (e) { autofill = {}; }
+    }
+    const saleForm = document.querySelector("[data-ip-sale-form]");
+    if (saleForm) {
+        const productSelect = saleForm.querySelector("[name=product]");
+        productSelect?.addEventListener("change", () => {
+            const data = autofill[productSelect.value];
+            if (!data) return;
+            const platform = saleForm.querySelector("[name=platform]");
+            const amount = saleForm.querySelector("[name=amount]");
+            if (platform && data.platform) platform.value = data.platform;
+            if (amount && (!amount.value.trim() || amount.value.trim() === "0,00")) amount.value = data.price;
+        });
+    }
 })();
 </script>
 {% endblock %}

@@ -26,7 +26,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 ZERO = Decimal("0")
@@ -555,8 +555,45 @@ def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:
     }
 
 
-def infoproducts_snapshot(workspace: Workspace) -> dict:
+_IP_ACCESS_MONTHS = {"1_month": 1, "3_months": 3, "6_months": 6, "12_months": 12}
+_IP_PLATFORM_CLASSES = {
+    "Hubla": "orange", "Hotmart": "orange", "Kiwify": "green",
+    "Mercado Pago": "blue", "Link Nubank": "purple", "Pix direto": "green",
+}
+_IP_AVATAR_CLASSES = ["blue", "pink", "purple", "orange", "green"]
+
+
+def _ip_avatar(name: str) -> tuple[str, str]:
+    initials = "".join(part[0] for part in (name or "").split()[:2]).upper() or "?"
+    cls = _IP_AVATAR_CLASSES[sum(ord(c) for c in (name or "?")) % len(_IP_AVATAR_CLASSES)]
+    return initials, cls
+
+
+def _ip_access_deadline(product: "InfoProduct", sale_date: date) -> date | None:
+    months = _IP_ACCESS_MONTHS.get(product.access_duration)
+    if not months or not sale_date:
+        return None
+    return _shift_date_month(sale_date, months)
+
+
+def infoproducts_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     products_queryset = list(InfoProduct.objects.filter(workspace=workspace).order_by("name"))
+    sales_all = list(InfoProductSale.objects.filter(workspace=workspace).select_related("product"))
+
+    # Opções de mês a partir das datas de venda (+ mês atual) para o filtro do topo.
+    month_set = {date.today().replace(day=1)}
+    for sale in sales_all:
+        if sale.sale_date:
+            month_set.add(sale.sale_date.replace(day=1))
+    month_options = sorted(month_set)
+    selected_month = resolve_selected_month(month_filter, month_options)
+
+    def in_month(value: date | None) -> bool:
+        return selected_month is None or (value is not None and value.year == selected_month.year and value.month == selected_month.month)
+
+    sales = [s for s in sales_all if in_month(s.sale_date)]
+    confirmed = [s for s in sales if s.status == InfoProductSale.STATUS_CONFIRMED]
+
     active_count = sum(1 for item in products_queryset if item.status == InfoProduct.STATUS_ACTIVE)
     coming_soon_count = sum(1 for item in products_queryset if item.status == InfoProduct.STATUS_COMING_SOON)
     type_classes = {
@@ -573,17 +610,29 @@ def infoproducts_snapshot(workspace: Workspace) -> dict:
         InfoProduct.STATUS_CLOSED: "grey",
     }
     platform_colors = {
-        "Hubla": "#ff6b35",
-        "Hotmart": "#ff4d00",
-        "Kiwify": "#17c964",
-        "Mercado Pago": "#009ee3",
-        "Link Nubank": "#820ad1",
-        "Pix direto": "#10b981",
+        "Hubla": "#ff6b35", "Hotmart": "#ff4d00", "Kiwify": "#17c964",
+        "Mercado Pago": "#009ee3", "Link Nubank": "#820ad1", "Pix direto": "#10b981",
     }
+    sale_status_classes = {
+        InfoProductSale.STATUS_CONFIRMED: "success",
+        InfoProductSale.STATUS_PENDING: "warn",
+        InfoProductSale.STATUS_REFUNDED: "grey",
+    }
+
+    # Vendas/receita por produto (no mês selecionado).
+    sales_by_product: dict[int, list] = {}
+    for sale in sales:
+        sales_by_product.setdefault(sale.product_id, []).append(sale)
+
     products = []
     for item in products_queryset:
+        item_sales = sales_by_product.get(item.id, [])
+        item_confirmed = [s for s in item_sales if s.status == InfoProductSale.STATUS_CONFIRMED]
+        revenue = sum_money(s.amount for s in item_confirmed)
+        sold = len(item_confirmed)
         initials = "".join(part[0] for part in item.name.split()[:2]).upper() or "IP"
         products.append({
+            "id": item.id,
             "name": item.name,
             "kind": f"{item.get_product_type_display()} · {item.get_platform_display()}",
             "status": item.get_status_display(),
@@ -595,30 +644,112 @@ def infoproducts_snapshot(workspace: Workspace) -> dict:
             "type_label": item.get_product_type_display(),
             "type_class": type_classes.get(item.product_type, "blue"),
             "link_label": item.sales_link or "sem link",
-            "stats": [("Vendas", "0", ""), ("Preço", currency(item.price), ""), ("Receita", currency(0), "success")],
+            "stats": [("Vendas", str(sold), ""), ("Preço", currency(item.price), ""), ("Receita", currency(revenue), "success")],
             "capacity_label": "Vagas" if item.seats else "Sem limite de vagas",
-            "capacity_note": f"0 / {item.seats}" if item.seats else "produto sem limite",
+            "capacity_note": f"{sold} / {item.seats}" if item.seats else "produto sem limite",
             "capacity_tone": "" if item.seats else "success",
-            "progress": 0 if item.seats else None,
+            "progress": min(round((sold / item.seats) * 100), 100) if item.seats else None,
             "progress_color": "#3b82f6",
             "primary_action": "Ver alunas" if item.track_progress else "Compradores",
         })
 
+    # Entradas (todas as vendas do mês).
+    entries = []
+    for sale in sales:
+        initials, avatar_class = _ip_avatar(sale.buyer_name)
+        entries.append({
+            "id": sale.id,
+            "name": sale.buyer_name,
+            "sub": sale.buyer_email or "",
+            "initials": initials,
+            "avatar_class": avatar_class,
+            "product": sale.product.name,
+            "platform": sale.get_platform_display(),
+            "platform_class": _IP_PLATFORM_CLASSES.get(sale.platform, "blue"),
+            "amount": currency(sale.amount),
+            "date": short_date(sale.sale_date) if sale.sale_date else "—",
+            "status": sale.get_status_display(),
+            "status_class": sale_status_classes.get(sale.status, "grey"),
+        })
+
+    # Alunas/compradores (vendas confirmadas, com prazo de acesso e progresso).
+    today = date.today()
+    buyers = []
+    expiring = 0
+    for sale in confirmed:
+        initials, avatar_class = _ip_avatar(sale.buyer_name)
+        deadline = _ip_access_deadline(sale.product, sale.sale_date)
+        if deadline is not None:
+            days_left = (deadline - today).days
+            deadline_label = short_date(deadline)
+            deadline_sub = "vencido" if days_left < 0 else (f"vence em {days_left}d" if days_left <= 30 else f"{days_left}d restantes")
+            row_class = "danger" if days_left < 0 else ("warn" if days_left <= 7 else "")
+            if 0 <= days_left <= 7:
+                expiring += 1
+        else:
+            deadline_label = "Sem prazo"
+            deadline_sub = "acesso vitalício"
+            row_class = ""
+        track = sale.product.track_progress
+        buyers.append({
+            "id": sale.id,
+            "name": sale.buyer_name,
+            "sub": sale.buyer_email or "",
+            "initials": initials,
+            "avatar_class": avatar_class,
+            "product": sale.product.name,
+            "platform": sale.get_platform_display(),
+            "platform_class": _IP_PLATFORM_CLASSES.get(sale.platform, "blue"),
+            "deadline": deadline_label,
+            "deadline_sub": deadline_sub,
+            "progress": sale.progress if track else 0,
+            "progress_class": "ok" if sale.progress >= 100 else "active",
+            "progress_text": "" if track else "—",
+            "status": sale.get_status_display(),
+            "status_class": sale_status_classes.get(sale.status, "grey"),
+            "row_class": row_class,
+        })
+
+    total_revenue = sum_money(s.amount for s in confirmed)
+    deadline_alert = None
+    if expiring:
+        deadline_alert = {
+            "title": f"{expiring} prazo(s) vencendo em até 7 dias",
+            "text": "Acesse a aba Alunas / Compradores para renovar ou avisar.",
+        }
+
+    # Dados para os selects de produto e o autopreenchimento (id -> preço/plataforma).
+    product_options = [
+        {"id": item.id, "name": item.name, "platform": item.platform}
+        for item in products_queryset
+    ]
+    product_autofill = {
+        str(item.id): {
+            "platform": item.platform,
+            "price": f"{Decimal(item.price or 0):.2f}".replace(".", ","),
+        }
+        for item in products_queryset
+    }
+
     return {
         "kpis": [
             {"label": "Produtos cadastrados", "value": str(len(products_queryset)), "sub": f"{active_count} ativos · {coming_soon_count} em breve", "tone": ""},
-            {"label": "Receita total", "value": "R$0", "sub": "sem entradas registradas", "tone": "success"},
-            {"label": "Alunas / compradores", "value": "0", "sub": "nenhuma pessoa cadastrada", "tone": ""},
-            {"label": "Prazos vencendo", "value": "0", "sub": "nenhum prazo vencendo", "tone": "warning"},
+            {"label": "Receita total", "value": currency(total_revenue), "sub": f"{len(confirmed)} entrada(s) confirmada(s)", "tone": "success"},
+            {"label": "Alunas / compradores", "value": str(len(buyers)), "sub": "no período" if selected_month else "no total", "tone": ""},
+            {"label": "Prazos vencendo", "value": str(expiring), "sub": "em até 7 dias", "tone": "warning"},
         ],
-        "deadline_alert": None,
+        "deadline_alert": deadline_alert,
         "products": products,
-        "entries": [],
-        "buyers": [],
+        "entries": entries,
+        "buyers": buyers,
         "more_entries": [],
         "more_entries_count": 0,
         "more_buyers": [],
         "more_buyers_count": 0,
+        "product_options": product_options,
+        "product_autofill": product_autofill,
+        "month_choices": month_choice_payload(month_options),
+        "selected_month": selected_month_payload(selected_month),
     }
 
 

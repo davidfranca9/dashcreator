@@ -42,6 +42,7 @@ from .forms import (
     FixedCostForm,
     HAS_INSTALLMENTS_YES,
     InfoProductForm,
+    InfoProductSaleForm,
     ManagedOptionForm,
     ProjectForm,
     ProjectInstallmentFormSet,
@@ -51,7 +52,7 @@ from .forms import (
     WorkspaceSettingsForm,
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
-from .models import CashBox, FinanceEntry, FixedCost, Project, ProjectInstallment, Prospect, ServiceCategory
+from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Project, ProjectInstallment, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
@@ -1221,25 +1222,63 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     if not workspace_has_infoproducts_access(workspace, request.user):
         raise Http404("Pagina nao encontrada.")
-    product_form = InfoProductForm(workspace=workspace)
-    if request.method == "POST" and request.POST.get("infoproduct_action") == "create_product":
-        product_form = InfoProductForm(request.POST, workspace=workspace)
-        if product_form.is_valid():
-            product = product_form.save(commit=False)
-            product.workspace = workspace
-            product.save()
-            messages.success(request, "Produto cadastrado.")
+    month_filter = request.GET.get("month")
+
+    # Produto sendo editado (abre o modal já preenchido).
+    editing_product = None
+    edit_id = request.POST.get("product_id") if request.method == "POST" else request.GET.get("edit")
+    if edit_id:
+        if not str(edit_id).isdigit():
+            raise Http404("Produto nao encontrado.")
+        editing_product = get_object_or_404(InfoProduct, pk=int(edit_id), workspace=workspace)
+
+    product_form = InfoProductForm(instance=editing_product, workspace=workspace)
+    sale_form = InfoProductSaleForm(workspace=workspace)
+    open_product_modal = editing_product is not None
+    open_entry_modal = False
+    open_buyer_modal = False
+
+    if request.method == "POST":
+        action = request.POST.get("infoproduct_action")
+        if action in {"create_product", "update_product"}:
+            product_form = InfoProductForm(request.POST, instance=editing_product, workspace=workspace)
+            if product_form.is_valid():
+                product = product_form.save(commit=False)
+                product.workspace = workspace
+                product.save()
+                messages.success(request, "Produto atualizado." if editing_product else "Produto cadastrado.")
+                return redirect("infoproducts")
+            open_product_modal = True
+        elif action == "product_delete" and editing_product is not None:
+            editing_product.delete()
+            messages.success(request, "Produto excluído.")
             return redirect("infoproducts")
+        elif action in {"create_sale", "create_buyer"}:
+            sale_form = InfoProductSaleForm(request.POST, workspace=workspace)
+            if sale_form.is_valid():
+                sale = sale_form.save(commit=False)
+                sale.workspace = workspace
+                sale.save()
+                messages.success(request, "Aluna/comprador adicionado." if action == "create_buyer" else "Entrada registrada.")
+                return redirect("infoproducts")
+            open_entry_modal = action == "create_sale"
+            open_buyer_modal = action == "create_buyer"
+
     context = shell_context(
         "infoproducts",
         workspace,
         "Infoprodutos",
         "Produtos digitais, entradas, alunas e prazos.",
         user=request.user,
+        month_filter=month_filter,
     )
-    context.update(infoproducts_snapshot(workspace))
+    context.update(infoproducts_snapshot(workspace, month_filter))
     context["product_form"] = product_form
-    context["open_product_modal"] = request.method == "POST" and product_form.errors
+    context["sale_form"] = sale_form
+    context["editing_product"] = editing_product
+    context["open_product_modal"] = open_product_modal
+    context["open_entry_modal"] = open_entry_modal
+    context["open_buyer_modal"] = open_buyer_modal
     return render(request, "studio/infoproducts.html", context)
 
 

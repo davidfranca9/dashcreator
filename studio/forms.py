@@ -24,7 +24,7 @@ from .constants import (
     SERVICE_TYPE_TO_CATEGORY,
     SETTINGS_GROUPS,
 )
-from .models import AccessCode, CashBox, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
+from .models import AccessCode, CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, normalize_access_code
 from .services import default_niche_queryset, ensure_default_niches, ensure_default_settings, settings_map
 
 
@@ -1250,8 +1250,12 @@ class InfoProductForm(forms.ModelForm):
 
     def clean_name(self):
         name = (self.cleaned_data.get("name") or "").strip()
-        if self.workspace and InfoProduct.objects.filter(workspace=self.workspace, name__iexact=name).exists():
-            raise forms.ValidationError("Já existe um produto com esse nome.")
+        if self.workspace:
+            dupes = InfoProduct.objects.filter(workspace=self.workspace, name__iexact=name)
+            if self.instance and self.instance.pk:
+                dupes = dupes.exclude(pk=self.instance.pk)
+            if dupes.exists():
+                raise forms.ValidationError("Já existe um produto com esse nome.")
         return name
 
     def clean_price(self):
@@ -1270,6 +1274,62 @@ class InfoProductForm(forms.ModelForm):
     def clean_seats(self):
         seats = self.cleaned_data.get("seats")
         return seats or None
+
+
+def _parse_brl(raw) -> Decimal:
+    raw_text = str(raw or "0").strip().replace("R$", "").replace(" ", "")
+    if "," in raw_text:
+        raw_text = raw_text.replace(".", "").replace(",", ".")
+    if raw_text == "":
+        raw_text = "0"
+    try:
+        value = Decimal(raw_text)
+    except Exception:
+        raise forms.ValidationError("Informe um valor válido.")
+    if value < 0:
+        raise forms.ValidationError("O valor não pode ser negativo.")
+    return value
+
+
+class InfoProductSaleForm(forms.ModelForm):
+    amount = forms.CharField(label="Valor (R$)", required=False, widget=forms.TextInput(attrs={"placeholder": "0,00", "inputmode": "decimal"}))
+
+    class Meta:
+        model = InfoProductSale
+        fields = ["product", "buyer_name", "buyer_email", "platform", "amount", "sale_date", "status", "progress"]
+        labels = {
+            "product": "Produto",
+            "buyer_name": "Comprador",
+            "buyer_email": "E-mail",
+            "platform": "Plataforma",
+            "sale_date": "Data da venda",
+            "status": "Status",
+            "progress": "Progresso (%)",
+        }
+        widgets = {
+            "buyer_name": forms.TextInput(attrs={"placeholder": "Nome do comprador"}),
+            "buyer_email": forms.EmailInput(attrs={"placeholder": "email@exemplo.com"}),
+            "sale_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "progress": forms.NumberInput(attrs={"min": "0", "max": "100", "placeholder": "0"}),
+        }
+
+    def __init__(self, *args, workspace=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workspace = workspace
+        qs = InfoProduct.objects.all()
+        if workspace is not None:
+            qs = qs.filter(workspace=workspace)
+        self.fields["product"].queryset = qs.order_by("name")
+        self.fields["product"].empty_label = "Selecione um produto"
+        self.fields["buyer_email"].required = False
+        self.fields["progress"].required = False
+        self.fields["sale_date"].input_formats = ["%Y-%m-%d"]
+
+    def clean_amount(self):
+        return _parse_brl(self.cleaned_data.get("amount"))
+
+    def clean_progress(self):
+        return self.cleaned_data.get("progress") or 0
 
 
 def _decimal_from_setting(raw_value, default: str):

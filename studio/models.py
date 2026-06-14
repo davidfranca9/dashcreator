@@ -491,6 +491,34 @@ class InfoProduct(WorkspaceOwnedModel):
         return self.name
 
 
+class InfoProductSale(WorkspaceOwnedModel):
+    """Entrada/venda de um infoproduto. Alimenta as abas Entradas e
+    Alunas/Compradores (alunas = vendas de produtos com track_progress)."""
+    STATUS_CONFIRMED = "confirmado"
+    STATUS_PENDING = "pendente"
+    STATUS_REFUNDED = "reembolsado"
+    STATUS_CHOICES = [
+        (STATUS_CONFIRMED, "Confirmado"),
+        (STATUS_PENDING, "Pendente"),
+        (STATUS_REFUNDED, "Reembolsado"),
+    ]
+
+    product = models.ForeignKey(InfoProduct, on_delete=models.CASCADE, related_name="sales")
+    buyer_name = models.CharField(max_length=180)
+    buyer_email = models.EmailField(blank=True, default="")
+    platform = models.CharField(max_length=40, choices=InfoProduct.PLATFORM_CHOICES, default="Hubla")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    sale_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_CONFIRMED)
+    progress = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-sale_date", "-pk"]
+
+    def __str__(self) -> str:
+        return f"{self.buyer_name} · {self.product_id}"
+
+
 class CashBox(WorkspaceOwnedModel):
     ALLOCATION_PERCENTAGE = "percentage"
     ALLOCATION_FIXED = "fixed"
