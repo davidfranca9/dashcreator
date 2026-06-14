@@ -1262,8 +1262,8 @@ PIPELINE_STAGES = [
     ("Rascunho", "Rascunho", "draft"),
     ("Prospeccao", "Prospecção", "prospect"),
     ("Aguardando retorno", "Ag. retorno", "waiting"),
-    ("Follow-up", "Follow-up", "follow-up"),
     ("Negociacao", "Negociação", "negotiation"),
+    ("Follow-up", "Follow-up", "follow-up"),
     ("Fechado", "Fechados ✓", "closed"),
 ]
 
