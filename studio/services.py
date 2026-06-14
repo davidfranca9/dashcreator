@@ -1309,6 +1309,27 @@ def auto_archive_stale_prospects(workspace: Workspace, today: date | None = None
     return moved
 
 
+def _instagram_link(value: str) -> tuple[str, str]:
+    """Retorna (url, handle) a partir do campo instagram, que pode vir como
+    handle ('marca'), '@marca' ou URL completa. handle é o texto limpo para
+    exibição; url é o link clicável para o perfil."""
+    raw = (value or "").strip()
+    if not raw:
+        return "", ""
+    handle = raw
+    for prefix in ("https://", "http://"):
+        if handle.startswith(prefix):
+            handle = handle[len(prefix):]
+    handle = handle.lstrip("@")
+    if handle.startswith("www."):
+        handle = handle[4:]
+    if handle.startswith("instagram.com/"):
+        handle = handle[len("instagram.com/"):]
+    handle = handle.strip("/")
+    url = raw if raw.startswith(("http://", "https://")) else f"https://instagram.com/{handle}"
+    return url, handle
+
+
 def _serialize_pipeline_prospect(item: Prospect) -> dict:
     today = date.today()
     last = _prospect_last_activity(item)
@@ -1329,6 +1350,8 @@ def _serialize_pipeline_prospect(item: Prospect) -> dict:
         "niche": item.niche.name if item.niche_id else "",
         "channel": channel,
         "instagram": item.instagram,
+        "instagram_url": _instagram_link(item.instagram)[0],
+        "instagram_handle": _instagram_link(item.instagram)[1],
         "contact_date": short_date(item.contact_date) if item.contact_date else "",
         "meeting_date": short_date(item.meeting_date) if item.meeting_date else "",
         "note": item.note,
@@ -1354,6 +1377,8 @@ def _serialize_banco_prospect(item: Prospect) -> dict:
         "id": item.id,
         "company": item.company,
         "instagram": item.instagram,
+        "instagram_url": _instagram_link(item.instagram)[0],
+        "instagram_handle": _instagram_link(item.instagram)[1],
         "niche": item.niche.name if item.niche_id else "",
         "channel": channel,
         "last_contact": short_date(item.contact_date) if item.contact_date else (short_date(item.archived_at.date()) if item.archived_at else ""),

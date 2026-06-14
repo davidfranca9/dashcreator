@@ -4915,6 +4915,17 @@ body.page-finance .workspace-label {
 .banco-kpi--danger strong { color: #c04d57; }
 .banco-kpi span { font-size: 0.8rem; }
 
+/* Linha da marca clicável (abre para editar) */
+.banco-row { cursor: pointer; transition: background 0.12s; }
+.banco-row:hover { background: #f7f7f4; }
+/* Link do Instagram (Banco e Pipeline) */
+.banco-instagram, .pipeline-instagram { color: #4d8cff; text-decoration: none; }
+.banco-instagram:hover, .pipeline-instagram:hover { text-decoration: underline; }
+/* KPI clicável + destaque da coluna ao expandir */
+.pipeline-kpi--clickable { cursor: pointer; transition: box-shadow 0.12s, transform 0.12s; }
+.pipeline-kpi--clickable:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.pipeline-column--highlight { box-shadow: 0 0 0 2px rgba(77,140,255,0.55); border-radius: 12px; }
+
 .banco-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .banco-table th, .banco-table td { padding: 0.85rem 0.75rem; text-align: left; border-bottom: 0.5px solid rgba(0,0,0,0.06); vertical-align: middle; }
 .banco-table th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; font-weight: 500; }

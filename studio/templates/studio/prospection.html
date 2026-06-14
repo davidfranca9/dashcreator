@@ -25,7 +25,7 @@
 
         <section class="pipeline-kpis">
             {% for stage in pipeline_stages %}
-                <article class="pipeline-kpi pipeline-kpi--{{ stage.tone }}">
+                <article class="pipeline-kpi pipeline-kpi--{{ stage.tone }}{% if stage.count %} pipeline-kpi--clickable{% endif %}"{% if stage.count %} data-pipeline-kpi="{{ stage.key }}" role="button" tabindex="0" title="Ver todas as marcas em {{ stage.title }}"{% endif %}>
                     <span class="pipeline-kpi-dot"></span>
                     <strong class="pipeline-kpi-value">{{ stage.count }}</strong>
                     <span class="pipeline-kpi-label">{{ stage.title }}</span>
@@ -68,7 +68,7 @@
                                     <div>
                                         <strong>{{ item.company }}</strong>
                                         <span class="muted">
-                                            {{ item.niche|default:"" }}{% if item.niche and item.instagram %} · {% endif %}{% if item.instagram %}@{{ item.instagram }}{% endif %}
+                                            {{ item.niche|default:"" }}{% if item.niche and item.instagram_handle %} · {% endif %}{% if item.instagram_handle %}<a class="pipeline-instagram" href="{{ item.instagram_url }}" target="_blank" rel="noopener" draggable="false">@{{ item.instagram_handle }}</a>{% endif %}
                                         </span>
                                     </div>
                                     {% if item.channel %}<span class="pipeline-chip">{{ item.channel }}</span>{% endif %}
@@ -177,8 +177,8 @@
                 <thead><tr><th>Marca</th><th>Nicho</th><th>Canal</th><th>Último contato</th><th>Status</th></tr></thead>
                 <tbody>
                     {% for row in archived_rows %}
-                        <tr>
-                            <td><strong>{{ row.company }}</strong>{% if row.instagram %}<br><span class="muted">@{{ row.instagram }}</span>{% endif %}</td>
+                        <tr class="banco-row" data-banco-row data-href="{% url 'prospect_edit' row.id %}">
+                            <td><strong>{{ row.company }}</strong>{% if row.instagram_handle %}<br><a class="banco-instagram" href="{{ row.instagram_url }}" target="_blank" rel="noopener" data-no-row-click>@{{ row.instagram_handle }}</a>{% endif %}</td>
                             <td>{{ row.niche|default:"—" }}</td>
                             <td>{{ row.channel|default:"—" }}</td>
                             <td>{{ row.last_contact|default:"—" }}</td>
@@ -286,6 +286,51 @@
                 });
                 button.setAttribute("aria-expanded", "true");
                 button.hidden = true;
+            });
+        });
+    })();
+
+    /* Clique no card de KPI: expande a coluna daquele estágio mostrando TODAS
+       as marcas (revela os cards escondidos e traz a coluna pra vista). */
+    (() => {
+        const board = document.querySelector("[data-pipeline-board]");
+        if (!board) return;
+        const expandColumn = (key) => {
+            const column = board.querySelector('[data-pipeline-column="' + key + '"]');
+            if (!column) return;
+            column.querySelectorAll("[data-overflow-card]").forEach((card) => {
+                card.hidden = false;
+                card.classList.remove("pipeline-card--overflow-hidden");
+            });
+            const toggle = column.querySelector("[data-pipeline-overflow-toggle]");
+            if (toggle) {
+                toggle.setAttribute("aria-expanded", "true");
+                toggle.hidden = true;
+            }
+            column.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+            column.classList.add("pipeline-column--highlight");
+            window.setTimeout(() => column.classList.remove("pipeline-column--highlight"), 1200);
+        };
+        document.querySelectorAll("[data-pipeline-kpi]").forEach((card) => {
+            const key = card.getAttribute("data-pipeline-kpi");
+            card.addEventListener("click", () => expandColumn(key));
+            card.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    expandColumn(key);
+                }
+            });
+        });
+    })();
+
+    /* Clique na linha do Banco de Marcas abre a marca para editar
+       (ignora cliques em links/botões/forms dentro da linha). */
+    (() => {
+        document.querySelectorAll("[data-banco-row]").forEach((row) => {
+            row.addEventListener("click", (e) => {
+                if (e.target.closest("a, button, form, input, label")) return;
+                const href = row.getAttribute("data-href");
+                if (href) window.location.href = href;
             });
         });
     })();
