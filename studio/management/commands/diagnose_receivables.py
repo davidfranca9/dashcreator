@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from collections import Counter
 from decimal import Decimal
 
@@ -21,6 +22,7 @@ class Command(BaseCommand):
         parser.add_argument("--company", default="", help="Filtra por nome (contem, case-insensitive).")
         parser.add_argument("--unlabeled-only", action="store_true", help="So trabalhos com parcela sem rotulo.")
         parser.add_argument("--mismatch-only", action="store_true", help="So trabalhos problematicos (parcelas sem rotulo que NAO batem com o cronograma).")
+        parser.add_argument("--csv", dest="csv_path", default="", help="Salva tudo num arquivo CSV (abre no Excel) no caminho informado.")
 
     def handle(self, *args, **options):
         company = (options["company"] or "").strip()
@@ -41,6 +43,18 @@ class Command(BaseCommand):
         all_ws = set()
         mismatch_ws = set()
         inconsistent_ws = set()
+
+        csv_path = (options.get("csv_path") or "").strip()
+        csv_file = None
+        csv_writer = None
+        if csv_path:
+            csv_file = open(csv_path, "w", newline="", encoding="utf-8-sig")
+            csv_writer = csv.writer(csv_file, delimiter=";")
+            csv_writer.writerow([
+                "Workspace", "Marca", "ID", "Tipo", "Total", "Entrada", "Recebido",
+                "Classificacao", "Qtd parcelas", "Parcelas (label|valor|pago)",
+                "Cronograma calculado (label|valor|pago)",
+            ])
 
         for project in qs:
             total_projects += 1
@@ -82,7 +96,6 @@ class Command(BaseCommand):
             if options["mismatch_only"] and not is_mismatch:
                 continue
 
-            self.stdout.write("=" * 70)
             tags = []
             if would_relabel:
                 tags.append("AUTO-OK")
@@ -90,6 +103,23 @@ class Command(BaseCommand):
                 tags.append("MISMATCH(continua Parcela)")
             if is_inconsistent:
                 tags.append("INCONSISTENTE(recebido!=parcelas)")
+
+            if csv_writer is not None:
+                csv_writer.writerow([
+                    project.workspace.name,
+                    project.company,
+                    project.id,
+                    project.service_type,
+                    total,
+                    project.entry_value,
+                    received,
+                    ", ".join(tags) or "ok",
+                    len(installments),
+                    " ; ".join(f"{i.label or '(sem)'}|{i.amount}|{'pago' if i.paid else 'nao'}" for i in installments),
+                    " ; ".join(f"{e['label']}|{e['amount']}|{'pago' if e['paid'] else 'nao'}" for e in schedule),
+                ])
+
+            self.stdout.write("=" * 70)
             self.stdout.write(
                 f"[{', '.join(tags) or 'ok'}] ws='{project.workspace.name}' | {project.company} (id={project.id}) | "
                 f"type={project.service_type} | total={total} entry={project.entry_value} "
@@ -118,3 +148,9 @@ class Command(BaseCommand):
             f"  INCONSISTENTES (recebido total mas parcela nao paga): {inconsistent_paid} "
             f"trabalhos em {len(inconsistent_ws)} workspace(s)"
         )
+
+        if csv_file is not None:
+            import os
+            csv_file.close()
+            self.stdout.write("=" * 70)
+            self.stdout.write(f"CSV salvo em: {os.path.abspath(csv_path)}")
