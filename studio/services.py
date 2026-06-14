@@ -1906,6 +1906,18 @@ def _apply_schedule_labels(existing: list, desired: list) -> None:
                 break
 
 
+def _number_installment_labels(existing: list) -> None:
+    """Numera parcelas sem rótulo de um parcelamento real: 'Parcela 1',
+    'Parcela 2'... (ou só 'Parcela' se for uma única). Só altera o label."""
+    ordered = sorted(existing, key=lambda i: (i.due_date, i.pk))
+    multi = len(ordered) > 1
+    for idx, inst in enumerate(ordered, start=1):
+        new_label = f"Parcela {idx}" if multi else "Parcela"
+        if inst.label != new_label:
+            inst.label = new_label
+            inst.save(update_fields=["label", "updated_at"])
+
+
 def reconcile_computed_installments(project: Project) -> None:
     """Materializa o cronograma calculado (Entrada/Saldo/Mensalidade) como
     parcelas reais (ProjectInstallment), tornando-as confirmáveis. Idempotente:
@@ -1938,7 +1950,11 @@ def reconcile_computed_installments(project: Project) -> None:
         desired_amounts = Counter(Decimal(entry["amount"]) for entry in desired)
         if desired and len(existing) == len(desired) and existing_amounts == desired_amounts:
             _apply_schedule_labels(existing, desired)
-            _invalidate_installment_cache(project)
+        else:
+            # Não bate com o cronograma → é parcelamento real (2+ pagamentos).
+            # Numera "Parcela 1", "Parcela 2"... pra ficar claro (só rótulo).
+            _number_installment_labels(existing)
+        _invalidate_installment_cache(project)
         return
 
     existing_by_key = {}

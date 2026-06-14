@@ -191,21 +191,60 @@ class InstallmentMaterializationTest(TestCase):
         project.refresh_from_db()
         self.assertEqual(list(project.installments.values_list("label", flat=True)), ["Pagamento"])
 
-    def test_does_not_relabel_genuine_manual_split(self):
-        # Divisão manual de propósito (3x 300) não bate com o cronograma
-        # calculado (Pagamento 900) → preserva como "Parcela".
+    def test_does_not_collapse_genuine_manual_split(self):
+        # Divisão manual de propósito (3x 300) não bate com o pagamento único
+        # calculado (900) → NÃO vira "Pagamento" nem é colapsada; só numera.
         project = self._full_payment_project(total=900)
-        for _ in range(3):
+        for n in range(3):
             ProjectInstallment.objects.create(
                 workspace=self.workspace, project=project, label="",
-                amount=300, due_date=date.today() - timedelta(days=10), paid=False,
+                amount=300, due_date=date.today() + timedelta(days=10 * n), paid=False,
             )
         ensure_computed_installments(project)
         project.refresh_from_db()
-        labels = set(project.installments.values_list("label", flat=True))
-        self.assertEqual(labels, {""})  # nada re-rotulado
-        kinds = {e["kind"] for e in _project_finance_events(project)}
-        self.assertEqual(kinds, {"Parcela"})
+        self.assertEqual(project.installments.count(), 3)  # não colapsou
+        labels = sorted(project.installments.values_list("label", flat=True))
+        self.assertEqual(labels, ["Parcela 1", "Parcela 2", "Parcela 3"])
+        self.assertNotIn("Pagamento", {e["kind"] for e in _project_finance_events(project)})
+
+    def test_numbers_real_installment_split(self):
+        # 2 parcelas de 200 que NÃO batem com o pagamento único calculado (400)
+        # → parcelamento real → numera "Parcela 1", "Parcela 2".
+        project = self._full_payment_project(total=400)
+        for due in (date.today() - timedelta(days=10), date.today() + timedelta(days=20)):
+            ProjectInstallment.objects.create(
+                workspace=self.workspace, project=project, label="",
+                amount=200, due_date=due, paid=False,
+            )
+        ensure_computed_installments(project)
+        project.refresh_from_db()
+        labels = sorted(project.installments.values_list("label", flat=True))
+        self.assertEqual(labels, ["Parcela 1", "Parcela 2"])
+
+    def test_fix_receivables_collapses_inconsistent_to_single_pending(self):
+        from django.core.management import call_command
+        project = self._full_payment_project(total=500)  # entry=0
+        project.received_value = 500  # trabalho diz recebido=total (inconsistente)
+        project.save(update_fields=["received_value"])
+        ProjectInstallment.objects.create(
+            workspace=self.workspace, project=project, label="",
+            amount=250, due_date=date.today() - timedelta(days=20), paid=True,
+        )
+        ProjectInstallment.objects.create(
+            workspace=self.workspace, project=project, label="",
+            amount=250, due_date=date.today() - timedelta(days=5), paid=False,
+        )
+        call_command("fix_receivables", "--apply", verbosity=0)
+        project.refresh_from_db()
+        self.assertEqual(project.received_value, 0)
+        self.assertEqual(project.installments.count(), 0)
+        # ao carregar o financeiro, vira 1 Pagamento pendente do valor cheio
+        ensure_computed_installments(project)
+        events = _project_finance_events(project)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["kind"], "Pagamento")
+        self.assertFalse(events[0]["paid"])
+        self.assertEqual(events[0]["amount"], Decimal("500"))
 
     def test_reconcile_preserves_confirmed_parcela(self):
         """Editar/recalcular não pode apagar nem desfazer uma confirmação."""
