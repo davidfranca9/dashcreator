@@ -128,7 +128,7 @@
                     <span><span class="ip-chip ip-chip--{{ entry.status_class }}">{{ entry.status }}</span></span>
                 </div>
             {% endfor %}
-            <button type="button" class="ip-more-row">Ver mais 82 entradas →</button>
+            <button type="button" class="ip-more-row" data-infoproduct-list-open="entries" aria-haspopup="dialog">Ver mais {{ more_entries_count }} entradas →</button>
         </article>
     </section>
 
@@ -178,10 +178,76 @@
                     <span><span class="ip-chip ip-chip--{{ buyer.status_class }}">{{ buyer.status }}</span></span>
                 </div>
             {% endfor %}
-            <button type="button" class="ip-more-row">Ver mais 81 alunas →</button>
+            <button type="button" class="ip-more-row" data-infoproduct-list-open="buyers" aria-haspopup="dialog">Ver mais {{ more_buyers_count }} alunas →</button>
         </article>
     </section>
 </section>
+
+<div class="ip-list-overlay" data-infoproduct-list-overlay hidden>
+    <section class="ip-list-panel" data-infoproduct-list-panel="entries" role="dialog" aria-modal="true" aria-label="Lista de entradas" hidden>
+        <header class="ip-list-head">
+            <div>
+                <span>Entradas</span>
+                <strong>Lista de e-mails</strong>
+                <p>{{ more_entries_count }} entradas adicionais registradas.</p>
+            </div>
+            <button type="button" class="ip-list-close" data-infoproduct-list-close aria-label="Fechar lista">&times;</button>
+        </header>
+        <label class="ip-list-search">
+            <span>⌕</span>
+            <input type="search" placeholder="Buscar por nome, e-mail ou produto" data-infoproduct-list-search>
+        </label>
+        <div class="ip-email-list">
+            {% for entry in more_entries %}
+                <article class="ip-email-row" data-infoproduct-list-item>
+                    <span class="ip-avatar ip-avatar--{{ entry.avatar_class }}">{{ entry.initials }}</span>
+                    <div class="ip-email-main">
+                        <strong>{{ entry.name }}</strong>
+                        <a href="mailto:{{ entry.sub }}">{{ entry.sub }}</a>
+                        <small>{{ entry.product }} · {{ entry.platform }}</small>
+                    </div>
+                    <div class="ip-email-meta">
+                        <strong>{{ entry.amount }}</strong>
+                        <small>{{ entry.date }}</small>
+                        <span class="ip-chip ip-chip--{{ entry.status_class }}">{{ entry.status }}</span>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="ip-list-panel" data-infoproduct-list-panel="buyers" role="dialog" aria-modal="true" aria-label="Lista de alunas" hidden>
+        <header class="ip-list-head">
+            <div>
+                <span>Alunas / Compradores</span>
+                <strong>Lista de e-mails</strong>
+                <p>{{ more_buyers_count }} alunas e compradores adicionais.</p>
+            </div>
+            <button type="button" class="ip-list-close" data-infoproduct-list-close aria-label="Fechar lista">&times;</button>
+        </header>
+        <label class="ip-list-search">
+            <span>⌕</span>
+            <input type="search" placeholder="Buscar por nome, e-mail ou produto" data-infoproduct-list-search>
+        </label>
+        <div class="ip-email-list">
+            {% for buyer in more_buyers %}
+                <article class="ip-email-row" data-infoproduct-list-item>
+                    <span class="ip-avatar ip-avatar--{{ buyer.avatar_class }}">{{ buyer.initials }}</span>
+                    <div class="ip-email-main">
+                        <strong>{{ buyer.name }}</strong>
+                        <a href="mailto:{{ buyer.sub }}">{{ buyer.sub }}</a>
+                        <small>{{ buyer.product }} · {{ buyer.platform }}</small>
+                    </div>
+                    <div class="ip-email-meta">
+                        <strong>{{ buyer.deadline }}</strong>
+                        <small>{{ buyer.deadline_sub }}</small>
+                        <span class="ip-chip ip-chip--{{ buyer.status_class }}">{{ buyer.status }}</span>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+</div>
 
 <div class="ip-modal-backdrop" data-infoproduct-modal="product" hidden>
     <div class="ip-modal" role="dialog" aria-modal="true" aria-label="Cadastrar produto">
@@ -258,6 +324,51 @@
         button.addEventListener("click", () => activate(button.dataset.infoproductGoTab));
     });
 
+    const listOverlay = document.querySelector("[data-infoproduct-list-overlay]");
+    const listPanels = document.querySelectorAll("[data-infoproduct-list-panel]");
+    const closeLists = () => {
+        if (!listOverlay) return;
+        listOverlay.hidden = true;
+        listPanels.forEach((panel) => {
+            panel.hidden = true;
+            panel.querySelectorAll("[data-infoproduct-list-search]").forEach((input) => {
+                input.value = "";
+            });
+            panel.querySelectorAll("[data-infoproduct-list-item]").forEach((item) => {
+                item.hidden = false;
+            });
+        });
+        document.body.classList.remove("has-popup-open");
+    };
+    const openList = (key) => {
+        if (!listOverlay) return;
+        const panel = document.querySelector(`[data-infoproduct-list-panel="${key}"]`);
+        if (!panel) return;
+        listPanels.forEach((item) => item.hidden = true);
+        listOverlay.hidden = false;
+        panel.hidden = false;
+        document.body.classList.add("has-popup-open");
+        panel.querySelector("[data-infoproduct-list-search]")?.focus();
+    };
+    document.querySelectorAll("[data-infoproduct-list-open]").forEach((button) => {
+        button.addEventListener("click", () => openList(button.dataset.infoproductListOpen));
+    });
+    document.querySelectorAll("[data-infoproduct-list-close]").forEach((button) => {
+        button.addEventListener("click", closeLists);
+    });
+    listOverlay?.addEventListener("click", (event) => {
+        if (event.target === listOverlay) closeLists();
+    });
+    document.querySelectorAll("[data-infoproduct-list-search]").forEach((input) => {
+        input.addEventListener("input", () => {
+            const query = input.value.trim().toLowerCase();
+            const panel = input.closest("[data-infoproduct-list-panel]");
+            panel?.querySelectorAll("[data-infoproduct-list-item]").forEach((item) => {
+                item.hidden = query && !item.textContent.toLowerCase().includes(query);
+            });
+        });
+    });
+
     const openModal = (key) => {
         const modal = document.querySelector(`[data-infoproduct-modal="${key}"]`);
         if (!modal) return;
@@ -283,6 +394,7 @@
     });
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+            closeLists();
             document.querySelectorAll(".ip-modal-backdrop:not([hidden])").forEach(closeModal);
         }
     });

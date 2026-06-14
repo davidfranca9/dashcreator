@@ -556,6 +556,99 @@ def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:
 
 
 def infoproducts_snapshot() -> dict:
+    avatar_classes = ["purple", "blue", "green", "slate", "amber", "orange", "violet"]
+    entry_names = [
+        "Amanda Costa",
+        "Bianca Torres",
+        "Camila Reis",
+        "Daniela Martins",
+        "Eduarda Lima",
+        "Flavia Souza",
+        "Gabriela Paiva",
+        "Helena Castro",
+        "Isabela Moreira",
+        "Joana Ribeiro",
+        "Karina Alves",
+        "Laura Mendes",
+        "Marina Lopes",
+        "Natalia Freitas",
+        "Olivia Rocha",
+        "Paula Araujo",
+        "Rafaela Dias",
+        "Sofia Barros",
+    ]
+    entry_products = [
+        ("Planner Creator", "Hubla", "orange", "R$97"),
+        ("Mentoria HPC", "Hubla", "orange", "R$397"),
+        ("Dash Creator", "Mercado Pago", "blue", "R$97"),
+        ("Acompanhamento", "Nubank", "purple", "R$797"),
+    ]
+    more_entries = []
+    for index in range(82):
+        name = entry_names[index % len(entry_names)]
+        product, platform, platform_class, amount = entry_products[index % len(entry_products)]
+        status = "Pendente" if index % 13 == 0 else "Confirmado"
+        status_class = "warn" if status == "Pendente" else "green"
+        more_entries.append({
+            "initials": "".join(part[0] for part in name.split()[:2]).upper(),
+            "name": name,
+            "sub": f"compradora{index + 6:02d}@email.com",
+            "product": product,
+            "platform": platform,
+            "platform_class": platform_class,
+            "amount": amount,
+            "date": f"{(index % 28) + 1:02d} Jun 2026",
+            "status": status,
+            "status_class": status_class,
+            "avatar_class": avatar_classes[index % len(avatar_classes)],
+        })
+
+    buyer_names = [
+        "Alice Prado",
+        "Bruna Sales",
+        "Clara Teixeira",
+        "Debora Melo",
+        "Estela Nery",
+        "Fabiana Tavares",
+        "Giovana Lima",
+        "Heloisa Campos",
+        "Ingrid Batista",
+        "Jessica Moura",
+        "Luana Farias",
+        "Mirela Duarte",
+        "Nicole Gomes",
+        "Patricia Matos",
+        "Renata Maia",
+        "Talita Neves",
+        "Vanessa Pinto",
+        "Yasmin Correia",
+    ]
+    buyer_products = ["Planner Creator", "Mentoria HPC", "Dash Creator", "Acompanhamento"]
+    more_buyers = []
+    for index in range(81):
+        name = buyer_names[index % len(buyer_names)]
+        product = buyer_products[index % len(buyer_products)]
+        is_lifetime = product == "Planner Creator"
+        is_due = index % 17 == 0 and not is_lifetime
+        status = "Vencendo" if is_due else "Ativo"
+        more_buyers.append({
+            "initials": "".join(part[0] for part in name.split()[:2]).upper(),
+            "name": name,
+            "sub": f"aluna{index + 7:02d}@email.com",
+            "product": product,
+            "platform": "Hubla" if product != "Acompanhamento" else "Nubank",
+            "platform_class": "purple" if product == "Acompanhamento" else "orange",
+            "deadline": "Encerra em 7 dias" if is_due else ("Acesso perpetuo" if is_lifetime else "Acesso ativo"),
+            "deadline_sub": "Produto sem prazo" if is_lifetime else f"Compra: {(index % 28) + 1:02d} Jun 2026",
+            "progress": 92 if is_due else (100 if is_lifetime else 48 + (index % 45)),
+            "progress_class": "warn" if is_due else ("success" if is_lifetime else ""),
+            "progress_text": "—" if is_lifetime else "",
+            "status": status,
+            "status_class": "warn" if is_due else "green",
+            "row_class": "warning" if is_due else "",
+            "avatar_class": avatar_classes[index % len(avatar_classes)],
+        })
+
     return {
         "kpis": [
             {"label": "Produtos cadastrados", "value": "4", "sub": "3 ativos · 1 em breve", "tone": ""},
@@ -662,6 +755,10 @@ def infoproducts_snapshot() -> dict:
             {"initials": "AN", "name": "Ana Nunes", "sub": "Desde Jun 2026", "product": "Planner Creator", "platform": "Hubla", "platform_class": "orange", "deadline": "Acesso perpetuo", "deadline_sub": "Produto sem prazo", "progress": 100, "progress_class": "success", "progress_text": "—", "status": "Ativo", "status_class": "green", "row_class": "", "avatar_class": "slate"},
             {"initials": "ML", "name": "Mariana Lima", "sub": "Desde Nov 2025", "product": "Mentoria HPC", "platform": "Hubla", "platform_class": "orange", "deadline": "Encerrado em Fev 2026", "deadline_sub": "Duracao: 3 meses", "progress": 100, "progress_class": "success", "status": "Concluido", "status_class": "grey", "row_class": "", "avatar_class": "violet"},
         ],
+        "more_entries": more_entries,
+        "more_entries_count": len(more_entries),
+        "more_buyers": more_buyers,
+        "more_buyers_count": len(more_buyers),
     }
 
 

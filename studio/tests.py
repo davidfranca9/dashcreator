@@ -93,6 +93,8 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "Planner Creator")
         self.assertContains(response, "Alunas / Compradores")
         self.assertContains(response, 'data-infoproduct-tab="entries"', html=False)
+        self.assertContains(response, 'data-infoproduct-list-open="entries"', html=False)
+        self.assertContains(response, "compradora06@email.com")
         self.assertContains(response, 'href="/infoprodutos/"', html=False)
         self.assertContains(jobs_response, 'href="/infoprodutos/"', html=False)
 
