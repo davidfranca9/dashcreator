@@ -22,6 +22,8 @@ class Command(BaseCommand):
         parser.add_argument("--company", default="", help="Filtra por nome (contem, case-insensitive).")
         parser.add_argument("--unlabeled-only", action="store_true", help="So trabalhos com parcela sem rotulo.")
         parser.add_argument("--mismatch-only", action="store_true", help="So trabalhos problematicos (parcelas sem rotulo que NAO batem com o cronograma).")
+        parser.add_argument("--inconsistent-only", action="store_true", help="So trabalhos inconsistentes (recebido=total mas parcela nao paga).")
+        parser.add_argument("--problems", action="store_true", help="Tudo que esta errado: mismatch OU inconsistente.")
         parser.add_argument("--csv", dest="csv_path", default="", help="Salva tudo num arquivo CSV (abre no Excel) no caminho informado.")
 
     def handle(self, *args, **options):
@@ -94,6 +96,10 @@ class Command(BaseCommand):
             if options["unlabeled_only"] and not has_unlabeled:
                 continue
             if options["mismatch_only"] and not is_mismatch:
+                continue
+            if options["inconsistent_only"] and not is_inconsistent:
+                continue
+            if options["problems"] and not (is_mismatch or is_inconsistent):
                 continue
 
             tags = []
