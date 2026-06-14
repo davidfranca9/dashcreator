@@ -985,6 +985,9 @@ def revenue_context(
 
     points = _build_points(totals)
     ip_points = _build_points(ip_totals)
+    # Rótulo de cada mês = total (trabalhos + infoprodutos).
+    for index, month_start in enumerate(month_starts):
+        points[index]["total_amount"] = int(totals[month_start] + ip_totals[month_start])
 
     steps = []
     for step in range(3, -1, -1):

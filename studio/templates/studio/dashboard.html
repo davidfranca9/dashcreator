@@ -64,7 +64,7 @@
                 <div class="chart-labels">
                     {% for point in revenue.points %}
                         <div class="chart-label">
-                            <strong class="chart-money-value">{{ point.amount|money }}</strong>
+                            <strong class="chart-money-value">{{ point.total_amount|money }}</strong>
                             <span>{{ point.label }}</span>
                         </div>
                     {% endfor %}
