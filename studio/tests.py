@@ -90,11 +90,13 @@ class DashboardSmokeTest(TestCase):
         jobs_response = self.client.get(reverse("jobs"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Planner Creator")
+        self.assertContains(response, "R$0")
+        self.assertContains(response, "Nenhum produto cadastrado ainda.")
+        self.assertContains(response, "Nenhuma entrada registrada ainda.")
         self.assertContains(response, "Alunas / Compradores")
         self.assertContains(response, 'data-infoproduct-tab="entries"', html=False)
-        self.assertContains(response, 'data-infoproduct-list-open="entries"', html=False)
-        self.assertContains(response, "compradora06@email.com")
+        self.assertNotContains(response, "Planner Creator")
+        self.assertNotContains(response, 'data-infoproduct-list-open="entries"', html=False)
         self.assertContains(response, 'href="/infoprodutos/"', html=False)
         self.assertContains(jobs_response, 'href="/infoprodutos/"', html=False)
 

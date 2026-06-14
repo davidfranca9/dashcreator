@@ -27,13 +27,15 @@
             {% endfor %}
         </div>
 
-        <article class="ip-alert">
-            <div class="ip-alert-icon">!</div>
-            <div>
-                <strong>{{ deadline_alert.title }}</strong>
-                <p>{{ deadline_alert.text }}</p>
-            </div>
-        </article>
+        {% if deadline_alert %}
+            <article class="ip-alert">
+                <div class="ip-alert-icon">!</div>
+                <div>
+                    <strong>{{ deadline_alert.title }}</strong>
+                    <p>{{ deadline_alert.text }}</p>
+                </div>
+            </article>
+        {% endif %}
 
         <div class="ip-product-grid">
             {% for product in products %}
@@ -79,6 +81,11 @@
                         </div>
                     </div>
                 </article>
+            {% empty %}
+                <article class="ip-empty-state">
+                    <strong>Nenhum produto cadastrado ainda.</strong>
+                    <p>Quando a Layfe cadastrar um infoproduto, os cards e indicadores aparecem aqui.</p>
+                </article>
             {% endfor %}
         </div>
     </section>
@@ -91,10 +98,6 @@
             </label>
             <select aria-label="Produto">
                 <option>Todos os produtos</option>
-                <option>Planner Creator</option>
-                <option>Mentoria HPC</option>
-                <option>Dash Creator</option>
-                <option>Acompanhamento</option>
             </select>
             <select aria-label="Plataforma">
                 <option>Todas as plataformas</option>
@@ -127,8 +130,12 @@
                     <span>{{ entry.date }}</span>
                     <span><span class="ip-chip ip-chip--{{ entry.status_class }}">{{ entry.status }}</span></span>
                 </div>
+            {% empty %}
+                <div class="ip-table-empty">Nenhuma entrada registrada ainda.</div>
             {% endfor %}
-            <button type="button" class="ip-more-row" data-infoproduct-list-open="entries" aria-haspopup="dialog">Ver mais {{ more_entries_count }} entradas →</button>
+            {% if more_entries_count %}
+                <button type="button" class="ip-more-row" data-infoproduct-list-open="entries" aria-haspopup="dialog">Ver mais {{ more_entries_count }} entradas →</button>
+            {% endif %}
         </article>
     </section>
 
@@ -140,10 +147,6 @@
             </label>
             <select aria-label="Produto">
                 <option>Todos os produtos</option>
-                <option>Planner Creator</option>
-                <option>Mentoria HPC</option>
-                <option>Dash Creator</option>
-                <option>Acompanhamento</option>
             </select>
             <select aria-label="Status">
                 <option>Todos os status</option>
@@ -177,8 +180,12 @@
                     </div>
                     <span><span class="ip-chip ip-chip--{{ buyer.status_class }}">{{ buyer.status }}</span></span>
                 </div>
+            {% empty %}
+                <div class="ip-table-empty">Nenhuma aluna ou comprador cadastrado ainda.</div>
             {% endfor %}
-            <button type="button" class="ip-more-row" data-infoproduct-list-open="buyers" aria-haspopup="dialog">Ver mais {{ more_buyers_count }} alunas →</button>
+            {% if more_buyers_count %}
+                <button type="button" class="ip-more-row" data-infoproduct-list-open="buyers" aria-haspopup="dialog">Ver mais {{ more_buyers_count }} alunas →</button>
+            {% endif %}
         </article>
     </section>
 </section>
@@ -258,8 +265,8 @@
             <label class="form-field form-field--full"><span>Nome do produto</span><input type="text" placeholder="Ex: Mentoria Creator, Planner Digital, Curso de UGC"></label>
             <label class="form-field"><span>Tipo</span><select><option>Mentoria em grupo</option><option>Acompanhamento 1:1</option><option>Curso gravado</option><option>Planner / Template</option><option>SaaS / Plataforma</option></select></label>
             <label class="form-field"><span>Status</span><select><option>Ativo</option><option>Em breve</option><option>Pausado</option><option>Encerrado</option></select></label>
-            <label class="form-field"><span>Preço (R$)</span><input type="text" placeholder="397,00"></label>
-            <label class="form-field"><span>Vagas</span><input type="number" placeholder="Vazio se nao tiver limite"></label>
+            <label class="form-field"><span>Preço (R$)</span><input type="text" placeholder="0,00"></label>
+            <label class="form-field"><span>Vagas</span><input type="number" placeholder="0"></label>
             <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Hotmart</option><option>Kiwify</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
             <label class="form-field"><span>Link de vendas</span><input type="text" placeholder="hubla.com.br/seuproduto"></label>
             <label class="form-field"><span>Duração do acesso</span><select><option>Sem prazo</option><option>1 mês</option><option>3 meses</option><option>6 meses</option><option>12 meses</option></select></label>
@@ -277,10 +284,10 @@
         <div class="form-grid">
             <label class="form-field"><span>Nome completo</span><input type="text" placeholder="Maria da Silva"></label>
             <label class="form-field"><span>E-mail</span><input type="email" placeholder="maria@email.com"></label>
-            <label class="form-field"><span>Produto</span><select><option>Planner Creator</option><option>Mentoria HPC</option><option>Dash Creator</option><option>Acompanhamento Individual</option></select></label>
+            <label class="form-field"><span>Produto</span><select><option>Nenhum produto cadastrado</option></select></label>
             <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
-            <label class="form-field"><span>Data da compra</span><input type="date" value="2026-06-13"></label>
-            <label class="form-field"><span>Valor pago (R$)</span><input type="text" placeholder="397,00"></label>
+            <label class="form-field"><span>Data da compra</span><input type="date"></label>
+            <label class="form-field"><span>Valor pago (R$)</span><input type="text" placeholder="0,00"></label>
             <label class="form-field form-field--full"><span>Prazo de acesso</span><select><option>Usar padrão do produto</option><option>Personalizado</option><option>Sem prazo</option></select></label>
         </div>
         <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Adicionar aluna</button></div>
@@ -294,10 +301,10 @@
         <p>Registre manualmente uma venda de infoproduto.</p>
         <div class="form-grid">
             <label class="form-field"><span>Comprador</span><input type="text" placeholder="Nome do comprador"></label>
-            <label class="form-field"><span>Produto</span><select><option>Planner Creator</option><option>Mentoria HPC</option><option>Dash Creator</option><option>Acompanhamento</option></select></label>
+            <label class="form-field"><span>Produto</span><select><option>Nenhum produto cadastrado</option></select></label>
             <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
-            <label class="form-field"><span>Valor (R$)</span><input type="text" placeholder="397,00"></label>
-            <label class="form-field"><span>Data da venda</span><input type="date" value="2026-06-13"></label>
+            <label class="form-field"><span>Valor (R$)</span><input type="text" placeholder="0,00"></label>
+            <label class="form-field"><span>Data da venda</span><input type="date"></label>
             <label class="form-field"><span>Status</span><select><option>Confirmado</option><option>Pendente</option><option>Reembolsado</option></select></label>
         </div>
         <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Registrar entrada</button></div>
