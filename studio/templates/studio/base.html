@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="{% static 'studio/app.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="{{ theme_class }} page-{{ page_key }}">
+<body class="{{ theme_class }} page-{{ page_key }}{% if beta %} is-beta{% endif %}">
     {% if meeting_alerts %}
         <div class="meeting-popup-backdrop" data-meeting-popup data-meeting-popup-key="meeting-alert-{{ workspace.pk }}-{{ meeting_alert_date }}">
             <div class="meeting-popup" role="dialog" aria-modal="true" aria-labelledby="meeting-popup-title">

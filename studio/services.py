@@ -579,6 +579,8 @@ def shell_context(
         "legal_alerts": legal_alerts,
         "legal_alert_date": today.strftime("%Y-%m-%d"),
         "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
+        # Workspace de teste vê as novidades antes de todos (flag por workspace).
+        "beta": bool(getattr(workspace, "is_beta", False)),
     }
 
 

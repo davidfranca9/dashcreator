@@ -5,7 +5,9 @@ from .models import AccessCode, ActiveUserSession, Membership, Niche, Project, P
 
 @admin.register(Workspace)
 class WorkspaceAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "created_at")
+    list_display = ("name", "slug", "is_beta", "created_at")
+    list_filter = ("is_beta",)
+    list_editable = ("is_beta",)
     search_fields = ("name", "slug")
 
 

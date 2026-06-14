@@ -46,6 +46,8 @@ class Workspace(TimestampedModel):
     instagram_url = models.URLField(blank=True, default="")
     tiktok_url = models.URLField(blank=True, default="")
     portfolio_url = models.URLField(blank=True, default="")
+    # Workspace de teste: recebe as novidades visuais antes de liberar pra todos.
+    is_beta = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["name"]
