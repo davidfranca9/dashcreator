@@ -3488,17 +3488,17 @@ class CheckoutTest(TestCase):
         response = self.client.get(reverse("checkout_page", kwargs={"product_key": "dashcreator"}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Dash Creator")
-        self.assertContains(response, "R$ 139,90")
+        self.assertContains(response, "R$ 134,90")
         self.assertContains(response, 'id="paymentBrick_container"')
         self.assertContains(response, reverse("checkout_payment"))
 
-    def test_checkout_product_price_can_be_overridden_by_env(self):
+    def test_checkout_product_ignores_low_price_override_from_env(self):
         with patch.dict(os.environ, {"CHECKOUT_DASHCREATOR_PRICE": "5,00"}):
             product = get_product("dashcreator")
             response = self.client.get(reverse("checkout_page", kwargs={"product_key": "dashcreator"}))
 
-        self.assertEqual(product.price, Decimal("5.00"))
-        self.assertContains(response, "R$ 5,00")
+        self.assertEqual(product.price, Decimal("134.90"))
+        self.assertContains(response, "R$ 134,90")
 
     def test_checkout_page_returns_503_when_mp_not_configured(self):
         with self.settings(MERCADO_PAGO_PUBLIC_KEY=""):
@@ -3514,7 +3514,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
             status=Purchase.STATUS_APPROVED,
@@ -3584,14 +3584,14 @@ class CheckoutTest(TestCase):
         data = response.json()
         self.assertEqual(data["preference_id"], "pref_123")
         self.assertEqual(data["public_key"], "TEST-public-key")
-        self.assertEqual(data["amount"], 139.90)
+        self.assertEqual(data["amount"], 134.90)
         self.assertTrue(Purchase.objects.filter(customer_email="maria@example.com").exists())
 
     def test_checkout_status_reports_purchase_state(self):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
             status=Purchase.STATUS_PENDING,
@@ -3614,7 +3614,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
             status=Purchase.STATUS_APPROVED,
@@ -3632,7 +3632,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
             status=Purchase.STATUS_PENDING,
@@ -3672,7 +3672,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
         )
@@ -3707,7 +3707,7 @@ class CheckoutTest(TestCase):
                 data=json.dumps({
                     "purchase_id": purchase.pk,
                     "form_data": {
-                        "transaction_amount": 139.90,
+                        "transaction_amount": 134.90,
                         "payment_method_id": "pix",
                         "payer": {"email": "maria@example.com"},
                     },
@@ -3722,14 +3722,14 @@ class CheckoutTest(TestCase):
         self.assertEqual(purchase.mp_payment_id, "pay_123")
         self.assertEqual(purchase.access_code.audience, AccessCode.AUDIENCE_PAID)
         self.assertEqual(fake_payment_api.payload["external_reference"], str(purchase.pk))
-        self.assertEqual(fake_payment_api.payload["transaction_amount"], 139.90)
+        self.assertEqual(fake_payment_api.payload["transaction_amount"], 134.90)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_checkout_payment_returns_pix_qr_data_when_pending(self):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
             customer_cpf="12345678909",
@@ -3767,7 +3767,7 @@ class CheckoutTest(TestCase):
                 data=json.dumps({
                     "purchase_id": purchase.pk,
                     "form_data": {
-                        "transaction_amount": 139.90,
+                        "transaction_amount": 134.90,
                         "payment_method_id": "pix",
                         "payer": {"email": "maria@example.com"},
                     },
@@ -3791,7 +3791,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
         )
@@ -3814,7 +3814,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
         )
@@ -3839,7 +3839,7 @@ class CheckoutTest(TestCase):
         purchase = Purchase.objects.create(
             product_key="dashcreator",
             product_name="Dash Creator",
-            amount=Decimal("139.90"),
+            amount=Decimal("134.90"),
             customer_name="Maria",
             customer_email="maria@example.com",
         )

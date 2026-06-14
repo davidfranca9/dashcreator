@@ -27,7 +27,7 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
             "Faturamento, prospecções, contratos, jurídico e finanças — "
             "do caos ao posicionamento."
         ),
-        price=Decimal("139.90"),
+        price=Decimal("134.90"),
         audience="paid",
         bullet_points=(
             "Dashboard executivo do seu negócio UGC",
@@ -41,6 +41,9 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
 }
 
 
+MINIMUM_CHECKOUT_PRICE = Decimal("100.00")
+
+
 def _apply_price_override(product: CheckoutProduct) -> CheckoutProduct:
     env_name = f"CHECKOUT_{product.key.upper()}_PRICE"
     raw_price = os.getenv(env_name, "").strip().replace(",", ".")
@@ -50,7 +53,7 @@ def _apply_price_override(product: CheckoutProduct) -> CheckoutProduct:
         price = Decimal(raw_price).quantize(Decimal("0.01"))
     except (InvalidOperation, ValueError):
         return product
-    if price <= 0:
+    if price < MINIMUM_CHECKOUT_PRICE:
         return product
     return replace(product, price=price)
 
