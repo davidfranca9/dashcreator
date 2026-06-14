@@ -4926,6 +4926,38 @@ body.page-finance .workspace-label {
 .pipeline-kpi--clickable:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); transform: translateY(-1px); }
 .pipeline-column--highlight { box-shadow: 0 0 0 2px rgba(77,140,255,0.55); border-radius: 12px; }
 
+/* Popup compacto com as marcas de um estágio (clique no KPI / "+N leads") */
+.kpi-popup-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(20,20,30,0.45);
+    display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.kpi-popup-overlay[hidden] { display: none; }
+.kpi-popup {
+    background: #fff; border-radius: 14px; width: 100%; max-width: 440px;
+    max-height: 80vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+}
+.kpi-popup-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.1rem; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
+.kpi-popup-head strong { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
+.kpi-popup-count { font-size: 0.75rem; background: rgba(0,0,0,0.06); padding: 0.1rem 0.5rem; border-radius: 999px; color: #555; }
+.kpi-popup-close { border: 0; background: none; font-size: 1.4rem; line-height: 1; cursor: pointer; color: #888; padding: 0 0.25rem; }
+.kpi-popup-close:hover { color: #1A1410; }
+.kpi-popup-list { list-style: none; margin: 0; padding: 0.5rem; overflow-y: auto; }
+.kpi-popup-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    padding: 0.6rem 0.65rem; border-radius: 10px;
+}
+.kpi-popup-item:hover { background: #f7f7f4; }
+.kpi-popup-item + .kpi-popup-item { border-top: 0.5px solid rgba(0,0,0,0.05); }
+.kpi-popup-item-info { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.kpi-popup-item-info strong { font-size: 0.92rem; }
+.kpi-popup-item-info .muted { font-size: 0.78rem; }
+.kpi-popup-item-info a { color: #4d8cff; text-decoration: none; }
+
 .banco-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .banco-table th, .banco-table td { padding: 0.85rem 0.75rem; text-align: left; border-bottom: 0.5px solid rgba(0,0,0,0.06); vertical-align: middle; }
 .banco-table th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; font-weight: 500; }

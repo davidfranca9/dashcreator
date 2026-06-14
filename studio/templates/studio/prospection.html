@@ -110,6 +110,31 @@
                 </article>
             {% endfor %}
         </section>
+
+        {# Popup das marcas de um estágio (abre ao clicar no KPI ou no "+N leads") #}
+        <div class="kpi-popup-overlay" data-kpi-overlay hidden>
+            {% for column in pipeline_columns %}
+                <div class="kpi-popup" data-kpi-popup="{{ column.key }}" role="dialog" aria-modal="true" hidden>
+                    <div class="kpi-popup-head">
+                        <strong><span class="pipeline-column-dot pipeline-column--{{ column.tone }}"></span> {{ column.title }} <span class="kpi-popup-count">{{ column.count }}</span></strong>
+                        <button type="button" class="kpi-popup-close" data-kpi-popup-close aria-label="Fechar">×</button>
+                    </div>
+                    <ul class="kpi-popup-list">
+                        {% for item in column.items %}
+                            <li class="kpi-popup-item">
+                                <div class="kpi-popup-item-info">
+                                    <strong>{{ item.company }}</strong>
+                                    <span class="muted">{{ item.niche|default:"" }}{% if item.niche and item.instagram_handle %} · {% endif %}{% if item.instagram_handle %}<a href="{{ item.instagram_url }}" target="_blank" rel="noopener">@{{ item.instagram_handle }}</a>{% endif %}{% if item.contact_date %} · {{ item.contact_date }}{% endif %}</span>
+                                </div>
+                                <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
+                            </li>
+                        {% empty %}
+                            <li class="muted">Nenhum lead nesta etapa.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
     </section>
 
     {# ===================== BANCO DE MARCAS ===================== #}
@@ -273,53 +298,49 @@
         });
     })();
 
+    /* Clique no KPI ou no "+N leads": abre um popup compacto com as marcas
+       daquele estágio (sem esticar o quadro). */
     (() => {
-        const board = document.querySelector("[data-pipeline-board]");
-        if (!board) return;
-        board.querySelectorAll("[data-pipeline-overflow-toggle]").forEach((button) => {
-            button.addEventListener("click", () => {
-                const column = button.closest("[data-pipeline-column]");
-                if (!column) return;
-                column.querySelectorAll("[data-overflow-card]").forEach((card) => {
-                    card.hidden = false;
-                    card.classList.remove("pipeline-card--overflow-hidden");
-                });
-                button.setAttribute("aria-expanded", "true");
-                button.hidden = true;
-            });
-        });
-    })();
+        const overlay = document.querySelector("[data-kpi-overlay]");
+        if (!overlay) return;
+        const popups = overlay.querySelectorAll("[data-kpi-popup]");
 
-    /* Clique no card de KPI: expande a coluna daquele estágio mostrando TODAS
-       as marcas (revela os cards escondidos e traz a coluna pra vista). */
-    (() => {
-        const board = document.querySelector("[data-pipeline-board]");
-        if (!board) return;
-        const expandColumn = (key) => {
-            const column = board.querySelector('[data-pipeline-column="' + key + '"]');
-            if (!column) return;
-            column.querySelectorAll("[data-overflow-card]").forEach((card) => {
-                card.hidden = false;
-                card.classList.remove("pipeline-card--overflow-hidden");
-            });
-            const toggle = column.querySelector("[data-pipeline-overflow-toggle]");
-            if (toggle) {
-                toggle.setAttribute("aria-expanded", "true");
-                toggle.hidden = true;
-            }
-            column.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-            column.classList.add("pipeline-column--highlight");
-            window.setTimeout(() => column.classList.remove("pipeline-column--highlight"), 1200);
+        const closePopup = () => {
+            overlay.hidden = true;
+            popups.forEach((p) => { p.hidden = true; });
+            document.body.classList.remove("has-popup-open");
         };
+        const openPopup = (key) => {
+            let found = false;
+            popups.forEach((p) => {
+                const match = p.getAttribute("data-kpi-popup") === key;
+                p.hidden = !match;
+                if (match) found = true;
+            });
+            if (!found) return;
+            overlay.hidden = false;
+            document.body.classList.add("has-popup-open");
+        };
+
         document.querySelectorAll("[data-pipeline-kpi]").forEach((card) => {
             const key = card.getAttribute("data-pipeline-kpi");
-            card.addEventListener("click", () => expandColumn(key));
+            card.addEventListener("click", () => openPopup(key));
             card.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    expandColumn(key);
-                }
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPopup(key); }
             });
+        });
+        document.querySelectorAll("[data-pipeline-overflow-toggle]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const column = button.closest("[data-pipeline-column]");
+                if (column) openPopup(column.getAttribute("data-pipeline-column"));
+            });
+        });
+
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay || e.target.closest("[data-kpi-popup-close]")) closePopup();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && !overlay.hidden) closePopup();
         });
     })();
 
