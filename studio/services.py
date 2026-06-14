@@ -915,11 +915,16 @@ def _project_dashboard_revenue_for_month(project: Project, selected_month: date 
     return ZERO
 
 
-def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: int | None = None) -> dict:
+def revenue_context(
+    projects: QuerySet[Project] | list[Project],
+    selected_year: int | None = None,
+    infoproduct_sales: list | None = None,
+) -> dict:
     current_year = selected_year or date.today().year
     current_month = date.today().replace(day=1)
     month_starts = [date(current_year, month, 1) for month in range(1, 13)]
     totals = {item: ZERO for item in month_starts}
+    ip_totals = {item: ZERO for item in month_starts}
     chart_width = 960
     chart_height = 260
     chart_top = 12
@@ -938,40 +943,61 @@ def revenue_context(projects: QuerySet[Project] | list[Project], selected_year: 
         if month_start in totals:
             totals[month_start] += _project_cash_value(project)
 
-    max_value = max([int(totals[item]) for item in month_starts] + [30000])
+    for sale in (infoproduct_sales or []):
+        if sale.sale_date:
+            month_start = sale.sale_date.replace(day=1)
+            if month_start in ip_totals:
+                ip_totals[month_start] += Decimal(sale.amount or 0)
+
+    has_infoproducts = any(ip_totals[item] for item in month_starts)
+    max_value = max(
+        [int(totals[item]) for item in month_starts]
+        + [int(ip_totals[item]) for item in month_starts]
+        + [30000]
+    )
     usable_height = chart_height - chart_top - chart_bottom
-    points = []
-    for index, month_start in enumerate(month_starts):
-        amount = int(totals[month_start])
-        progress_ratio = (amount / max_value) if max_value else 0
-        usable_width = chart_width - (chart_side_padding * 2)
-        x_position = chart_side_padding if len(month_starts) == 1 else round(chart_side_padding + ((usable_width / (len(month_starts) - 1)) * index), 2)
-        y_position = round(chart_height - chart_bottom - (progress_ratio * usable_height), 2)
-        points.append(
-            {
-                "label": month_label(month_start),
-                "amount": amount,
-                "height": max(6 if amount else 2, int((amount / max_value) * 100)) if max_value else 0,
-                "x": x_position,
-                "y": y_position,
-                "highlighted": month_start == current_month,
-            }
+    usable_width = chart_width - (chart_side_padding * 2)
+
+    def _build_points(series: dict) -> list[dict]:
+        built = []
+        for index, month_start in enumerate(month_starts):
+            amount = int(series[month_start])
+            progress_ratio = (amount / max_value) if max_value else 0
+            x_position = chart_side_padding if len(month_starts) == 1 else round(chart_side_padding + ((usable_width / (len(month_starts) - 1)) * index), 2)
+            y_position = round(chart_height - chart_bottom - (progress_ratio * usable_height), 2)
+            built.append(
+                {
+                    "label": month_label(month_start),
+                    "amount": amount,
+                    "height": max(6 if amount else 2, int((amount / max_value) * 100)) if max_value else 0,
+                    "x": x_position,
+                    "y": y_position,
+                    "highlighted": month_start == current_month,
+                }
+            )
+        return built
+
+    def _line_path(built: list[dict]) -> str:
+        return " ".join(
+            f"{'M' if index == 0 else 'L'} {point['x']} {point['y']}"
+            for index, point in enumerate(built)
         )
+
+    points = _build_points(totals)
+    ip_points = _build_points(ip_totals)
 
     steps = []
     for step in range(3, -1, -1):
         value = int(max_value * step / 3)
         steps.append({"label": currency(value)})
 
-    line_path = " ".join(
-        f"{'M' if index == 0 else 'L'} {point['x']} {point['y']}"
-        for index, point in enumerate(points)
-    )
-
     return {
         "points": points,
         "steps": steps,
-        "path": line_path,
+        "path": _line_path(points),
+        "infoproduct_points": ip_points,
+        "infoproduct_path": _line_path(ip_points),
+        "has_infoproducts": has_infoproducts,
         "chart_width": chart_width,
         "chart_height": chart_height,
     }
@@ -1395,6 +1421,12 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
     projects = list(Project.objects.filter(workspace=workspace).order_by("close_date", "due_date"))
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
+    # Receita de infoprodutos para a 2ª linha do gráfico (só workspaces com acesso).
+    infoproduct_sales = []
+    if workspace_has_infoproducts_access(workspace):
+        infoproduct_sales = list(
+            InfoProductSale.objects.filter(workspace=workspace, status=InfoProductSale.STATUS_CONFIRMED)
+        )
     if selected_month is None:
         active_projects = [item for item in projects if item.stage == "Fechado"]
         delivered_projects = [item for item in projects if item.stage == "Entregue"]
@@ -1490,7 +1522,7 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
         ],
         "month_choices": month_choice_payload(month_options),
         "selected_month": selected_month_payload(selected_month),
-        "revenue": revenue_context(projects, selected_month.year if selected_month else None),
+        "revenue": revenue_context(projects, selected_month.year if selected_month else None, infoproduct_sales=infoproduct_sales),
         "pipeline": pipeline,
         "activities": activities,
         "featured": featured,

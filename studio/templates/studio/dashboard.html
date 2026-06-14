@@ -36,6 +36,12 @@
             <div>
                 <h3>Faturamento anual</h3>
             </div>
+            {% if revenue.has_infoproducts %}
+                <div class="chart-legend">
+                    <span class="chart-legend-item"><span class="chart-legend-dot chart-legend-dot--jobs"></span>Trabalhos</span>
+                    <span class="chart-legend-item"><span class="chart-legend-dot chart-legend-dot--ip"></span>Infoprodutos</span>
+                </div>
+            {% endif %}
         </div>
         <div class="chart-grid">
             <div class="chart-axis">
@@ -51,6 +57,9 @@
                         {% endif %}
                     {% endfor %}
                     <path class="chart-line" d="{{ revenue.path }}"></path>
+                    {% if revenue.has_infoproducts %}
+                        <path class="chart-line chart-line--ip" d="{{ revenue.infoproduct_path }}"></path>
+                    {% endif %}
                 </svg>
                 <div class="chart-labels">
                     {% for point in revenue.points %}

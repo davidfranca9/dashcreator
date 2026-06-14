@@ -1838,6 +1838,15 @@ body.theme-dark .chart-gridline {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+.chart-line--ip {
+    stroke: #20b7a7;
+    stroke-dasharray: 7 5;
+}
+.chart-legend { display: flex; gap: 16px; align-items: center; }
+.chart-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #555; }
+.chart-legend-dot { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.chart-legend-dot--jobs { background: var(--primary); }
+.chart-legend-dot--ip { background: #20b7a7; }
 
 .chart-labels {
     display: grid;
