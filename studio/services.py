@@ -481,10 +481,37 @@ def _percentage_text(value: Decimal) -> str:
     return f"{amount.normalize()}%".replace(".", ",")
 
 
-def navigation(page_key: str, month_filter: str | None = None, badges: dict | None = None) -> list[dict]:
+def workspace_has_infoproducts_access(workspace: Workspace | None, user: User | None = None) -> bool:
+    candidates = [
+        getattr(workspace, "name", ""),
+        getattr(workspace, "slug", ""),
+        getattr(workspace, "business_full_name", ""),
+    ]
+    if user and getattr(user, "is_authenticated", False):
+        candidates.extend([
+            getattr(user, "username", ""),
+            getattr(user, "email", ""),
+            user.get_full_name() if hasattr(user, "get_full_name") else "",
+        ])
+    for value in candidates:
+        normalized = normalize_company_name(value).replace(" ", "")
+        if "layfeamorim" in normalized:
+            return True
+    return False
+
+
+def navigation(
+    page_key: str,
+    month_filter: str | None = None,
+    badges: dict | None = None,
+    workspace: Workspace | None = None,
+    user: User | None = None,
+) -> list[dict]:
     badges = badges or {}
     items = []
     for item in NAV_ITEMS:
+        if item["key"] == "infoproducts" and not workspace_has_infoproducts_access(workspace, user):
+            continue
         url = reverse(item["url_name"])
         if month_filter and item["key"] in MONTH_FILTER_PAGE_KEYS:
             url = f"{url}?{urlencode({'month': month_filter})}"
@@ -493,8 +520,17 @@ def navigation(page_key: str, month_filter: str | None = None, badges: dict | No
     return items
 
 
-def navigation_groups(page_key: str, month_filter: str | None = None, badges: dict | None = None) -> list[dict]:
-    nav_items = {item["key"]: item for item in navigation(page_key, month_filter, badges=badges)}
+def navigation_groups(
+    page_key: str,
+    month_filter: str | None = None,
+    badges: dict | None = None,
+    workspace: Workspace | None = None,
+    user: User | None = None,
+) -> list[dict]:
+    nav_items = {
+        item["key"]: item
+        for item in navigation(page_key, month_filter, badges=badges, workspace=workspace, user=user)
+    }
     groups = []
     for group in NAV_GROUPS:
         items = [nav_items[key] for key in group["keys"] if key in nav_items]
@@ -516,6 +552,116 @@ def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:
     return {
         "jobs": {"count": overdue, "tone": "danger"} if overdue else None,
         "prospection": {"count": follow_up_count, "tone": "info"} if follow_up_count else None,
+    }
+
+
+def infoproducts_snapshot() -> dict:
+    return {
+        "kpis": [
+            {"label": "Produtos cadastrados", "value": "4", "sub": "3 ativos · 1 em breve", "tone": ""},
+            {"label": "Receita total", "value": "R$20.839", "sub": "todos os produtos", "tone": "success"},
+            {"label": "Alunas / compradores", "value": "87", "sub": "28 com acompanhamento ativo", "tone": ""},
+            {"label": "Prazos vencendo", "value": "3", "sub": "acompanhamentos encerrando em 7d", "tone": "warning"},
+        ],
+        "deadline_alert": {
+            "title": "3 acompanhamentos encerram nos proximos 7 dias",
+            "text": "Julia Andrade (Mentoria · 3 dias), Carla Menezes (Acomp. · 5 dias), Fernanda Silva (Mentoria · 7 dias)",
+        },
+        "products": [
+            {
+                "name": "Planner Creator",
+                "kind": "Template digital · Hubla",
+                "status": "Ativo",
+                "status_class": "active",
+                "icon": "PC",
+                "icon_bg": "#ede9fe",
+                "platform": "Hubla",
+                "platform_color": "#ff6b35",
+                "type_label": "Template",
+                "type_class": "orange",
+                "link_label": "hubla.com.br",
+                "stats": [("Vendas", "47", ""), ("Preco", "R$97", ""), ("Receita", "R$4.559", "success")],
+                "capacity_label": "Sem limite de vagas",
+                "capacity_note": "produto perpetuo",
+                "capacity_tone": "success",
+                "progress": None,
+                "primary_action": "Compradores",
+            },
+            {
+                "name": "Mentoria High Performance Creator",
+                "kind": "Mentoria em grupo · Hubla",
+                "status": "Ativo",
+                "status_class": "active",
+                "icon": "HP",
+                "icon_bg": "#fce7f3",
+                "platform": "Hubla",
+                "platform_color": "#ff6b35",
+                "type_label": "Mentoria",
+                "type_class": "pink",
+                "link_label": "hubla.com.br",
+                "stats": [("Alunas", "18", ""), ("Preco", "R$397", ""), ("Receita", "R$7.146", "success")],
+                "capacity_label": "Vagas",
+                "capacity_note": "18 / 20",
+                "capacity_tone": "",
+                "progress": 90,
+                "progress_color": "#f5576c",
+                "primary_action": "Ver alunas",
+            },
+            {
+                "name": "Dash Creator",
+                "kind": "SaaS / Plataforma · Mercado Pago",
+                "status": "Ativo",
+                "status_class": "active",
+                "icon": "DC",
+                "icon_bg": "#dbeafe",
+                "platform": "Mercado Pago",
+                "platform_color": "#009ee3",
+                "type_label": "Checkout proprio",
+                "type_class": "blue",
+                "link_label": "link",
+                "stats": [("Assinantes", "12", ""), ("Anual", "R$97", ""), ("Receita", "R$1.164", "success")],
+                "capacity_label": "Sem limite · assinatura recorrente",
+                "capacity_note": "MRR: R$97",
+                "capacity_tone": "info",
+                "progress": None,
+                "primary_action": "Assinantes",
+            },
+            {
+                "name": "Acompanhamento Individual",
+                "kind": "Acompanhamento 1:1 · Link Nubank",
+                "status": "Ativo",
+                "status_class": "active",
+                "icon": "AI",
+                "icon_bg": "#d1fae5",
+                "platform": "Link Nubank",
+                "platform_color": "#820ad1",
+                "type_label": "Acompanhamento",
+                "type_class": "purple",
+                "link_label": "nubank.com.br",
+                "stats": [("Alunas", "10", ""), ("Preco", "R$797", ""), ("Receita", "R$7.970", "success")],
+                "capacity_label": "Vagas",
+                "capacity_note": "10 / 12",
+                "capacity_tone": "",
+                "progress": 83,
+                "progress_color": "#11998e",
+                "primary_action": "Ver alunas",
+            },
+        ],
+        "entries": [
+            {"initials": "JA", "name": "Julia Andrade", "sub": "julia@email.com", "product": "Mentoria HPC", "platform": "Hubla", "platform_class": "orange", "amount": "R$397", "date": "12 Mar 2026", "status": "Confirmado", "status_class": "green", "avatar_class": "purple"},
+            {"initials": "CM", "name": "Carla Menezes", "sub": "carla@email.com", "product": "Acompanhamento", "platform": "Nubank", "platform_class": "purple", "amount": "R$797", "date": "05 Abr 2026", "status": "Confirmado", "status_class": "green", "avatar_class": "blue"},
+            {"initials": "FS", "name": "Fernanda Silva", "sub": "fernanda@email.com", "product": "Mentoria HPC", "platform": "Hubla", "platform_class": "orange", "amount": "R$397", "date": "18 Fev 2026", "status": "Confirmado", "status_class": "green", "avatar_class": "green"},
+            {"initials": "AN", "name": "Ana Nunes", "sub": "ana@email.com", "product": "Planner Creator", "platform": "Hubla", "platform_class": "orange", "amount": "R$97", "date": "02 Jun 2026", "status": "Confirmado", "status_class": "green", "avatar_class": "slate"},
+            {"initials": "LR", "name": "Larissa Rocha", "sub": "larissa@email.com", "product": "Dash Creator", "platform": "Mercado Pago", "platform_class": "blue", "amount": "R$97", "date": "01 Jun 2026", "status": "Pendente", "status_class": "warn", "avatar_class": "amber"},
+        ],
+        "buyers": [
+            {"initials": "JA", "name": "Julia Andrade", "sub": "Desde Mar 2026", "product": "Mentoria HPC", "platform": "Hubla", "platform_class": "orange", "deadline": "Encerra em 3 dias", "deadline_sub": "Inicio: 12 Mar · Fim: 12 Jun", "progress": 95, "progress_class": "warn", "status": "Vencendo", "status_class": "warn", "row_class": "warning", "avatar_class": "purple"},
+            {"initials": "CM", "name": "Carla Menezes", "sub": "Desde Abr 2026", "product": "Acompanhamento", "platform": "Nubank", "platform_class": "purple", "deadline": "Encerra em 5 dias", "deadline_sub": "Inicio: 05 Abr · Fim: 05 Jun", "progress": 90, "progress_class": "warn", "status": "Vencendo", "status_class": "warn", "row_class": "warning", "avatar_class": "blue"},
+            {"initials": "FS", "name": "Fernanda Silva", "sub": "Desde Fev 2026", "product": "Mentoria HPC", "platform": "Hubla", "platform_class": "orange", "deadline": "7 dias restantes", "deadline_sub": "Inicio: 18 Fev · Fim: 18 Jun", "progress": 80, "progress_class": "", "status": "Ativo", "status_class": "green", "row_class": "", "avatar_class": "green"},
+            {"initials": "BR", "name": "Beatriz Rocha", "sub": "Desde Jan 2026", "product": "Acompanhamento", "platform": "Nubank", "platform_class": "purple", "deadline": "Pausado", "deadline_sub": "Inicio: 10 Jan · Prazo suspenso", "progress": 55, "progress_class": "warn", "status": "Pausado", "status_class": "warn", "row_class": "", "avatar_class": "orange"},
+            {"initials": "AN", "name": "Ana Nunes", "sub": "Desde Jun 2026", "product": "Planner Creator", "platform": "Hubla", "platform_class": "orange", "deadline": "Acesso perpetuo", "deadline_sub": "Produto sem prazo", "progress": 100, "progress_class": "success", "progress_text": "—", "status": "Ativo", "status_class": "green", "row_class": "", "avatar_class": "slate"},
+            {"initials": "ML", "name": "Mariana Lima", "sub": "Desde Nov 2025", "product": "Mentoria HPC", "platform": "Hubla", "platform_class": "orange", "deadline": "Encerrado em Fev 2026", "deadline_sub": "Duracao: 3 meses", "progress": 100, "progress_class": "success", "status": "Concluido", "status_class": "grey", "row_class": "", "avatar_class": "violet"},
+        ],
     }
 
 
@@ -549,8 +695,8 @@ def shell_context(
     if user and getattr(user, "is_authenticated", False):
         user_display_name = (user.get_full_name() or user.username or user.email or "").strip()
     return {
-        "nav_items": navigation(page_key, month_filter, badges=nav_badges),
-        "nav_groups": navigation_groups(page_key, month_filter, badges=nav_badges),
+        "nav_items": navigation(page_key, month_filter, badges=nav_badges, workspace=workspace, user=user),
+        "nav_groups": navigation_groups(page_key, month_filter, badges=nav_badges, workspace=workspace, user=user),
         "user_display_name": user_display_name,
         "page_key": page_key,
         "page_title": title,
@@ -581,6 +727,7 @@ def shell_context(
         "theme_class": "theme-dark" if str(workspace_settings.get("ui_dark_theme", "")).lower() in {"1", "true", "yes", "on"} else "",
         # Workspace de teste vê as novidades antes de todos (flag por workspace).
         "beta": bool(getattr(workspace, "is_beta", False)),
+        "has_infoproducts_access": workspace_has_infoproducts_access(workspace, user),
     }
 
 

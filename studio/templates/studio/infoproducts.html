@@ -1,0 +1,291 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<section class="infoproducts-page" data-infoproducts-page>
+    {% include "studio/includes/workspace_profile_nav.html" %}
+
+    <div class="infoproducts-toolbar">
+        <nav class="subtabs infoproducts-tabs" aria-label="Infoprodutos">
+            <button type="button" class="subtab subtab--active" data-infoproduct-tab="overview" aria-current="page">Visão geral</button>
+            <button type="button" class="subtab" data-infoproduct-tab="entries">Entradas</button>
+            <button type="button" class="subtab" data-infoproduct-tab="buyers">Alunas / Compradores</button>
+        </nav>
+        <div class="infoproducts-actions">
+            <button type="button" class="ghost-button small">Exportar</button>
+            <button type="button" class="primary-button small" data-infoproduct-modal-open="product">Novo produto</button>
+        </div>
+    </div>
+
+    <section class="infoproduct-panel is-active" data-infoproduct-panel="overview">
+        <div class="ip-kpi-grid">
+            {% for item in kpis %}
+                <article class="ip-kpi ip-kpi--{{ item.tone }}">
+                    <span class="ip-kpi-label">{{ item.label }}</span>
+                    <strong>{{ item.value }}</strong>
+                    <span>{{ item.sub }}</span>
+                </article>
+            {% endfor %}
+        </div>
+
+        <article class="ip-alert">
+            <div class="ip-alert-icon">!</div>
+            <div>
+                <strong>{{ deadline_alert.title }}</strong>
+                <p>{{ deadline_alert.text }}</p>
+            </div>
+        </article>
+
+        <div class="ip-product-grid">
+            {% for product in products %}
+                <article class="ip-product-card">
+                    <header class="ip-product-header">
+                        <div class="ip-product-title">
+                            <span class="ip-product-icon" style="background: {{ product.icon_bg }};">{{ product.icon }}</span>
+                            <div>
+                                <strong>{{ product.name }}</strong>
+                                <span>{{ product.kind }}</span>
+                            </div>
+                        </div>
+                        <span class="ip-status ip-status--{{ product.status_class }}">{{ product.status }}</span>
+                    </header>
+                    <div class="ip-product-body">
+                        <div class="ip-channel">
+                            <span class="ip-channel-dot" style="background: {{ product.platform_color }};"></span>
+                            <span>{{ product.platform }}</span>
+                            <span class="ip-chip ip-chip--{{ product.type_class }}">{{ product.type_label }}</span>
+                            <span class="ip-channel-link">{{ product.link_label }} ↗</span>
+                        </div>
+                        <div class="ip-stat-grid">
+                            {% for stat in product.stats %}
+                                <div class="ip-stat-box">
+                                    <strong class="{% if stat.2 %}ip-text-{{ stat.2 }}{% endif %}">{{ stat.1 }}</strong>
+                                    <span>{{ stat.0 }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="ip-capacity-row">
+                            <span>{{ product.capacity_label }}</span>
+                            <span class="ip-capacity-note ip-capacity-note--{{ product.capacity_tone }}">{{ product.capacity_note }}</span>
+                        </div>
+                        {% if product.progress %}
+                            <div class="ip-progress-track">
+                                <span style="width: {{ product.progress }}%; background: {{ product.progress_color }};"></span>
+                            </div>
+                        {% endif %}
+                        <div class="ip-product-actions">
+                            <button type="button" data-infoproduct-go-tab="entries">Ver entradas</button>
+                            <button type="button" data-infoproduct-modal-open="product">Editar</button>
+                            <button type="button" class="is-primary" data-infoproduct-go-tab="buyers">{{ product.primary_action }}</button>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="infoproduct-panel" data-infoproduct-panel="entries">
+        <div class="ip-filter-row">
+            <label class="ip-search">
+                <span>⌕</span>
+                <input type="search" placeholder="Buscar por comprador ou produto">
+            </label>
+            <select aria-label="Produto">
+                <option>Todos os produtos</option>
+                <option>Planner Creator</option>
+                <option>Mentoria HPC</option>
+                <option>Dash Creator</option>
+                <option>Acompanhamento</option>
+            </select>
+            <select aria-label="Plataforma">
+                <option>Todas as plataformas</option>
+                <option>Hubla</option>
+                <option>Mercado Pago</option>
+                <option>Link Nubank</option>
+            </select>
+            <select aria-label="Status">
+                <option>Todos os status</option>
+                <option>Confirmado</option>
+                <option>Pendente</option>
+                <option>Reembolsado</option>
+            </select>
+            <button type="button" class="primary-button small" data-infoproduct-modal-open="entry">Registrar entrada</button>
+        </div>
+
+        <article class="ip-table">
+            <div class="ip-table-head ip-table-row--entries">
+                <span>Comprador</span><span>Produto</span><span>Plataforma</span><span>Valor</span><span>Data</span><span>Status</span>
+            </div>
+            {% for entry in entries %}
+                <div class="ip-table-row ip-table-row--entries">
+                    <div class="ip-person">
+                        <span class="ip-avatar ip-avatar--{{ entry.avatar_class }}">{{ entry.initials }}</span>
+                        <div><strong>{{ entry.name }}</strong><small>{{ entry.sub }}</small></div>
+                    </div>
+                    <span>{{ entry.product }}</span>
+                    <span><span class="ip-chip ip-chip--{{ entry.platform_class }}">{{ entry.platform }}</span></span>
+                    <strong class="ip-text-success">{{ entry.amount }}</strong>
+                    <span>{{ entry.date }}</span>
+                    <span><span class="ip-chip ip-chip--{{ entry.status_class }}">{{ entry.status }}</span></span>
+                </div>
+            {% endfor %}
+            <button type="button" class="ip-more-row">Ver mais 82 entradas →</button>
+        </article>
+    </section>
+
+    <section class="infoproduct-panel" data-infoproduct-panel="buyers">
+        <div class="ip-filter-row ip-filter-row--buyers">
+            <label class="ip-search">
+                <span>⌕</span>
+                <input type="search" placeholder="Buscar aluna ou comprador">
+            </label>
+            <select aria-label="Produto">
+                <option>Todos os produtos</option>
+                <option>Planner Creator</option>
+                <option>Mentoria HPC</option>
+                <option>Dash Creator</option>
+                <option>Acompanhamento</option>
+            </select>
+            <select aria-label="Status">
+                <option>Todos os status</option>
+                <option>Ativo</option>
+                <option>Concluido</option>
+                <option>Vencendo</option>
+                <option>Pausado</option>
+            </select>
+            <button type="button" class="primary-button small" data-infoproduct-modal-open="buyer">Adicionar aluna</button>
+        </div>
+
+        <article class="ip-table">
+            <div class="ip-table-head ip-table-row--buyers">
+                <span>Aluna / Comprador</span><span>Produto</span><span>Plataforma</span><span>Prazo / Acesso</span><span>Progresso</span><span>Status</span>
+            </div>
+            {% for buyer in buyers %}
+                <div class="ip-table-row ip-table-row--buyers {% if buyer.row_class %}ip-row--{{ buyer.row_class }}{% endif %}">
+                    <div class="ip-person">
+                        <span class="ip-avatar ip-avatar--{{ buyer.avatar_class }}">{{ buyer.initials }}</span>
+                        <div><strong>{{ buyer.name }}</strong><small>{{ buyer.sub }}</small></div>
+                    </div>
+                    <span>{{ buyer.product }}</span>
+                    <span><span class="ip-chip ip-chip--{{ buyer.platform_class }}">{{ buyer.platform }}</span></span>
+                    <div class="ip-deadline">
+                        <strong>{{ buyer.deadline }}</strong>
+                        <small>{{ buyer.deadline_sub }}</small>
+                    </div>
+                    <div class="ip-progress-inline">
+                        <div class="ip-progress-track"><span class="ip-progress--{{ buyer.progress_class }}" style="width: {{ buyer.progress }}%;"></span></div>
+                        <small>{% if buyer.progress_text %}{{ buyer.progress_text }}{% else %}{{ buyer.progress }}%{% endif %}</small>
+                    </div>
+                    <span><span class="ip-chip ip-chip--{{ buyer.status_class }}">{{ buyer.status }}</span></span>
+                </div>
+            {% endfor %}
+            <button type="button" class="ip-more-row">Ver mais 81 alunas →</button>
+        </article>
+    </section>
+</section>
+
+<div class="ip-modal-backdrop" data-infoproduct-modal="product" hidden>
+    <div class="ip-modal" role="dialog" aria-modal="true" aria-label="Cadastrar produto">
+        <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
+        <h3>Cadastrar produto</h3>
+        <p>Preencha o nome e a plataforma. O sistema se adapta ao seu negócio.</p>
+        <div class="form-grid">
+            <label class="form-field form-field--full"><span>Nome do produto</span><input type="text" placeholder="Ex: Mentoria Creator, Planner Digital, Curso de UGC"></label>
+            <label class="form-field"><span>Tipo</span><select><option>Mentoria em grupo</option><option>Acompanhamento 1:1</option><option>Curso gravado</option><option>Planner / Template</option><option>SaaS / Plataforma</option></select></label>
+            <label class="form-field"><span>Status</span><select><option>Ativo</option><option>Em breve</option><option>Pausado</option><option>Encerrado</option></select></label>
+            <label class="form-field"><span>Preço (R$)</span><input type="text" placeholder="397,00"></label>
+            <label class="form-field"><span>Vagas</span><input type="number" placeholder="Vazio se nao tiver limite"></label>
+            <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Hotmart</option><option>Kiwify</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
+            <label class="form-field"><span>Link de vendas</span><input type="text" placeholder="hubla.com.br/seuproduto"></label>
+            <label class="form-field"><span>Duração do acesso</span><select><option>Sem prazo</option><option>1 mês</option><option>3 meses</option><option>6 meses</option><option>12 meses</option></select></label>
+            <label class="form-field"><span>Controle de progresso?</span><select><option>Sim</option><option>Não</option></select></label>
+        </div>
+        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Cadastrar produto</button></div>
+    </div>
+</div>
+
+<div class="ip-modal-backdrop" data-infoproduct-modal="buyer" hidden>
+    <div class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Adicionar aluna">
+        <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
+        <h3>Adicionar aluna / comprador</h3>
+        <p>Registre quem comprou e o sistema calcula o prazo automaticamente.</p>
+        <div class="form-grid">
+            <label class="form-field"><span>Nome completo</span><input type="text" placeholder="Maria da Silva"></label>
+            <label class="form-field"><span>E-mail</span><input type="email" placeholder="maria@email.com"></label>
+            <label class="form-field"><span>Produto</span><select><option>Planner Creator</option><option>Mentoria HPC</option><option>Dash Creator</option><option>Acompanhamento Individual</option></select></label>
+            <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
+            <label class="form-field"><span>Data da compra</span><input type="date" value="2026-06-13"></label>
+            <label class="form-field"><span>Valor pago (R$)</span><input type="text" placeholder="397,00"></label>
+            <label class="form-field form-field--full"><span>Prazo de acesso</span><select><option>Usar padrão do produto</option><option>Personalizado</option><option>Sem prazo</option></select></label>
+        </div>
+        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Adicionar aluna</button></div>
+    </div>
+</div>
+
+<div class="ip-modal-backdrop" data-infoproduct-modal="entry" hidden>
+    <div class="ip-modal ip-modal--compact" role="dialog" aria-modal="true" aria-label="Registrar entrada">
+        <button type="button" class="ip-modal-close" data-infoproduct-modal-close aria-label="Fechar">&times;</button>
+        <h3>Registrar entrada</h3>
+        <p>Registre manualmente uma venda de infoproduto.</p>
+        <div class="form-grid">
+            <label class="form-field"><span>Comprador</span><input type="text" placeholder="Nome do comprador"></label>
+            <label class="form-field"><span>Produto</span><select><option>Planner Creator</option><option>Mentoria HPC</option><option>Dash Creator</option><option>Acompanhamento</option></select></label>
+            <label class="form-field"><span>Plataforma</span><select><option>Hubla</option><option>Mercado Pago</option><option>Link Nubank</option><option>Pix direto</option></select></label>
+            <label class="form-field"><span>Valor (R$)</span><input type="text" placeholder="397,00"></label>
+            <label class="form-field"><span>Data da venda</span><input type="date" value="2026-06-13"></label>
+            <label class="form-field"><span>Status</span><select><option>Confirmado</option><option>Pendente</option><option>Reembolsado</option></select></label>
+        </div>
+        <div class="ip-modal-actions"><button type="button" class="ghost-button" data-infoproduct-modal-close>Cancelar</button><button type="button" class="primary-button" data-infoproduct-modal-close>Registrar entrada</button></div>
+    </div>
+</div>
+
+<script>
+(() => {
+    const page = document.querySelector("[data-infoproducts-page]");
+    if (!page) return;
+    const tabs = page.querySelectorAll("[data-infoproduct-tab]");
+    const panels = page.querySelectorAll("[data-infoproduct-panel]");
+    const activate = (key) => {
+        tabs.forEach((tab) => {
+            const active = tab.dataset.infoproductTab === key;
+            tab.classList.toggle("subtab--active", active);
+            if (active) tab.setAttribute("aria-current", "page");
+            else tab.removeAttribute("aria-current");
+        });
+        panels.forEach((panel) => panel.classList.toggle("is-active", panel.dataset.infoproductPanel === key));
+    };
+    tabs.forEach((tab) => tab.addEventListener("click", () => activate(tab.dataset.infoproductTab)));
+    page.querySelectorAll("[data-infoproduct-go-tab]").forEach((button) => {
+        button.addEventListener("click", () => activate(button.dataset.infoproductGoTab));
+    });
+
+    const openModal = (key) => {
+        const modal = document.querySelector(`[data-infoproduct-modal="${key}"]`);
+        if (!modal) return;
+        modal.hidden = false;
+        document.body.classList.add("has-popup-open");
+    };
+    const closeModal = (modal) => {
+        modal.hidden = true;
+        if (!document.querySelector(".ip-modal-backdrop:not([hidden])")) {
+            document.body.classList.remove("has-popup-open");
+        }
+    };
+    document.querySelectorAll("[data-infoproduct-modal-open]").forEach((button) => {
+        button.addEventListener("click", () => openModal(button.dataset.infoproductModalOpen));
+    });
+    document.querySelectorAll(".ip-modal-backdrop").forEach((modal) => {
+        modal.addEventListener("click", (event) => {
+            if (event.target === modal) closeModal(modal);
+        });
+        modal.querySelectorAll("[data-infoproduct-modal-close]").forEach((button) => {
+            button.addEventListener("click", () => closeModal(modal));
+        });
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            document.querySelectorAll(".ip-modal-backdrop:not([hidden])").forEach(closeModal);
+        }
+    });
+})();
+</script>
+{% endblock %}

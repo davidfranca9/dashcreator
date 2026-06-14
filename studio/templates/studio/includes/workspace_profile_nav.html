@@ -2,4 +2,7 @@
     <a href="{% url 'profile' %}" class="profile-tab{% if page_key == 'profile' %} is-active{% endif %}">Perfil</a>
     <a href="{% url 'settings' %}" class="profile-tab{% if page_key == 'settings' and not request.GET.aba %} is-active{% endif %}">Configurações</a>
     <a href="{% url 'settings' %}?aba=categorias" class="profile-tab{% if page_key == 'settings' and request.GET.aba == 'categorias' %} is-active{% endif %}">Categorias</a>
+    {% if has_infoproducts_access %}
+        <a href="{% url 'infoproducts' %}" class="profile-tab{% if page_key == 'infoproducts' %} is-active{% endif %}">Infoprodutos</a>
+    {% endif %}
 </nav>

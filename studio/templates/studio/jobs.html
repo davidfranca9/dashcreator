@@ -5,32 +5,40 @@
     <button type="button" class="subtab subtab--active" aria-current="page">
         <span>Serviços</span>
     </button>
-    <button type="button" class="subtab subtab--disabled" disabled aria-disabled="true">
-        <span>Infoprodutos</span>
-        <span class="subtab-badge subtab-badge--terra">EM BREVE</span>
-    </button>
+    {% if has_infoproducts_access %}
+        <a href="{% url 'infoproducts' %}" class="subtab">
+            <span>Infoprodutos</span>
+        </a>
+    {% else %}
+        <button type="button" class="subtab subtab--disabled" disabled aria-disabled="true">
+            <span>Infoprodutos</span>
+            <span class="subtab-badge subtab-badge--terra">EM BREVE</span>
+        </button>
+    {% endif %}
 </nav>
 
-<section class="infoprodutos-empty">
-    <div class="infoprodutos-empty-copy">
-        <h3>Infoprodutos chegando em breve</h3>
-        <p>Gerencie cursos, e-books, templates e outros produtos digitais em um só lugar.</p>
-    </div>
-    <div class="infoprodutos-preview-grid">
-        <article class="infoprodutos-preview-card">
-            <strong>Cadastro de produtos</strong>
-            <p>Catalogue cada infoproduto com preço, formato de entrega e canal de venda.</p>
-        </article>
-        <article class="infoprodutos-preview-card">
-            <strong>Controle de vendas</strong>
-            <p>Acompanhe quantos clientes compraram, ticket médio e refunds.</p>
-        </article>
-        <article class="infoprodutos-preview-card">
-            <strong>Métricas de receita passiva</strong>
-            <p>Veja o quanto seus produtos digitais somam ao faturamento mensal sem novas entregas.</p>
-        </article>
-    </div>
-</section>
+{% if not has_infoproducts_access %}
+    <section class="infoprodutos-empty">
+        <div class="infoprodutos-empty-copy">
+            <h3>Infoprodutos chegando em breve</h3>
+            <p>Gerencie cursos, e-books, templates e outros produtos digitais em um só lugar.</p>
+        </div>
+        <div class="infoprodutos-preview-grid">
+            <article class="infoprodutos-preview-card">
+                <strong>Cadastro de produtos</strong>
+                <p>Catalogue cada infoproduto com preço, formato de entrega e canal de venda.</p>
+            </article>
+            <article class="infoprodutos-preview-card">
+                <strong>Controle de vendas</strong>
+                <p>Acompanhe quantos clientes compraram, ticket médio e refunds.</p>
+            </article>
+            <article class="infoprodutos-preview-card">
+                <strong>Métricas de receita passiva</strong>
+                <p>Veja o quanto seus produtos digitais somam ao faturamento mensal sem novas entregas.</p>
+            </article>
+        </div>
+    </section>
+{% endif %}
 
 <article class="card jobs-filter-bar">
     <form method="get" class="jobs-filter-form" data-jobs-filter-form>

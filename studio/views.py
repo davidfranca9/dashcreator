@@ -58,6 +58,7 @@ from .services import (
     dismiss_follow_up_company,
     finance_snapshot,
     get_or_create_workspace_for_user,
+    infoproducts_snapshot,
     jobs_snapshot_filtered,
     legal_snapshot,
     parse_month_value,
@@ -68,6 +69,7 @@ from .services import (
     settings_map,
     shell_context,
     start_follow_up_prospection,
+    workspace_has_infoproducts_access,
     workspace_business_address_summary,
 )
 
@@ -1211,6 +1213,22 @@ def jobs(request: HttpRequest) -> HttpResponse:
         )
     )
     return render(request, "studio/jobs.html", context)
+
+
+@login_required
+def infoproducts(request: HttpRequest) -> HttpResponse:
+    workspace = _workspace(request)
+    if not workspace_has_infoproducts_access(workspace, request.user):
+        raise Http404("Pagina nao encontrada.")
+    context = shell_context(
+        "infoproducts",
+        workspace,
+        "Infoprodutos",
+        "Produtos digitais, entradas, alunas e prazos.",
+        user=request.user,
+    )
+    context.update(infoproducts_snapshot())
+    return render(request, "studio/infoproducts.html", context)
 
 
 @login_required

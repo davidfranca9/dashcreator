@@ -7,6 +7,7 @@ NAV_ITEMS = [
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance", "icon": "cash"},
     {"key": "distribution", "label": "Distribuição", "subtitle": "Destino do material entregue entre orgânico e ads.", "url_name": "distribution", "icon": "share"},
     {"key": "legal", "label": "Jurídico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal", "icon": "file-text"},
+    {"key": "infoproducts", "label": "Infoprodutos", "subtitle": "Produtos digitais, entradas, alunas e prazos.", "url_name": "infoproducts", "icon": "monitor"},
     {"key": "reports", "label": "Relatórios", "subtitle": "Indicadores estratégicos do negócio.", "url_name": "reports", "icon": "chart-bar"},
     {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile", "icon": "user"},
     {"key": "settings", "label": "Configurações", "subtitle": "Preferências visuais e operacionais.", "url_name": "settings", "icon": "settings"},
@@ -14,7 +15,7 @@ NAV_ITEMS = [
 
 NAV_GROUPS = [
     {"label": "Principal", "keys": ["dashboard", "jobs", "prospection"]},
-    {"label": "Gestão", "keys": ["finance", "distribution", "legal", "reports"]},
+    {"label": "Gestão", "keys": ["finance", "distribution", "legal", "infoproducts", "reports"]},
     {"label": "Conta", "keys": ["profile", "settings"]},
 ]
 

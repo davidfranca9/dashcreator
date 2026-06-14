@@ -73,6 +73,29 @@ class DashboardSmokeTest(TestCase):
         dashboard_response = self.client.get(reverse("dashboard"))
         self.assertNotContains(dashboard_response, 'nav-group-label">Perfil<', html=False)
 
+    def test_infoproducts_page_is_available_only_for_layfe_profile(self):
+        self.client.force_login(self.user)
+
+        blocked_response = self.client.get(reverse("infoproducts"))
+        profile_response = self.client.get(reverse("profile"))
+
+        self.assertEqual(blocked_response.status_code, 404)
+        self.assertNotContains(profile_response, 'href="/infoprodutos/"', html=False)
+
+        layfe = User.objects.create_user(username="layfeamorim", password="segura123")
+        get_or_create_workspace_for_user(layfe)
+        self.client.force_login(layfe)
+
+        response = self.client.get(reverse("infoproducts"))
+        jobs_response = self.client.get(reverse("jobs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Planner Creator")
+        self.assertContains(response, "Alunas / Compradores")
+        self.assertContains(response, 'data-infoproduct-tab="entries"', html=False)
+        self.assertContains(response, 'href="/infoprodutos/"', html=False)
+        self.assertContains(jobs_response, 'href="/infoprodutos/"', html=False)
+
     def test_workspace_uses_default_niches_and_can_create_reusable_service_category_from_settings(self):
         self.client.force_login(self.user)
 

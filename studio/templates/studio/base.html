@@ -184,7 +184,7 @@
                     <div class="bottom-nav-popover-section">
                         <span class="bottom-nav-popover-label">Gestão</span>
                         {% for item in nav_items %}
-                            {% if item.key == "distribution" or item.key == "legal" or item.key == "reports" %}
+                            {% if item.key == "distribution" or item.key == "legal" or item.key == "infoproducts" or item.key == "reports" %}
                                 <a href="{{ item.url }}" class="bottom-nav-popover-link{% if item.active %} bottom-nav-popover-link--active{% endif %}">
                                     {% include "studio/includes/nav_icon.html" with icon=item.icon %}
                                     <span>{{ item.label }}</span>
