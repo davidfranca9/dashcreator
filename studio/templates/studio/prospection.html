@@ -62,7 +62,7 @@
 
                     {% if column.items %}
                         {% for item in column.items %}
-                            <article class="pipeline-card{% if item.is_stale %} pipeline-card--stale{% endif %}" draggable="true" data-pipeline-card data-prospect-id="{{ item.id }}" data-current-stage="{{ item.stage }}">
+                            <article class="pipeline-card{% if item.is_stale %} pipeline-card--stale{% endif %}{% if item.is_overflow %} pipeline-card--overflow-hidden{% endif %}" draggable="true" data-pipeline-card data-prospect-id="{{ item.id }}" data-current-stage="{{ item.stage }}"{% if item.is_overflow %} data-overflow-card hidden{% endif %}>
                                 {% if item.is_stale %}<span class="pipeline-card-stale-note">{{ item.days_since_last }}d sem resposta</span>{% endif %}
                                 <div class="pipeline-card-top">
                                     <div>
@@ -102,7 +102,7 @@
                             </article>
                         {% endfor %}
                         {% if column.overflow %}
-                            <a class="pipeline-overflow" href="?tab=banco&search={{ filters.search|urlencode }}">+ {{ column.overflow }} lead{{ column.overflow|pluralize:",s" }}</a>
+                            <button class="pipeline-overflow" type="button" data-pipeline-overflow-toggle aria-expanded="false">+ {{ column.overflow }} lead{{ column.overflow|pluralize:",s" }}</button>
                         {% endif %}
                     {% else %}
                         <p class="muted pipeline-empty">Nenhum lead nesta etapa.</p>
@@ -270,6 +270,23 @@
                     timerId = window.setTimeout(() => form.requestSubmit(), 300);
                 });
             }
+        });
+    })();
+
+    (() => {
+        const board = document.querySelector("[data-pipeline-board]");
+        if (!board) return;
+        board.querySelectorAll("[data-pipeline-overflow-toggle]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const column = button.closest("[data-pipeline-column]");
+                if (!column) return;
+                column.querySelectorAll("[data-overflow-card]").forEach((card) => {
+                    card.hidden = false;
+                    card.classList.remove("pipeline-card--overflow-hidden");
+                });
+                button.setAttribute("aria-expanded", "true");
+                button.hidden = true;
+            });
         });
     })();
 

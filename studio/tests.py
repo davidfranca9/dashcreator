@@ -389,6 +389,35 @@ class DashboardSmokeTest(TestCase):
         self.assertContains(response, "Nike")
         self.assertNotContains(response, "Insider")
 
+    def test_pipeline_overflow_reveals_leads_without_opening_brand_bank(self):
+        for index in range(3):
+            Prospect.objects.create(
+                workspace=self.workspace,
+                company=f"Marca extra {index}",
+                contact="Julia",
+                contact_type="Email",
+                stage="Prospeccao",
+                contact_date=date.today() - timedelta(days=index),
+                niche=self.niche,
+                email=f"extra{index}@marca.com",
+                instagram=f"@marcaextra{index}",
+                whatsapp="71911111111",
+                note="Lead extra na coluna",
+            )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("prospection"))
+
+        self.assertEqual(response.status_code, 200)
+        prospect_column = next(column for column in response.context["pipeline_columns"] if column["key"] == "Prospeccao")
+        self.assertEqual(prospect_column["overflow"], 2)
+        self.assertFalse(prospect_column["items"][0]["is_overflow"])
+        self.assertTrue(all(item["is_overflow"] for item in prospect_column["items"][2:]))
+        self.assertContains(response, 'data-pipeline-overflow-toggle', html=False)
+        self.assertContains(response, "+ 2 leads", html=False)
+        self.assertContains(response, "data-overflow-card hidden", html=False)
+        self.assertNotContains(response, 'class="pipeline-overflow" href', html=False)
+
     def test_prospection_manual_follow_up_stage_appears_in_follow_up_column(self):
         Prospect.objects.create(
             workspace=self.workspace,

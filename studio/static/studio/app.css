@@ -4892,9 +4892,11 @@ body.page-finance .workspace-label {
 .pipeline-card-actions form { display: inline-flex; margin: 0; min-width: 0; }
 .pipeline-card-actions .xsmall { flex: 0 1 auto; min-width: 0; white-space: nowrap; }
 .xsmall { font-size: 0.72rem; padding: 0.4rem 0.7rem; border-radius: 6px; }
+.pipeline-card--overflow-hidden { display: none; }
 .pipeline-overflow {
     text-align: center; color: #4d8cff; font-size: 0.8rem; text-decoration: none;
-    padding: 0.5rem; border-radius: 6px;
+    padding: 0.5rem; border-radius: 6px; border: 0; background: transparent; cursor: pointer;
+    font: inherit; width: 100%;
 }
 .pipeline-overflow:hover { background: rgba(77,140,255,0.08); }
 .pipeline-empty { text-align: center; padding: 1rem 0; font-size: 0.85rem; }
