@@ -522,7 +522,10 @@
     #creators .back-section-label { color: var(--text-lt); }
     #creators .inner-eyebrow { color: var(--gold); }
     #creators .inner-title { color: var(--navy); }
-    #creators .inner-sub { color: var(--text-md); }
+    #creators .inner-sub {
+      color: var(--text-md);
+      margin-bottom: 38px;
+    }
 
     #creators .card {
       background: var(--white);
@@ -539,13 +542,16 @@
 
     .choice-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(5, minmax(168px, 1fr));
+      gap: 12px;
       text-align: center;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
     }
     .choice-card {
-      min-height: 230px;
-      padding: 34px 30px 28px;
+      min-height: 218px;
+      padding: 22px 14px 18px;
       border: 1px solid rgba(13,31,60,.16);
       background: rgba(255,255,255,.7);
       color: var(--navy);
@@ -562,36 +568,37 @@
       background: var(--white);
     }
     .choice-icon {
-      font-size: 28px;
+      font-size: 22px;
       line-height: 1;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
     .choice-title {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-family: 'Cormorant Garamond', serif;
-      font-size: 28px;
+      font-size: 21px;
       font-weight: 700;
-      line-height: 1;
+      line-height: 1.04;
       color: var(--navy);
     }
     .choice-desc {
-      max-width: 320px;
-      min-height: 42px;
-      margin-bottom: 22px;
-      font-size: 12px;
+      max-width: 220px;
+      min-height: 52px;
+      margin-bottom: 14px;
+      font-size: 10px;
       line-height: 1.6;
       color: var(--text-md);
     }
     .choice-button {
-      min-height: 34px;
-      padding: 0 20px;
+      min-height: 31px;
+      width: 100%;
+      padding: 0 12px;
       border: 1px solid rgba(13,31,60,.38);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 9px;
       font-weight: 800;
-      letter-spacing: .12em;
+      letter-spacing: .09em;
       text-transform: uppercase;
       color: var(--navy);
     }
@@ -691,11 +698,15 @@
       }
       .cards-grid { grid-template-columns: 1fr; }
       .choice-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(188px, 1fr));
         gap: 10px;
+        margin-left: -22px;
+        margin-right: -22px;
+        padding-left: 22px;
+        padding-right: 22px;
       }
       .choice-card {
-        min-height: 210px;
+        min-height: 220px;
         padding: 24px 14px 20px;
       }
       .choice-icon { font-size: 24px; }
@@ -872,15 +883,33 @@
     <div class="choice-grid">
       <a href="https://wa.me/5571997238419?text=Quero%20entrar%20na%20lista%20de%20espera%20da%20mentoria%20UGC" class="choice-card featured" target="_blank" rel="noopener">
         <span class="choice-icon" aria-hidden="true">🎓</span>
-        <h3 class="choice-title">Mentoria UGC</h3>
-        <p class="choice-desc">Acompanhamento para creators que querem vender mais, se posicionar melhor e estruturar uma carreira real.</p>
+        <h3 class="choice-title">Lista de Espera</h3>
+        <p class="choice-desc">Entre na lista da próxima turma da mentoria UGC e receba os detalhes em primeira mão.</p>
         <span class="choice-button">Entrar na lista</span>
+      </a>
+      <a href="https://wa.me/5571997238419?text=Quero%20ver%20o%20cronograma%20da%20mentoria%20UGC" class="choice-card" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">🗓️</span>
+        <h3 class="choice-title">Cronograma</h3>
+        <p class="choice-desc">Veja como funciona o acompanhamento, os encontros e o caminho da mentoria.</p>
+        <span class="choice-button">Ver cronograma</span>
+      </a>
+      <a href="https://wa.me/5571997238419?text=Quero%20conhecer%20o%20Dash%20Creator" class="choice-card" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">💻</span>
+        <h3 class="choice-title">Dash Creator</h3>
+        <p class="choice-desc">App de gestão para creators organizarem projetos, rotina, entregas e financeiro.</p>
+        <span class="choice-button">Conhecer app</span>
+      </a>
+      <a href="https://wa.me/5571997238419?text=Quero%20conhecer%20o%20Planner%20Creator" class="choice-card" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">📝</span>
+        <h3 class="choice-title">Planner Creator</h3>
+        <p class="choice-desc">Organize sua produção de conteúdo, ideias, metas e próximos passos como creator.</p>
+        <span class="choice-button">Ver planner</span>
       </a>
       <a href="https://thecreatorsclub.com.br" class="choice-card" target="_blank" rel="noopener">
         <span class="choice-icon" aria-hidden="true">✨</span>
         <h3 class="choice-title">The Creators Club</h3>
-        <p class="choice-desc">Comunidade para creators que querem pensar estratégia, conteúdo e negócio com mais clareza.</p>
-        <span class="choice-button">Conhecer comunidade</span>
+        <p class="choice-desc">Comunidade para creators que querem pensar estratégia, conteúdo e negócio com clareza.</p>
+        <span class="choice-button">Conhecer clube</span>
       </a>
     </div>
   </div>
