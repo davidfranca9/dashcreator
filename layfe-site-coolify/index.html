@@ -537,6 +537,81 @@
     #creators .card.featured .card-desc { color: rgba(255,255,255,.5); }
     #creators .card-desc { color: var(--text-md); }
 
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      text-align: center;
+    }
+    .choice-card {
+      min-height: 230px;
+      padding: 34px 30px 28px;
+      border: 1px solid rgba(13,31,60,.16);
+      background: rgba(255,255,255,.7);
+      color: var(--navy);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: transform .18s, border-color .18s, background .18s;
+    }
+    .choice-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(13,31,60,.34);
+      background: var(--white);
+    }
+    .choice-icon {
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+    .choice-title {
+      margin-bottom: 10px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--navy);
+    }
+    .choice-desc {
+      max-width: 320px;
+      min-height: 42px;
+      margin-bottom: 22px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-md);
+    }
+    .choice-button {
+      min-height: 34px;
+      padding: 0 20px;
+      border: 1px solid rgba(13,31,60,.38);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--navy);
+    }
+    .choice-card.featured {
+      background: var(--navy);
+      color: var(--white);
+      border-color: rgba(201,185,154,.35);
+    }
+    .choice-card.featured .choice-title {
+      color: var(--cream);
+    }
+    .choice-card.featured .choice-desc {
+      color: rgba(245,240,232,.64);
+    }
+    .choice-card.featured .choice-button {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: var(--navy);
+    }
+
     /* ── FOOTER inside sections ── */
     .inner-footer {
       border-top: 1px solid;
@@ -615,6 +690,27 @@
         margin-bottom: 36px;
       }
       .cards-grid { grid-template-columns: 1fr; }
+      .choice-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .choice-card {
+        min-height: 210px;
+        padding: 24px 14px 20px;
+      }
+      .choice-icon { font-size: 24px; }
+      .choice-title { font-size: 22px; }
+      .choice-desc {
+        min-height: 64px;
+        font-size: 10px;
+      }
+      .choice-button {
+        width: 100%;
+        min-height: 32px;
+        padding: 0 8px;
+        font-size: 8px;
+        letter-spacing: .08em;
+      }
       .stats-row { overflow-x: auto; }
       .stat { min-width: 120px; }
       .inner-footer { padding: 20px 24px; }
@@ -773,41 +869,18 @@
       Método, comunidade e ferramentas para creators que querem ir além de curtidas — e construir uma carreira de verdade.
     </p>
 
-    <div class="cards-grid">
-      <a href="#" class="card featured">
-        <div class="card-body">
-          <div class="card-title">Lista de Espera — Mentoria UGC</div>
-          <div class="card-desc">High Performance Creator · Turma 02 chegando</div>
-        </div>
-        <span class="card-arrow">↗</span>
+    <div class="choice-grid">
+      <a href="https://wa.me/5571997238419?text=Quero%20entrar%20na%20lista%20de%20espera%20da%20mentoria%20UGC" class="choice-card featured" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">🎓</span>
+        <h3 class="choice-title">Mentoria UGC</h3>
+        <p class="choice-desc">Acompanhamento para creators que querem vender mais, se posicionar melhor e estruturar uma carreira real.</p>
+        <span class="choice-button">Entrar na lista</span>
       </a>
-      <a href="#" class="card">
-        <div class="card-body">
-          <div class="card-title">Cronograma da Mentoria</div>
-          <div class="card-desc">Como funciona o acompanhamento</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
-      <a href="#" class="card">
-        <div class="card-body">
-          <div class="card-title">Dash Creator</div>
-          <div class="card-desc">App de gestão para creators — R$139,90/ano</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
-      <a href="#" class="card">
-        <div class="card-body">
-          <div class="card-title">Planner Creator</div>
-          <div class="card-desc">Organize sua produção de conteúdo</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
-      <a href="https://thecreatorsclub.com.br" class="card" target="_blank" rel="noopener">
-        <div class="card-body">
-          <div class="card-title">The Creators Club</div>
-          <div class="card-desc">A comunidade de creators que pensa diferente</div>
-        </div>
-        <span class="card-arrow">↗</span>
+      <a href="https://thecreatorsclub.com.br" class="choice-card" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">✨</span>
+        <h3 class="choice-title">The Creators Club</h3>
+        <p class="choice-desc">Comunidade para creators que querem pensar estratégia, conteúdo e negócio com mais clareza.</p>
+        <span class="choice-button">Conhecer comunidade</span>
       </a>
     </div>
   </div>
