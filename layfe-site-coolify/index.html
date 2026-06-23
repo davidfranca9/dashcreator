@@ -710,6 +710,144 @@
     }
     .footer-contact a:hover { opacity: .6; }
 
+    /* ── WAITLIST MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(8,18,36,.72);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-card {
+      position: relative;
+      width: min(100%, 420px);
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      padding: 38px clamp(24px, 5vw, 40px) 32px;
+      background: var(--navy);
+      border: 1px solid var(--gold-bdr);
+      border-radius: 3px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.5);
+      text-align: center;
+      animation: fadeUp .3s ease;
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: 0;
+      color: rgba(245,240,232,.5);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      transition: color .2s;
+    }
+    .modal-close:hover { color: var(--gold); }
+    .modal-icon {
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--cream);
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+    .modal-sub {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: rgba(245,240,232,.6);
+      max-width: 300px;
+      margin: 0 auto 24px;
+    }
+    .modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .field-label {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: rgba(201,185,154,.9);
+      margin-bottom: 6px;
+    }
+    .modal-form input {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(201,185,154,.3);
+      border-radius: 2px;
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      transition: border-color .2s, background .2s;
+    }
+    .modal-form input::placeholder { color: rgba(245,240,232,.35); }
+    .modal-form input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(255,255,255,.07);
+    }
+    .modal-form input:invalid:not(:placeholder-shown) {
+      border-color: rgba(220,120,120,.6);
+    }
+    .modal-submit {
+      min-height: 48px;
+      margin-top: 8px;
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      border-radius: 2px;
+      color: var(--navy);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .modal-submit:hover { opacity: .85; }
+    .modal-submit:disabled { opacity: .5; cursor: default; }
+    .modal-note {
+      font-size: 10px;
+      line-height: 1.5;
+      color: rgba(245,240,232,.4);
+      margin-top: 4px;
+      text-align: center;
+    }
+    /* success state */
+    .modal-success { display: none; }
+    .modal-card.done .modal-form,
+    .modal-card.done .modal-sub,
+    .modal-card.done .modal-icon { display: none; }
+    .modal-card.done .modal-success { display: block; }
+    .modal-success .modal-icon { display: block; font-size: 30px; margin-bottom: 14px; }
+    .modal-success-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(245,240,232,.7);
+      margin-top: 6px;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
       #hero {
@@ -952,7 +1090,7 @@
         <span class="choice-icon" aria-hidden="true">🎓</span>
         <h3 class="choice-title">Lista de Espera</h3>
         <p class="choice-desc">Entre na lista da próxima turma da mentoria UGC e receba os detalhes em primeira mão.</p>
-        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20entrar%20na%20lista%20de%20espera%20da%20mentoria%20UGC" target="_blank" rel="noopener">Entrar na lista</a>
+        <button type="button" class="choice-button" onclick="openWaitlist()">Entrar na lista</button>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">🗓️</span>
@@ -991,7 +1129,88 @@
 </div>
 
 
+<!-- ════════ MODAL — LISTA DE ESPERA ════════ -->
+<div id="waitlist-overlay" class="modal-overlay" onclick="if(event.target===this)closeWaitlist()">
+  <div class="modal-card" id="waitlist-card" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
+    <button type="button" class="modal-close" aria-label="Fechar" onclick="closeWaitlist()">×</button>
+
+    <div class="modal-icon" aria-hidden="true">🎓</div>
+    <h2 class="modal-title" id="waitlist-title">Lista de Espera</h2>
+    <p class="modal-sub">Garanta sua vaga na próxima turma da mentoria UGC. Você recebe os detalhes em primeira mão.</p>
+
+    <form class="modal-form" id="waitlist-form" novalidate>
+      <div>
+        <label class="field-label" for="wl-name">Nome completo</label>
+        <input id="wl-name" name="name" type="text" placeholder="Seu nome" required autocomplete="name">
+      </div>
+      <div>
+        <label class="field-label" for="wl-whats">WhatsApp</label>
+        <input id="wl-whats" name="whatsapp" type="tel" placeholder="(71) 99999-9999" required autocomplete="tel">
+      </div>
+      <div>
+        <label class="field-label" for="wl-insta">Instagram</label>
+        <input id="wl-insta" name="instagram" type="text" placeholder="@seuusuario" autocomplete="off">
+      </div>
+      <div>
+        <label class="field-label" for="wl-email">E-mail</label>
+        <input id="wl-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <button type="submit" class="modal-submit">Entrar na lista</button>
+      <p class="modal-note">Seus dados são usados apenas para o contato da mentoria.</p>
+    </form>
+
+    <div class="modal-success">
+      <div class="modal-icon" aria-hidden="true">✓</div>
+      <h2 class="modal-title">Tudo certo!</h2>
+      <p class="modal-success-text">Você está na lista de espera.<br>Em breve entro em contato com os detalhes da próxima turma. 💛</p>
+    </div>
+  </div>
+</div>
+
+
 <script>
+  /* ── Lista de Espera ── */
+  function openWaitlist() {
+    var card = document.getElementById('waitlist-card');
+    card.classList.remove('done');
+    document.getElementById('waitlist-form').reset();
+    document.getElementById('waitlist-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function(){ document.getElementById('wl-name').focus(); }, 50);
+  }
+  function closeWaitlist() {
+    document.getElementById('waitlist-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeWaitlist();
+  });
+
+  document.getElementById('waitlist-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (!this.checkValidity()) { this.reportValidity(); return; }
+
+    var data = {
+      name:      document.getElementById('wl-name').value.trim(),
+      whatsapp:  document.getElementById('wl-whats').value.trim(),
+      instagram: document.getElementById('wl-insta').value.trim(),
+      email:     document.getElementById('wl-email').value.trim()
+    };
+
+    /* ───────────────────────────────────────────────
+       TODO: definir o destino dos dados.
+       Hoje só mostra a confirmação. Opções pra ligar depois:
+         • POST pra um endpoint do Dash (Django)
+         • Formspree / e-mail
+         • Google Sheets
+         • Abrir WhatsApp com os dados preenchidos
+       Os dados estão no objeto `data` acima.
+    ─────────────────────────────────────────────── */
+    console.log('Lista de espera:', data);
+
+    document.getElementById('waitlist-card').classList.add('done');
+  });
+
   function showSection(id) {
     document.body.classList.add('inner-active');
     document.getElementById('hero').classList.remove('active');
