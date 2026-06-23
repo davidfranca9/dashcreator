@@ -64,7 +64,7 @@
     .logo-name {
       font-size: 15px;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      letter-spacing: 0;
       color: var(--white);
     }
     .logo-sub {
@@ -93,6 +93,7 @@
       transition: color .2s;
     }
     .header-social a:hover { color: var(--gold); }
+    body.inner-active header { display: none; }
 
     /* ─── SCREENS ─── */
     .screen {
@@ -129,9 +130,9 @@
     }
 
     .hero-title {
-      font-size: clamp(32px, 3.5vw, 50px);
+      font-size: 50px;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: 0;
       line-height: 1.05;
       color: var(--white);
       margin-bottom: 12px;
@@ -172,7 +173,7 @@
       font-family: 'Montserrat', sans-serif;
       font-size: 14px;
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -250,7 +251,6 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      animation: fadeUp .4s ease forwards;
     }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
@@ -259,7 +259,11 @@
 
     /* ── Back bar ── */
     .back-bar {
-      padding: 22px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      min-height: 68px;
+      padding: 14px clamp(22px, 5vw, 72px);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -278,7 +282,8 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       transition: opacity .2s;
-      padding: 4px 0;
+      min-height: 40px;
+      padding: 0;
     }
     .back-btn:hover { opacity: .55; }
     .back-btn svg { width: 14px; height: 14px; }
@@ -292,10 +297,10 @@
     /* ── Inner content area ── */
     .inner-content {
       flex: 1;
-      max-width: 900px;
+      max-width: 1120px;
       width: 100%;
-      margin: 0 auto;
-      padding: 60px 40px 80px;
+      margin: 0;
+      padding: 56px clamp(22px, 7vw, 96px) 80px;
     }
 
     .inner-eyebrow {
@@ -308,9 +313,10 @@
     }
 
     .inner-title {
-      font-size: clamp(28px, 4vw, 48px);
+      max-width: 680px;
+      font-size: 52px;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: 0;
       line-height: 1.08;
       margin-bottom: 14px;
     }
@@ -352,7 +358,7 @@
     .card-title {
       font-size: 14px;
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
       line-height: 1.3;
       margin-bottom: 5px;
     }
@@ -374,6 +380,7 @@
       color: var(--navy);
     }
     #marcas .back-bar {
+      background: var(--white);
       border-color: var(--cream-dk);
       color: var(--navy);
     }
@@ -403,7 +410,7 @@
     .stat-n {
       font-size: 24px;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: 0;
       color: var(--navy);
       line-height: 1;
     }
@@ -434,6 +441,7 @@
       color: var(--navy);
     }
     #creators .back-bar {
+      background: var(--cream);
       border-color: var(--cream-dk);
       color: var(--navy);
     }
@@ -509,8 +517,18 @@
       .hero-btns { max-width: 100%; }
       header { padding: 18px 24px; }
       .header-social { display: none; }
-      .back-bar { padding: 16px 24px; }
-      .inner-content { padding: 36px 24px 60px; }
+      .hero-title { font-size: 40px; }
+      .back-bar {
+        min-height: 60px;
+        padding: 10px 22px;
+      }
+      .inner-content { padding: 38px 22px 60px; }
+      .inner-title { font-size: 36px; }
+      .inner-sub {
+        max-width: none;
+        margin-bottom: 36px;
+      }
+      .cards-grid { grid-template-columns: 1fr; }
       .stats-row { overflow-x: auto; }
       .stat { min-width: 120px; }
       .inner-footer { padding: 20px 24px; }
@@ -518,6 +536,7 @@
 
     @media (max-width: 480px) {
       .hero-title { font-size: 30px; }
+      .inner-title { font-size: 32px; }
       .cards-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -557,11 +576,11 @@
 
     <p class="question-label">Por onde você quer começar?</p>
     <div class="hero-btns">
-      <button class="hero-btn" onclick="showSection('marcas')">
+      <button type="button" class="hero-btn" onclick="showSection('marcas')">
         Sou Marca
         <span class="btn-arrow">→</span>
       </button>
-      <button class="hero-btn" onclick="showSection('creators')">
+      <button type="button" class="hero-btn" onclick="showSection('creators')">
         Sou Creator
         <span class="btn-arrow">→</span>
       </button>
@@ -580,7 +599,7 @@
 <div id="marcas" class="inner-screen" style="display:none;">
 
   <div class="back-bar">
-    <button class="back-btn" onclick="showHero()">
+    <button type="button" class="back-btn" onclick="showHero()">
       <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Voltar
     </button>
@@ -657,7 +676,7 @@
 <div id="creators" class="inner-screen" style="display:none;">
 
   <div class="back-bar">
-    <button class="back-btn" onclick="showHero()">
+    <button type="button" class="back-btn" onclick="showHero()">
       <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Voltar
     </button>
@@ -722,6 +741,7 @@
 
 <script>
   function showSection(id) {
+    document.body.classList.add('inner-active');
     document.getElementById('hero').classList.remove('active');
     document.getElementById('hero').style.display = 'none';
     document.getElementById('marcas').style.display   = 'none';
@@ -732,6 +752,7 @@
     window.scrollTo(0, 0);
   }
   function showHero() {
+    document.body.classList.remove('inner-active');
     document.getElementById('marcas').style.display   = 'none';
     document.getElementById('creators').style.display = 'none';
     document.getElementById('hero').style.display = 'grid';
