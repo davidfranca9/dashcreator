@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Creators Club — A comunidade das creators de alta performance</title>
+  <meta name="description" content="Você não é mediana. Você está olhando para as referências erradas. O TCC é a comunidade das creators de alta performance que criaram uma categoria própria.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper:    #f5f1e8;
+      --paper-dk: #eae4d4;
+      --navy:     #0a2463;
+      --navy-lt:  #3e6cb5;
+      --ink:      #1a1410;
+      --ink-soft: #5a5345;
+      --ink-mute: #8c8475;
+      --line:     rgba(26,20,16,.14);
+      --line-st:  rgba(26,20,16,.28);
+      --accent:   #c9956a;
+      --accent-lt:rgba(201,149,106,.14);
+      --cream:    #f5f1e8;
+    }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 clamp(22px, 5vw, 64px); }
+
+    .display { font-family: 'Playfair Display', serif; font-weight: 400; letter-spacing: -.012em; line-height: 1.04; color: var(--navy); }
+    .display em { font-style: italic; font-weight: 400; color: var(--accent); }
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--accent); margin-bottom: 22px; }
+    .lead { font-size: clamp(14.5px, 1.5vw, 16.5px); line-height: 1.78; color: var(--ink-soft); }
+
+    /* ─── HEADER ─── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(245,241,232,.9);
+      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; min-height: 68px; gap: 20px; }
+    .brand { display: flex; align-items: baseline; gap: 8px; text-decoration: none; color: var(--navy); flex-shrink: 0; }
+    .brand-mark { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 500; font-style: italic; letter-spacing: -.01em; color: var(--accent); }
+    .brand-logo { height: 34px; width: auto; display: block; }
+    .brand-name { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--navy); }
+    .nav-links { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 34px); margin-left: auto; }
+    .nav-links a { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); text-decoration: none; transition: color .2s; }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ─── BUTTONS (pill) ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      min-height: 52px; padding: 0 30px;
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase; text-decoration: none; cursor: pointer;
+      border: 1px solid var(--navy); background: var(--navy); color: var(--cream);
+      border-radius: 100px; transition: opacity .2s, background .2s, color .2s, border-color .2s, transform .15s; white-space: nowrap;
+    }
+    .btn:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--navy); border-color: var(--line-st); }
+    .btn-ghost:hover { opacity: 1; border-color: var(--navy); }
+    .nav .btn { min-height: 42px; padding: 0 22px; }
+    .nav .btn-mini { display: inline-flex; }
+
+    /* ─── HERO ─── */
+    .hero { padding: clamp(40px, 5vw, 72px) 0 clamp(56px, 7vw, 96px); }
+    .hero-grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: clamp(32px, 5vw, 76px); align-items: center; }
+    .hero-kicker { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 26px; padding: 7px 16px; border: 1px solid var(--line-st); border-radius: 100px; font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
+    .hero-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .hero h1 { max-width: 22ch; margin-bottom: 26px; font-size: clamp(32px, 4vw, 56px); }
+    .hero-sub { max-width: 48ch; margin-bottom: 18px; font-size: clamp(16px, 1.7vw, 19px); line-height: 1.65; color: var(--ink-soft); }
+    .hero-mini { max-width: 50ch; margin-bottom: 36px; font-size: 14px; line-height: 1.7; color: var(--ink-mute); }
+    .hero-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+    .hero-figure { position: relative; }
+    .hero-figure img { width: 100%; height: clamp(420px, 60vw, 640px); object-fit: cover; border-radius: 8px; display: block; }
+    .hero-badge {
+      position: absolute; left: 22px; bottom: 22px; padding: 10px 18px; border-radius: 100px;
+      background: rgba(10,36,99,.86); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      color: var(--cream); font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+    }
+
+    /* ─── MARQUEE ─── */
+    .marquee { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper-dk); padding: 16px 0; }
+    .marquee-track { display: inline-flex; align-items: center; white-space: nowrap; will-change: transform; animation: marquee 34s linear infinite; }
+    .marquee:hover .marquee-track { animation-play-state: paused; }
+    .marquee-track span { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: clamp(20px, 2.6vw, 30px); color: var(--navy); padding: 0 24px; }
+    .marquee-track span.sep { color: var(--accent); font-style: normal; padding: 0; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ─── SECTIONS ─── */
+    section { padding: clamp(64px, 9vw, 120px) 0; }
+    .sec-head { max-width: 30ch; margin-bottom: clamp(40px, 6vw, 60px); }
+    .sec-head.center { max-width: 40ch; margin-left: auto; margin-right: auto; text-align: center; }
+    .sec-head h2 { font-size: clamp(28px, 4.2vw, 52px); margin-bottom: 18px; }
+
+    /* ─── MANIFESTO (navy) ─── */
+    #manifesto { background: var(--navy); color: var(--cream); text-align: center; position: relative; overflow: hidden; }
+    .seal { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-48%); width: min(560px, 78vw); aspect-ratio: 1; border: 1px solid rgba(245,241,232,.12); border-radius: 50%; z-index: 0; pointer-events: none; }
+    .seal::before { content: ''; position: absolute; inset: 26px; border: 1px solid rgba(245,241,232,.08); border-radius: 50%; }
+    #manifesto .wrap { position: relative; z-index: 2; }
+    #manifesto .eyebrow { color: rgba(201,149,106,.95); }
+    #manifesto h2 { max-width: 20ch; margin: 0 auto 26px; font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; line-height: 1.16; letter-spacing: -.01em; font-size: clamp(28px, 4.4vw, 56px); color: var(--cream); }
+    #manifesto h2 em { font-style: italic; color: var(--accent); }
+    #manifesto .lead { max-width: 56ch; margin: 0 auto; color: rgba(245,241,232,.62); }
+
+    /* ─── PARA QUEM É ─── */
+    .queme { text-align: center; }
+    .queme h2 { max-width: 18ch; margin: 0 auto 26px; font-size: clamp(30px, 4.6vw, 56px); }
+    .queme .lead { max-width: 62ch; margin: 0 auto; }
+
+    /* ─── OS CAMINHOS ─── */
+    #caminhos { background: var(--paper-dk); }
+    .paths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+    .path { position: relative; display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; transition: transform .2s, box-shadow .2s, border-color .2s; }
+    .path:hover { transform: translateY(-4px); box-shadow: 0 22px 50px rgba(26,20,16,.12); border-color: var(--line-st); }
+    .path.featured { background: var(--navy); border-color: var(--navy); color: var(--cream); }
+    .path-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
+    .path-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+    .path:hover .path-media img { transform: scale(1.04); }
+    .badge { position: absolute; top: 14px; right: 14px; padding: 6px 13px; background: var(--accent); color: var(--ink); font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; border-radius: 100px; z-index: 2; }
+    .path-body { display: flex; flex-direction: column; flex: 1; padding: 26px 26px 28px; }
+    .path-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .path-tags span { font-size: 9.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); padding: 5px 11px; border: 1px solid var(--accent-lt); border-radius: 100px; background: var(--accent-lt); }
+    .path h3 { font-family: 'Playfair Display', serif; font-weight: 500; font-size: 30px; letter-spacing: -.01em; margin-bottom: 12px; color: var(--navy); }
+    .path.featured h3 { color: var(--cream); }
+    .path-body > p { font-size: 13.5px; line-height: 1.62; color: var(--ink-soft); margin-bottom: 22px; }
+    .path.featured .path-body > p { color: rgba(245,241,232,.72); }
+    .feats { list-style: none; margin-bottom: 26px; display: flex; flex-direction: column; gap: 10px; }
+    .feats li { position: relative; padding-left: 24px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+    .path.featured .feats li { color: rgba(245,241,232,.92); }
+    .feats li::before { content: ''; position: absolute; left: 0; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent-lt); box-shadow: inset 0 0 0 1.5px var(--accent); }
+    .feats li::after { content: ''; position: absolute; left: 4.7px; top: 8px; width: 4px; height: 7px; border: solid var(--accent); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+    .path .btn { margin-top: auto; }
+    .path:not(.featured) .btn { background: transparent; color: var(--navy); border-color: var(--line-st); }
+    .path:not(.featured) .btn:hover { background: var(--navy); color: var(--cream); border-color: var(--navy); opacity: 1; }
+    .path.featured .btn { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+
+    /* ─── JORNADA ─── */
+    .jornada h2 { max-width: 16ch; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(22px, 4vw, 46px); }
+    .step { border-top: 2px solid var(--navy); padding-top: 22px; }
+    .step-num { font-family: 'Playfair Display', serif; font-style: italic; font-size: 42px; color: var(--accent); line-height: 1; margin-bottom: 16px; display: block; }
+    .step p { font-size: 14.5px; line-height: 1.6; color: var(--ink-soft); }
+    .step p strong { color: var(--navy); font-weight: 600; }
+
+    /* ─── COMUNIDADE ─── */
+    #comunidade { background: var(--paper-dk); }
+    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .cat { display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; transition: transform .2s, box-shadow .2s, border-color .2s; }
+    .cat:hover { transform: translateY(-4px); box-shadow: 0 18px 42px rgba(26,20,16,.1); border-color: var(--line-st); }
+    .cat-media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+    .cat-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+    .cat:hover .cat-media img { transform: scale(1.05); }
+    .cat-media.grad { display: flex; align-items: center; justify-content: center; }
+    .cat-media.grad::after { content: '✦'; color: rgba(245,241,232,.5); font-size: 26px; }
+    .cat-1 { background: linear-gradient(150deg,#1b3f78,#0a2463); }
+    .cat-2 { background: linear-gradient(150deg,#d3a079,#a06a40); }
+    .cat-3 { background: linear-gradient(150deg,#3e6cb5,#15336b); }
+    .cat-4 { background: linear-gradient(150deg,#4a3f30,#1a1410); }
+    .cat-body { padding: 20px 20px 22px; }
+    .cat h3 { font-family: 'Playfair Display', serif; font-weight: 500; font-size: 22px; line-height: 1.12; margin-bottom: 10px; color: var(--navy); }
+    .cat p { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); }
+
+    /* ─── CTA FINAL ─── */
+    #cta { background: var(--navy); color: var(--cream); text-align: center; position: relative; overflow: hidden; }
+    #cta .wrap { position: relative; z-index: 2; }
+    #cta .eyebrow { color: rgba(201,149,106,.95); }
+    #cta h2 { max-width: 14ch; margin: 0 auto 22px; font-size: clamp(34px, 5.4vw, 66px); color: var(--cream); }
+    #cta p { max-width: 54ch; margin: 0 auto 40px; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.7; color: rgba(245,241,232,.64); }
+    .cta-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    #cta .btn { background: var(--cream); color: var(--navy); border-color: var(--cream); }
+    #cta .btn.alt { background: transparent; color: var(--cream); border-color: rgba(245,241,232,.4); }
+
+    /* ─── FOOTER ─── */
+    footer { background: var(--paper); border-top: 1px solid var(--line); padding: clamp(44px, 6vw, 68px) 0 34px; }
+    .foot-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 24px; margin-bottom: 40px; }
+    .foot-brand .brand-mark { font-size: 26px; }
+    .foot-brand .brand-logo { height: 48px; }
+    .foot-brand p { margin-top: 14px; max-width: 34ch; font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+    .foot-links { display: flex; gap: clamp(28px, 6vw, 64px); flex-wrap: wrap; }
+    .foot-col h4 { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 14px; }
+    .foot-col a { display: block; font-size: 14px; color: var(--ink-soft); text-decoration: none; padding: 5px 0; transition: color .2s; }
+    .foot-col a:hover { color: var(--accent); }
+    .foot-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-mute); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-figure { order: -1; }
+      .hero-figure img { height: clamp(320px, 60vw, 460px); }
+      .paths { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .cat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 540px) {
+      .cat-grid { grid-template-columns: 1fr; }
+      .hero-btns .btn, .cta-btns .btn { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════ HEADER ════════ -->
+<header>
+  <div class="wrap nav">
+    <a href="#top" class="brand">
+      <img class="brand-logo" src="assets/logo-tcc.png" alt="The Creators Club" onerror="this.remove()">
+      <span class="brand-name">The Creators Club</span>
+    </a>
+    <nav class="nav-links" aria-label="Navegação principal">
+      <a href="#manifesto">Manifesto</a>
+      <a href="#caminhos">Caminhos</a>
+      <a href="#comunidade">Comunidade</a>
+    </nav>
+    <a href="#caminhos" class="btn btn-mini">Conhecer os caminhos</a>
+  </div>
+</header>
+
+
+<!-- ════════ HERO ════════ -->
+<section id="top" class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <span class="hero-kicker"><span class="dot"></span>Wellness · Lifestyle · Comunidade</span>
+        <h1 class="display">Você não é mediana. Você está olhando para <em>as referências erradas.</em></h1>
+        <p class="hero-sub">O TCC é a comunidade das creators de alta performance que pararam de se comparar com quem não eram elas e descobriram que seu maior diferencial sempre esteve lá.</p>
+        <p class="hero-mini">Para creators que querem clareza, direção e uma narrativa própria — sem viver reféns de tendência, comparação ou improviso.</p>
+        <div class="hero-btns">
+          <a href="#caminhos" class="btn">Conhecer os caminhos</a>
+          <a href="#comunidade" class="btn btn-ghost">A comunidade</a>
+        </div>
+      </div>
+      <figure class="hero-figure">
+        <img src="assets/hero.jpg" alt="Creator em sua rotina de criação">
+        <span class="hero-badge">Edição 01 · The Creators Club</span>
+      </figure>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ MARQUEE ════════ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>Clareza</span><span class="sep">✦</span>
+    <span>Direção</span><span class="sep">✦</span>
+    <span>Narrativa própria</span><span class="sep">✦</span>
+    <span>Repertório</span><span class="sep">✦</span>
+    <span>Posicionamento</span><span class="sep">✦</span>
+    <span>Categoria própria</span><span class="sep">✦</span>
+    <span>Estratégia</span><span class="sep">✦</span>
+    <span>Movimento</span><span class="sep">✦</span>
+    <span>Clareza</span><span class="sep">✦</span>
+    <span>Direção</span><span class="sep">✦</span>
+    <span>Narrativa própria</span><span class="sep">✦</span>
+    <span>Repertório</span><span class="sep">✦</span>
+    <span>Posicionamento</span><span class="sep">✦</span>
+    <span>Categoria própria</span><span class="sep">✦</span>
+    <span>Estratégia</span><span class="sep">✦</span>
+    <span>Movimento</span><span class="sep">✦</span>
+  </div>
+</div>
+
+
+<!-- ════════ MANIFESTO ════════ -->
+<section id="manifesto">
+  <div class="seal" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Manifesto</span>
+    <h2>A geração mais conectada da história chegou a um ponto de saturação e descobriu que o verdadeiro privilégio é <em>poder desligar.</em></h2>
+    <p class="lead">Somos creators que vivemos no digital, mas exploramos a parcela do mercado que ninguém está explorando.</p>
+  </div>
+</section>
+
+
+<!-- ════════ PARA QUEM É ════════ -->
+<section class="queme">
+  <div class="wrap">
+    <span class="eyebrow">Para quem é</span>
+    <h2 class="display">Para a creator que sente que tem algo único <em>mas ainda não sabe como transmitir isso para o mundo.</em></h2>
+    <p class="lead">Você olha para as referências erradas, se sente mediana, e trabalha horas sem saber qual é o próximo passo. Mas o problema nunca foi você, foi a comparação. O TCC existe para encontrar o que sempre esteve lá e transformar no seu maior diferencial.</p>
+  </div>
+</section>
+
+
+<!-- ════════ OS CAMINHOS ════════ -->
+<section id="caminhos">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Os caminhos</span>
+      <h2 class="display">Três formas de conhecer a metodologia do The Creators Club.</h2>
+      <p class="lead">Cada produto resolve uma etapa diferente e juntos formam o sistema completo de uma creator de alta performance.</p>
+    </div>
+
+    <div class="paths">
+      <!-- Planner -->
+      <article class="path">
+        <div class="path-media"><img src="assets/planner.jpg" alt="Planner Creator"></div>
+        <div class="path-body">
+          <div class="path-tags"><span>Passo 01 · Entrada</span><span>Digital · Intencional</span></div>
+          <h3>Planner Creator</h3>
+          <p>Planeje com intenção, 100% digital. A ferramenta para quem quer organizar a rotina de criação com clareza — conteúdos, marcas, follow-ups e datas estratégicas em um só lugar.</p>
+          <ul class="feats">
+            <li>Planejamento mensal e semanal</li>
+            <li>Tracker de marcas e follow-ups</li>
+            <li>Mapa de datas para fechar contratos</li>
+            <li>Espaço de intenção semanal</li>
+          </ul>
+          <a href="#cta" class="btn">Conhecer o Planner</a>
+        </div>
+      </article>
+
+      <!-- Dash (featured) -->
+      <article class="path featured">
+        <div class="path-media">
+          <span class="badge">Mais acessado</span>
+          <img src="assets/dash.jpg" alt="Dash Creator">
+        </div>
+        <div class="path-body">
+          <div class="path-tags"><span>Passo 01 · Entrada</span><span>App · Visão executiva</span></div>
+          <h3>Dash Creator</h3>
+          <p>Centralize toda a visão do seu negócio em um único lugar. Faturamento, prospecções, contratos, jurídico e finanças. Bate o olho e sabe exatamente o próximo passo.</p>
+          <ul class="feats">
+            <li>Dashboard executivo completo</li>
+            <li>CRM de marcas com pipeline</li>
+            <li>Financeiro com caixinhas automáticas</li>
+            <li>Alerta de vencimento de licença</li>
+            <li>Contratos gerados em 1 clique</li>
+          </ul>
+          <a href="#cta" class="btn">Conhecer o Dash Creator</a>
+        </div>
+      </article>
+
+      <!-- Acompanhamento -->
+      <article class="path">
+        <div class="path-media"><img src="assets/community.jpg" alt="Acompanhamento TCC"></div>
+        <div class="path-body">
+          <div class="path-tags"><span>Passo 02 · Transformação</span><span>4 encontros ao vivo</span></div>
+          <h3>Acompanhamento TCC</h3>
+          <p>Encontre seu diferencial real, construa sua narrativa de mercado e aprenda a abordar marcas do jeito certo. É aqui que você descobre que o que achava ser seu problema era seu maior diferencial.</p>
+          <ul class="feats">
+            <li>4 encontros 100% ao vivo</li>
+            <li>Lapidação da sua narrativa única</li>
+            <li>Como abordar marcas sem ser ignorada</li>
+            <li>Acesso à Comunidade TCC ao final</li>
+          </ul>
+          <a href="#cta" class="btn">Quero o acompanhamento</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ A JORNADA COMPLETA ════════ -->
+<section class="jornada">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">A jornada completa</span>
+      <h2 class="display">Do caos ao posicionamento. Do posicionamento ao destino.</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">01</span>
+        <p><strong>Organiza a casa.</strong> Para de perder tempo e dinheiro com o caos operacional.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <p><strong>Encontra o diferencial.</strong> Lapida a narrativa. Aprende a abordar marcas.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <p><strong>Chega ao destino.</strong> Seu diferencial fica visível para as marcas certas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ A COMUNIDADE ════════ -->
+<section id="comunidade">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">A comunidade</span>
+      <h2 class="display">Cada uma é uma categoria.</h2>
+      <p class="lead">Não competem entre si. Não competem com o mercado. Criaram um espaço que só elas ocupam.</p>
+    </div>
+
+    <div class="cat-grid">
+      <article class="cat">
+        <div class="cat-media"><img src="assets/story-1.jpg" alt="Maternidade & movimento"></div>
+        <div class="cat-body"><h3>Maternidade &amp; movimento</h3><p>Largou tudo para viver a maternidade de verdade. Cuidar de si e cuidar dos filhos são a mesma coisa.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/story-2.jpg" alt="Vida litorânea"></div>
+        <div class="cat-body"><h3>Vida litorânea</h3><p>O litoral dita como se move, o que come, como descansa. O mar como modo de vida.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/story-3.jpg" alt="Corrida & turismo"></div>
+        <div class="cat-body"><h3>Corrida &amp; turismo</h3><p>A interseção de dois mercados bilionários. Cada maratona em uma cidade diferente. A corrida como passaporte para o mundo.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/story-4.jpg" alt="Reinvenção & personalidade"></div>
+        <div class="cat-body"><h3>Reinvenção &amp; personalidade</h3><p>Mãe, barista, maquiadora e criadora. A mulher que se reinventa no cabelo, na vida e no trabalho sem perder quem ela é.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media grad cat-1"></div>
+        <div class="cat-body"><h3>Autocuidado &amp; equilíbrio</h3><p>Aprendeu que se cuidar não é egoísmo. É a única forma de continuar dando conta de tudo. Mãe, noiva, veterinária e mulher.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media grad cat-2"></div>
+        <div class="cat-body"><h3>Romantizando a vida</h3><p>Não espera o momento perfeito, constrói ele. Romantizar a vida não é ter uma vida perfeita, é escolher enxergar beleza no que você tem.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media grad cat-3"></div>
+        <div class="cat-body"><h3>Fitness &amp; maternidade</h3><p>23kg a menos e uma mãe que decidiu olhar um pouco mais para si. A prova de que consistência e persistência mudam vidas e se tornam herança para os filhos.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media grad cat-4"></div>
+        <div class="cat-body"><h3>Curadora de experiências</h3><p>Transforma tudo em experiência. Agora vive a maior delas: construir o lar dos sonhos do zero. Quem a segue por dicas vai acompanhar essa jornada íntima.</p></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ CTA FINAL ════════ -->
+<section id="cta">
+  <div class="seal" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Por onde começar</span>
+    <h2 class="display">Escolha o seu próximo passo.</h2>
+    <p>Cada caminho leva ao mesmo destino: uma creator com narrativa clara, negócio organizado e tempo de sobra para viver o off de verdade.</p>
+    <div class="cta-btns">
+      <a href="#caminhos" class="btn">Quero conhecer o Planner</a>
+      <a href="#caminhos" class="btn alt">Quero o Dash Creator</a>
+      <a href="#caminhos" class="btn alt">Quero o Acompanhamento</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ FOOTER ════════ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a href="#top" class="brand"><img class="brand-logo" src="assets/logo-tcc.png" alt="The Creators Club" onerror="this.remove()"> <span class="brand-name">The Creators Club</span></a>
+        <p>A comunidade das creators de alta performance que criaram uma categoria própria.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Caminhos</h4>
+          <a href="#caminhos">Planner Creator</a>
+          <a href="#caminhos">Dash Creator</a>
+          <a href="#caminhos">Acompanhamento</a>
+        </div>
+        <div class="foot-col">
+          <h4>Club</h4>
+          <a href="#manifesto">Manifesto</a>
+          <a href="#comunidade">A comunidade</a>
+          <a href="https://instagram.com/thecreatorssclubb" target="_blank" rel="noopener">Instagram</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 The Creators Club. Feito com intenção.</span>
+      <span>@thecreatorssclubb · Brasil</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
