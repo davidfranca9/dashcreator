@@ -248,14 +248,15 @@
     .hero-btns {
       display: flex;
       flex-direction: row;
-      flex-wrap: wrap;
-      gap: 12px;
-      width: 100%;
+      flex-wrap: nowrap;
+      gap: 0;
+      width: min(100%, 520px);
     }
 
     .hero-btn {
-      width: auto;
-      min-width: 148px;
+      flex: 1 1 0;
+      width: 50%;
+      min-width: 0;
       min-height: 46px;
       padding: 0 22px;
       background: transparent;
@@ -273,6 +274,9 @@
       gap: 16px;
       transition: background .25s, border-color .25s, color .25s;
       text-align: center;
+    }
+    .hero-btn + .hero-btn {
+      margin-left: -1px;
     }
     .hero-btn:hover {
       background: var(--gold);
@@ -622,13 +626,13 @@
         padding: 0 16px;
       }
       .hero-btns {
-        flex-direction: column;
+        flex-direction: row;
         max-width: 360px;
       }
       .hero-btn {
-        width: 100%;
+        width: 50%;
         justify-content: space-between;
-        padding: 0 24px;
+        padding: 0 18px;
       }
       header { padding: 18px 24px; }
       .header-social { display: none; }
