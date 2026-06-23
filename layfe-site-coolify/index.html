@@ -115,33 +115,6 @@
     .header-nav a:hover {
       color: var(--gold);
     }
-    .header-right {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      pointer-events: all;
-    }
-    .header-cta {
-      min-height: 28px;
-      padding: 0 22px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--gold);
-      background: var(--gold);
-      color: var(--navy);
-      text-decoration: none;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      transition: background .2s, color .2s;
-    }
-    .header-cta:hover {
-      background: transparent;
-      color: var(--gold);
-    }
     body.inner-active header { display: none; }
 
     /* ─── SCREENS ─── */
@@ -618,13 +591,9 @@
       .hero-intro { width: min(100%, 420px); }
       header {
         min-height: 54px;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 1fr;
       }
       .header-nav { display: none; }
-      .header-cta {
-        min-height: 30px;
-        padding: 0 16px;
-      }
       .hero-btns {
         flex-direction: row;
         max-width: 360px;
@@ -635,7 +604,6 @@
         padding: 0 18px;
       }
       header { padding: 18px 24px; }
-      .header-social { display: none; }
       .back-bar {
         min-height: 60px;
         padding: 10px 22px;
@@ -673,9 +641,6 @@
     <a href="https://wa.me/5571997238419" target="_blank" rel="noopener">WhatsApp</a>
     <a href="mailto:ugclayfeamorim@gmail.com">E-mail</a>
   </nav>
-  <div class="header-right">
-    <a class="header-cta" href="https://wa.me/5571997238419" target="_blank" rel="noopener">Falar comigo</a>
-  </div>
 </header>
 
 
