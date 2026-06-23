@@ -577,13 +577,15 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      text-decoration: none;
+      cursor: default;
       transition: transform .18s, border-color .18s, background .18s;
     }
-    .choice-card:hover {
+    .choice-card:hover,
+    .choice-card:focus-within {
       transform: translateY(-2px);
-      border-color: rgba(13,31,60,.34);
-      background: var(--white);
+      border-color: rgba(201,185,154,.35);
+      background: var(--navy);
+      color: var(--white);
     }
     .choice-icon {
       font-size: 22px;
@@ -615,6 +617,7 @@
       width: 100%;
       padding: 0 12px;
       border: 1px solid rgba(13,31,60,.38);
+      background: transparent;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -622,8 +625,11 @@
       font-weight: 800;
       letter-spacing: .09em;
       text-transform: uppercase;
+      text-decoration: none;
       color: var(--navy);
       margin-top: auto;
+      cursor: pointer;
+      transition: background .18s, border-color .18s, color .18s;
     }
     .choice-card.featured {
       background: var(--navy);
@@ -639,6 +645,40 @@
     .choice-card.featured .choice-button {
       border-color: var(--gold);
       background: var(--gold);
+      color: var(--navy);
+    }
+    .choice-card:hover .choice-title,
+    .choice-card:focus-within .choice-title {
+      color: var(--cream);
+    }
+    .choice-card:hover .choice-desc,
+    .choice-card:focus-within .choice-desc {
+      color: rgba(245,240,232,.64);
+    }
+    .choice-card:hover .choice-button,
+    .choice-card:focus-within .choice-button {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: var(--navy);
+    }
+    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover),
+    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) {
+      background: rgba(255,255,255,.7);
+      color: var(--navy);
+      border-color: rgba(13,31,60,.16);
+    }
+    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover) .choice-title,
+    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) .choice-title {
+      color: var(--navy);
+    }
+    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover) .choice-desc,
+    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) .choice-desc {
+      color: var(--text-md);
+    }
+    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover) .choice-button,
+    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) .choice-button {
+      border-color: rgba(13,31,60,.38);
+      background: transparent;
       color: var(--navy);
     }
 
@@ -851,30 +891,30 @@
 
     <!-- Cards -->
     <div class="choice-grid brand-choice-grid">
-      <a href="https://instagram.com/layfeamorim" class="choice-card featured" target="_blank" rel="noopener">
+      <article class="choice-card featured">
         <span class="choice-icon" aria-hidden="true">🎬</span>
         <h3 class="choice-title">Portfólio UGC</h3>
         <p class="choice-desc">Veja os conteúdos que já produzi para marcas. Cases com números reais.</p>
-        <span class="choice-button">Ver portfólio</span>
-      </a>
-      <a href="https://wa.me/5571997238419?text=Quero%20Social%20Media%20para%20o%20meu%20Instagram" class="choice-card" target="_blank" rel="noopener">
+        <a class="choice-button" href="https://instagram.com/layfeamorim" target="_blank" rel="noopener">Ver portfólio</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">📈</span>
         <h3 class="choice-title">Social Media</h3>
         <p class="choice-desc">Estratégia e gestão para o seu Instagram.</p>
-        <span class="choice-button">Quero social</span>
-      </a>
-      <a href="https://wa.me/5571997238419" class="choice-card" target="_blank" rel="noopener">
+        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20Social%20Media%20para%20o%20meu%20Instagram" target="_blank" rel="noopener">Quero social</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">💬</span>
         <h3 class="choice-title">Quero falar direto no WhatsApp</h3>
         <p class="choice-desc">Fale diretamente comigo.</p>
-        <span class="choice-button">Abrir WhatsApp</span>
-      </a>
-      <a href="mailto:ugclayfeamorim@gmail.com" class="choice-card">
+        <a class="choice-button" href="https://wa.me/5571997238419" target="_blank" rel="noopener">Abrir WhatsApp</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">📩</span>
         <h3 class="choice-title">Enviar proposta personalizada</h3>
         <p class="choice-desc">Tem uma proposta específica? Envia ela pra mim!</p>
-        <span class="choice-button">Enviar proposta</span>
-      </a>
+        <a class="choice-button" href="mailto:ugclayfeamorim@gmail.com">Enviar proposta</a>
+      </article>
     </div>
   </div>
 
@@ -907,36 +947,36 @@
     </p>
 
     <div class="choice-grid">
-      <a href="https://wa.me/5571997238419?text=Quero%20entrar%20na%20lista%20de%20espera%20da%20mentoria%20UGC" class="choice-card featured" target="_blank" rel="noopener">
+      <article class="choice-card featured">
         <span class="choice-icon" aria-hidden="true">🎓</span>
         <h3 class="choice-title">Lista de Espera</h3>
         <p class="choice-desc">Entre na lista da próxima turma da mentoria UGC e receba os detalhes em primeira mão.</p>
-        <span class="choice-button">Entrar na lista</span>
-      </a>
-      <a href="https://wa.me/5571997238419?text=Quero%20ver%20o%20cronograma%20da%20mentoria%20UGC" class="choice-card" target="_blank" rel="noopener">
+        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20entrar%20na%20lista%20de%20espera%20da%20mentoria%20UGC" target="_blank" rel="noopener">Entrar na lista</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">🗓️</span>
         <h3 class="choice-title">Cronograma</h3>
         <p class="choice-desc">Veja como funciona o acompanhamento, os encontros e o caminho da mentoria.</p>
-        <span class="choice-button">Ver cronograma</span>
-      </a>
-      <a href="https://wa.me/5571997238419?text=Quero%20conhecer%20o%20Dash%20Creator" class="choice-card" target="_blank" rel="noopener">
+        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20ver%20o%20cronograma%20da%20mentoria%20UGC" target="_blank" rel="noopener">Ver cronograma</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">💻</span>
         <h3 class="choice-title">Dash Creator</h3>
         <p class="choice-desc">App de gestão para creators organizarem projetos, rotina, entregas e financeiro.</p>
-        <span class="choice-button">Conhecer app</span>
-      </a>
-      <a href="https://wa.me/5571997238419?text=Quero%20conhecer%20o%20Planner%20Creator" class="choice-card" target="_blank" rel="noopener">
+        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20conhecer%20o%20Dash%20Creator" target="_blank" rel="noopener">Conhecer app</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">📝</span>
         <h3 class="choice-title">Planner Creator</h3>
         <p class="choice-desc">Organize sua produção de conteúdo, ideias, metas e próximos passos como creator.</p>
-        <span class="choice-button">Ver planner</span>
-      </a>
-      <a href="https://thecreatorsclub.com.br" class="choice-card" target="_blank" rel="noopener">
+        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20conhecer%20o%20Planner%20Creator" target="_blank" rel="noopener">Ver planner</a>
+      </article>
+      <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">✨</span>
         <h3 class="choice-title">The Creators Club</h3>
         <p class="choice-desc">Comunidade para creators que querem pensar estratégia, conteúdo e negócio com clareza.</p>
-        <span class="choice-button">Conhecer clube</span>
-      </a>
+        <a class="choice-button" href="https://thecreatorsclub.com.br" target="_blank" rel="noopener">Conhecer clube</a>
+      </article>
     </div>
   </div>
 
