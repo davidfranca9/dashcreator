@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layfe Amorim — UGC Creator & Estrategista de Conteúdo</title>
+  <meta name="description" content="UGC Creator estratégica. Conteúdo que vende para marcas. Mentoria para creators.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:     #0d1f3c;
+      --navy-mid: #1a3260;
+      --cream:    #f5f0e8;
+      --cream-dk: #e4ddd0;
+      --gold:     #c9b99a;
+      --gold-dim: rgba(201,185,154,.22);
+      --gold-bdr: rgba(201,185,154,.55);
+      --white:    #ffffff;
+      --text-md:  #4a4a6a;
+      --text-lt:  #8a8aaa;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 22px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: all;
+    }
+    .logo-mark {
+      width: 40px;
+      height: auto;
+      display: block;
+    }
+    .logo-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .logo-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--white);
+    }
+    .logo-sub {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .header-right {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      pointer-events: all;
+    }
+    .header-social {
+      display: flex;
+      gap: 14px;
+    }
+    .header-social a {
+      color: rgba(255,255,255,.5);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+      transition: color .2s;
+    }
+    .header-social a:hover { color: var(--gold); }
+
+    /* ─── SCREENS ─── */
+    .screen {
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+    }
+    .screen.active { display: flex; }
+
+    /* ─── HERO SCREEN ─── */
+    #hero {
+      display: grid;
+      grid-template-columns: 52% 48%;
+      min-height: 100vh;
+    }
+
+    .hero-left {
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 64px 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-size: clamp(32px, 3.5vw, 50px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+
+    .hero-tagline {
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+      color: rgba(255,255,255,.5);
+      line-height: 1.7;
+      margin-bottom: 52px;
+      max-width: 340px;
+    }
+
+    .question-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.3);
+      margin-bottom: 18px;
+    }
+
+    .hero-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 380px;
+    }
+
+    .hero-btn {
+      width: 100%;
+      padding: 20px 28px;
+      background: transparent;
+      border: 1px solid var(--gold-bdr);
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background .25s, border-color .25s, color .25s;
+      text-align: left;
+    }
+    .hero-btn:hover {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--navy);
+    }
+    .hero-btn .btn-arrow {
+      font-size: 18px;
+      opacity: .6;
+      transition: transform .2s, opacity .2s;
+    }
+    .hero-btn:hover .btn-arrow {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+
+    /* HERO RIGHT — photo panel */
+    .hero-right {
+      position: relative;
+      overflow: hidden;
+      background: var(--navy-mid);
+    }
+    /* Gradient overlay — left edge blends into navy */
+    .hero-right::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to right,
+        var(--navy) 0%,
+        rgba(13,31,60,.65) 30%,
+        rgba(13,31,60,.2) 100%
+      );
+      z-index: 1;
+    }
+    .hero-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      /* 
+        ↑ SUBSTITUA PELA SUA FOTO:
+        Coloque sua imagem na mesma pasta e aponte aqui.
+        Ex: background-image: url('layfe.jpg');
+        ou use a tag <img> abaixo.
+      */
+      background: linear-gradient(145deg, var(--navy-mid) 0%, #2a4a7a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Placeholder quando não há foto */
+    .photo-placeholder {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: rgba(201,185,154,.25);
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 2;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ─── INNER SCREENS (Marcas / Creators) ─── */
+    .inner-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      animation: fadeUp .4s ease forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Back bar ── */
+    .back-bar {
+      padding: 22px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: opacity .2s;
+      padding: 4px 0;
+    }
+    .back-btn:hover { opacity: .55; }
+    .back-btn svg { width: 14px; height: 14px; }
+    .back-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    /* ── Inner content area ── */
+    .inner-content {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 60px 40px 80px;
+    }
+
+    .inner-eyebrow {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .inner-title {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      margin-bottom: 14px;
+    }
+
+    .inner-sub {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.7;
+      max-width: 520px;
+      margin-bottom: 52px;
+    }
+
+    /* ── Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 24px 26px;
+      border-radius: 2px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+      text-align: left;
+      width: 100%;
+      transition: transform .18s, opacity .18s;
+    }
+    .card:hover { transform: translateY(-2px); opacity: .9; }
+    .card:active { transform: scale(.98); }
+
+    .card-body { flex: 1; }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+      margin-bottom: 5px;
+    }
+    .card-desc {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+    .card-arrow {
+      font-size: 18px;
+      opacity: .4;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    /* ── MARCAS screen ── */
+    #marcas {
+      background: var(--white);
+      color: var(--navy);
+    }
+    #marcas .back-bar {
+      border-color: var(--cream-dk);
+      color: var(--navy);
+    }
+    #marcas .back-btn { color: var(--navy); }
+    #marcas .back-btn svg { stroke: var(--navy); fill: none; }
+    #marcas .back-section-label { color: var(--text-lt); }
+    #marcas .inner-eyebrow { color: var(--gold); }
+    #marcas .inner-title { color: var(--navy); }
+    #marcas .inner-sub { color: var(--text-md); }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      gap: 0;
+      margin-bottom: 48px;
+      border-top: 1px solid var(--cream-dk);
+      border-bottom: 1px solid var(--cream-dk);
+      padding: 20px 0;
+    }
+    .stat {
+      flex: 1;
+      text-align: center;
+      padding: 0 20px;
+      border-right: 1px solid var(--cream-dk);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-n {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+      line-height: 1;
+    }
+    .stat-l {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--text-lt);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    #marcas .card {
+      background: var(--cream);
+      color: var(--navy);
+    }
+    #marcas .card.featured {
+      background: var(--navy);
+      color: var(--white);
+    }
+    #marcas .card.featured .card-desc { color: rgba(255,255,255,.55); }
+    #marcas .card-desc { color: var(--text-md); }
+    #marcas .card-arrow { color: inherit; }
+
+    /* ── CREATORS screen ── */
+    #creators {
+      background: var(--cream);
+      color: var(--navy);
+    }
+    #creators .back-bar {
+      border-color: var(--cream-dk);
+      color: var(--navy);
+    }
+    #creators .back-btn { color: var(--navy); }
+    #creators .back-btn svg { stroke: var(--navy); fill: none; }
+    #creators .back-section-label { color: var(--text-lt); }
+    #creators .inner-eyebrow { color: var(--gold); }
+    #creators .inner-title { color: var(--navy); }
+    #creators .inner-sub { color: var(--text-md); }
+
+    #creators .card {
+      background: var(--white);
+      color: var(--navy);
+      border: 1px solid var(--cream-dk);
+    }
+    #creators .card.featured {
+      background: var(--navy);
+      color: var(--white);
+      border-color: transparent;
+    }
+    #creators .card.featured .card-desc { color: rgba(255,255,255,.5); }
+    #creators .card-desc { color: var(--text-md); }
+
+    /* ── FOOTER inside sections ── */
+    .inner-footer {
+      border-top: 1px solid;
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .inner-footer p {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+    }
+    #marcas .inner-footer { border-color: var(--cream-dk); color: var(--text-lt); }
+    #creators .inner-footer { border-color: var(--cream-dk); color: var(--text-lt); }
+    .footer-contact a {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--navy);
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .footer-contact a:hover { opacity: .6; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      #hero {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-left {
+        padding: 100px 28px 60px;
+        background: transparent;
+        position: relative;
+        z-index: 2;
+      }
+      .hero-right {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+      }
+      .hero-right::before {
+        background: linear-gradient(to bottom, rgba(13,31,60,.85) 0%, rgba(13,31,60,.95) 100%);
+      }
+      .hero-btns { max-width: 100%; }
+      header { padding: 18px 24px; }
+      .header-social { display: none; }
+      .back-bar { padding: 16px 24px; }
+      .inner-content { padding: 36px 24px 60px; }
+      .stats-row { overflow-x: auto; }
+      .stat { min-width: 120px; }
+      .inner-footer { padding: 20px 24px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-title { font-size: 30px; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════ HEADER (fixed, sempre visível) ════════ -->
+<header>
+  <div class="header-logo">
+    <img class="logo-mark" src="logo.png" alt="Layfe Amorim">
+    <div class="logo-copy">
+      <span class="logo-name">Layfe Amorim</span>
+      <span class="logo-sub">The Creators Club</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <nav class="header-social">
+      <a href="https://instagram.com/layfeamorim" target="_blank">Instagram</a>
+      <a href="https://wa.me/5571997238419" target="_blank">WhatsApp</a>
+      <a href="mailto:ugclayfeamorim@gmail.com">E-mail</a>
+    </nav>
+  </div>
+</header>
+
+
+<!-- ════════ HERO ════════ -->
+<div id="hero" class="active">
+
+  <!-- ESQUERDA -->
+  <div class="hero-left">
+    <p class="hero-eyebrow">Salvador, BA · UGC Creator Verificada</p>
+    <h1 class="hero-title">Conteúdo<br>que vende.</h1>
+    <p class="hero-tagline">
+      UGC Creator e Estrategista de Conteúdo.<br>
+      Não só cria — pensa antes de criar.
+    </p>
+
+    <p class="question-label">Por onde você quer começar?</p>
+    <div class="hero-btns">
+      <button class="hero-btn" onclick="showSection('marcas')">
+        Sou Marca
+        <span class="btn-arrow">→</span>
+      </button>
+      <button class="hero-btn" onclick="showSection('creators')">
+        Sou Creator
+        <span class="btn-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- DIREITA — sua foto aqui -->
+  <div class="hero-right">
+    <img class="hero-photo" src="layfe.png" alt="Layfe Amorim">
+  </div>
+
+</div>
+
+
+<!-- ════════ SEÇÃO MARCAS ════════ -->
+<div id="marcas" class="inner-screen" style="display:none;">
+
+  <div class="back-bar">
+    <button class="back-btn" onclick="showHero()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Voltar
+    </button>
+    <span class="back-section-label">Para marcas</span>
+  </div>
+
+  <div class="inner-content">
+    <span class="inner-eyebrow">Para marcas</span>
+    <h2 class="inner-title">UGC estratégico<br>que converte.</h2>
+    <p class="inner-sub">
+      Criadora de conteúdo com método. Cada vídeo e cada foto são pensados antes de executados — com foco no resultado da sua marca.
+    </p>
+
+    <!-- Números -->
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-n">775K</div>
+        <div class="stat-l">views orgânicas<br>Case Inoar</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n">R$20K</div>
+        <div class="stat-l">em vendas no orgânico<br>Case Joingo</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n">+10</div>
+        <div class="stat-l">marcas nacionais<br>e internacionais</div>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="cards-grid">
+      <a href="#" class="card featured">
+        <div class="card-body">
+          <div class="card-title">Portfólio UGC</div>
+          <div class="card-desc">Veja os conteúdos que já produzi — cases com números reais</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="https://wa.me/5571997238419" class="card" target="_blank" rel="noopener">
+        <div class="card-body">
+          <div class="card-title">Solicitar orçamento</div>
+          <div class="card-desc">Fale diretamente no WhatsApp</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="mailto:ugclayfeamorim@gmail.com" class="card">
+        <div class="card-body">
+          <div class="card-title">Enviar proposta personalizada</div>
+          <div class="card-desc">ugclayfeamorim@gmail.com</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="#" class="card">
+        <div class="card-body">
+          <div class="card-title">Expert em conteúdo para o seu perfil</div>
+          <div class="card-desc">Estratégia e gestão do seu Instagram</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="inner-footer">
+    <p>Layfe Amorim · UGC Creator & Estrategista · Salvador, BA</p>
+    <div class="footer-contact">
+      <a href="https://instagram.com/layfeamorim" target="_blank">@layfeamorim</a>
+    </div>
+  </footer>
+
+</div>
+
+
+<!-- ════════ SEÇÃO CREATORS ════════ -->
+<div id="creators" class="inner-screen" style="display:none;">
+
+  <div class="back-bar">
+    <button class="back-btn" onclick="showHero()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Voltar
+    </button>
+    <span class="back-section-label">Para creators</span>
+  </div>
+
+  <div class="inner-content">
+    <span class="inner-eyebrow">Para creators</span>
+    <h2 class="inner-title">Do conteúdo<br>para o negócio.</h2>
+    <p class="inner-sub">
+      Método, comunidade e ferramentas para creators que querem ir além de curtidas — e construir uma carreira de verdade.
+    </p>
+
+    <div class="cards-grid">
+      <a href="#" class="card featured">
+        <div class="card-body">
+          <div class="card-title">Lista de Espera — Mentoria UGC</div>
+          <div class="card-desc">High Performance Creator · Turma 02 chegando</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="#" class="card">
+        <div class="card-body">
+          <div class="card-title">Cronograma da Mentoria</div>
+          <div class="card-desc">Como funciona o acompanhamento</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="#" class="card">
+        <div class="card-body">
+          <div class="card-title">Dash Creator</div>
+          <div class="card-desc">App de gestão para creators — R$139,90/ano</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="#" class="card">
+        <div class="card-body">
+          <div class="card-title">Planner Creator</div>
+          <div class="card-desc">Organize sua produção de conteúdo</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+      <a href="https://thecreatorsclub.com.br" class="card" target="_blank" rel="noopener">
+        <div class="card-body">
+          <div class="card-title">The Creators Club</div>
+          <div class="card-desc">A comunidade de creators que pensa diferente</div>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="inner-footer">
+    <p>Layfe Amorim · The Creators Club · Salvador, BA</p>
+    <div class="footer-contact">
+      <a href="https://instagram.com/layfeamorim" target="_blank">@layfeamorim</a>
+    </div>
+  </footer>
+
+</div>
+
+
+<script>
+  function showSection(id) {
+    document.getElementById('hero').classList.remove('active');
+    document.getElementById('hero').style.display = 'none';
+    document.getElementById('marcas').style.display   = 'none';
+    document.getElementById('creators').style.display = 'none';
+    var el = document.getElementById(id);
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+    window.scrollTo(0, 0);
+  }
+  function showHero() {
+    document.getElementById('marcas').style.display   = 'none';
+    document.getElementById('creators').style.display = 'none';
+    document.getElementById('hero').style.display = 'grid';
+    document.getElementById('hero').classList.add('active');
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>
