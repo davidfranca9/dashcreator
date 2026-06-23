@@ -1040,7 +1040,7 @@
         <span class="choice-icon" aria-hidden="true">📈</span>
         <h3 class="choice-title">Social Media</h3>
         <p class="choice-desc">Estratégia e gestão para o seu Instagram.</p>
-        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20Social%20Media%20para%20o%20meu%20Instagram" target="_blank" rel="noopener">Quero social</a>
+        <button type="button" class="choice-button" onclick="openSocial()">Quero social</button>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">💬</span>
@@ -1168,7 +1168,72 @@
 </div>
 
 
+<!-- ════════ MODAL — SOCIAL MEDIA ════════ -->
+<div id="social-overlay" class="modal-overlay" onclick="if(event.target===this)closeSocial()">
+  <div class="modal-card" id="social-card" role="dialog" aria-modal="true" aria-labelledby="social-title">
+    <button type="button" class="modal-close" aria-label="Fechar" onclick="closeSocial()">×</button>
+
+    <div class="modal-icon" aria-hidden="true">📈</div>
+    <h2 class="modal-title" id="social-title">Social Media</h2>
+    <p class="modal-sub">Conta um pouco da sua marca que eu te retorno com a melhor estratégia pro seu Instagram.</p>
+
+    <form class="modal-form" id="social-form" novalidate>
+      <div>
+        <label class="field-label" for="sm-name">Seu nome</label>
+        <input id="sm-name" name="name" type="text" placeholder="Seu nome" required autocomplete="name">
+      </div>
+      <div>
+        <label class="field-label" for="sm-insta">Instagram da marca</label>
+        <input id="sm-insta" name="instagram" type="text" placeholder="@suamarca" required autocomplete="off">
+      </div>
+      <div>
+        <label class="field-label" for="sm-whats">WhatsApp</label>
+        <input id="sm-whats" name="whatsapp" type="tel" placeholder="(71) 99999-9999" required autocomplete="tel">
+      </div>
+      <div>
+        <label class="field-label" for="sm-msg">O que você precisa?</label>
+        <input id="sm-msg" name="mensagem" type="text" placeholder="Ex: gestão de Instagram, conteúdo…" autocomplete="off">
+      </div>
+      <button type="submit" class="modal-submit">Quero social media</button>
+      <p class="modal-note">Seus dados são usados apenas para esse contato.</p>
+    </form>
+
+    <div class="modal-success">
+      <div class="modal-icon" aria-hidden="true">✓</div>
+      <h2 class="modal-title">Recebido!</h2>
+      <p class="modal-success-text">Já abri o WhatsApp com seus dados. É só enviar que eu te retorno com a estratégia. 💛</p>
+    </div>
+  </div>
+</div>
+
+
 <script>
+  /* ── Configuração ── */
+  var LAYFE_WHATS = '5571997238419';
+  // Cole aqui a URL do Web App do Google Apps Script (planilha). Enquanto vazio, salva só via WhatsApp.
+  var SHEETS_ENDPOINT = '';
+
+  function sendLead(tipo, data, intro) {
+    // 1) salva na planilha (Google Sheets via Apps Script), se configurado
+    if (SHEETS_ENDPOINT) {
+      try {
+        fetch(SHEETS_ENDPOINT, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(Object.assign({ tipo: tipo }, data))
+        });
+      } catch (e) {}
+    }
+    // 2) abre o WhatsApp da Layfe com os dados preenchidos
+    var linhas = [intro, ''];
+    if (data.name)      linhas.push('Nome: ' + data.name);
+    if (data.whatsapp)  linhas.push('WhatsApp: ' + data.whatsapp);
+    if (data.instagram) linhas.push('Instagram: ' + data.instagram);
+    if (data.email)     linhas.push('E-mail: ' + data.email);
+    if (data.mensagem)  linhas.push('Mensagem: ' + data.mensagem);
+    window.open('https://wa.me/' + LAYFE_WHATS + '?text=' + encodeURIComponent(linhas.join('\n')), '_blank');
+  }
+
   /* ── Lista de Espera ── */
   function openWaitlist() {
     var card = document.getElementById('waitlist-card');
@@ -1183,7 +1248,7 @@
     document.body.style.overflow = '';
   }
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') closeWaitlist();
+    if (e.key === 'Escape') { closeWaitlist(); closeSocial(); }
   });
 
   document.getElementById('waitlist-form').addEventListener('submit', function(e) {
@@ -1197,18 +1262,34 @@
       email:     document.getElementById('wl-email').value.trim()
     };
 
-    /* ───────────────────────────────────────────────
-       TODO: definir o destino dos dados.
-       Hoje só mostra a confirmação. Opções pra ligar depois:
-         • POST pra um endpoint do Dash (Django)
-         • Formspree / e-mail
-         • Google Sheets
-         • Abrir WhatsApp com os dados preenchidos
-       Os dados estão no objeto `data` acima.
-    ─────────────────────────────────────────────── */
-    console.log('Lista de espera:', data);
-
+    sendLead('Lista de Espera', data, 'Olá Layfe! Quero entrar na lista de espera da mentoria UGC.');
     document.getElementById('waitlist-card').classList.add('done');
+  });
+
+  /* ── Social Media ── */
+  function openSocial() {
+    var card = document.getElementById('social-card');
+    card.classList.remove('done');
+    document.getElementById('social-form').reset();
+    document.getElementById('social-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function(){ document.getElementById('sm-name').focus(); }, 50);
+  }
+  function closeSocial() {
+    document.getElementById('social-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('social-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (!this.checkValidity()) { this.reportValidity(); return; }
+    var data = {
+      name:      document.getElementById('sm-name').value.trim(),
+      instagram: document.getElementById('sm-insta').value.trim(),
+      whatsapp:  document.getElementById('sm-whats').value.trim(),
+      mensagem:  document.getElementById('sm-msg').value.trim()
+    };
+    sendLead('Social Media', data, 'Olá Layfe! Quero Social Media para o meu Instagram.');
+    document.getElementById('social-card').classList.add('done');
   });
 
   function showSection(id) {
