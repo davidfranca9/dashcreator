@@ -460,17 +460,24 @@
     #marcas .back-btn svg { stroke: var(--navy); fill: none; }
     #marcas .back-section-label { color: var(--text-lt); }
     #marcas .inner-eyebrow { color: var(--gold); }
-    #marcas .inner-title { color: var(--navy); }
-    #marcas .inner-sub { color: var(--text-md); }
+    #marcas .inner-content { padding-top: 32px; }
+    #marcas .inner-title {
+      color: var(--navy);
+      font-size: 42px;
+    }
+    #marcas .inner-sub {
+      color: var(--text-md);
+      margin-bottom: 24px;
+    }
 
     /* Stats row */
     .stats-row {
       display: flex;
       gap: 0;
-      margin-bottom: 48px;
+      margin-bottom: 20px;
       border-top: 1px solid var(--cream-dk);
       border-bottom: 1px solid var(--cream-dk);
-      padding: 20px 0;
+      padding: 12px 0;
     }
     .stat {
       flex: 1;
@@ -506,6 +513,14 @@
     #marcas .card.featured .card-desc { color: rgba(255,255,255,.55); }
     #marcas .card-desc { color: var(--text-md); }
     #marcas .card-arrow { color: inherit; }
+    #marcas .choice-card {
+      min-height: 224px;
+      padding: 20px 14px 16px;
+    }
+    #marcas .choice-desc {
+      min-height: 52px;
+      margin-bottom: 14px;
+    }
 
     /* ── CREATORS screen ── */
     #creators {
@@ -549,16 +564,19 @@
       padding-bottom: 6px;
       scrollbar-width: thin;
     }
+    .brand-choice-grid {
+      grid-template-columns: repeat(4, minmax(190px, 1fr));
+    }
     .choice-card {
-      min-height: 218px;
-      padding: 22px 14px 18px;
+      min-height: 246px;
+      padding: 24px 14px 18px;
       border: 1px solid rgba(13,31,60,.16);
       background: rgba(255,255,255,.7);
       color: var(--navy);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       text-decoration: none;
       transition: transform .18s, border-color .18s, background .18s;
     }
@@ -582,25 +600,30 @@
     }
     .choice-desc {
       max-width: 220px;
-      min-height: 52px;
-      margin-bottom: 14px;
+      min-height: 64px;
+      margin-bottom: 16px;
       font-size: 10px;
       line-height: 1.6;
       color: var(--text-md);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .choice-button {
-      min-height: 31px;
+      min-height: 42px;
       width: 100%;
       padding: 0 12px;
       border: 1px solid rgba(13,31,60,.38);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: .09em;
       text-transform: uppercase;
       color: var(--navy);
+      margin-top: auto;
     }
     .choice-card.featured {
       background: var(--navy);
@@ -692,6 +715,8 @@
       }
       .inner-content { padding: 38px 22px 60px; }
       .inner-title { font-size: 36px; }
+      #marcas .inner-content { padding-top: 38px; }
+      #marcas .inner-title { font-size: 36px; }
       .inner-sub {
         max-width: none;
         margin-bottom: 36px;
@@ -705,8 +730,11 @@
         padding-left: 22px;
         padding-right: 22px;
       }
+      .brand-choice-grid {
+        grid-template-columns: repeat(4, minmax(188px, 1fr));
+      }
       .choice-card {
-        min-height: 220px;
+        min-height: 244px;
         padding: 24px 14px 20px;
       }
       .choice-icon { font-size: 24px; }
@@ -717,9 +745,9 @@
       }
       .choice-button {
         width: 100%;
-        min-height: 32px;
+        min-height: 40px;
         padding: 0 8px;
-        font-size: 8px;
+        font-size: 9px;
         letter-spacing: .08em;
       }
       .stats-row { overflow-x: auto; }
@@ -757,7 +785,7 @@
   <!-- ESQUERDA -->
   <div class="hero-left">
     <div class="hero-intro">
-      <p class="hero-kicker">Portfolio 2026</p>
+      <p class="hero-kicker">UGC 2026</p>
       <h1 class="hero-name">
         <span class="name-script">Layfe</span>
         <span class="name-last">Amorim</span>
@@ -820,34 +848,30 @@
     </div>
 
     <!-- Cards -->
-    <div class="cards-grid">
-      <a href="#" class="card featured">
-        <div class="card-body">
-          <div class="card-title">Portfólio UGC</div>
-          <div class="card-desc">Veja os conteúdos que já produzi — cases com números reais</div>
-        </div>
-        <span class="card-arrow">↗</span>
+    <div class="choice-grid brand-choice-grid">
+      <a href="https://instagram.com/layfeamorim" class="choice-card featured" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">🎬</span>
+        <h3 class="choice-title">Portfólio UGC</h3>
+        <p class="choice-desc">Veja conteúdos, cases e formatos que já produzi para marcas reais.</p>
+        <span class="choice-button">Ver portfólio</span>
       </a>
-      <a href="https://wa.me/5571997238419" class="card" target="_blank" rel="noopener">
-        <div class="card-body">
-          <div class="card-title">Solicitar orçamento</div>
-          <div class="card-desc">Fale diretamente no WhatsApp</div>
-        </div>
-        <span class="card-arrow">↗</span>
+      <a href="https://wa.me/5571997238419" class="choice-card" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">💬</span>
+        <h3 class="choice-title">Orçamento</h3>
+        <p class="choice-desc">Fale diretamente comigo no WhatsApp para alinhar campanha, briefing e entregas.</p>
+        <span class="choice-button">Solicitar agora</span>
       </a>
-      <a href="mailto:ugclayfeamorim@gmail.com" class="card">
-        <div class="card-body">
-          <div class="card-title">Enviar proposta personalizada</div>
-          <div class="card-desc">ugclayfeamorim@gmail.com</div>
-        </div>
-        <span class="card-arrow">↗</span>
+      <a href="mailto:ugclayfeamorim@gmail.com" class="choice-card">
+        <span class="choice-icon" aria-hidden="true">📩</span>
+        <h3 class="choice-title">Proposta</h3>
+        <p class="choice-desc">Envie uma proposta personalizada ou briefing para criação de conteúdo estratégico.</p>
+        <span class="choice-button">Enviar e-mail</span>
       </a>
-      <a href="#" class="card">
-        <div class="card-body">
-          <div class="card-title">Expert em conteúdo para o seu perfil</div>
-          <div class="card-desc">Estratégia e gestão do seu Instagram</div>
-        </div>
-        <span class="card-arrow">↗</span>
+      <a href="https://wa.me/5571997238419?text=Quero%20estrategia%20para%20meu%20perfil" class="choice-card" target="_blank" rel="noopener">
+        <span class="choice-icon" aria-hidden="true">📈</span>
+        <h3 class="choice-title">Estratégia</h3>
+        <p class="choice-desc">Conteúdo, posicionamento e gestão para deixar o perfil mais claro e comercial.</p>
+        <span class="choice-button">Quero estratégia</span>
       </a>
     </div>
   </div>
@@ -877,7 +901,7 @@
     <span class="inner-eyebrow">Para creators</span>
     <h2 class="inner-title">Do conteúdo<br>para o negócio.</h2>
     <p class="inner-sub">
-      Método, comunidade e ferramentas para creators que querem ir além de curtidas — e construir uma carreira de verdade.
+      Método, comunidade e ferramentas para creators que querem ir além de curtidas e construir uma carreira de verdade.
     </p>
 
     <div class="choice-grid">
