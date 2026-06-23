@@ -1201,7 +1201,7 @@
     <div class="modal-success">
       <div class="modal-icon" aria-hidden="true">✓</div>
       <h2 class="modal-title">Recebido!</h2>
-      <p class="modal-success-text">Já abri o WhatsApp com seus dados. É só enviar que eu te retorno com a estratégia. 💛</p>
+      <p class="modal-success-text">Recebi seus dados! Em breve te retorno com a melhor estratégia pro seu Instagram. 💛</p>
     </div>
   </div>
 </div>
@@ -1214,24 +1214,17 @@
   var SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzxWQN0q9NoiwIMoIWbjfLoMY6zqqu24F_kMqgMzlbmG4HhIZPPakZA9pP-mdrTdwQQ-Q/exec';
 
   function sendLead(tipo, data, intro) {
-    // 1) salva na planilha (Google Sheets via Apps Script), se configurado
+    // Envia os dados pro Apps Script, que (1) salva na planilha e
+    // (2) notifica a Layfe automaticamente no WhatsApp via CallMeBot.
     if (SHEETS_ENDPOINT) {
       try {
         fetch(SHEETS_ENDPOINT, {
           method: 'POST', mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(Object.assign({ tipo: tipo }, data))
+          body: JSON.stringify(Object.assign({ tipo: tipo, intro: intro }, data))
         });
       } catch (e) {}
     }
-    // 2) abre o WhatsApp da Layfe com os dados preenchidos
-    var linhas = [intro, ''];
-    if (data.name)      linhas.push('Nome: ' + data.name);
-    if (data.whatsapp)  linhas.push('WhatsApp: ' + data.whatsapp);
-    if (data.instagram) linhas.push('Instagram: ' + data.instagram);
-    if (data.email)     linhas.push('E-mail: ' + data.email);
-    if (data.mensagem)  linhas.push('Mensagem: ' + data.mensagem);
-    window.open('https://wa.me/' + LAYFE_WHATS + '?text=' + encodeURIComponent(linhas.join('\n')), '_blank');
   }
 
   /* ── Lista de Espera ── */
