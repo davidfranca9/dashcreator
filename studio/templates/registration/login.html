@@ -4,75 +4,149 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Entrar | The Creators Club</title>
+    <title>Entrar — Dash Creator</title>
     <link rel="icon" type="image/png" sizes="64x64" href="{% static 'studio/creators-club-favicon.png' %}">
-    <link rel="stylesheet" href="{% static 'studio/app.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root{
+        --navy:#0a2463; --blue:#3c86fe; --paper:#f5f1e8;
+        --card:#ffffff; --ink:#1a1410; --muted:#8a8478; --line:#e7e1d4;
+        --field:#f4f0e8;
+      }
+      *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+      body{
+        font-family:'Inter',system-ui,sans-serif; color:var(--ink);
+        min-height:100vh; -webkit-font-smoothing:antialiased;
+        background:radial-gradient(120% 120% at 50% 35%, #0a2463 0%, #081d49 100%);
+        display:flex; align-items:center; justify-content:center; padding:40px 20px;
+      }
+      .wrap{ width:100%; max-width:420px; }
+
+      .card{
+        background:var(--card); border:1px solid var(--line); border-radius:24px;
+        padding:40px clamp(24px,6vw,40px); box-shadow:0 30px 70px -25px rgba(26,20,16,.25);
+      }
+
+      .brand{ display:flex; justify-content:center; margin-bottom:22px; }
+      .brand-logo{ height:42px; width:auto; display:block; }
+
+      .head{ margin-bottom:26px; }
+      .head h1{ font-size:30px; font-weight:800; letter-spacing:-.02em; color:var(--navy); }
+      .head p{ margin-top:6px; font-size:14px; color:var(--muted); }
+
+      .messages{ margin-bottom:16px; }
+      .message{ padding:11px 14px; border-radius:12px; font-size:13px;
+        background:rgba(60,134,254,.08); border:1px solid rgba(60,134,254,.25); color:var(--navy); }
+
+      .field{ margin-bottom:18px; }
+      .field-label{ display:block; margin:0 0 8px 2px; font-size:11px; font-weight:600;
+        letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+      .label-row{ display:flex; align-items:center; justify-content:space-between; }
+      .inline-link{ font-size:13px; font-weight:500; color:var(--blue); text-decoration:none; }
+      .inline-link:hover{ text-decoration:underline; }
+
+      .shell{ display:flex; align-items:center; gap:10px; padding:0 14px; border-radius:12px;
+        background:var(--field); border:1px solid var(--line); transition:border-color .15s, box-shadow .15s; }
+      .shell:focus-within{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(60,134,254,.15); background:#fff; }
+      .shell .icon{ flex-shrink:0; width:18px; height:18px; color:var(--muted); }
+      .shell input{ width:100%; border:0; background:transparent; outline:none; padding:14px 0;
+        font-family:'Inter',sans-serif; font-size:15px; color:var(--ink); }
+      .shell input::placeholder{ color:#b7b09f; }
+      .eye{ flex-shrink:0; background:none; border:0; cursor:pointer; color:var(--muted);
+        display:inline-flex; padding:4px; }
+      .eye:hover{ color:var(--navy); }
+      .eye svg{ width:18px; height:18px; }
+
+      .remember{ display:flex; align-items:center; gap:9px; margin:4px 0 22px; font-size:13.5px; color:var(--ink); cursor:pointer; }
+      .remember input{ width:16px; height:16px; accent-color:var(--blue); cursor:pointer; }
+
+      .submit{ width:100%; border:0; border-radius:12px; padding:15px; cursor:pointer;
+        font-family:'Inter',sans-serif; font-size:15px; font-weight:600; color:#fff;
+        background:var(--navy); display:inline-flex; align-items:center; justify-content:center; gap:9px;
+        box-shadow:0 14px 30px -12px rgba(10,36,99,.6); transition:background .2s, transform .15s; }
+      .submit:hover{ background:#16306e; transform:translateY(-1px); }
+      .submit:active{ transform:scale(.99); }
+
+      .signup{ margin-top:24px; text-align:center; font-size:13.5px; color:var(--muted); }
+      .signup a{ color:var(--blue); font-weight:600; text-decoration:none; }
+      .signup a:hover{ text-decoration:underline; }
+
+      .errorlist{ list-style:none; margin:8px 0 0; padding:0; }
+      .errorlist li{ font-size:12px; color:#c0392b; padding-left:2px; }
+    </style>
 </head>
-<body class="login-body">
-    <main class="login-shell">
-        <section class="login-card">
-            <div class="login-brand">
-                <img class="login-logo" src="{% static 'studio/creators-club-logo-banner.png' %}" alt="Dash Creator">
-                <div class="login-copy">
-                    <h1>Bem-vindo de volta</h1>
-                    <p>Acesse sua conta para continuar</p>
-                </div>
+<body>
+    <main class="wrap">
+      <div class="brand">
+        <img class="brand-logo" src="{% static 'studio/dashcreator-sidebar-logo.png' %}" alt="Dash Creator">
+      </div>
+      <div class="card">
+        <div class="head">
+          <h1>Bem-vindo de volta</h1>
+          <p>Acesse sua conta para continuar onde parou.</p>
+        </div>
+
+        {% if messages %}
+          <div class="messages">
+            {% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          {{ form.non_field_errors }}
+
+          <div class="field">
+            <label class="field-label" for="id_username">Usuário</label>
+            <div class="shell">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="8" r="4"></circle></svg>
+              {{ form.username }}
             </div>
+            {{ form.username.errors }}
+          </div>
 
-            {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                        <div class="message">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+          <div class="field">
+            <div class="label-row">
+              <label class="field-label" for="id_password">Senha</label>
+              <a class="inline-link" href="{% url 'password_reset' %}">Esqueci minha senha</a>
+            </div>
+            <div class="shell">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 1 1 8 0v3"></path></svg>
+              {{ form.password }}
+              <button type="button" id="pwd-toggle" class="eye" aria-label="Mostrar senha">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+            {{ form.password.errors }}
+          </div>
 
-            <form method="post" class="login-form-stack">
-                {% csrf_token %}
-                {{ form.non_field_errors }}
+          <label class="remember">
+            <input type="checkbox" name="remember_me">
+            Manter-me conectado
+          </label>
 
-                <div class="login-field">
-                    <div class="login-input-shell">
-                        <span class="login-field-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21a8 8 0 0 0-16 0"></path>
-                                <circle cx="12" cy="8" r="4"></circle>
-                            </svg>
-                        </span>
-                        {{ form.username }}
-                    </div>
-                    {{ form.username.errors }}
-                </div>
+          {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}">{% endif %}
 
-                <div class="login-field">
-                    <div class="login-input-shell">
-                        <span class="login-field-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-                                <path d="M8 11V8a4 4 0 1 1 8 0v3"></path>
-                            </svg>
-                        </span>
-                        {{ form.password }}
-                    </div>
-                    {{ form.password.errors }}
-                </div>
+          <button type="submit" class="submit">Acessar painel →</button>
 
-                {% if next %}
-                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}">
-                {% endif %}
-
-                <div class="login-links-row">
-                    <a class="login-inline-link" href="{% url 'password_reset' %}">Esqueci minha senha</a>
-                </div>
-
-                <button type="submit" class="login-submit-button">Acessar painel</button>
-
-                <p class="login-signup-copy">
-                    Ainda não tem uma conta?
-                    <a href="{% url 'signup' %}">Cadastre-se</a>
-                </p>
-            </form>
-        </section>
+          <p class="signup">
+            Ainda não tem uma conta? <a href="{% url 'signup' %}">Cadastre-se</a>
+          </p>
+        </form>
+      </div>
     </main>
+
+    <script>
+      (function(){
+        var u=document.getElementById('id_username');
+        var p=document.getElementById('id_password');
+        if(u && !u.placeholder) u.placeholder='seu.usuario';
+        if(p && !p.placeholder) p.placeholder='••••••••';
+        var t=document.getElementById('pwd-toggle');
+        if(t && p) t.addEventListener('click',function(){ p.type = p.type==='password' ? 'text' : 'password'; });
+      })();
+    </script>
 </body>
 </html>
