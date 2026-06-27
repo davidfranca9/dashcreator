@@ -1,1 +1,0 @@
-import{a as e}from"./index-CJwEofJM.js";import{t}from"./site-header-C_5L3GgO.js";import{t as n}from"./sobre-section-C64x2Uuy.js";var r=e();function i(){return(0,r.jsxs)(`div`,{className:`min-h-screen bg-navy-deep text-ivory`,children:[(0,r.jsx)(t,{}),(0,r.jsx)(n,{})]})}export{i as component};
