@@ -72,7 +72,7 @@
     .stats { display: flex; gap: 0; border-top: 1px solid var(--line); padding-top: 22px; }
     .stat { flex: 1; padding-right: 18px; border-right: 1px solid var(--line); }
     .stat:last-child { border-right: none; padding-right: 0; padding-left: 18px; }
-    .stat-n { font-family: 'Playfair Display', serif; font-size: clamp(24px, 3vw, 32px); font-weight: 600; color: var(--navy); line-height: 1; }
+    .stat-n { font-family: 'Playfair Display', serif; font-size: clamp(22px, 2.6vw, 30px); font-weight: 600; color: var(--navy); line-height: 1; white-space: nowrap; }
     .stat-l { font-size: 11px; color: var(--ink-mute); margin-top: 6px; line-height: 1.4; }
     .hero-figure { position: relative; }
     .hero-figure img { width: 100%; height: clamp(380px, 52vw, 540px); object-fit: cover; object-position: center center; border-radius: 8px; display: block; border: 1px solid var(--line); }
@@ -130,10 +130,11 @@
     .vs-col.us li::before { content: '✓'; color: var(--accent); }
 
     /* DEPOIMENTOS */
-    .quotes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .quote { padding: 30px 28px; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; }
+    .quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .quote { padding: 30px 28px; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; }
     .quote-mark { font-family: 'Playfair Display', serif; font-size: 44px; line-height: .4; color: var(--accent); }
     .quote p { font-size: 15px; line-height: 1.6; color: var(--ink); margin: 14px 0 0; }
+    .quote-name { margin-top: 18px; font-weight: 700; font-size: 13px; letter-spacing: .02em; color: var(--navy); }
 
     /* MANIFESTO */
     #filosofia { background: var(--navy); color: var(--cream); text-align: center; }
@@ -210,7 +211,6 @@
   <div class="wrap">
     <div class="hero-grid">
       <div>
-        <span class="hero-kicker">Dash Creator · by The Creators Club</span>
         <h1 class="display">Centralize toda a <em>visão executiva</em> do seu negócio em um único lugar.</h1>
         <p class="hero-sub">Faturamento, prospecções, contratos, fontes de renda, finanças, base de clientes e muito mais. Tudo pensado pra você bater o olho e saber exatamente o próximo passo.</p>
         <div class="hero-btns">
@@ -234,21 +234,34 @@
 <!-- COMO O DASH AJUDA -->
 <section id="problema">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head center">
       <span class="eyebrow">Como o Dash te ajuda a ser mais organizada</span>
-      <h2 class="display">Chega de se enrolar nas demandas e atrasar prazos.</h2>
+      <h2 class="display">Chega de se enrolar nas demandas<br>e atrasar prazos.</h2>
+      <p class="lead">Com o Dash você sai na frente, se organiza, faz uma entrega de excelência e garante que a marca possa te contratar de novo.</p>
     </div>
-    <p class="prob-sub lead">Com o Dash você sai na frente, se organiza, faz uma entrega de excelência e garante que a marca possa te contratar de novo.</p>
-    <div class="benefits">
-      <span class="bh">Com o Dash:</span>
-      <ul>
-        <li>Consegue acompanhar de forma visual o faturamento ao longo do ano</li>
-        <li>Centraliza todos os trabalhos em um único lugar</li>
-        <li>Recebe um alerta quando seu direito de uso de imagem estiver para vencer</li>
-        <li>Gera um contrato personalizado em 1 min</li>
-        <li>Tem clareza de todas as suas fontes de renda</li>
-        <li>Aba de prospecção pra você saber quanto conseguiu converter</li>
-      </ul>
+    <div class="vs">
+      <div class="vs-col other">
+        <div class="vs-h">Sem o Dash</div>
+        <ul>
+          <li>Perde a noção de quanto faturou ao longo do ano</li>
+          <li>Trabalhos espalhados em várias planilhas e anotações</li>
+          <li>Descobre tarde demais que o direito de uso de imagem venceu</li>
+          <li>Perde tempo montando cada contrato do zero</li>
+          <li>Não tem clareza de onde vem a maior parte da sua renda</li>
+          <li>Não sabe quantas marcas abordou nem quanto converteu</li>
+        </ul>
+      </div>
+      <div class="vs-col us">
+        <div class="vs-h">Com o Dash</div>
+        <ul>
+          <li>Acompanha de forma visual o faturamento ao longo do ano</li>
+          <li>Centraliza todos os trabalhos em um único lugar</li>
+          <li>Recebe um alerta quando seu direito de uso de imagem estiver para vencer</li>
+          <li>Gera um contrato personalizado em 1 min</li>
+          <li>Tem clareza de todas as suas fontes de renda</li>
+          <li>Aba de prospecção pra você saber quanto conseguiu converter</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
@@ -261,12 +274,12 @@
       <h2 class="display">Tudo que você precisa para organizar a parte business do seu negócio. Em um só lugar.</h2>
     </div>
     <div class="mods">
-      <article class="mod"><div class="mod-media"></div><div class="mod-content"><span class="mod-tag">Visão geral</span><h3>Dashboard</h3><p>Visão executiva completa com faturamento anual, trabalhos ativos, pipeline e atividades recentes. Bate o olho e sabe o próximo passo.</p></div></article>
-      <article class="mod"><div class="mod-media"></div><div class="mod-content"><span class="mod-tag">Operacional</span><h3>Trabalhos</h3><p>Gestão de jobs por status, atrasados, aguardando aprovação e entregas próximas. Filtro por tipo, andamento e nicho.</p></div></article>
-      <article class="mod"><div class="mod-media"></div><div class="mod-content"><span class="mod-tag">Comercial</span><h3>Prospecção</h3><p>CRM de marcas com pipeline completo: rascunho, prospecção, aguardando retorno e negociação. Nenhum lead e nenhum retorno esquecido.</p></div></article>
-      <article class="mod"><div class="mod-media"></div><div class="mod-content"><span class="mod-tag">Financeiro</span><h3>Caixa</h3><p>Pró-labore fixo, caixinhas automáticas, reserva de emergência, tempo médio de recebimento e fluxo livre. Você para de confundir faturamento com lucro.</p></div></article>
-      <article class="mod"><div class="mod-media"></div><div class="mod-content"><span class="mod-tag">Licenciamento</span><h3>Direito de uso</h3><p>Controle de licenciamento de imagem, orgânico vs ads e datas de vencimento com tudo monitorado automaticamente.</p></div></article>
-      <article class="mod"><span class="mod-excl">Exclusivo</span><div class="mod-media"></div><div class="mod-content"><span class="mod-tag">Jurídico</span><h3>Contratos</h3><p>Contratos gerados em 1 clique. Alerta automático de vencimento de direito de uso com sugestão de abordar a marca para renovar e não perder receita.</p></div></article>
+      <article class="mod"><div class="mod-media"><img src="assets/mod-dashboard.jpg" alt="Dashboard do Dash Creator"></div><div class="mod-content"><span class="mod-tag">Visão geral</span><h3>Dashboard</h3><p>Visão executiva completa com faturamento anual, trabalhos ativos, pipeline e atividades recentes. Bate o olho e sabe o próximo passo.</p></div></article>
+      <article class="mod"><div class="mod-media"><img src="assets/mod-trabalhos.jpg" alt="Trabalhos no Dash Creator"></div><div class="mod-content"><span class="mod-tag">Operacional</span><h3>Trabalhos</h3><p>Gestão de jobs por status, atrasados, aguardando aprovação e entregas próximas. Filtro por tipo, andamento e nicho.</p></div></article>
+      <article class="mod"><div class="mod-media"><img src="assets/mod-prospeccao.jpg" alt="Prospecção no Dash Creator"></div><div class="mod-content"><span class="mod-tag">Comercial</span><h3>Prospecção</h3><p>CRM de marcas com pipeline completo: rascunho, prospecção, aguardando retorno e negociação. Nenhum lead e nenhum retorno esquecido.</p></div></article>
+      <article class="mod"><div class="mod-media"><img src="assets/mod-caixa.jpg" alt="Financeiro no Dash Creator"></div><div class="mod-content"><span class="mod-tag">Financeiro</span><h3>Caixa</h3><p>Pró-labore fixo, caixinhas automáticas, reserva de emergência, tempo médio de recebimento e fluxo livre. Você para de confundir faturamento com lucro.</p></div></article>
+      <article class="mod"><div class="mod-media"><img src="assets/mod-juridico.jpg" alt="Direito de uso no Dash Creator"></div><div class="mod-content"><span class="mod-tag">Licenciamento</span><h3>Direito de uso</h3><p>Controle de licenciamento de imagem, orgânico vs ads e datas de vencimento com tudo monitorado automaticamente.</p></div></article>
+      <article class="mod"><span class="mod-excl">Exclusivo</span><div class="mod-media"><img src="assets/mod-juridico.jpg" alt="Contratos no Dash Creator"></div><div class="mod-content"><span class="mod-tag">Jurídico</span><h3>Contratos</h3><p>Contratos gerados em 1 clique. Alerta automático de vencimento de direito de uso com sugestão de abordar a marca para renovar e não perder receita.</p></div></article>
     </div>
   </div>
 </section>
@@ -298,7 +311,7 @@
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Por que o Dash Creator</span>
-      <h2 class="display">Não é só organização. É <em>visão executiva eficiente.</em></h2>
+      <h2 class="display">Não é só organização.<br>É <em>visão executiva eficiente.</em></h2>
     </div>
     <div class="vs">
       <div class="vs-col other">
@@ -330,17 +343,24 @@
   <div class="wrap">
     <div class="sec-head center">
       <span class="eyebrow">Depoimentos</span>
-      <h2 class="display">Quem usa, não volta para a planilha.</h2>
+      <h2 class="display">Quem usa,<br>não volta para a planilha.</h2>
       <p class="lead">Veja o que as creators de alta performance estão falando sobre o Dash Creator.</p>
     </div>
     <div class="quotes">
       <div class="quote">
         <div class="quote-mark">"</div>
         <p>Adoro os gráficos que ele gera. Inclusive eu saí das agências que tava pagando pq vi pelos relatórios que tinha fechado mt pouco trabalho por elas, só tava gastando dinheiro.</p>
+        <div class="quote-name">Railane Freitas</div>
       </div>
       <div class="quote">
         <div class="quote-mark">"</div>
         <p>Esse seu app mudou tudo mulher, sério! Antes eu usava planilha tbm, mas nunca alimentava tão bem, pq não era visual. Me ajudou muito a ter clareza e projeção de onde eu posso chegar.</p>
+        <div class="quote-name">Milena Cestari</div>
+      </div>
+      <div class="quote">
+        <div class="quote-mark">"</div>
+        <p>Com esse aplicativo, vocês superaram tudo! Eu já tinha pago outros aplicativos similares e não chega nem 1% perto do Dash. Ele é bem completo, você ainda explica cada coisinha. Tá muito barato para o tanto que ele entrega.</p>
+        <div class="quote-name">Bianca Aguiar</div>
       </div>
     </div>
   </div>
