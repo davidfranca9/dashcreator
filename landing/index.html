@@ -158,20 +158,21 @@
 
     /* ─── COMUNIDADE ─── */
     #comunidade { background: var(--paper-dk); }
-    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .cat { display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; transition: transform .2s, box-shadow .2s, border-color .2s; }
     .cat:hover { transform: translateY(-4px); box-shadow: 0 18px 42px rgba(26,20,16,.1); border-color: var(--line-st); }
-    .cat-media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
-    .cat-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+    .cat-media { position: relative; aspect-ratio: 4 / 5; overflow: hidden; }
+    .cat-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; transition: transform .4s; }
     .cat:hover .cat-media img { transform: scale(1.05); }
     .cat-media.grad { display: flex; align-items: center; justify-content: center; }
-    .cat-media.grad::after { content: '✦'; color: rgba(245,241,232,.5); font-size: 26px; }
+    .cat-media.grad::after { content: ''; }
     .cat-1 { background: linear-gradient(150deg,#1b3f78,#0a2463); }
     .cat-2 { background: linear-gradient(150deg,#d3a079,#a06a40); }
     .cat-3 { background: linear-gradient(150deg,#3e6cb5,#15336b); }
     .cat-4 { background: linear-gradient(150deg,#4a3f30,#1a1410); }
     .cat-body { padding: 20px 20px 22px; }
-    .cat h3 { font-family: 'Playfair Display', serif; font-weight: 500; font-size: 22px; line-height: 1.12; margin-bottom: 10px; color: var(--navy); }
+    .cat h3 { font-family: 'Playfair Display', serif; font-weight: 500; font-size: 22px; line-height: 1.12; margin-bottom: 4px; color: var(--navy); }
+    .cat-niche { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
     .cat p { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); }
 
     /* ─── CTA FINAL ─── */
@@ -222,11 +223,11 @@
       <span class="brand-name">The Creators Club</span>
     </a>
     <nav class="nav-links" aria-label="Navegação principal">
-      <a href="#manifesto">Manifesto</a>
+      <a href="#manifesto">O que acreditamos</a>
       <a href="#caminhos">Caminhos</a>
       <a href="#comunidade">Comunidade</a>
     </nav>
-    <a href="#caminhos" class="btn btn-mini">Conhecer os caminhos</a>
+    <a href="#caminhos" class="btn btn-mini">Quero saber como fazer parte</a>
   </div>
 </header>
 
@@ -236,12 +237,11 @@
   <div class="wrap">
     <div class="hero-grid">
       <div class="hero-text">
-        <span class="hero-kicker"><span class="dot"></span>Wellness · Lifestyle · Comunidade</span>
-        <h1 class="display">Você não é mediana. Você está olhando para <em>as referências erradas.</em></h1>
+        <h1 class="display">Você não é mediana.<br>Você está olhando para<br><em>as referências erradas.</em></h1>
         <p class="hero-sub">O TCC é a comunidade das creators de alta performance que pararam de se comparar com quem não eram elas e descobriram que seu maior diferencial sempre esteve lá.</p>
         <p class="hero-mini">Para creators que querem clareza, direção e uma narrativa própria, sem viver reféns de tendência, comparação ou improviso.</p>
         <div class="hero-btns">
-          <a href="#caminhos" class="btn">Conhecer os caminhos</a>
+          <a href="#caminhos" class="btn">Quero saber como fazer parte</a>
           <a href="#comunidade" class="btn btn-ghost">A comunidade</a>
         </div>
       </div>
@@ -254,35 +254,11 @@
 </section>
 
 
-<!-- ════════ MARQUEE ════════ -->
-<div class="marquee" aria-hidden="true">
-  <div class="marquee-track">
-    <span>Clareza</span><span class="sep">✦</span>
-    <span>Direção</span><span class="sep">✦</span>
-    <span>Narrativa própria</span><span class="sep">✦</span>
-    <span>Repertório</span><span class="sep">✦</span>
-    <span>Posicionamento</span><span class="sep">✦</span>
-    <span>Categoria própria</span><span class="sep">✦</span>
-    <span>Estratégia</span><span class="sep">✦</span>
-    <span>Movimento</span><span class="sep">✦</span>
-    <span>Clareza</span><span class="sep">✦</span>
-    <span>Direção</span><span class="sep">✦</span>
-    <span>Narrativa própria</span><span class="sep">✦</span>
-    <span>Repertório</span><span class="sep">✦</span>
-    <span>Posicionamento</span><span class="sep">✦</span>
-    <span>Categoria própria</span><span class="sep">✦</span>
-    <span>Estratégia</span><span class="sep">✦</span>
-    <span>Movimento</span><span class="sep">✦</span>
-  </div>
-</div>
-
-
 <!-- ════════ MANIFESTO ════════ -->
 <section id="manifesto">
-  <div class="seal" aria-hidden="true"></div>
   <div class="wrap">
-    <span class="eyebrow">Manifesto</span>
-    <h2>A geração mais conectada da história chegou a um ponto de saturação e descobriu que o verdadeiro privilégio é <em>poder desligar.</em></h2>
+    <span class="eyebrow">O que acreditamos</span>
+    <h2>A geração mais conectada da história chegou a um ponto de saturação<br>e descobriu que o verdadeiro privilégio<br>é <em>poder desligar.</em></h2>
     <p class="lead">Somos creators que vivemos no digital, mas exploramos a parcela do mercado que ninguém está explorando.</p>
   </div>
 </section>
@@ -292,8 +268,8 @@
 <section class="queme">
   <div class="wrap">
     <span class="eyebrow">Para quem é</span>
-    <h2 class="display">Para a creator que sente que tem algo único <em>mas ainda não sabe como transmitir isso para o mundo.</em></h2>
-    <p class="lead">Você olha para as referências erradas, se sente mediana, e trabalha horas sem saber qual é o próximo passo. Mas o problema nunca foi você, foi a comparação. O TCC existe para encontrar o que sempre esteve lá e transformar no seu maior diferencial.</p>
+    <h2 class="display">Para a creator que sente que tem algo único<br><em>mas ainda não sabe como transmitir<br>isso para o mundo.</em></h2>
+    <p class="lead">Você olha para as referências erradas, se sente mediana e trabalha horas sem saber qual é o próximo passo.<br>Mas o problema nunca foi você, foi a comparação.<br>O TCC existe para encontrar o que sempre esteve lá<br>e transformar no seu maior diferencial.</p>
   </div>
 </section>
 
@@ -302,9 +278,9 @@
 <section id="caminhos">
   <div class="wrap">
     <div class="sec-head center">
-      <span class="eyebrow">Os caminhos</span>
-      <h2 class="display">Três formas de conhecer a metodologia do The Creators Club.</h2>
-      <p class="lead">Cada produto resolve uma etapa diferente e juntos formam o sistema completo de uma creator de alta performance.</p>
+      <span class="eyebrow">Como você pode pertencer a esta comunidade</span>
+      <h2 class="display">Três formas de conhecer<br>a metodologia do<br>The Creators Club.</h2>
+      <p class="lead">Cada produto resolve uma etapa diferente e juntos<br>formam o sistema completo de uma creator de alta performance.</p>
     </div>
 
     <div class="paths">
@@ -367,72 +343,51 @@
 </section>
 
 
-<!-- ════════ A JORNADA COMPLETA ════════ -->
-<section class="jornada">
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">A jornada completa</span>
-      <h2 class="display">Do caos ao posicionamento. Do posicionamento ao destino.</h2>
-    </div>
-    <div class="steps">
-      <div class="step">
-        <span class="step-num">01</span>
-        <p><strong>Organiza a casa.</strong> Para de perder tempo e dinheiro com o caos operacional.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">02</span>
-        <p><strong>Encontra o diferencial.</strong> Lapida a narrativa. Aprende a abordar marcas.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">03</span>
-        <p><strong>Chega ao destino.</strong> Seu diferencial fica visível para as marcas certas.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-
 <!-- ════════ A COMUNIDADE ════════ -->
 <section id="comunidade">
   <div class="wrap">
     <div class="sec-head center">
-      <span class="eyebrow">A comunidade</span>
+      <span class="eyebrow">Conheça algumas das nossas creators</span>
       <h2 class="display">Cada uma é uma categoria.</h2>
       <p class="lead">Não competem entre si. Não competem com o mercado. Criaram um espaço que só elas ocupam.</p>
     </div>
 
     <div class="cat-grid">
       <article class="cat">
-        <div class="cat-media"><img src="assets/story-1.jpg" alt="Maternidade & movimento"></div>
-        <div class="cat-body"><h3>Maternidade &amp; movimento</h3><p>Largou tudo para viver a maternidade de verdade. Cuidar de si e cuidar dos filhos são a mesma coisa.</p></div>
-      </article>
-      <article class="cat">
-        <div class="cat-media"><img src="assets/story-2.jpg" alt="Vida litorânea"></div>
-        <div class="cat-body"><h3>Vida litorânea</h3><p>O litoral dita como se move, o que come, como descansa. O mar como modo de vida.</p></div>
-      </article>
-      <article class="cat">
-        <div class="cat-media"><img src="assets/story-3.jpg" alt="Corrida & turismo"></div>
-        <div class="cat-body"><h3>Corrida &amp; turismo</h3><p>A interseção de dois mercados bilionários. Cada maratona em uma cidade diferente. A corrida como passaporte para o mundo.</p></div>
-      </article>
-      <article class="cat">
-        <div class="cat-media"><img src="assets/story-4.jpg" alt="Reinvenção & personalidade"></div>
-        <div class="cat-body"><h3>Reinvenção &amp; personalidade</h3><p>Mãe, barista, maquiadora e criadora. A mulher que se reinventa no cabelo, na vida e no trabalho sem perder quem ela é.</p></div>
-      </article>
-      <article class="cat">
-        <div class="cat-media grad cat-1"></div>
-        <div class="cat-body"><h3>Autocuidado &amp; equilíbrio</h3><p>Aprendeu que se cuidar não é egoísmo. É a única forma de continuar dando conta de tudo. Mãe, noiva, veterinária e mulher.</p></div>
+        <div class="cat-media"><img src="assets/c-jamile.jpg" alt="Jamile"></div>
+        <div class="cat-body"><h3>Jamile</h3><span class="cat-niche">Maternidade &amp; movimento</span><p>Largou tudo para viver a maternidade de verdade. Cuidar de si e cuidar dos filhos são a mesma coisa.</p></div>
       </article>
       <article class="cat">
         <div class="cat-media grad cat-2"></div>
-        <div class="cat-body"><h3>Romantizando a vida</h3><p>Não espera o momento perfeito, constrói ele. Romantizar a vida não é ter uma vida perfeita, é escolher enxergar beleza no que você tem.</p></div>
+        <div class="cat-body"><h3>Thainara</h3><span class="cat-niche">Vida litorânea</span><p>O litoral dita como se move, o que come, como descansa. O mar como modo de vida.</p></div>
       </article>
       <article class="cat">
-        <div class="cat-media grad cat-3"></div>
-        <div class="cat-body"><h3>Fitness &amp; maternidade</h3><p>23kg a menos e uma mãe que decidiu olhar um pouco mais para si. A prova de que consistência e persistência mudam vidas e se tornam herança para os filhos.</p></div>
+        <div class="cat-media"><img src="assets/c-vanessa.jpg" alt="Vanessa"></div>
+        <div class="cat-body"><h3>Vanessa</h3><span class="cat-niche">Corrida &amp; turismo</span><p>A interseção de dois mercados bilionários. Cada maratona em uma cidade diferente. A corrida como passaporte para o mundo.</p></div>
       </article>
       <article class="cat">
-        <div class="cat-media grad cat-4"></div>
-        <div class="cat-body"><h3>Curadora de experiências</h3><p>Transforma tudo em experiência. Agora vive a maior delas: construir o lar dos sonhos do zero. Quem a segue por dicas vai acompanhar essa jornada íntima.</p></div>
+        <div class="cat-media"><img src="assets/c-anna.jpg" alt="Anna"></div>
+        <div class="cat-body"><h3>Anna</h3><span class="cat-niche">Autocuidado &amp; equilíbrio</span><p>Aprendeu que se cuidar não é egoísmo. É a única forma de continuar dando conta de tudo. Mãe, noiva, veterinária e mulher.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/c-riane.jpg" alt="Riane"></div>
+        <div class="cat-body"><h3>Riane</h3><span class="cat-niche">Romantizando a vida</span><p>Não espera o momento perfeito, constrói ele. Romantizar a vida não é ter uma vida perfeita, é escolher enxergar beleza no que você tem.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/c-sabrina.jpg" alt="Sabrina"></div>
+        <div class="cat-body"><h3>Sabrina</h3><span class="cat-niche">Fitness &amp; maternidade</span><p>23kg a menos e uma mãe que decidiu olhar um pouco mais para si. A prova de que consistência e persistência mudam vidas e se tornam herança para os filhos.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/c-railane.jpg" alt="Railane"></div>
+        <div class="cat-body"><h3>Railane</h3><span class="cat-niche">Curadora de experiências</span><p>Transforma tudo em experiência. Agora vive a maior delas: construir o lar dos sonhos do zero. Quem a segue por dicas vai acompanhar essa jornada íntima.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/c-gabi.jpg" alt="Gabi"></div>
+        <div class="cat-body"><h3>Gabi</h3><span class="cat-niche">Reinvenção &amp; personalidade</span><p>Mãe, barista, maquiadora e criadora. A mulher que se reinventa no cabelo, na vida e no trabalho sem perder quem ela é.</p></div>
+      </article>
+      <article class="cat">
+        <div class="cat-media"><img src="assets/c-bianca.jpg" alt="Bianca"></div>
+        <div class="cat-body"><h3>Bianca</h3><span class="cat-niche">Reinvenção &amp; autocuidado</span><p>Casada e cristã. Está redescobrindo como é ser ela novamente, enquanto mulher. Longe dos paradigmas que a sociedade impõe, se permitindo se reconectar consigo mesma.</p></div>
       </article>
     </div>
   </div>
@@ -441,7 +396,6 @@
 
 <!-- ════════ CTA FINAL ════════ -->
 <section id="cta">
-  <div class="seal" aria-hidden="true"></div>
   <div class="wrap">
     <span class="eyebrow">Por onde começar</span>
     <h2 class="display">Escolha o seu próximo passo.</h2>
@@ -461,20 +415,19 @@
     <div class="foot-top">
       <div class="foot-brand">
         <a href="#top" class="brand"><img class="brand-logo" src="assets/logo-tcc.png" alt="The Creators Club" onerror="this.remove()"> <span class="brand-name">The Creators Club</span></a>
-        <p>A comunidade das creators de alta performance que criaram uma categoria própria.</p>
+        <p>A comunidade das creators de alta performance<br>que criaram uma categoria própria.</p>
       </div>
       <div class="foot-links">
         <div class="foot-col">
-          <h4>Caminhos</h4>
+          <h4>Produtos</h4>
           <a href="/planner/">Planner Creator</a>
           <a href="/dashcreator/">Dash Creator</a>
           <a href="https://www.instagram.com/thecreatorssclubb/" target="_blank" rel="noopener">Acompanhamento</a>
         </div>
         <div class="foot-col">
-          <h4>Club</h4>
-          <a href="#manifesto">Manifesto</a>
-          <a href="#comunidade">A comunidade</a>
-          <a href="https://www.instagram.com/thecreatorssclubb/" target="_blank" rel="noopener">Instagram</a>
+          <h4>Contato</h4>
+          <a href="https://www.instagram.com/thecreatorssclubb/" target="_blank" rel="noopener">Instagram da Comunidade</a>
+          <a href="https://www.instagram.com/layfeamorim/" target="_blank" rel="noopener">Fundadora (meu Instagram)</a>
         </div>
       </div>
     </div>
