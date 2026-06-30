@@ -138,7 +138,10 @@
     .quote { padding: 30px 28px; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; }
     .quote-mark { font-family: 'Playfair Display', serif; font-size: 44px; line-height: .4; color: var(--accent); }
     .quote p { font-size: 15px; line-height: 1.6; color: var(--ink); margin: 14px 0 0; }
-    .quote-name { margin-top: 18px; font-weight: 700; font-size: 13px; letter-spacing: .02em; color: var(--navy); }
+    .quote-author { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+    .quote-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; color: var(--cream); font-weight: 700; font-size: 16px; }
+    .quote-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .quote-name { font-weight: 700; font-size: 13px; letter-spacing: .02em; color: var(--navy); }
 
     /* MANIFESTO */
     #filosofia { background: var(--navy); color: var(--cream); text-align: center; }
@@ -354,17 +357,26 @@
       <div class="quote">
         <div class="quote-mark">"</div>
         <p>Adoro os gráficos que ele gera. Inclusive eu saí das agências que tava pagando pq vi pelos relatórios que tinha fechado mt pouco trabalho por elas, só tava gastando dinheiro.</p>
-        <div class="quote-name">Railane Freitas</div>
+        <div class="quote-author">
+          <div class="quote-avatar"><img src="/assets/c-railane.jpg" alt="Railane Freitas" onerror="this.parentNode.textContent='R'"></div>
+          <div class="quote-name">Railane Freitas</div>
+        </div>
       </div>
       <div class="quote">
         <div class="quote-mark">"</div>
         <p>Esse seu app mudou tudo mulher, sério! Antes eu usava planilha tbm, mas nunca alimentava tão bem, pq não era visual. Me ajudou muito a ter clareza e projeção de onde eu posso chegar.</p>
-        <div class="quote-name">Milena Cestari</div>
+        <div class="quote-author">
+          <div class="quote-avatar"><img src="/assets/c-milena.jpg" alt="Milena Cestari" onerror="this.parentNode.textContent='M'"></div>
+          <div class="quote-name">Milena Cestari</div>
+        </div>
       </div>
       <div class="quote">
         <div class="quote-mark">"</div>
         <p>Com esse aplicativo, vocês superaram tudo! Eu já tinha pago outros aplicativos similares e não chega nem 1% perto do Dash. Ele é bem completo, você ainda explica cada coisinha. Tá muito barato para o tanto que ele entrega.</p>
-        <div class="quote-name">Bianca Aguiar</div>
+        <div class="quote-author">
+          <div class="quote-avatar"><img src="/assets/c-bianca.jpg" alt="Bianca Aguiar" onerror="this.parentNode.textContent='B'"></div>
+          <div class="quote-name">Bianca Aguiar</div>
+        </div>
       </div>
     </div>
   </div>
