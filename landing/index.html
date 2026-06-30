@@ -54,7 +54,7 @@
     .nav { display: flex; align-items: center; justify-content: space-between; min-height: 68px; gap: 20px; }
     .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--navy); flex-shrink: 0; }
     .brand-mark { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 500; font-style: italic; letter-spacing: -.01em; color: var(--accent); }
-    .brand-logo { height: 60px; width: auto; display: block; }
+    .brand-logo { height: 42px; width: auto; display: block; }
     .brand-name { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--navy); display: none; }
     .nav-links { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 34px); margin-left: auto; }
     .nav-links a { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); text-decoration: none; transition: color .2s; }
@@ -133,9 +133,11 @@
     .path-media img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform .4s; }
     @media (max-width: 900px) { .path-media { height: 380px; } }
     @media (max-width: 640px) { .path-media { height: 320px; } }
-    .path-media img[src*="dash-mockup"] { object-position: center 35%; }
-    .path-media img[src*="planner"] { object-position: center 45%; }
-    .path-media img[src*="community"] { object-position: center 30%; }
+    /* Foca a metade de cima das fotos pra cortar bottom (mesas/tripés/objetos
+       no rodapé das imagens), deixando o laptop como protagonista alinhado nos 3. */
+    .path-media img[src*="dash-mockup"] { object-position: center 20%; }
+    .path-media img[src*="planner"] { object-position: center 20%; }
+    .path-media img[src*="community"] { object-position: center 20%; }
     .path:hover .path-media img { transform: scale(1.04); }
     .badge { position: absolute; top: 14px; right: 14px; padding: 6px 13px; background: var(--accent); color: var(--ink); font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; border-radius: 0; z-index: 2; }
     .path-body { display: flex; flex-direction: column; flex: 1; padding: 26px 26px 28px; }
@@ -171,9 +173,6 @@
     .cat-media { position: relative; aspect-ratio: 4 / 5; overflow: hidden; }
     .cat-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; transition: transform .4s; }
     .cat:hover .cat-media img { transform: scale(1.05); }
-    .cat-media--railane { background: #171413; }
-    .cat-media--railane img { object-position: center 35%; transform: translateX(8%) scale(1.04); transform-origin: left top; }
-    .cat:hover .cat-media--railane img { transform: translateX(8%) scale(1.09); }
     .cat-media.grad { display: flex; align-items: center; justify-content: center; }
     .cat-media.grad::after { content: ''; }
     .cat-1 { background: linear-gradient(150deg,#1b3f78,#0a2463); }
@@ -388,7 +387,7 @@
         <div class="cat-body"><h3>Sabrina</h3><span class="cat-niche">Fitness &amp; maternidade</span><p>23kg a menos e uma mãe que decidiu olhar um pouco mais para si. A prova de que consistência e persistência mudam vidas e se tornam herança para os filhos.</p></div>
       </article>
       <article class="cat">
-        <div class="cat-media cat-media--railane"><img src="assets/c-railane.jpg" alt="Railane"></div>
+        <div class="cat-media"><img src="assets/c-railane.jpg" alt="Railane"></div>
         <div class="cat-body"><h3>Railane</h3><span class="cat-niche">Curadora de experiências</span><p>Transforma tudo em experiência. Agora vive a maior delas: construir o lar dos sonhos do zero. Quem a segue por dicas vai acompanhar essa jornada íntima.</p></div>
       </article>
       <article class="cat">
