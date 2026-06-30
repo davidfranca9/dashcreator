@@ -23,7 +23,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 .main { background: #fff; border: 0.5px solid var(--border); border-radius: 10px; padding: 2.5rem; }
 .side { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 2rem; align-self: start; }
 @media (max-width: 880px) { .side { position: static; } }
-.brand { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+.brand { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); text-decoration: none; color: inherit; cursor: pointer; transition: opacity 0.18s; }
+.brand:hover { opacity: 0.7; }
 .brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; }
 .brand-club { font-size: 0.55rem; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(10,36,99,0.4); }
 .label { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.5rem; }
@@ -71,12 +72,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 <body>
 <div class="shell">
     <main class="main">
-        <div class="brand">
+        <a class="brand" href="/dashcreator/" aria-label="Voltar para Dash Creator">
             <span class="brand-name">The Creators Club</span>
             <span class="brand-club">Checkout seguro</span>
-        </div>
+        </a>
         <span class="label">Finalize seu pedido</span>
-        <h1 class="title">Dash Creator <em>— acesso imediato</em></h1>
+        <h1 class="title">Dash Creator <em>acesso imediato</em></h1>
         <p class="subtitle">Centralize toda a visão do seu negócio em um único lugar. Faturamento, prospecções, contratos, jurídico e finanças — do caos ao posicionamento.</p>
 
         <form id="customerForm" autocomplete="on" novalidate>
