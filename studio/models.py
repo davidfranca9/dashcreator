@@ -608,3 +608,35 @@ class WorkspaceSetting(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.workspace} - {self.key}"
+
+
+class PageEvent(models.Model):
+    """Evento anônimo de navegação/clique nas landing pages (sistema de métricas)."""
+
+    SITE_CHOICES = [
+        ("layfe", "layfeamorim.com"),
+        ("tcc", "The Creators Club"),
+        ("dash", "Dashcreator"),
+        ("portfolio", "Portfólio"),
+    ]
+    KIND_CHOICES = [("pageview", "Pageview"), ("click", "Clique")]
+
+    site = models.CharField(max_length=20, choices=SITE_CHOICES, db_index=True)
+    path = models.CharField(max_length=200, blank=True)
+    kind = models.CharField(max_length=12, choices=KIND_CHOICES, default="pageview")
+    label = models.CharField(max_length=80, blank=True)
+    visitor = models.CharField(max_length=40, blank=True, db_index=True)
+    session = models.CharField(max_length=40, blank=True)
+    referrer = models.CharField(max_length=300, blank=True)
+    user_agent = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["site", "created_at"]),
+            models.Index(fields=["site", "kind", "created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.site}:{self.kind}:{self.label or self.path}"

@@ -970,11 +970,11 @@
       </h1>
       <p class="hero-role">UGC Creator & Estrategista de Conteúdo</p>
       <div class="hero-btns">
-        <button type="button" class="hero-btn" onclick="showSection('marcas')">
+        <button type="button" class="hero-btn" data-track="sou-marca" onclick="showSection('marcas')">
           Sou Marca
           <span class="btn-arrow">→</span>
         </button>
-        <button type="button" class="hero-btn" onclick="showSection('creators')">
+        <button type="button" class="hero-btn" data-track="sou-creator" onclick="showSection('creators')">
           Sou Creator
           <span class="btn-arrow">→</span>
         </button>
@@ -1034,7 +1034,7 @@
         <span class="choice-icon" aria-hidden="true">🎬</span>
         <h3 class="choice-title">Portfólio UGC</h3>
         <p class="choice-desc">Veja os conteúdos que já produzi para marcas. Cases com números reais.</p>
-        <a class="choice-button" href="/portfolio/" target="_blank" rel="noopener">Ver portfólio</a>
+        <a class="choice-button" data-track="ver-portfolio" href="/portfolio/" target="_blank" rel="noopener">Ver portfólio</a>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">📈</span>
@@ -1046,7 +1046,7 @@
         <span class="choice-icon" aria-hidden="true">💬</span>
         <h3 class="choice-title">Quero falar direto no WhatsApp</h3>
         <p class="choice-desc">Fale diretamente comigo.</p>
-        <a class="choice-button" href="https://wa.me/5571997238419" target="_blank" rel="noopener">Abrir WhatsApp</a>
+        <a class="choice-button" data-track="whatsapp-marca" href="https://wa.me/5571997238419" target="_blank" rel="noopener">Abrir WhatsApp</a>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">📩</span>
@@ -1305,5 +1305,6 @@
     window.scrollTo(0, 0);
   }
 </script>
+<script src="https://app.thecreatorsclub.com.br/static/studio/track.js" data-site="layfe" defer></script>
 </body>
 </html>

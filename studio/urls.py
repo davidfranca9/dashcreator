@@ -49,6 +49,7 @@ from .views import (
     settings,
     signup,
 )
+from .metrics import metrics_dashboard, track
 
 
 urlpatterns = [
@@ -97,4 +98,6 @@ urlpatterns = [
     path("checkout/obrigado/", checkout_success, name="checkout_success"),
     path("checkout/erro/", checkout_failure, name="checkout_failure"),
     path("checkout/<slug:product_key>/", checkout_page, name="checkout_page"),
+    path("api/track/", track, name="track"),
+    path("metricas/", metrics_dashboard, name="metrics_dashboard"),
 ]
