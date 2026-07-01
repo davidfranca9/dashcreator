@@ -2901,6 +2901,98 @@ def reports_snapshot(
     )
     prospection_flow = prospection_evolution_context(workspace, selected_month)
 
+    # Tipo de serviço com maior ticket médio no período (para leitura e sugestões).
+    max_ticket_key = None
+    max_ticket_value = ZERO
+    for key, bucket in type_buckets.items():
+        if bucket["count"]:
+            ticket_value = bucket["revenue"] / bucket["count"]
+            if ticket_value > max_ticket_value:
+                max_ticket_value = ticket_value
+                max_ticket_key = key
+    max_ticket_label = type_label_lookup.get(max_ticket_key, max_ticket_key) if max_ticket_key else None
+    has_source = bool(top_source_label and top_source_label != "Sem dados")
+    has_niche = bool(top_niche_label and top_niche_label != "Sem dados")
+
+    # Leitura estratégica: frase-resumo automática do período.
+    if volume:
+        reading_parts = [
+            f"Você fechou <strong>{volume} trabalho{'s' if volume != 1 else ''}</strong> "
+            f"e faturou <strong>{currency(total_closed)}</strong> em {selected_month_label.lower()}."
+        ]
+        if has_source:
+            reading_parts.append(
+                f" Seu principal canal é <strong>{top_source_label}</strong> "
+                f"({top_source_percentage}% dos fechamentos)."
+            )
+        if has_niche:
+            reading_parts.append(f" O nicho <strong>{top_niche_label}</strong> lidera em volume.")
+        if max_ticket_label and max_ticket_value > 0:
+            reading_parts.append(
+                f" O maior ticket médio é de <strong>{max_ticket_label}</strong> "
+                f"({currency(max_ticket_value)}); vale prospectar mais nessa categoria."
+            )
+        strategic_reading = {
+            "has_data": True,
+            "text": "".join(reading_parts),
+            "chips": [{"label": f"{currency(total_closed)} faturados", "tone": "green"}]
+            + ([{"label": f"{top_source_label} lidera os canais", "tone": "blue"}] if has_source else [])
+            + ([{"label": f"{max_ticket_label} tem o maior ticket", "tone": "warn"}] if max_ticket_label else []),
+        }
+    else:
+        strategic_reading = {
+            "has_data": False,
+            "text": (
+                f"Nenhum fechamento em {selected_month_label.lower()} ainda. "
+                "Assim que você registrar trabalhos fechados, a leitura estratégica aparece aqui."
+            ),
+            "chips": [],
+        }
+
+    # Próximos passos sugeridos: ações objetivas baseadas nos dados do período.
+    peak_summary = next(
+        (item for item in prospection_flow.get("summary", []) if item.get("title") == "Pico de volume"),
+        None,
+    )
+    next_steps = []
+    if prospection_flow.get("points"):
+        next_steps.append({
+            "tone": "green",
+            "tag": "Prospecção",
+            "title": "Mantenha o ritmo de prospecção",
+            "desc": (
+                f"Seu pico foi de {peak_summary['value']} {peak_summary['detail']}. Siga com os follow-ups em aberto."
+                if peak_summary
+                else "Acompanhe o volume de leads e os follow-ups em aberto para não perder oportunidades."
+            ),
+            "cta_label": "Ir para Prospecção",
+            "cta_url": reverse("prospection"),
+        })
+    if max_ticket_label and max_ticket_value > 0:
+        next_steps.append({
+            "tone": "blue",
+            "tag": "Serviços",
+            "title": f"Priorize {max_ticket_label} na próxima oferta",
+            "desc": (
+                f"É o serviço com maior ticket médio ({currency(max_ticket_value)}). "
+                "Poucos fechamentos já impactam bastante o faturamento."
+            ),
+            "cta_label": "Novo trabalho",
+            "cta_url": reverse("project_create"),
+        })
+    if has_source:
+        next_steps.append({
+            "tone": "warn",
+            "tag": "Canais",
+            "title": f"{top_source_label} está funcionando",
+            "desc": (
+                f"{top_source_percentage}% dos fechamentos vieram por {top_source_label}. "
+                "Continue investindo nesse canal de aquisição."
+            ),
+            "cta_label": "Ver trabalhos",
+            "cta_url": reverse("jobs"),
+        })
+
     has_any_project = bool(projects)
     has_active_in_month = any(item.stage == "Fechado" for item in (month_projects or projects))
     if not has_any_project:
@@ -2936,22 +3028,22 @@ def reports_snapshot(
                 "title": "Volume de trabalhos",
                 "value": str(volume),
                 "subtitle": f"{cadastrados_in_month} cadastrado{'s' if cadastrados_in_month != 1 else ''} · {volume} com fechamento",
-                "comparison": _format_count_delta(volume, prev_volume),
+                "comparison": _format_count_delta(volume, prev_volume) if selected_month else None,
                 "icon_label": "V",
             },
             {
                 "title": "Total fechado",
                 "value": currency(total_closed),
-                "comparison": _format_currency_delta(total_closed, prev_total),
+                "comparison": _format_currency_delta(total_closed, prev_total) if selected_month else None,
                 "icon_label": "$",
             },
-            {"title": "Via principal", "value": top_source_label, "icon_label": "%"},
-            {"title": "Nicho líder", "value": top_niche_label, "icon_label": "N"},
+            {"title": "Via principal", "value": top_source_label, "subtitle": f"{top_source_percentage}% dos fechamentos" if volume else None, "icon_label": "%"},
+            {"title": "Nicho líder", "value": top_niche_label, "subtitle": "maior volume" if volume else None, "icon_label": "N"},
             {
                 "title": "Ticket médio",
                 "value": currency(ticket_medio),
                 "subtitle": f"sobre {len(paid_closures)} fechamento{'s' if len(paid_closures) != 1 else ''}" if paid_closures else "sem fechamentos no mês",
-                "comparison": _format_currency_delta(ticket_medio, prev_ticket),
+                "comparison": _format_currency_delta(ticket_medio, prev_ticket) if selected_month else None,
                 "icon_label": "M",
             },
         ],
@@ -2962,6 +3054,8 @@ def reports_snapshot(
         "via_breakdown": via_breakdown,
         "service_type_tabs": service_type_tabs,
         "active_service_type": active_type,
+        "strategic_reading": strategic_reading,
+        "next_steps": next_steps,
         "distribution_table": distribution_table,
         "distribution_table_total": distribution_table_total,
         "highlights": [

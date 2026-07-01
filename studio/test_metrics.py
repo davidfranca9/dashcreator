@@ -59,3 +59,47 @@ class MetricsTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "quero-fazer-parte")
         self.assertContains(resp, "Visitas por dia")
+
+
+class ReportsRedesignTests(TestCase):
+    def setUp(self):
+        from datetime import date
+        from studio.services import get_or_create_workspace_for_user
+        from studio.models import Project, Prospect, Niche, ServiceCategory
+        User = get_user_model()
+        self.user = User.objects.create_user("boss2", password="x", is_staff=True)
+        self.workspace = get_or_create_workspace_for_user(self.user)
+        niche = Niche.objects.create(workspace=self.workspace, name="Tech")
+        category = ServiceCategory.objects.create(workspace=self.workspace, name="Consultoria de Marketing")
+        Project.objects.create(
+            workspace=self.workspace, company="Marca X", closing_source="Inbound",
+            niche=niche, service_category=category, service_type="consultoria_marketing",
+            project_name="Consultoria", content_type="", stage="Fechado", status="Briefing",
+            total_value=3500, monthly_value=0, entry_value=0, received_value=0,
+            deliverables_count=1, progress=0, close_date=date.today(), due_date=date.today(),
+        )
+        Project.objects.create(
+            workspace=self.workspace, company="Marca Y", closing_source="Inbound",
+            niche=niche, service_category=category, service_type="ugc_creator",
+            project_name="UGC", content_type="", stage="Fechado", status="Briefing",
+            total_value=460, monthly_value=0, entry_value=0, received_value=0,
+            deliverables_count=1, progress=0, close_date=date.today(), due_date=date.today(),
+        )
+        Prospect.objects.create(workspace=self.workspace, company="Lead A", contact="@a", stage="Prospecção", contact_date=date.today())
+
+    def test_snapshot_has_narrative(self):
+        from studio.services import reports_snapshot
+        snap = reports_snapshot(self.workspace, None)
+        self.assertIn("strategic_reading", snap)
+        self.assertIn("next_steps", snap)
+        self.assertTrue(snap["strategic_reading"]["has_data"])
+        self.assertTrue(len(snap["next_steps"]) >= 1)
+
+    def test_reports_view_renders(self):
+        c = Client(); c.login(username="boss2", password="x")
+        resp = c.get(reverse("reports"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Leitura estratégica")
+        self.assertContains(resp, "Próximos passos")
+        self.assertContains(resp, "Evolução da prospecção")
+        self.assertContains(resp, "Por tipo de serviço")

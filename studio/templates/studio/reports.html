@@ -2,40 +2,24 @@
 {% load studio_extras %}
 
 {% block content %}
-<article class="card finance-month-card">
-    <div class="card-header">
-        <div>
-            <h3>Overview do mês</h3>
-            <p class="muted">Mês selecionado: {{ selected_month.label }}</p>
-        </div>
-    </div>
-</article>
 
 {% if service_type_tabs|length > 1 %}
-    <nav class="subtabs reports-tabs" aria-label="Tipos de serviço">
+    <div class="rp-service-tabs" role="tablist" aria-label="Tipos de serviço">
         {% for tab in service_type_tabs %}
             {% if tab.key == "geral" %}
-                <a href="?{% if selected_month.value %}month={{ selected_month.value }}{% endif %}" class="subtab{% if tab.active %} subtab--active{% endif %}">
-                    <span>{{ tab.label }}</span>
-                    {% if tab.count %}<span class="subtab-badge subtab-badge--muted">{{ tab.count }}</span>{% endif %}
-                </a>
+                <a class="rp-stab{% if tab.active %} is-active{% endif %}" href="?{% if selected_month.value %}month={{ selected_month.value }}{% endif %}">{{ tab.label }}{% if tab.count %}<span class="rp-stab-count">{{ tab.count }}</span>{% endif %}</a>
             {% else %}
-                <a href="?{% if selected_month.value %}month={{ selected_month.value }}&{% endif %}type={{ tab.key }}" class="subtab{% if tab.active %} subtab--active{% endif %}">
-                    <span>{{ tab.label }}</span>
-                    <span class="subtab-badge subtab-badge--muted">{{ tab.count }}</span>
-                </a>
+                <a class="rp-stab{% if tab.active %} is-active{% endif %}" href="?{% if selected_month.value %}month={{ selected_month.value }}&{% endif %}type={{ tab.key }}">{{ tab.label }}<span class="rp-stab-count">{{ tab.count }}</span></a>
             {% endif %}
         {% endfor %}
-    </nav>
+    </div>
 {% endif %}
 
 {% if empty_state.case == "no_data_at_all" %}
-    <article class="card empty-state-card">
-        <div class="empty-state-header">
-            <h3>{{ empty_state.title }}</h3>
-            <p class="muted">{{ empty_state.subtitle }}</p>
-        </div>
-        <ol class="empty-state-checklist">
+    <article class="fd-card" style="padding:22px 24px;">
+        <h3 style="font-size:16px;font-weight:600;color:var(--fdm-t1);margin-bottom:4px;">{{ empty_state.title }}</h3>
+        <p class="muted">{{ empty_state.subtitle }}</p>
+        <ol class="empty-state-checklist" style="margin-top:16px;">
             {% for step in empty_state.steps %}
                 <li class="empty-state-step{% if step.done %} empty-state-step--done{% endif %}{% if step.locked %} empty-state-step--locked{% endif %}">
                     <span class="empty-state-step-marker">{{ forloop.counter }}</span>
@@ -50,14 +34,6 @@
                 </li>
             {% endfor %}
         </ol>
-        <div class="empty-state-previews">
-            <span class="muted">Quando houver dados, você verá:</span>
-            <ul>
-                {% for preview in empty_state.previews %}
-                    <li>{{ preview }}</li>
-                {% endfor %}
-            </ul>
-        </div>
     </article>
 {% else %}
     {% if empty_state.case == "no_closings_this_month" %}
@@ -70,166 +46,136 @@
         </article>
     {% endif %}
 
-    <section class="stats-grid">
-        {% for item in stats %}
-            <article class="stat-card">
-                <span class="stat-icon">{{ item.icon_label }}</span>
-                <div>
-                    <p>{{ item.title }}</p>
-                    <strong>{{ item.value }}</strong>
-                    {% if item.subtitle %}
-                        <span class="stat-subtitle">{{ item.subtitle }}</span>
-                    {% endif %}
-                    {% if item.comparison %}
-                        <span class="stat-comparison stat-comparison--{{ item.comparison.direction }}">{{ item.comparison.label }}</span>
-                    {% endif %}
+    {# Leitura estratégica #}
+    <div class="rp-insight">
+        <div class="rp-insight-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+            <div class="rp-insight-label">Leitura estratégica · {{ selected_month.label }}</div>
+            <div class="rp-insight-text">{{ strategic_reading.text|safe }}</div>
+            {% if strategic_reading.chips %}
+                <div class="rp-insight-chips">
+                    {% for chip in strategic_reading.chips %}<span class="rp-chip rp-chip-{{ chip.tone }}">{{ chip.label }}</span>{% endfor %}
                 </div>
-            </article>
-        {% endfor %}
-    </section>
-{% endif %}
+            {% endif %}
+        </div>
+    </div>
 
-<section class="stack-section">
-    <article class="card">
-        <div class="card-header">
-            <div>
-                <h3>Evolução da prospecção</h3>
-                <p class="muted">Veja quando você teve mais e menos volume de prospecção.</p>
+    {# KPIs #}
+    <div class="rp-kpis">
+        {% for item in stats %}
+            <div class="fd-metric-card">
+                <div class="fd-metric-label">{{ item.title }}</div>
+                <div class="fd-metric-value{% if item.title == "Total fechado" %} fd-text-green{% endif %}"{% if item.title == "Via principal" or item.title == "Nicho líder" %} style="font-size:17px;"{% endif %}>{{ item.value }}</div>
+                {% if item.comparison %}
+                    <div class="rp-kpi-delta {{ item.comparison.direction }}">{{ item.comparison.label }}</div>
+                {% elif item.subtitle %}
+                    <div class="fd-metric-detail">{{ item.subtitle }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    {# Evolução da prospecção + Distribuição por tipo #}
+    <div class="rp-grid-21">
+        <div class="fd-card">
+            <div class="fd-card-header">
+                <div class="fd-card-title">Evolução da prospecção</div>
+                {% for item in prospection_flow.summary %}{% if item.title == "Pico de volume" %}<span class="fd-tag fd-tag-blue">Pico: {{ item.value }}</span>{% endif %}{% endfor %}
+            </div>
+            <div class="rp-card-body">
+                {% if prospection_flow.points %}
+                    <div class="rp-chart">
+                        <svg viewBox="0 0 {{ prospection_flow.chart_width }} {{ prospection_flow.chart_height }}" preserveAspectRatio="none" aria-label="Evolução da prospecção">
+                            {% for step in prospection_flow.steps %}{% if not forloop.last %}<line x1="0" y1="{% widthratio forloop.counter0 3 prospection_flow.chart_height %}" x2="{{ prospection_flow.chart_width }}" y2="{% widthratio forloop.counter0 3 prospection_flow.chart_height %}" stroke="#e8eaf0" stroke-width="1" stroke-dasharray="4,4"></line>{% endif %}{% endfor %}
+                            <path d="{{ prospection_flow.path }}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                            {% for point in prospection_flow.points %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="#3b82f6" stroke="#fff" stroke-width="2"></circle>{% endfor %}
+                        </svg>
+                    </div>
+                    <div class="rp-chart-labels" style="grid-template-columns: repeat({{ prospection_flow.points|length }}, minmax(0, 1fr));">
+                        {% for point in prospection_flow.points %}<div><div class="v">{{ point.amount }}</div><div class="m">{{ point.label }}</div></div>{% endfor %}
+                    </div>
+                {% else %}
+                    <p class="muted">{{ prospection_flow.empty_message }}</p>
+                {% endif %}
             </div>
         </div>
-        {% if prospection_flow.points %}
-            <div class="chart-grid">
-                <div class="chart-axis">
-                    {% for step in prospection_flow.steps %}
-                        <span>{{ step.label }}</span>
-                    {% endfor %}
-                </div>
-                <div class="chart-visual">
-                    <svg class="chart-svg" viewBox="0 0 {{ prospection_flow.chart_width }} {{ prospection_flow.chart_height }}" preserveAspectRatio="none" aria-label="Gráfico de evolução da prospecção">
-                        {% for step in prospection_flow.steps %}
-                            {% if not forloop.last %}
-                                <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 prospection_flow.chart_height %}" x2="{{ prospection_flow.chart_width }}" y2="{% widthratio forloop.counter0 3 prospection_flow.chart_height %}"></line>
-                            {% endif %}
-                        {% endfor %}
-                        <path class="chart-line" d="{{ prospection_flow.path }}"></path>
-                    </svg>
-                    <div class="chart-labels chart-labels--adaptive" style="grid-template-columns: repeat({{ prospection_flow.points|length }}, minmax(0, 1fr));">
-                        {% for point in prospection_flow.points %}
-                            <div class="chart-label">
-                                <strong>{{ point.amount }}</strong>
-                                <span>{{ point.label }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            <div class="highlight-grid reports-insight-grid">
-                {% for item in prospection_flow.summary %}
-                    <article class="soft-card reports-insight-card">
-                        <strong>{{ item.title }}</strong>
-                        <span class="reports-insight-value">{{ item.value }}</span>
-                        <p>{{ item.detail }}</p>
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="muted">{{ prospection_flow.empty_message }}</p>
-        {% endif %}
-    </article>
 
-    <article class="card">
-        <div class="card-header"><div><h3>Via de fechamento</h3><p class="muted">{{ selected_month.label }}</p></div></div>
-        {% if source_mix.total %}
-            <div class="source-mix-card source-mix-card--horizontal">
-                <div class="source-mix-chart-wrap">
-                    <div class="source-mix-chart" style="--pie-gradient: {{ source_mix.gradient }};">
-                        <div class="source-mix-center">
-                            <strong>{{ source_mix.total }}</strong>
-                            <span>trabalhos</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="source-mix-summary">
-                    <div class="source-mix-summary-head">
-                        <span>Canal</span>
-                        <span>Trabalhos</span>
-                        <span>Participação</span>
-                    </div>
-                    <div class="source-mix-summary-body">
-                        {% for item in source_mix.items %}
-                            <div class="source-mix-summary-row{% if item.is_zero %} source-mix-summary-row--muted{% endif %}">
-                                <div class="source-mix-summary-label">
-                                    <span class="source-mix-dot" style="background: {{ item.color }};"></span>
-                                    <strong>{{ item.label }}</strong>
-                                </div>
-                                <span>{{ item.count }}</span>
-                                <span>{{ item.percentage }}%</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div class="source-mix-summary-total">
-                        <strong>Total</strong>
-                        <strong>{{ source_mix.total }}</strong>
-                        <strong>100%</strong>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <p class="muted">Nenhum trabalho fechado em {{ selected_month.label|lower }}.</p>
-        {% endif %}
-    </article>
-
-    {% if not active_service_type and distribution_table %}
-        <article class="card">
-            <div class="card-header">
-                <div>
-                    <h3>Distribuição por tipo de serviço</h3>
-                    <p class="muted">Receita, volume e ticket médio por tipo no período selecionado.</p>
-                </div>
-            </div>
-            <div class="distribution-table-wrap">
-                <table class="distribution-table">
-                    <thead>
-                        <tr>
-                            <th>Tipo de serviço</th>
-                            <th>Receita</th>
-                            <th>Qtd. trabalhos</th>
-                            <th>Ticket médio</th>
-                        </tr>
-                    </thead>
+        {% if not active_service_type and distribution_table %}
+        <div class="fd-card">
+            <div class="fd-card-header"><div class="fd-card-title">Por tipo de serviço</div></div>
+            <div class="rp-card-body">
+                <table class="rp-table">
+                    <thead><tr><th>Tipo</th><th>Receita</th><th>Qtd</th><th>Ticket</th></tr></thead>
                     <tbody>
                         {% for row in distribution_table %}
-                            <tr>
-                                <td><strong>{{ row.label }}</strong></td>
-                                <td>{{ row.revenue }}</td>
-                                <td>{{ row.count }}</td>
-                                <td>{{ row.ticket_medio }}</td>
-                            </tr>
+                            <tr><td>{{ row.label }}</td><td class="rp-money">{{ row.revenue }}</td><td>{{ row.count }}</td><td>{{ row.ticket_medio }}</td></tr>
                         {% endfor %}
+                        <tr><td>Total</td><td class="rp-money">{{ distribution_table_total.revenue }}</td><td>{{ distribution_table_total.count }}</td><td>{{ distribution_table_total.ticket_medio }}</td></tr>
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td><strong>Total</strong></td>
-                            <td><strong>{{ distribution_table_total.revenue }}</strong></td>
-                            <td><strong>{{ distribution_table_total.count }}</strong></td>
-                            <td><strong>{{ distribution_table_total.ticket_medio }}</strong></td>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
-        </article>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Via de fechamento + distribuição visual #}
+    {% if source_mix.total %}
+    <div class="rp-grid-2">
+        <div class="fd-card">
+            <div class="fd-card-header"><div class="fd-card-title">Via de fechamento</div></div>
+            <div class="rp-card-body">
+                <table class="rp-table">
+                    <thead><tr><th>Canal</th><th>Trabalhos</th><th>Participação</th></tr></thead>
+                    <tbody>
+                        {% for item in source_mix.items %}{% if not item.is_zero %}
+                            <tr>
+                                <td><span class="rp-cell-dot"><span class="rp-dot" style="background: {{ item.color }};"></span>{{ item.label }}</span></td>
+                                <td>{{ item.count }}</td>
+                                <td{% if forloop.first %} class="rp-strong-blue"{% endif %}>{{ item.percentage }}%</td>
+                            </tr>
+                        {% endif %}{% endfor %}
+                        <tr><td>Total</td><td>{{ source_mix.total }}</td><td>100%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="fd-card">
+            <div class="fd-card-header"><div class="fd-card-title">Distribuição visual por canal</div></div>
+            <div class="rp-card-body">
+                {% for item in source_mix.items %}{% if not item.is_zero %}
+                    <div class="rp-bar-row">
+                        <span class="rp-dot" style="background: {{ item.color }};"></span>
+                        <div>
+                            <div class="rp-bar-label">{{ item.label }}</div>
+                            <div class="fd-bar-wrap" style="margin-top:6px;"><span class="fd-bar" style="width: {{ item.percentage }}%; background: {{ item.color }};"></span></div>
+                        </div>
+                        <span class="rp-bar-pct{% if forloop.first %} lead{% endif %}">{{ item.percentage }}%</span>
+                    </div>
+                {% endif %}{% endfor %}
+            </div>
+        </div>
+    </div>
     {% endif %}
 
-    <article class="card">
-        <div class="card-header"><div><h3>Leituras estratégicas</h3><p class="muted">{{ selected_month.label }}</p></div></div>
-        <div class="highlight-grid">
-            {% for item in highlights %}
-                <article class="soft-card highlight-card">
-                    <strong>{{ item.title }}</strong>
-                    <p>{{ item.description }}</p>
-                </article>
-            {% endfor %}
+    {# Próximos passos sugeridos #}
+    {% if next_steps %}
+    <div class="fd-card" style="margin-bottom:14px;">
+        <div class="fd-card-header"><div class="fd-card-title">Próximos passos sugeridos</div></div>
+        <div class="rp-card-body">
+            <div class="rp-steps">
+                {% for step in next_steps %}
+                    <div class="rp-step {{ step.tone }}">
+                        <div class="rp-step-tag">{{ step.tag }}</div>
+                        <div class="rp-step-title">{{ step.title }}</div>
+                        <div class="rp-step-desc">{{ step.desc }}</div>
+                        <a class="rp-step-cta" href="{{ step.cta_url }}">{{ step.cta_label }} ›</a>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-    </article>
-</section>
+    </div>
+    {% endif %}
+{% endif %}
 {% endblock %}
