@@ -1949,7 +1949,7 @@ def _sync_repeating_manual_installments(project: Project, workspace) -> None:
     if duration <= 1:
         return
 
-    installments = list(project.installments.all().order_by("due_date", "pk"))
+    installments = list(project.installments.filter(label="").order_by("due_date", "pk"))
     if not installments:
         return
 

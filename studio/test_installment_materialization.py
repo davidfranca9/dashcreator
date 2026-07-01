@@ -246,6 +246,42 @@ class InstallmentMaterializationTest(TestCase):
         self.assertFalse(events[0]["paid"])
         self.assertEqual(events[0]["amount"], Decimal("500"))
 
+    def test_labeled_installments_do_not_seed_manual_monthly_repetition(self):
+        """Parcelas ja calculadas/rotuladas nao podem virar molde mensal manual."""
+        from studio.views import _sync_auto_monthly_installments
+
+        project = self._recurring_project()
+        project.service_type = "consultoria_marketing"
+        project.contract_duration_months = 6
+        project.close_date = date(2026, 1, 15)
+        project.payment_due_date = date(2026, 1, 15)
+        project.due_date = date(2026, 6, 30)
+        project.save(
+            update_fields=[
+                "service_type",
+                "contract_duration_months",
+                "close_date",
+                "payment_due_date",
+                "due_date",
+                "updated_at",
+            ]
+        )
+        for index in range(1, 7):
+            ProjectInstallment.objects.create(
+                workspace=self.workspace,
+                project=project,
+                label=f"Parcela {index}",
+                amount=3500,
+                due_date=date(2026, 1, 15),
+                paid=True,
+                paid_on=date(2026, 1, 15),
+            )
+
+        _sync_auto_monthly_installments(project, self.workspace, has_installments_yes=True)
+
+        self.assertEqual(project.installments.count(), 6)
+        self.assertFalse(project.installments.filter(due_date__gte=date(2026, 2, 1)).exists())
+
     def test_reconcile_preserves_confirmed_parcela(self):
         """Editar/recalcular não pode apagar nem desfazer uma confirmação."""
         project = self._single_payment_project()
