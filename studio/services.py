@@ -2397,9 +2397,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     ]
     incoming_total += sum_money(Decimal(sale.amount or 0) for sale in infoproduct_month_sales)
     outgoing_total = sum_money(item.amount for item in month_entries)
-    # "A receber" abrange todos os recebíveis futuros (em qualquer mês),
-    # não apenas o mês filtrado, para refletir o caixa que ainda vai
-    # entrar — incluindo parcelas mensais de contratos plurimensais.
+    # Future schedule remains global so the overview can show the next receipts.
     receivable_events = [
         item
         for item in finance_events
@@ -2410,7 +2408,21 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         for item in finance_events
         if not item["paid"] and item["due_date"] < _today()
     ]
-    receivable_balance = sum_money(item["amount"] for item in receivable_events)
+    # Metric/card "A receber" follows the selected month. The schedule can
+    # still show future receipts, but the headline balance is month-scoped.
+    receivable_balance_events = [
+        item
+        for item in finance_events
+        if not item["paid"]
+        and (
+            selected_month is None
+            or (
+                item["due_date"].year == selected_month.year
+                and item["due_date"].month == selected_month.month
+            )
+        )
+    ]
+    receivable_balance = sum_money(item["amount"] for item in receivable_balance_events)
     overdue_balance = sum_money(item["amount"] for item in overdue_events)
     cash_balance = incoming_total - outgoing_total
 
@@ -2654,7 +2666,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         "stats": [
             {"title": "Entradas", "value": currency(incoming_total), "icon_label": "+"},
             {"title": "Saídas", "value": currency(outgoing_total), "icon_label": "-"},
-            {"title": "Saldo de recebíveis", "value": currency(receivable_balance), "icon_label": "R"},
+            {"title": "A receber", "value": currency(receivable_balance), "icon_label": "R"},
             {"title": "Saldo", "value": currency(cash_balance), "icon_label": "$"},
         ],
         "schedule": schedule,
@@ -2666,6 +2678,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
             "revenue_total": currency(incoming_total),
             "outgoing_total": currency(outgoing_total),
             "receivable_total": currency(receivable_balance),
+            "receivable_detail": "todos os meses" if selected_month is None else f"em {long_month_label(selected_month).lower()}",
             "cash_balance": currency(cash_balance),
             "pro_labore": currency(pro_labore_amount),
             "pro_labore_covered": pro_labore_covered,
@@ -2728,7 +2741,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         "breakdown": [
             {"label": "Entradas dos trabalhos", "amount_text": currency(incoming_total), "progress": 100 if incoming_total else 0, "accent": "#20b7a7"},
             {"label": "Saídas registradas", "amount_text": currency(outgoing_total), "progress": round((outgoing_total / incoming_total) * 100) if incoming_total else 0, "accent": "#c04d57"},
-            {"label": "Saldo de recebíveis", "amount_text": currency(receivable_balance), "progress": round((receivable_balance / (incoming_total + receivable_balance)) * 100) if (incoming_total + receivable_balance) else 0, "accent": "#7f6fff"},
+            {"label": "A receber", "amount_text": currency(receivable_balance), "progress": round((receivable_balance / (incoming_total + receivable_balance)) * 100) if (incoming_total + receivable_balance) else 0, "accent": "#7f6fff"},
             {"label": "Saldo do período", "amount_text": currency(cash_balance), "progress": round((cash_balance / incoming_total) * 100) if incoming_total and cash_balance > 0 else 0, "accent": "#4d8cff"},
         ],
     }
