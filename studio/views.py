@@ -1241,7 +1241,7 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
         editing_sale = get_object_or_404(InfoProductSale, pk=int(edit_sale_id), workspace=workspace)
 
     product_form = InfoProductForm(instance=editing_product, workspace=workspace)
-    sale_initial = {} if editing_sale else {"sale_date": date.today()}
+    sale_initial = {} if editing_sale else {"sale_date": timezone.localdate()}
     sale_form = InfoProductSaleForm(instance=editing_sale, workspace=workspace, initial=sale_initial)
     open_product_modal = editing_product is not None
     open_entry_modal = editing_sale is not None
@@ -1348,7 +1348,7 @@ def finance(request: HttpRequest) -> HttpResponse:
     add_cash_box = request.GET.get("add_cash_box") == "1"
     workspace_settings = settings_map(workspace)
     selected_month = parse_month_value(month_filter) if month_filter and month_filter != "all" else None
-    today = date.today()
+    today = timezone.localdate()
     initial_date = (
         today
         if selected_month is None or (selected_month.year == today.year and selected_month.month == today.month)
@@ -1829,9 +1829,9 @@ def installment_confirm(request: HttpRequest, pk: int) -> HttpResponse:
     installment = get_object_or_404(ProjectInstallment, pk=pk, workspace=workspace)
     raw_date = (request.POST.get("paid_on") or "").strip()
     try:
-        paid_on = _date.fromisoformat(raw_date) if raw_date else _date.today()
+        paid_on = _date.fromisoformat(raw_date) if raw_date else timezone.localdate()
     except ValueError:
-        paid_on = _date.today()
+        paid_on = timezone.localdate()
     installment.paid = True
     installment.paid_on = paid_on
     installment.save(update_fields=["paid", "paid_on", "updated_at"])

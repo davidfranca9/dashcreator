@@ -1327,7 +1327,7 @@ class InfoProductSaleForm(forms.ModelForm):
         return _parse_brl(self.cleaned_data.get("amount"))
 
     def clean_sale_date(self):
-        return self.cleaned_data.get("sale_date") or date.today()
+        return self.cleaned_data.get("sale_date") or timezone.localdate()
 
     def clean_progress(self):
         return self.cleaned_data.get("progress") or 0

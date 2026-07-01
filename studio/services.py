@@ -12,6 +12,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.db.models import Case, IntegerField, Q, QuerySet, Value, When
 from django.urls import reverse
+from django.utils import timezone as _django_tz
 
 from .contact_types import infer_contact_type
 from .constants import (
@@ -27,6 +28,13 @@ from .constants import (
     SETTINGS_GROUPS,
 )
 from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+
+
+def _today() -> date:
+    """Data local no TIME_ZONE do Django (ex.: America/Bahia).
+    Substitui date.today(), que usa o TZ do SO (UTC no Docker) e
+    resultava em datas do dia seguinte à noite pela hora do Brasil."""
+    return _django_tz.localdate()
 
 
 ZERO = Decimal("0")
@@ -223,7 +231,7 @@ def google_calendar_event_url(title: str, event_date: date, details: str = "") -
 
 
 def project_counts_as_overdue(project: Project, today: date | None = None) -> bool:
-    reference_date = today or date.today()
+    reference_date = today or _today()
     return (
         project.stage == "Fechado"
         and project.due_date < reference_date
@@ -281,7 +289,7 @@ def distribution_label(project: Project) -> str:
 
 
 def month_options_for_workspace(workspace: Workspace) -> list[date]:
-    months = {date.today().replace(day=1)}
+    months = {_today().replace(day=1)}
     for close_date, due_date, payment_due_date, meeting_date, contract_duration_months in Project.objects.filter(workspace=workspace).values_list(
         "close_date",
         "due_date",
@@ -327,7 +335,7 @@ def resolve_selected_month(month_filter: str | None, month_options: list[date]) 
         return None
     selected_month = parse_month_value(month_filter)
     if selected_month is None or selected_month.replace(day=1) not in month_options:
-        current_month = date.today().replace(day=1)
+        current_month = _today().replace(day=1)
         selected_month = current_month if current_month in month_options else month_options[0]
     return selected_month.replace(day=1)
 
@@ -543,7 +551,7 @@ def overdue_projects_count(workspace: Workspace) -> int:
     return Project.objects.filter(
         workspace=workspace,
         stage="Fechado",
-        due_date__lt=date.today(),
+        due_date__lt=_today(),
     ).exclude(status__in=OVERDUE_EXCLUDED_STATUSES).count()
 
 
@@ -581,7 +589,7 @@ def infoproducts_snapshot(workspace: Workspace, month_filter: str | None = None)
     sales_all = list(InfoProductSale.objects.filter(workspace=workspace).select_related("product"))
 
     # Opções de mês a partir das datas de venda (+ mês atual) para o filtro do topo.
-    month_set = {date.today().replace(day=1)}
+    month_set = {_today().replace(day=1)}
     for sale in sales_all:
         if sale.sale_date:
             month_set.add(sale.sale_date.replace(day=1))
@@ -673,7 +681,7 @@ def infoproducts_snapshot(workspace: Workspace, month_filter: str | None = None)
         })
 
     # Alunas/compradores (vendas confirmadas, com prazo de acesso e progresso).
-    today = date.today()
+    today = _today()
     buyers = []
     expiring = 0
     for sale in confirmed:
@@ -768,7 +776,7 @@ def shell_context(
     workspace_membership = None
     if user and getattr(user, "is_authenticated", False):
         workspace_membership = user.memberships.select_related("workspace").filter(workspace=workspace).first()
-    today = date.today()
+    today = _today()
     today_meetings = list(
         Prospect.objects.filter(
             workspace=workspace,
@@ -920,8 +928,8 @@ def revenue_context(
     selected_year: int | None = None,
     infoproduct_sales: list | None = None,
 ) -> dict:
-    current_year = selected_year or date.today().year
-    current_month = date.today().replace(day=1)
+    current_year = selected_year or _today().year
+    current_month = _today().replace(day=1)
     month_starts = [date(current_year, month, 1) for month in range(1, 13)]
     totals = {item: ZERO for item in month_starts}
     ip_totals = {item: ZERO for item in month_starts}
@@ -1171,7 +1179,7 @@ def closing_source_mix(projects: list[Project]) -> dict:
 
 
 def follow_up_candidates(workspace: Workspace) -> list[dict]:
-    today = date.today()
+    today = _today()
     projects = list(Project.objects.filter(workspace=workspace).order_by("-due_date", "-close_date", "-updated_at"))
     prospect_companies = {
         normalize_company_name(item)
@@ -1230,7 +1238,7 @@ def confirmed_follow_up_items(workspace: Workspace) -> list[dict]:
 
 
 def legal_usage_items(workspace: Workspace, user: User | None = None) -> list[dict]:
-    today = date.today()
+    today = _today()
     display_name = profile_display_name(workspace, user)
     projects = list(
         Project.objects.filter(workspace=workspace, content_distribution="Ads")
@@ -1388,7 +1396,7 @@ def follow_up_source_project(workspace: Workspace, company_key: str) -> Project 
     if latest_project is None or latest_project.stage != "Entregue":
         return None
 
-    if (date.today() - latest_project.due_date).days < 30:
+    if (_today() - latest_project.due_date).days < 30:
         return None
 
     return latest_project
@@ -1407,7 +1415,7 @@ def start_follow_up_prospection(workspace: Workspace, company_key: str) -> Prosp
         contact="Contato principal",
         contact_type="Follow-up",
         stage="Prospeccao",
-        contact_date=date.today(),
+        contact_date=_today(),
         niche=project.niche,
         note=note,
     )
@@ -1574,7 +1582,7 @@ def auto_archive_stale_prospects(workspace: Workspace, today: date | None = None
     usuário abre a página."""
     from django.utils import timezone as _tz
     from .constants import PROSPECT_AUTO_ARCHIVE_DAYS
-    today = today or date.today()
+    today = today or _today()
     cutoff = today - timedelta(days=PROSPECT_AUTO_ARCHIVE_DAYS)
     moved = 0
     qs = Prospect.objects.filter(
@@ -1613,7 +1621,7 @@ def _instagram_link(value: str) -> tuple[str, str]:
 
 
 def _serialize_pipeline_prospect(item: Prospect) -> dict:
-    today = date.today()
+    today = _today()
     last = _prospect_last_activity(item)
     days_since = (today - last).days
     color_a, color_b, accent = company_palette(item.company)
@@ -1730,7 +1738,7 @@ def prospection_snapshot(
             "overflow": overflow,
         })
 
-    stale_alert = [_serialize_pipeline_prospect(p) for p in active if (date.today() - _prospect_last_activity(p)).days >= 28 and p.stage in {"Prospeccao", "Aguardando retorno"}]
+    stale_alert = [_serialize_pipeline_prospect(p) for p in active if (_today() - _prospect_last_activity(p)).days >= 28 and p.stage in {"Prospeccao", "Aguardando retorno"}]
 
     banco_sorted = sorted(
         banco_prospects,
@@ -1819,7 +1827,7 @@ def empresas_snapshot(
             .order_by("due_date")
         )
     active = [item for item in projects if item.stage == "Fechado"]
-    today = date.today()
+    today = _today()
     upcoming_limit = today + timedelta(days=21)
 
     def serialize_job_card(item: Project) -> dict:
@@ -1988,13 +1996,13 @@ def jobs_snapshot_filtered(
             if _project_matches_contract_month(item, selected_month)
         ]
     overdue_projects = list(
-        overdue_projects_query.filter(stage="Fechado", due_date__lt=date.today())
+        overdue_projects_query.filter(stage="Fechado", due_date__lt=_today())
         .exclude(status__in=OVERDUE_EXCLUDED_STATUSES)
         .order_by("due_date")
     )
-    upcoming_limit = date.today() + timedelta(days=21)
+    upcoming_limit = _today() + timedelta(days=21)
     upcoming_projects = list(
-        upcoming_projects_query.filter(stage="Fechado", due_date__gte=date.today(), due_date__lte=upcoming_limit).order_by("due_date")
+        upcoming_projects_query.filter(stage="Fechado", due_date__gte=_today(), due_date__lte=upcoming_limit).order_by("due_date")
     )
     snapshot = empresas_snapshot(
         workspace,
@@ -2110,7 +2118,7 @@ def _compute_project_schedule(project: Project) -> list[dict]:
         if monthly_amount <= ZERO:
             return schedule
         for index, payment_date in enumerate(_project_recurring_payment_dates(project), start=1):
-            is_paid = payment_date <= date.today()
+            is_paid = payment_date <= _today()
             schedule.append(
                 {
                     "label": f"Mensalidade {index}",
@@ -2384,12 +2392,12 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     receivable_events = [
         item
         for item in finance_events
-        if not item["paid"] and item["due_date"] >= date.today()
+        if not item["paid"] and item["due_date"] >= _today()
     ]
     overdue_events = [
         item
         for item in finance_events
-        if not item["paid"] and item["due_date"] < date.today()
+        if not item["paid"] and item["due_date"] < _today()
     ]
     receivable_balance = sum_money(item["amount"] for item in receivable_events)
     overdue_balance = sum_money(item["amount"] for item in overdue_events)
@@ -2398,7 +2406,7 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
     def _serialize_receivable(item: dict) -> dict:
         project = item["project"]
         _, _, accent = company_palette(project.company)
-        days_overdue = (date.today() - item["due_date"]).days
+        days_overdue = (_today() - item["due_date"]).days
         return {
             "company": project.company,
             "kind": item["kind"],
