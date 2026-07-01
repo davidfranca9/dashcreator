@@ -235,6 +235,10 @@
         };
 
         const entryDueDateWrapper = form.querySelector(".entry-due-date-field");
+        // Tipos SEM entrada (recorrente/simplificado/comissao/pagamento recorrente).
+        // Setado em applyServiceTypeVisibility(); usado no syncEntryValue() para nao
+        // reexibir a entrada ao digitar o valor num contrato recorrente (ex: Social Media).
+        let noEntryType = false;
         const paymentDueDateLabelEarly = form.querySelector('label[for="id_payment_due_date"]');
         const syncPaymentDueDateLabel = () => {
             if (!paymentDueDateLabelEarly) return;
@@ -247,6 +251,11 @@
                 return;
             }
             const total = parseNumber(totalField);
+            if (noEntryType) {
+                if (entryFieldWrapper) { entryFieldWrapper.hidden = true; }
+                if (entryDueDateWrapper) { entryDueDateWrapper.hidden = true; }
+                return;
+            }
             if (!hasEntry()) {
                 if (entryFieldWrapper) {
                     entryFieldWrapper.hidden = true;
@@ -756,6 +765,7 @@
             const isUgcManager = selected === "ugc_manager";
             const isPaymentRecurring = selected === "publicidade" && hasPaymentRecurrence();
             const hasGeneratedInstallments = selected === "publicidade" && isPaymentRecurring;
+            noEntryType = isRecurringContract || isSimplifiedPayment || isCommission || isPaymentRecurring;
 
             ["total_value", "received_value", "payment_due_day", "payment_due_date", "due_date", "meeting_scheduled"].forEach((name) => {
                 if (wrappersByName[name]) {
