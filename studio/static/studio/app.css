@@ -1269,6 +1269,28 @@ body.theme-dark .stat-card p {
     background: var(--card-soft);
 }
 
+.monthly-status-block {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--card-soft);
+    margin-top: 14px;
+}
+.monthly-status-header h4 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+.monthly-status-header p { margin: 0; font-size: 12px; }
+.monthly-status-list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.monthly-status-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: center; }
+.monthly-status-label { font-size: 13px; font-weight: 500; color: var(--text-primary, #1A1410); }
+.monthly-status-select {
+    border: 0.5px solid rgba(0,0,0,0.12);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    background: #fff;
+}
+
 .installments-block-header h4 {
     margin: 0 0 4px;
     font-size: 16px;

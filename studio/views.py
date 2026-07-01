@@ -52,7 +52,7 @@ from .forms import (
     WorkspaceSettingsForm,
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
-from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Project, ProjectInstallment, Prospect, ServiceCategory
+from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, Prospect, ServiceCategory
 from .services import (
     confirm_follow_up_companies,
     dashboard_snapshot,
@@ -1068,6 +1068,17 @@ def _workspace(request: HttpRequest):
     return get_or_create_workspace_for_user(request.user)
 
 
+def _redirect_preserving_month(request: HttpRequest, view_name: str, *args, **kwargs) -> HttpResponse:
+    """Redireciona pra view mantendo o filtro de mês selecionado.
+    Prioriza POST (form enviado) e cai pra GET (URL atual)."""
+    from urllib.parse import urlencode
+    month = (request.POST.get("month") if request.method == "POST" else "") or request.GET.get("month", "")
+    url = reverse(view_name, args=args, kwargs=kwargs)
+    if month:
+        url = f"{url}?{urlencode({'month': month})}"
+    return redirect(url)
+
+
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
@@ -1253,11 +1264,11 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
         if delete_target == "product" and editing_product is not None:
             editing_product.delete()
             messages.success(request, "Produto excluído.")
-            return redirect("infoproducts")
+            return _redirect_preserving_month(request, "infoproducts")
         elif delete_target == "sale" and editing_sale is not None:
             editing_sale.delete()
             messages.success(request, "Entrada excluída.")
-            return redirect("infoproducts")
+            return _redirect_preserving_month(request, "infoproducts")
         elif action in {"create_product", "update_product"}:
             product_form = InfoProductForm(request.POST, instance=editing_product, workspace=workspace)
             if product_form.is_valid():
@@ -1265,7 +1276,7 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
                 product.workspace = workspace
                 product.save()
                 messages.success(request, "Produto atualizado." if editing_product else "Produto cadastrado.")
-                return redirect("infoproducts")
+                return _redirect_preserving_month(request, "infoproducts")
             open_product_modal = True
         elif action in {"create_sale", "update_sale", "create_buyer"}:
             sale_form = InfoProductSaleForm(request.POST, instance=editing_sale, workspace=workspace)
@@ -1280,7 +1291,11 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
                 return_tab = request.POST.get("return_tab")
                 if return_tab not in {"entries", "buyers"}:
                     return_tab = "entries"
-                return redirect(f"{reverse('infoproducts')}?tab={return_tab}")
+                month = request.POST.get("month") or ""
+                url = f"{reverse('infoproducts')}?tab={return_tab}"
+                if month:
+                    url += f"&month={month}"
+                return redirect(url)
             open_entry_modal = action in {"create_sale", "update_sale"}
             open_buyer_modal = action == "create_buyer"
 
@@ -1798,6 +1813,7 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
+        _sync_project_monthly_statuses(project, workspace)
         if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
             reconcile_computed_installments(project)
         from django.utils import timezone as _tz
@@ -1962,6 +1978,62 @@ def _sync_repeating_manual_installments(project: Project, workspace) -> None:
             )
 
 
+MONTH_LABELS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+
+
+def _monthly_statuses_context(project: Project) -> list[dict]:
+    """Retorna a lista de meses do contrato pra renderizar no template.
+    Faz lazy-create pra projetos recorrentes antigos que ainda não têm rows."""
+    if project.service_type in AUTO_MONTHLY_INSTALLMENT_TYPES and project.workspace_id:
+        if not project.monthly_statuses.exists():
+            _sync_project_monthly_statuses(project, project.workspace)
+    items = []
+    for ms in project.monthly_statuses.order_by("month"):
+        items.append({
+            "id": ms.pk,
+            "month": ms.month,
+            "label": f"{MONTH_LABELS_PT[ms.month.month - 1]}/{ms.month.year}",
+            "status": ms.status,
+        })
+    return items
+
+
+def _save_monthly_statuses(project: Project, post_data) -> None:
+    """Lê inputs monthly_status_<pk> do POST e atualiza cada linha."""
+    for ms in project.monthly_statuses.all():
+        key = f"monthly_status_{ms.pk}"
+        new_status = (post_data.get(key) or "").strip()
+        valid_choices = {choice[0] for choice in ms._meta.get_field("status").choices}
+        if new_status and new_status in valid_choices and new_status != ms.status:
+            ms.status = new_status
+            ms.save(update_fields=["status", "updated_at"])
+
+
+def _sync_project_monthly_statuses(project: Project, workspace) -> None:
+    """Cria/mantém uma ProjectMonthlyStatus por mês de contrato recorrente.
+    Preserva status já editados; só adiciona meses faltantes e remove
+    excedentes se a duração diminuiu."""
+    from .services import _project_contract_month_count, _shift_month
+    if project.service_type not in AUTO_MONTHLY_INSTALLMENT_TYPES:
+        return
+    duration = _project_contract_month_count(project)
+    if duration < 1 or project.close_date is None:
+        return
+    expected_months = {
+        _shift_month(project.close_date.replace(day=1), i) for i in range(duration)
+    }
+    existing = {ms.month: ms for ms in project.monthly_statuses.all()}
+    # Cria os meses faltantes
+    for month in expected_months - set(existing):
+        ProjectMonthlyStatus.objects.create(
+            project=project, workspace=workspace, month=month, status="Briefing"
+        )
+    # Remove meses que ficaram fora da duração (quando o usuário diminui)
+    for month, obj in existing.items():
+        if month not in expected_months:
+            obj.delete()
+
+
 def _sync_auto_monthly_installments(
     project: Project, workspace, has_installments_yes: bool = True
 ) -> None:
@@ -2036,6 +2108,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
+        _sync_project_monthly_statuses(project, workspace)
         if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
             reconcile_computed_installments(project)
         messages.success(request, "Trabalho salvo com sucesso.")
@@ -2080,6 +2153,8 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
             workspace,
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
+        _sync_project_monthly_statuses(project, workspace)
+        _save_monthly_statuses(project, request.POST)
         if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
             reconcile_computed_installments(project)
         messages.success(request, "Trabalho atualizado.")
@@ -2093,6 +2168,7 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
         "form_title": "Trabalho",
         "cancel_url": "jobs",
         "installments_formset": installments_formset,
+        "monthly_statuses": _monthly_statuses_context(project),
     })
     return render(request, "studio/project_form.html", context)
 

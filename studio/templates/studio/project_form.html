@@ -87,6 +87,26 @@
                     {% endif %}
                     {% if field.name == "note" %}
                         {% include "studio/_installments_block.html" %}
+                        {% if monthly_statuses %}
+                            <div class="form-field--full monthly-status-block" data-monthly-status-block>
+                                <div class="monthly-status-header">
+                                    <h4>Status por mês</h4>
+                                    <p class="muted">Marque o andamento mês a mês. Só o(s) mês(es) passados que não estão concluídos contam como "atrasado".</p>
+                                </div>
+                                <div class="monthly-status-list">
+                                    {% for ms in monthly_statuses %}
+                                        <div class="monthly-status-row">
+                                            <span class="monthly-status-label">{{ ms.label }}</span>
+                                            <select name="monthly_status_{{ ms.id }}" class="monthly-status-select">
+                                                {% for choice_val, choice_label in form.fields.status.choices %}
+                                                    <option value="{{ choice_val }}" {% if choice_val == ms.status %}selected{% endif %}>{{ choice_label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
                         <div class="form-field--full project-form-section" data-form-section="notes">
                             <span class="project-form-section-label">Observações</span>
                         </div>

@@ -232,9 +232,20 @@ def google_calendar_event_url(title: str, event_date: date, details: str = "") -
 
 def project_counts_as_overdue(project: Project, today: date | None = None) -> bool:
     reference_date = today or _today()
+    if project.stage != "Fechado":
+        return False
+    # Contratos recorrentes (Publicidade/Social Media/Consultoria) usam
+    # status por mês. Overdue = existe algum mês PASSADO com status ainda
+    # pendente (não concluído/cancelado/aguardando aprovação).
+    if _project_contract_month_count(project) > 1:
+        current_month_start = reference_date.replace(day=1)
+        past_pending = project.monthly_statuses.filter(
+            month__lt=current_month_start,
+        ).exclude(status__in=OVERDUE_EXCLUDED_STATUSES)
+        return past_pending.exists()
+    # Contratos únicos: mantém a checagem antiga por status do projeto.
     return (
-        project.stage == "Fechado"
-        and project.due_date < reference_date
+        project.due_date < reference_date
         and project.status not in OVERDUE_EXCLUDED_STATUSES
     )
 
@@ -548,11 +559,11 @@ def navigation_groups(
 
 
 def overdue_projects_count(workspace: Workspace) -> int:
-    return Project.objects.filter(
-        workspace=workspace,
-        stage="Fechado",
-        due_date__lt=_today(),
-    ).exclude(status__in=OVERDUE_EXCLUDED_STATUSES).count()
+    """Conta trabalhos atrasados usando a mesma regra do project_counts_as_overdue
+    (respeita status mensal em contratos recorrentes)."""
+    today = _today()
+    candidates = Project.objects.filter(workspace=workspace, stage="Fechado")
+    return sum(1 for p in candidates if project_counts_as_overdue(p, today))
 
 
 def navigation_badges(workspace: Workspace, follow_up_count: int) -> dict:

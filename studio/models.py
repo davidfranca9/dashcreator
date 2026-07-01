@@ -347,6 +347,22 @@ class ProjectInstallment(WorkspaceOwnedModel):
         return f"Parcela {self.amount} em {self.due_date}"
 
 
+class ProjectMonthlyStatus(WorkspaceOwnedModel):
+    """Status por mês de um contrato recorrente. Cada mês do contrato vira uma
+    linha; permite marcar 'julho entregue' sem afetar 'agosto em produção'."""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="monthly_statuses")
+    month = models.DateField()  # sempre dia 1 do mês (ex.: 2026-06-01)
+    status = models.CharField(max_length=40, choices=PROJECT_STATUS_CHOICES, default="Briefing")
+    note = models.CharField(max_length=180, blank=True, default="")
+
+    class Meta:
+        ordering = ["month"]
+        unique_together = [("project", "month")]
+
+    def __str__(self) -> str:
+        return f"{self.project.company} · {self.month.strftime('%b/%Y')} · {self.status}"
+
+
 class FinanceEntry(WorkspaceOwnedModel):
     KIND_INCOMING = "incoming"
     KIND_OUTGOING = "outgoing"
