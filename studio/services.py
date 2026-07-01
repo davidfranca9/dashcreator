@@ -91,7 +91,7 @@ SOURCE_MIX_ORDER = ["Inbound", "Prospec\u00e7\u00e3o", "Follow-up", "Indica\u00e
 FOLLOW_UP_CONFIRMED_COMPANIES_KEY = "ops_follow_up_confirmed_companies"
 FOLLOW_UP_DISMISSED_COMPANIES_KEY = "ops_follow_up_dismissed_companies"
 AWAITING_APPROVAL_STATUS = "Aguardando aprovação"
-OVERDUE_EXCLUDED_STATUSES = {AWAITING_APPROVAL_STATUS}
+OVERDUE_EXCLUDED_STATUSES = {AWAITING_APPROVAL_STATUS, "Concluído", "Entregue", "Cancelado"}
 
 
 def currency(value: Decimal | int | float | None) -> str:

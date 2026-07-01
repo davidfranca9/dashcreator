@@ -65,7 +65,6 @@ PUBLICIDADE_SERVICE_TYPE = "publicidade"
 RECURRING_CONTRACT_TYPES = [SOCIAL_MEDIA_SERVICE_TYPE, MARKETING_CONSULTING_SERVICE_TYPE]
 RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "stage",
-    "status",
     "has_entry",
     "entry_value",
     "received_value",
