@@ -1113,6 +1113,17 @@ body.theme-dark .stat-card p {
     margin: 0;
 }
 
+.follow-up-reminders {
+    display: grid;
+    gap: 12px;
+}
+
+.follow-up-reminder-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+
 .follow-up-banner .icon-button {
     width: 32px;
     height: 32px;

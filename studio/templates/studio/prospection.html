@@ -52,6 +52,43 @@
             </article>
         {% endif %}
 
+        {% if follow_up_alerts %}
+            <section class="follow-up-reminders" id="follow-up-column" aria-label="Alertas de follow-up">
+                <article class="banner banner--info follow-up-banner">
+                    <div>
+                        <strong>{{ follow_up_alerts|length }} alerta{{ follow_up_alerts|length|pluralize:",s" }} de follow-up</strong>
+                        <p class="muted">Marcas com trabalho entregue h&aacute; mais de 30 dias e sem lead ativo. Retome a conversa ou ignore para tirar o aviso do menu.</p>
+                    </div>
+                </article>
+                <div class="follow-up-reminder-list">
+                    {% for item in follow_up_alerts %}
+                        <article class="pipeline-card prospect-card--follow-up">
+                            <div class="follow-up-brand">
+                                <span class="pipeline-column-dot pipeline-column--follow-up"></span>
+                                <div class="follow-up-brand-copy">
+                                    <strong>{{ item.company }}</strong>
+                                    <span class="muted">{{ item.service_category }} &middot; entregue em {{ item.last_delivery_text }} &middot; {{ item.days_since_last_job }} dias</span>
+                                </div>
+                            </div>
+                            <p class="muted follow-up-note">{{ item.note }}</p>
+                            <div class="pipeline-card-actions">
+                                <form method="post" action="{% url 'follow_up_start_prospection' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="company_key" value="{{ item.dismiss_key }}">
+                                    <button class="primary-button xsmall" type="submit">Retomar</button>
+                                </form>
+                                <form method="post" action="{% url 'follow_up_dismiss' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="company_key" value="{{ item.dismiss_key }}">
+                                    <button class="ghost-button xsmall" type="submit">Ignorar</button>
+                                </form>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
         <section class="pipeline-board" id="stale-list" data-pipeline-board>
             {% for column in pipeline_columns %}
                 <article class="pipeline-column pipeline-column--{{ column.tone }}" data-pipeline-column="{{ column.key }}">
