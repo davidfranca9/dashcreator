@@ -30,7 +30,15 @@ class MetricsTests(TestCase):
 
     def test_dashboard_requires_staff(self):
         resp = Client().get(reverse("metrics_dashboard"))
-        self.assertEqual(resp.status_code, 302)  # redireciona pro login
+        self.assertEqual(resp.status_code, 302)  # anônimo → redireciona pro login
+
+    def test_dashboard_non_staff_forbidden(self):
+        User = get_user_model()
+        User.objects.create_user("creator", password="x", is_staff=False)
+        c = Client()
+        c.login(username="creator", password="x")
+        resp = c.get(reverse("metrics_dashboard"))
+        self.assertEqual(resp.status_code, 403)  # logado sem permissão → 403 (sem loop)
 
     def test_dashboard_renders_with_and_without_data(self):
         User = get_user_model()

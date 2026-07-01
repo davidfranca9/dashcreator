@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import json
 
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.db.models.functions import TruncDate
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -80,8 +81,12 @@ def track(request: HttpRequest) -> HttpResponse:
     return _cors_headers(HttpResponse(status=204), origin)
 
 
-@user_passes_test(lambda u: u.is_authenticated and u.is_staff)
+@login_required
 def metrics_dashboard(request: HttpRequest) -> HttpResponse:
+    # Autenticado mas sem permissão → 403 (evita loop de redirect com o login).
+    if not (request.user.is_staff or request.user.is_superuser):
+        raise PermissionDenied("Acesso restrito às métricas.")
+
     site = request.GET.get("site", "layfe")
     if site not in VALID_SITES:
         site = "layfe"
