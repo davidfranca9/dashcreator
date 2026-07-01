@@ -67,6 +67,7 @@ RECURRING_CONTRACT_HIDDEN_FIELDS = [
     "stage",
     "has_entry",
     "entry_value",
+    "entry_due_date",
     "received_value",
     "monthly_value",
 ]
