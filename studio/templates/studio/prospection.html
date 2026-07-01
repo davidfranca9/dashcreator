@@ -27,8 +27,18 @@
             {% for stage in pipeline_stages %}
                 <article class="pipeline-kpi pipeline-kpi--{{ stage.tone }}{% if stage.count %} pipeline-kpi--clickable{% endif %}"{% if stage.count %} data-pipeline-kpi="{{ stage.key }}" role="button" tabindex="0" title="Ver todas as marcas em {{ stage.title }}"{% endif %}>
                     <span class="pipeline-kpi-dot"></span>
-                    <strong class="pipeline-kpi-value">{{ stage.count }}</strong>
+                    <span class="pipeline-kpi-icon pipeline-icon-round">
+                        {% if stage.tone == 'draft' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+                        {% elif stage.tone == 'prospect' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        {% elif stage.tone == 'waiting' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {% elif stage.tone == 'negotiation' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="M3 12h5l2 2"/></svg>
+                        {% elif stage.tone == 'follow-up' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        {% elif stage.tone == 'closed' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        {% endif %}
+                    </span>
                     <span class="pipeline-kpi-label">{{ stage.title }}</span>
+                    <span class="pipeline-kpi-sep">•••</span>
+                    <strong class="pipeline-kpi-value">{{ stage.count }}</strong>
                 </article>
             {% endfor %}
         </section>
@@ -179,7 +189,7 @@
         <article class="card banco-header">
             <div>
                 <h2>Banco de Marcas</h2>
-                <p class="muted">Histórico de todas as marcas abordadas — ativas e encerradas</p>
+                <p class="muted">Histórico de todas as marcas abordadas ativas e encerradas</p>
             </div>
             <div class="banco-header-actions">
                 <a class="ghost-button" href="{% url 'prospect_export' %}">⤓ Exportar planilha</a>

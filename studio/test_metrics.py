@@ -103,3 +103,19 @@ class ReportsRedesignTests(TestCase):
         self.assertContains(resp, "Próximos passos")
         self.assertContains(resp, "Evolução da prospecção")
         self.assertContains(resp, "Por tipo de serviço")
+
+
+class PipelineIconsTest(TestCase):
+    def test_prospection_renders_pipeline_icons(self):
+        from studio.services import get_or_create_workspace_for_user
+        User = get_user_model()
+        u = User.objects.create_user("boss3", password="x", is_staff=True)
+        get_or_create_workspace_for_user(u)
+        c = Client(); c.login(username="boss3", password="x")
+        resp = c.get(reverse("prospection"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn("pipeline-kpi-icon", html)
+        # deve ter pelo menos 6 <svg dentro dos icones (um por etapa)
+        self.assertGreaterEqual(html.count('class="pipeline-kpi-icon'), 6)
+        self.assertIn("<svg", html)
