@@ -1624,6 +1624,17 @@ def legal_contract_dismiss(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 @login_required
+@require_POST
+def legal_usage_dismiss(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace = _workspace(request)
+    project = get_object_or_404(Project.objects.filter(workspace=workspace), pk=pk)
+    project.image_rights_dismissed = True
+    project.save(update_fields=["image_rights_dismissed", "updated_at"])
+    messages.success(request, f"Licença de uso de imagem ignorada para {project.company}.")
+    return redirect("legal")
+
+
+@login_required
 def reports(request: HttpRequest) -> HttpResponse:
     workspace = _workspace(request)
     month_filter = request.GET.get("month")

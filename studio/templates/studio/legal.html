@@ -58,6 +58,10 @@
                             <span class="chip">{{ item.deliverables_text }}</span>
                         </div>
                         <div class="legal-row-actions">
+                            <form method="post" action="{% url 'legal_contract_dismiss' item.id %}" class="legal-dismiss-form" data-legal-dismiss="Dispensar o contrato de {{ item.company|escapejs }}? Ele sai desta lista.">
+                                {% csrf_token %}
+                                <button type="submit" class="ghost-button small legal-dismiss-btn">✕ Dispensar</button>
+                            </form>
                             <a class="ghost-button small" href="{% url 'project_edit' item.id %}">✎ Editar trabalho</a>
                             <button type="button" class="primary-button small" data-contract-modal-open="{{ item.id }}">📄 Gerar contrato</button>
                         </div>
@@ -136,6 +140,10 @@
                             <span class="chip{% if item.urgency == 'urgent' %} chip--warning{% elif item.urgency == 'expired' %} chip--danger{% endif %}">Vence {{ item.expires_text }}</span>
                         </div>
                         <div class="legal-row-actions">
+                            <form method="post" action="{% url 'legal_usage_dismiss' item.id %}" class="legal-dismiss-form" data-legal-dismiss="Ignorar a licença de {{ item.company|escapejs }}? Ela sai desta lista.">
+                                {% csrf_token %}
+                                <button type="submit" class="ghost-button small legal-dismiss-btn">✕ Ignorar</button>
+                            </form>
                             <a class="ghost-button small" href="{{ item.google_calendar_url }}" target="_blank" rel="noopener noreferrer">📅 Google Agenda</a>
                             <a class="ghost-button small" href="{% url 'project_edit' item.id %}">Editar</a>
                         </div>
@@ -266,6 +274,16 @@
     btn.addEventListener("click", () => {
         document.querySelectorAll("[data-license-item].legal-row--hidden").forEach((el) => el.classList.remove("legal-row--hidden"));
         btn.remove();
+    });
+})();
+
+(() => {
+    document.querySelectorAll("[data-legal-dismiss]").forEach((form) => {
+        form.addEventListener("submit", (event) => {
+            if (!window.confirm(form.dataset.legalDismiss)) {
+                event.preventDefault();
+            }
+        });
     });
 })();
 </script>

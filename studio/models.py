@@ -254,6 +254,7 @@ class Project(WorkspaceOwnedModel):
     closing_source = models.CharField(max_length=120, blank=True, default="")
     content_distribution = models.CharField(max_length=20, choices=PROJECT_DISTRIBUTION_CHOICES, blank=True, default="")
     image_license_term_days = models.PositiveSmallIntegerField(choices=IMAGE_LICENSE_TERM_CHOICES, null=True, blank=True)
+    image_rights_dismissed = models.BooleanField(default=False)
     niche = models.ForeignKey(Niche, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects")
     service_category = models.ForeignKey(
         ServiceCategory,

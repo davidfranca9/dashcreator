@@ -7350,3 +7350,16 @@ body.page-legal .jobs-kpi-modal .primary-button {
     font-size: 12px !important;
     font-weight: 500 !important;
 }
+/* botão dispensar/ignorar — discreto à esquerda, hover em vermelho */
+.legal-dismiss-form { display: contents; }
+body.page-legal .legal-dismiss-btn {
+    margin-right: auto !important;
+    color: var(--tcc-muted) !important;
+    border-color: var(--tcc-line) !important;
+    background: transparent !important;
+}
+body.page-legal .legal-dismiss-btn:hover {
+    color: var(--tcc-red) !important;
+    border-color: rgba(177, 53, 64, 0.40) !important;
+    background: rgba(177, 53, 64, 0.06) !important;
+}

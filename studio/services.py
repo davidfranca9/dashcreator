@@ -1253,6 +1253,7 @@ def legal_usage_items(workspace: Workspace, user: User | None = None) -> list[di
     display_name = profile_display_name(workspace, user)
     projects = list(
         Project.objects.filter(workspace=workspace, content_distribution="Ads")
+        .exclude(image_rights_dismissed=True)
         .select_related("service_category", "niche")
         .order_by("due_date", "company")
     )

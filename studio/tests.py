@@ -4128,3 +4128,83 @@ class AuthenticationFlowsTest(TestCase):
         second_dashboard = second_client.get(reverse("dashboard"))
         self.assertEqual(first_dashboard.status_code, 200)
         self.assertEqual(second_dashboard.status_code, 200)
+
+
+class LegalDismissTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="legaltester", password="segura123")
+        self.workspace = get_or_create_workspace_for_user(self.user)
+        self.niche = Niche.objects.get(workspace=self.workspace, name="Beleza e Maquiagem")
+        self.category = ServiceCategory.objects.create(workspace=self.workspace, name="Pacote de videos")
+        common = dict(
+            workspace=self.workspace,
+            niche=self.niche,
+            service_category=self.category,
+            stage="Fechado",
+            status="Briefing",
+            total_value=2000,
+            deliverables_count=2,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=5),
+        )
+        # Projeto com Ads + direito de uso (aparece em licenças E contratos)
+        self.license_project = Project.objects.create(
+            company="MarcaLicenca", content_distribution="Ads", image_license_term_days=90, **common
+        )
+        # Projeto normal (aparece só em contratos)
+        self.contract_project = Project.objects.create(
+            company="MarcaContrato", content_distribution="Organico", **common
+        )
+
+    def _license_companies(self):
+        from .services import legal_usage_items
+        return {item["company"] for item in legal_usage_items(self.workspace, self.user)}
+
+    def _contract_companies(self):
+        from .services import legal_contract_items
+        return {item["company"] for item in legal_contract_items(self.workspace)}
+
+    def test_page_renders_dismiss_buttons(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("legal"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "✕ Ignorar")
+        self.assertContains(response, "✕ Dispensar")
+
+    def test_ignore_image_license_removes_it(self):
+        self.client.force_login(self.user)
+        self.assertIn("MarcaLicenca", self._license_companies())
+
+        response = self.client.post(reverse("legal_usage_dismiss", args=[self.license_project.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.license_project.refresh_from_db()
+        self.assertTrue(self.license_project.image_rights_dismissed)
+        self.assertNotIn("MarcaLicenca", self._license_companies())
+        # continua existindo como projeto/contrato (só sumiu das licenças)
+        self.assertIn("MarcaLicenca", self._contract_companies())
+
+    def test_ignore_requires_post(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("legal_usage_dismiss", args=[self.license_project.pk]))
+        self.assertEqual(response.status_code, 405)
+        self.license_project.refresh_from_db()
+        self.assertFalse(self.license_project.image_rights_dismissed)
+
+    def test_dismiss_contract_removes_it(self):
+        self.client.force_login(self.user)
+        self.assertIn("MarcaContrato", self._contract_companies())
+
+        response = self.client.post(reverse("legal_contract_dismiss", args=[self.contract_project.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.contract_project.refresh_from_db()
+        self.assertEqual(self.contract_project.contract_status, Project.CONTRACT_STATUS_DISMISSED)
+        self.assertNotIn("MarcaContrato", self._contract_companies())
+
+    def test_dismiss_only_affects_own_workspace(self):
+        other = User.objects.create_user(username="intruder", password="segura123")
+        get_or_create_workspace_for_user(other)
+        self.client.force_login(other)
+        response = self.client.post(reverse("legal_usage_dismiss", args=[self.license_project.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.license_project.refresh_from_db()
+        self.assertFalse(self.license_project.image_rights_dismissed)
