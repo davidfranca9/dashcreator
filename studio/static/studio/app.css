@@ -7338,6 +7338,7 @@ body.page-legal .danger-button.small,
 body.page-legal .legal-show-more {
     padding: 5px 10px !important;
     font-size: 11px !important;
+    font-weight: 500 !important;
     letter-spacing: .02em !important;
     border-radius: 0 !important;
 }
@@ -7347,4 +7348,5 @@ body.page-legal .legal-row-actions {
 body.page-legal .jobs-kpi-modal .primary-button {
     padding: 8px 14px !important;
     font-size: 12px !important;
+    font-weight: 500 !important;
 }
