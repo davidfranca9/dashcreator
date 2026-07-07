@@ -4208,3 +4208,98 @@ class LegalDismissTest(TestCase):
         self.assertEqual(response.status_code, 404)
         self.license_project.refresh_from_db()
         self.assertFalse(self.license_project.image_rights_dismissed)
+
+
+class LayfeCampaignDetailTest(TestCase):
+    """Detalhe do trabalho / Assistente de Atualizações é EXCLUSIVO da Layfe.
+    Estes testes provam que nenhuma outra conta acessa (404 no servidor)."""
+
+    def setUp(self):
+        self.layfe = User.objects.create_user(username="layfeamorim", password="segura123")
+        self.layfe_ws = get_or_create_workspace_for_user(self.layfe)
+        self.other = User.objects.create_user(username="tester", password="segura123")
+        self.other_ws = get_or_create_workspace_for_user(self.other)
+        common = dict(
+            stage="Fechado", status="Briefing", total_value=1000, deliverables_count=1,
+            close_date=date.today(), due_date=date.today() + timedelta(days=10),
+        )
+        self.project = Project.objects.create(workspace=self.layfe_ws, company="Aice", **common)
+        self.other_project = Project.objects.create(workspace=self.other_ws, company="Marca X", **common)
+
+    def test_ver_mais_button_only_for_layfe(self):
+        detail_url = reverse("project_detail", args=[self.project.pk])
+        self.client.force_login(self.layfe)
+        r = self.client.get(reverse("jobs"))
+        self.assertContains(r, "Ver mais")
+        self.assertContains(r, detail_url)
+        # conta comum NÃO vê o botão
+        self.client.force_login(self.other)
+        self.assertNotContains(self.client.get(reverse("jobs")), "Ver mais")
+
+    def test_detail_page_is_layfe_only(self):
+        url = reverse("project_detail", args=[self.project.pk])
+        self.client.force_login(self.layfe)
+        self.assertEqual(self.client.get(url).status_code, 200)
+        # conta comum logada -> 404 no servidor
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_all_write_endpoints_blocked_for_non_layfe(self):
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.post(reverse("project_detail_advance", args=[self.project.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("project_detail_save", args=[self.project.pk]), {}).status_code, 404)
+        self.assertEqual(self.client.post(reverse("project_message_action", args=[self.project.pk, 1])).status_code, 404)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.campaign_stage, 0)
+
+    def test_layfe_cannot_touch_other_workspace(self):
+        self.client.force_login(self.layfe)
+        self.assertEqual(self.client.get(reverse("project_detail", args=[self.other_project.pk])).status_code, 404)
+
+    def test_advance_persists_and_generates_message(self):
+        self.client.force_login(self.layfe)
+        self.client.get(reverse("project_detail", args=[self.project.pk]))  # semeia briefing
+        r = self.client.post(reverse("project_detail_advance", args=[self.project.pk]))
+        self.assertEqual(r.status_code, 302)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.campaign_stage, 1)
+        self.assertIn("0", self.project.campaign_stage_dates)
+        self.assertTrue(self.project.update_messages.filter(stage_index=1, status="new").exists())
+
+    def test_save_persists_and_personalizes_message(self):
+        self.client.force_login(self.layfe)
+        r = self.client.post(
+            reverse("project_detail_save", args=[self.project.pk]),
+            {"contact_name": "Mariana", "roteiro_link": "http://x/roteiro", "delivery_link": "http://x/entrega"},
+        )
+        self.assertEqual(r.status_code, 302)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.contact_name, "Mariana")
+        self.assertEqual(self.project.roteiro_link, "http://x/roteiro")
+        # ao abrir, a mensagem de briefing usa o nome do contato
+        self.client.get(reverse("project_detail", args=[self.project.pk]))
+        msg = self.project.update_messages.get(stage_index=0)
+        self.assertIn("Mariana", msg.body)
+
+    def test_message_copy_marks_history(self):
+        self.client.force_login(self.layfe)
+        self.client.get(reverse("project_detail", args=[self.project.pk]))
+        msg = self.project.update_messages.get(stage_index=0)
+        r = self.client.post(
+            reverse("project_message_action", args=[self.project.pk, msg.pk]),
+            {"action": "copy", "body": "Texto final", "tone": "formal"},
+        )
+        self.assertEqual(r.status_code, 302)
+        msg.refresh_from_db()
+        self.assertEqual(msg.status, "copied")
+        self.assertEqual(msg.body, "Texto final")
+        self.assertEqual(msg.tone, "formal")
+        self.assertIsNotNone(msg.actioned_at)
+
+    def test_message_ignore(self):
+        self.client.force_login(self.layfe)
+        self.client.get(reverse("project_detail", args=[self.project.pk]))
+        msg = self.project.update_messages.get(stage_index=0)
+        self.client.post(reverse("project_message_action", args=[self.project.pk, msg.pk]), {"action": "ignore"})
+        msg.refresh_from_db()
+        self.assertEqual(msg.status, "ignored")

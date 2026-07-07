@@ -27,7 +27,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, ProjectUpdateMessage, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 def _today() -> date:
@@ -500,7 +500,10 @@ def _percentage_text(value: Decimal) -> str:
     return f"{amount.normalize()}%".replace(".", ",")
 
 
-def workspace_has_infoproducts_access(workspace: Workspace | None, user: User | None = None) -> bool:
+def is_layfe_account(workspace: Workspace | None, user: User | None = None) -> bool:
+    """Fonte única de verdade para recursos exclusivos da Layfe. Verdadeiro
+    somente quando 'layfeamorim' aparece no workspace (nome/slug/razão social)
+    ou no usuário (username/email/nome). Nenhuma outra conta passa por aqui."""
     candidates = [
         getattr(workspace, "name", ""),
         getattr(workspace, "slug", ""),
@@ -517,6 +520,10 @@ def workspace_has_infoproducts_access(workspace: Workspace | None, user: User | 
         if "layfeamorim" in normalized:
             return True
     return False
+
+
+def workspace_has_infoproducts_access(workspace: Workspace | None, user: User | None = None) -> bool:
+    return is_layfe_account(workspace, user)
 
 
 def navigation(
@@ -836,6 +843,7 @@ def shell_context(
         # Workspace de teste vê as novidades antes de todos (flag por workspace).
         "beta": bool(getattr(workspace, "is_beta", False)),
         "has_infoproducts_access": workspace_has_infoproducts_access(workspace, user),
+        "is_layfe": is_layfe_account(workspace, user),
     }
 
 
@@ -1358,6 +1366,209 @@ def legal_usage_alerts(workspace: Workspace, user: User | None = None) -> list[d
             }
         )
     return alerts
+
+
+# ── Detalhe do trabalho / Assistente de Atualizações (exclusivo Layfe) ──────
+CAMPAIGN_STAGES = [
+    {"key": "briefing", "name": "Briefing recebido"},
+    {"key": "roteiro", "name": "Roteiro finalizado"},
+    {"key": "roteiro_aprovado", "name": "Roteiro aprovado pela marca"},
+    {"key": "producao", "name": "Conteúdo em produção"},
+    {"key": "enviado", "name": "Conteúdo enviado para aprovação"},
+    {"key": "aprovado", "name": "Aprovação da marca"},
+    {"key": "publicado", "name": "Conteúdo publicado"},
+]
+CAMPAIGN_STAGE_COUNT = len(CAMPAIGN_STAGES)
+CAMPAIGN_TONES = ["formal", "neutro", "descontraido"]
+CAMPAIGN_TONE_LABELS = {"formal": "Formal", "neutro": "Neutro", "descontraido": "Descontraído"}
+
+_MSG_GREETING = {
+    "formal": "Prezada(o) {name},",
+    "neutro": "Olá, {name}! Tudo bem?",
+    "descontraido": "Oi, {name}! 😊",
+}
+_MSG_CLOSING = {
+    "formal": "Fico à disposição para qualquer ajuste.\n\nAtenciosamente.",
+    "neutro": "Qualquer feedback, é só me avisar. 💛",
+    "descontraido": "Me conta o que achou! 🙌",
+}
+_MSG_HOOK = {
+    0: {
+        "formal": "Confirmo o recebimento do briefing da campanha {company}. Já dou início aos próximos passos.",
+        "neutro": "Recebi o briefing da campanha {company}, já estou começando por aqui!",
+        "descontraido": "Recebi o briefing da {company}, bora começar! 🚀",
+    },
+    1: {
+        "formal": "O roteiro da campanha {company} está finalizado e disponível para sua revisão:\n\n{link}",
+        "neutro": "O roteiro da campanha {company} já está pronto para revisão:\n\n{link}",
+        "descontraido": "Finalizei o roteiro da {company}! Dá uma olhada:\n\n{link}",
+    },
+    2: {
+        "formal": "Agradeço a aprovação do roteiro da campanha {company}. Seguimos para a produção do conteúdo.",
+        "neutro": "Que ótimo, roteiro aprovado! Já sigo para a produção do conteúdo da {company}.",
+        "descontraido": "Ebaa, roteiro aprovado! Já vou pra produção. 🎬",
+    },
+    3: {
+        "formal": "Informo que a produção do conteúdo da campanha {company} está em andamento.",
+        "neutro": "Passando pra avisar que já estou produzindo o conteúdo da {company}!",
+        "descontraido": "Tô gravando o conteúdo da {company}! 🎥",
+    },
+    4: {
+        "formal": "O conteúdo da campanha {company} está concluído e disponível para aprovação:\n\n{link}",
+        "neutro": "O conteúdo da campanha {company} já está pronto para sua aprovação:\n\n{link}",
+        "descontraido": "O conteúdo da {company} ficou incrível! Deixei aqui pra você aprovar:\n\n{link}",
+    },
+    5: {
+        "formal": "Agradeço a aprovação do conteúdo da campanha {company}. Aguardo a confirmação da data de publicação.",
+        "neutro": "Conteúdo aprovado, que alegria! Me avisa a melhor data de publicação da {company}?",
+        "descontraido": "Aprovado! 🎉 Me fala quando você quer publicar?",
+    },
+    6: {
+        "formal": "Informo que o conteúdo da campanha {company} foi publicado. Permaneço à disposição para acompanhar os resultados.",
+        "neutro": "O conteúdo da {company} está no ar! Qualquer coisa me chama pra acompanharmos os resultados juntos. 🚀",
+        "descontraido": "Tá no ar!! 🚀 Bora acompanhar os números?",
+    },
+}
+
+
+def campaign_stage_message(stage_index: int, tone: str, project: Project) -> str:
+    """Monta a mensagem pronta pra marca de uma etapa, no tom escolhido, já
+    com os dados reais do trabalho (nome do contato/marca e links)."""
+    tone = tone if tone in CAMPAIGN_TONES else "neutro"
+    idx = max(0, min(int(stage_index or 0), CAMPAIGN_STAGE_COUNT - 1))
+    name = (project.contact_name or "").strip() or project.company
+    link = ""
+    if idx == 1:
+        link = project.roteiro_link or "[adicione o link do roteiro antes de enviar]"
+    elif idx == 4:
+        link = project.delivery_link or "[adicione o link de entrega antes de enviar]"
+    greeting = _MSG_GREETING[tone].format(name=name)
+    hook = _MSG_HOOK[idx][tone].format(company=project.company, link=link)
+    return f"{greeting}\n\n{hook}\n\n{_MSG_CLOSING[tone]}"
+
+
+def _fmt_iso_date(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        return short_date(date.fromisoformat(value))
+    except (ValueError, TypeError):
+        return ""
+
+
+def ensure_campaign_started(project: Project) -> None:
+    """Semeia a primeira mensagem (Briefing recebido) quando o trabalho ainda
+    não tem nenhuma — dá um ponto de partida ao assistente."""
+    if (project.campaign_stage or 0) == 0 and not project.update_messages.exists():
+        ProjectUpdateMessage.objects.create(
+            workspace_id=project.workspace_id,
+            project=project,
+            stage_index=0,
+            stage_label=CAMPAIGN_STAGES[0]["name"],
+            tone="neutro",
+            body=campaign_stage_message(0, "neutro", project),
+            status=ProjectUpdateMessage.STATUS_NEW,
+        )
+
+
+def advance_campaign_stage(project: Project) -> ProjectUpdateMessage | None:
+    """Conclui a etapa atual (marca a data), avança para a próxima e gera a
+    mensagem pronta da etapa alcançada. Retorna None se já estiver concluído."""
+    final_idx = CAMPAIGN_STAGE_COUNT - 1
+    current = max(0, min(project.campaign_stage or 0, final_idx))
+    dates = dict(project.campaign_stage_dates or {})
+    if dates.get(str(final_idx)):
+        return None  # campanha já concluída
+    dates[str(current)] = _today().isoformat()
+    new_stage = min(current + 1, final_idx)
+    project.campaign_stage = new_stage
+    project.campaign_stage_dates = dates
+    project.save(update_fields=["campaign_stage", "campaign_stage_dates", "updated_at"])
+    return ProjectUpdateMessage.objects.create(
+        workspace_id=project.workspace_id,
+        project=project,
+        stage_index=new_stage,
+        stage_label=CAMPAIGN_STAGES[new_stage]["name"],
+        tone="neutro",
+        body=campaign_stage_message(new_stage, "neutro", project),
+        status=ProjectUpdateMessage.STATUS_NEW,
+    )
+
+
+def campaign_detail_snapshot(project: Project) -> dict:
+    color_a, color_b, accent = company_palette(project.company)
+    final_idx = CAMPAIGN_STAGE_COUNT - 1
+    current = max(0, min(project.campaign_stage or 0, final_idx))
+    dates = project.campaign_stage_dates or {}
+    final_done = bool(dates.get(str(final_idx)))
+
+    stages = []
+    for idx, stage in enumerate(CAMPAIGN_STAGES):
+        if final_done or idx < current:
+            state = "done"
+        elif idx == current:
+            state = "active"
+        else:
+            state = "pending"
+        stages.append({
+            "index": idx,
+            "name": stage["name"],
+            "key": stage["key"],
+            "state": state,
+            "date_text": _fmt_iso_date(dates.get(str(idx))),
+        })
+    done_count = CAMPAIGN_STAGE_COUNT if final_done else current
+    progress_pct = round(done_count / CAMPAIGN_STAGE_COUNT * 100)
+
+    messages = list(project.update_messages.all())
+
+    def _msg(m, variants=False):
+        data = {
+            "id": m.id,
+            "stage_index": m.stage_index,
+            "stage_label": m.stage_label,
+            "tone": m.tone,
+            "body": m.body,
+            "status": m.status,
+            "status_text": m.get_status_display(),
+            "created_text": short_date(m.created_at.date()) if m.created_at else "",
+            "actioned_text": short_date(m.actioned_at.date()) if m.actioned_at else "",
+        }
+        if variants:
+            data["tone_variants"] = {t: campaign_stage_message(m.stage_index, t, project) for t in CAMPAIGN_TONES}
+        return data
+
+    active_messages = [_msg(m, variants=True) for m in messages if m.status == ProjectUpdateMessage.STATUS_NEW]
+    history_messages = [_msg(m) for m in messages if m.status != ProjectUpdateMessage.STATUS_NEW]
+    active_variants = {m["id"]: m["tone_variants"] for m in active_messages}
+
+    return {
+        "project": project,
+        "meta": {
+            "company": project.company,
+            "contact_name": project.contact_name,
+            "service_category": project.service_category_name,
+            "total_value_text": currency(project.total_value),
+            "due_text": short_date(project.due_date),
+            "colors": (color_a, color_b),
+            "accent": accent,
+        },
+        "anexos": {
+            "roteiro_link": project.roteiro_link,
+            "delivery_link": project.delivery_link,
+        },
+        "stages": stages,
+        "current_stage_name": "Campanha concluída" if final_done else CAMPAIGN_STAGES[current]["name"],
+        "can_advance": not final_done,
+        "final_done": final_done,
+        "done_count": done_count,
+        "total_count": CAMPAIGN_STAGE_COUNT,
+        "progress_pct": progress_pct,
+        "active_messages": active_messages,
+        "history_messages": history_messages,
+        "active_variants": active_variants,
+        "tones": [{"key": t, "label": CAMPAIGN_TONE_LABELS[t]} for t in CAMPAIGN_TONES],
+    }
 
 
 def confirm_follow_up_companies(workspace: Workspace, company_keys: list[str]) -> list[str]:

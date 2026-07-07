@@ -7363,3 +7363,14 @@ body.page-legal .legal-dismiss-btn:hover {
     border-color: rgba(177, 53, 64, 0.40) !important;
     background: rgba(177, 53, 64, 0.06) !important;
 }
+
+/* Ver mais (detalhe da campanha — só Layfe): botão navy de destaque */
+.jobs-work-actions .wc-btn--primary {
+    background: var(--tcc-navy) !important;
+    color: var(--tcc-paper) !important;
+    border-color: var(--tcc-navy) !important;
+}
+.jobs-work-actions .wc-btn--primary:hover {
+    background: #16306e !important;
+    border-color: #16306e !important;
+}

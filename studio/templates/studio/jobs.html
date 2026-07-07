@@ -157,6 +157,7 @@
                     <div class="jobs-work-footer">
                         <span class="jobs-work-value"></span>
                         <div class="jobs-work-actions">
+                            {% if is_layfe %}<a class="wc-btn wc-btn--primary" href="{% url 'project_detail' item.id %}">Ver mais</a>{% endif %}
                             <a class="wc-btn" href="{% url 'project_edit' item.id %}">Editar</a>
                             <form method="post" action="{% url 'project_delete' item.id %}">{% csrf_token %}<button type="submit" class="wc-btn wc-btn--danger">Excluir</button></form>
                         </div>
@@ -186,6 +187,7 @@
                 <div class="jobs-work-footer">
                     <span class="jobs-work-value">{{ item.total_value }}</span>
                     <div class="jobs-work-actions">
+                        {% if is_layfe %}<a class="wc-btn wc-btn--primary" href="{% url 'project_detail' item.id %}">Ver mais</a>{% endif %}
                         <a class="wc-btn" href="{% url 'project_edit' item.id %}">Editar</a>
                         <form method="post" action="{% url 'project_delete' item.id %}">{% csrf_token %}<button type="submit" class="wc-btn wc-btn--danger">Excluir</button></form>
                     </div>
@@ -215,6 +217,7 @@
                     <div class="jobs-work-footer">
                         <span class="jobs-work-value">{{ item.total_value }}</span>
                         <div class="jobs-work-actions">
+                            {% if is_layfe %}<a class="wc-btn wc-btn--primary" href="{% url 'project_detail' item.id %}">Ver mais</a>{% endif %}
                             <a class="wc-btn" href="{% url 'project_edit' item.id %}">Editar</a>
                             <form method="post" action="{% url 'project_delete' item.id %}">{% csrf_token %}<button type="submit" class="wc-btn wc-btn--danger">Excluir</button></form>
                         </div>

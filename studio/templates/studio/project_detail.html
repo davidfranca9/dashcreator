@@ -1,0 +1,299 @@
+{% extends "studio/base.html" %}
+
+{% block extra_head %}
+<style>
+/* ── Detalhe do trabalho (exclusivo Layfe) — classes com prefixo cd- ── */
+.cd-detail{--cd-navy:#0a2463;--cd-navy2:#16306e;--cd-cream:#f5f1e8;--cd-cream2:#ede8df;
+  --cd-gold:#b8925f;--cd-line:#ddd6cb;--cd-t1:#1a2340;--cd-t2:#5c5143;--cd-t3:#8a7d6b;
+  --cd-green-bg:#f0f7f4;--cd-green-t:#1a5240;--cd-green-b:#a7d4c0;--cd-blue:#2563eb;}
+.cd-topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.cd-back{font-size:12px;color:var(--cd-t3);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.cd-back:hover{color:var(--cd-navy)}
+.cd-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.cd-tab{font-size:12px;color:var(--cd-t3);padding:6px 12px;border-bottom:2px solid transparent}
+.cd-tab--active{color:var(--cd-navy);font-weight:600;border-bottom-color:var(--cd-navy)}
+.cd-tab--muted{opacity:.5;cursor:default}
+.cd-tab-badge{font-size:9px;font-weight:700;background:var(--cd-gold);color:#fff;border-radius:99px;padding:1px 6px;margin-left:3px}
+.cd-advance-form{margin-left:auto}
+.cd-advance{font-size:12px;font-weight:600;color:#fff;background:var(--cd-navy);border:1px solid var(--cd-navy);padding:8px 16px;cursor:pointer}
+.cd-advance:hover{background:var(--cd-navy2)}
+.cd-advance:disabled{background:var(--cd-green-t);border-color:var(--cd-green-t);cursor:default;opacity:.85}
+
+.cd-layout{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+@media (max-width:900px){.cd-layout{grid-template-columns:1fr}}
+
+.cd-sec-title{font-family:var(--font-display,'Playfair Display',serif);font-size:15px;font-weight:600;color:var(--cd-t1);margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cd-sec-sub{font-size:11px;color:var(--cd-t3);font-weight:400}
+.cd-sec-title a{font-size:11px;color:var(--cd-blue);text-decoration:none}
+
+.cd-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.cd-card{background:#fff;border:1px solid var(--cd-line);padding:12px 14px}
+.cd-lbl{font-size:10px;color:var(--cd-t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.cd-val{font-size:14px;color:var(--cd-t1);font-weight:500;word-break:break-word}
+
+.cd-form{background:#fff;border:1px solid var(--cd-line);padding:14px;margin-bottom:20px}
+.cd-field{margin-bottom:10px}
+.cd-field label{display:block;font-size:10px;color:var(--cd-t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.cd-field input{width:100%;border:1px solid var(--cd-line);background:var(--cd-cream);padding:8px 10px;font-size:13px;font-family:inherit;color:var(--cd-t1)}
+.cd-field input:focus{outline:none;border-color:var(--cd-gold)}
+.cd-save{font-size:12px;font-weight:600;color:#fff;background:var(--cd-navy);border:1px solid var(--cd-navy);padding:7px 14px;cursor:pointer}
+.cd-save:hover{background:var(--cd-navy2)}
+
+.cd-etapas{list-style:none;margin:0;padding:0}
+.cd-etapa{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--cd-line)}
+.cd-etapa:last-child{border-bottom:none}
+.cd-tl{display:flex;flex-direction:column;align-items:center;width:18px;flex-shrink:0;padding-top:2px}
+.cd-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--cd-line);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cd-dot--done{background:var(--cd-navy);border-color:var(--cd-navy)}
+.cd-dot--active{border-color:var(--cd-gold);box-shadow:0 0 0 3px rgba(184,146,95,.2)}
+.cd-tl-line{width:2px;flex:1;min-height:14px;background:var(--cd-line);margin:3px auto}
+.cd-etapa-info{flex:1;min-width:0}
+.cd-etapa-name{font-size:13px;font-weight:500;color:var(--cd-t1)}
+.cd-etapa--done .cd-etapa-name{color:var(--cd-t3);text-decoration:line-through;text-decoration-color:var(--cd-line)}
+.cd-etapa--pending .cd-etapa-name{color:var(--cd-t3)}
+.cd-etapa--active .cd-etapa-name{color:var(--cd-navy);font-weight:600}
+.cd-etapa-date{font-size:10px;color:var(--cd-t3);margin-top:2px}
+.cd-etapa-btn{font-size:11px;font-weight:600;padding:5px 11px;background:var(--cd-navy);color:#fff;border:1px solid var(--cd-navy);cursor:pointer;flex-shrink:0}
+.cd-etapa-btn:hover{background:var(--cd-navy2)}
+
+/* right panel */
+.cd-assist{background:var(--cd-cream2);border:1px solid var(--cd-line);display:flex;flex-direction:column}
+.cd-assist-head{padding:14px 16px;border-bottom:1px solid var(--cd-line)}
+.cd-assist-title{font-family:var(--font-display,'Playfair Display',serif);font-size:14px;font-weight:600;color:var(--cd-t1);display:flex;align-items:center;gap:8px}
+.cd-assist-badge{font-size:9px;font-weight:700;background:var(--cd-gold);color:#fff;border-radius:99px;padding:2px 7px;margin-left:auto}
+.cd-assist-sub{font-size:11px;color:var(--cd-t3);margin-top:2px}
+.cd-assist-body{padding:14px 16px}
+
+.cd-msg{background:#fff;border:1px solid var(--cd-line);margin-bottom:14px}
+.cd-msg--active{border-color:var(--cd-gold);box-shadow:0 0 0 2px rgba(184,146,95,.14)}
+.cd-msg-head{padding:10px 12px;border-bottom:1px solid var(--cd-line);display:flex;align-items:center;gap:8px}
+.cd-msg-evento{font-size:10px;font-weight:700;color:var(--cd-t3);text-transform:uppercase;letter-spacing:.06em;flex:1;min-width:0}
+.cd-msg-time{font-size:10px;color:var(--cd-t3)}
+.cd-msg-status{font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px}
+.cd-st-new{background:var(--cd-gold);color:#fff}
+.cd-st-copied{background:var(--cd-green-bg);color:var(--cd-green-t);border:1px solid var(--cd-green-b)}
+.cd-st-ignored{background:var(--cd-cream2);color:var(--cd-t3);border:1px solid var(--cd-line)}
+.cd-msg-body{padding:12px}
+.cd-tom-lbl{font-size:10px;color:var(--cd-t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.cd-tom-row{display:flex;gap:5px;margin-bottom:12px}
+.cd-tom{flex:1;font-size:11px;padding:5px;border:1px solid var(--cd-line);background:transparent;color:var(--cd-t2);cursor:pointer;font-family:inherit}
+.cd-tom--act{background:var(--cd-navy);color:#fff;border-color:var(--cd-navy)}
+.cd-textarea{width:100%;border:1px solid var(--cd-line);padding:10px;font-size:12px;line-height:1.6;color:var(--cd-t1);background:var(--cd-cream);font-family:inherit;resize:vertical;min-height:120px}
+.cd-textarea:focus{outline:none;border-color:var(--cd-gold)}
+.cd-wpp{background:#e5ddd5;padding:10px;margin:12px 0}
+.cd-wpp-lbl{font-size:10px;color:var(--cd-t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.cd-wpp-bubble{background:#fff;padding:8px 11px;font-size:11px;line-height:1.6;color:#111;border-radius:0 8px 8px 8px;box-shadow:0 1px 2px rgba(0,0,0,.12);white-space:normal;word-break:break-word}
+.cd-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cd-btn{font-size:12px;font-weight:600;padding:9px;border:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+.cd-btn-copy{background:var(--cd-navy);color:#fff}
+.cd-btn-copy:hover{background:var(--cd-navy2)}
+.cd-btn-wpp{background:var(--cd-green-bg);color:var(--cd-green-t);border:1px solid var(--cd-green-b)}
+.cd-btn-ignore{background:transparent;border:1px solid var(--cd-line);color:var(--cd-t3);font-size:11px;grid-column:1/-1}
+.cd-btn-ignore:hover{background:var(--cd-cream2)}
+.cd-hist-lbl{display:flex;align-items:center;gap:8px;margin:16px 0 12px}
+.cd-hist-lbl span{font-size:11px;font-style:italic;color:var(--cd-t3)}
+.cd-hist-lbl::before,.cd-hist-lbl::after{content:'';flex:1;height:1px;background:var(--cd-line)}
+.cd-msg--hist .cd-msg-body{padding:10px 12px}
+.cd-msg-preview{font-size:11px;color:var(--cd-t2);line-height:1.5;white-space:pre-line}
+.cd-msg-meta{font-size:10px;color:var(--cd-t3);margin-top:6px}
+.cd-empty{font-size:12px;color:var(--cd-t3);padding:10px 0}
+</style>
+{% endblock %}
+
+{% block content %}
+{{ active_variants|json_script:"cd-active-variants" }}
+<div class="cd-detail">
+
+  <div class="cd-topline">
+    <a class="cd-back" href="{% url 'jobs' %}">‹ Trabalhos</a>
+    <div class="cd-tabs">
+      <span class="cd-tab cd-tab--active">Campanha</span>
+      <span class="cd-tab cd-tab--muted" title="Em breve">Financeiro</span>
+      <span class="cd-tab cd-tab--muted" title="Em breve">Jurídico</span>
+      <span class="cd-tab cd-tab--muted" title="Em breve">Atualizações{% if active_messages %}<b class="cd-tab-badge">{{ active_messages|length }}</b>{% endif %}</span>
+    </div>
+    <form class="cd-advance-form" method="post" action="{% url 'project_detail_advance' project.id %}">
+      {% csrf_token %}
+      <button type="submit" class="cd-advance" {% if not can_advance %}disabled{% endif %}>
+        {% if can_advance %}Avançar etapa ›{% else %}Campanha concluída ✓{% endif %}
+      </button>
+    </form>
+  </div>
+
+  <div class="cd-layout">
+    <!-- LEFT -->
+    <div class="cd-left">
+      <div class="cd-sec-title">Informações da campanha <span class="cd-sec-sub">{{ meta.service_category }} · {{ meta.total_value_text }}</span></div>
+      <div class="cd-meta">
+        <div class="cd-card"><div class="cd-lbl">Marca</div><div class="cd-val">{{ meta.company }}</div></div>
+        <div class="cd-card"><div class="cd-lbl">Tipo</div><div class="cd-val">{{ meta.service_category }}</div></div>
+        <div class="cd-card"><div class="cd-lbl">Valor contratado</div><div class="cd-val">{{ meta.total_value_text }}</div></div>
+        <div class="cd-card"><div class="cd-lbl">Prazo de entrega</div><div class="cd-val">{{ meta.due_text }}</div></div>
+      </div>
+
+      <div class="cd-sec-title">Dados para o assistente <a href="{% url 'project_edit' project.id %}">Editar trabalho ›</a></div>
+      <form class="cd-form" method="post" action="{% url 'project_detail_save' project.id %}">
+        {% csrf_token %}
+        <div class="cd-field">
+          <label for="cd-contact">Nome do contato (usado na saudação)</label>
+          <input id="cd-contact" type="text" name="contact_name" value="{{ anexos.contact_name|default:meta.contact_name }}" placeholder="Ex.: Mariana" maxlength="120">
+        </div>
+        <div class="cd-field">
+          <label for="cd-roteiro">Link do roteiro</label>
+          <input id="cd-roteiro" type="text" name="roteiro_link" value="{{ anexos.roteiro_link }}" placeholder="Cole o link do Google Docs/Drive" maxlength="500">
+        </div>
+        <div class="cd-field">
+          <label for="cd-entrega">Link de entrega</label>
+          <input id="cd-entrega" type="text" name="delivery_link" value="{{ anexos.delivery_link }}" placeholder="Cole o link do Drive/Dropbox" maxlength="500">
+        </div>
+        <button type="submit" class="cd-save">Salvar</button>
+      </form>
+
+      <div class="cd-sec-title">Etapas da campanha <span class="cd-sec-sub">{{ done_count }} de {{ total_count }} concluídas</span></div>
+      <ul class="cd-etapas">
+        {% for stage in stages %}
+          <li class="cd-etapa cd-etapa--{{ stage.state }}">
+            <div class="cd-tl">
+              <div class="cd-dot cd-dot--{{ stage.state }}">
+                {% if stage.state == 'done' %}<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{% endif %}
+              </div>
+              {% if not forloop.last %}<div class="cd-tl-line"></div>{% endif %}
+            </div>
+            <div class="cd-etapa-info">
+              <div class="cd-etapa-name">{{ stage.name }}</div>
+              <div class="cd-etapa-date">
+                {% if stage.state == 'done' %}Concluído{% if stage.date_text %} em {{ stage.date_text }}{% endif %}{% elif stage.state == 'active' %}Em andamento{% else %}Aguardando{% endif %}
+              </div>
+            </div>
+            {% if stage.state == 'active' and can_advance %}
+              <form method="post" action="{% url 'project_detail_advance' project.id %}">
+                {% csrf_token %}
+                <button type="submit" class="cd-etapa-btn">Concluir ›</button>
+              </form>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- RIGHT: ASSISTENTE -->
+    <div class="cd-assist">
+      <div class="cd-assist-head">
+        <div class="cd-assist-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cd-gold, #b8925f)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Assistente de Atualizações
+          {% if active_messages %}<span class="cd-assist-badge">{{ active_messages|length }} nova{{ active_messages|length|pluralize:",s" }}</span>{% endif %}
+        </div>
+        <div class="cd-assist-sub">Mensagens prontas para enviar à marca</div>
+      </div>
+      <div class="cd-assist-body">
+
+        {% for msg in active_messages %}
+          <div class="cd-msg cd-msg--active" data-msg-card data-msg-id="{{ msg.id }}">
+            <div class="cd-msg-head">
+              <div class="cd-msg-evento">{{ msg.stage_label }}</div>
+              <span class="cd-msg-time">{{ msg.created_text }}</span>
+              <span class="cd-msg-status cd-st-new">Nova</span>
+            </div>
+            <div class="cd-msg-body">
+              <div class="cd-tom-lbl">Tom da mensagem</div>
+              <div class="cd-tom-row">
+                {% for tone in tones %}
+                  <button type="button" class="cd-tom{% if tone.key == msg.tone %} cd-tom--act{% endif %}" data-tone-btn="{{ tone.key }}">{{ tone.label }}</button>
+                {% endfor %}
+              </div>
+              <form method="post" action="{% url 'project_message_action' project.id msg.id %}" data-msg-form>
+                {% csrf_token %}
+                <input type="hidden" name="tone" value="{{ msg.tone }}" data-tone-input>
+                <textarea class="cd-textarea" name="body" data-msg-textarea>{{ msg.body }}</textarea>
+                <div class="cd-wpp">
+                  <div class="cd-wpp-lbl">Como aparece no WhatsApp</div>
+                  <div class="cd-wpp-bubble" data-msg-preview></div>
+                </div>
+                <div class="cd-actions">
+                  <button type="submit" class="cd-btn cd-btn-copy" name="action" value="copy">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copiar
+                  </button>
+                  <button type="submit" class="cd-btn cd-btn-wpp" name="action" value="whatsapp">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Abrir WhatsApp
+                  </button>
+                  <button type="submit" class="cd-btn cd-btn-ignore" name="action" value="ignore">Ignorar esta sugestão</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        {% empty %}
+          <p class="cd-empty">Nenhuma mensagem pendente. Avance uma etapa para gerar a próxima atualização.</p>
+        {% endfor %}
+
+        <div class="cd-hist-lbl"><span>histórico</span></div>
+        {% for msg in history_messages %}
+          <div class="cd-msg cd-msg--hist">
+            <div class="cd-msg-head">
+              <div class="cd-msg-evento">{{ msg.stage_label }}</div>
+              <span class="cd-msg-time">{{ msg.actioned_text|default:msg.created_text }}</span>
+              <span class="cd-msg-status {% if msg.status == 'copied' %}cd-st-copied{% else %}cd-st-ignored{% endif %}">{{ msg.status_text }}</span>
+            </div>
+            <div class="cd-msg-body">
+              <div class="cd-msg-preview">{{ msg.body|truncatechars:160 }}</div>
+            </div>
+          </div>
+        {% empty %}
+          <p class="cd-empty">Nenhuma mensagem no histórico ainda.</p>
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const el = document.getElementById("cd-active-variants");
+  const VARIANTS = el ? JSON.parse(el.textContent) : {};
+
+  const escapeHtml = (s) => (s || "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  document.querySelectorAll("[data-msg-card]").forEach((card) => {
+    const msgId = card.dataset.msgId;
+    const variants = VARIANTS[msgId] || {};
+    const textarea = card.querySelector("[data-msg-textarea]");
+    const preview = card.querySelector("[data-msg-preview]");
+    const toneInput = card.querySelector("[data-tone-input]");
+    const form = card.querySelector("[data-msg-form]");
+    if (!textarea) return;
+
+    const renderPreview = () => {
+      preview.innerHTML = escapeHtml(textarea.value).replace(/\n/g, "<br>");
+    };
+    textarea.addEventListener("input", renderPreview);
+    renderPreview();
+
+    card.querySelectorAll("[data-tone-btn]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tone = btn.dataset.toneBtn;
+        if (variants[tone] !== undefined) textarea.value = variants[tone];
+        if (toneInput) toneInput.value = tone;
+        card.querySelectorAll("[data-tone-btn]").forEach((b) => b.classList.toggle("cd-tom--act", b === btn));
+        renderPreview();
+      });
+    });
+
+    if (form) {
+      form.addEventListener("submit", (event) => {
+        const action = event.submitter ? event.submitter.value : "";
+        if (action === "copy" || action === "whatsapp") {
+          try { navigator.clipboard.writeText(textarea.value); } catch (err) {}
+          if (action === "whatsapp") {
+            window.open("https://wa.me/?text=" + encodeURIComponent(textarea.value), "_blank");
+          }
+        }
+      });
+    }
+  });
+})();
+</script>
+{% endblock %}

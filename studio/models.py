@@ -308,6 +308,13 @@ class Project(WorkspaceOwnedModel):
     publication_date = models.DateField(null=True, blank=True)
     profile_managed = models.CharField(max_length=160, blank=True, default="")
     briefing = models.TextField(blank=True, default="")
+    # Detalhe do trabalho / Assistente de Atualizações (exclusivo Layfe).
+    # campaign_stage = etapa atual (0..6); campaign_stage_dates = {"idx": "ISO"}
+    contact_name = models.CharField(max_length=120, blank=True, default="")
+    campaign_stage = models.PositiveSmallIntegerField(default=0)
+    campaign_stage_dates = models.JSONField(default=dict, blank=True)
+    roteiro_link = models.CharField(max_length=500, blank=True, default="")
+    delivery_link = models.CharField(max_length=500, blank=True, default="")
 
     class Meta:
         ordering = ["stage", "due_date", "-updated_at"]
@@ -362,6 +369,33 @@ class ProjectMonthlyStatus(WorkspaceOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.project.company} · {self.month.strftime('%b/%Y')} · {self.status}"
+
+
+class ProjectUpdateMessage(WorkspaceOwnedModel):
+    """Mensagem do Assistente de Atualizações (detalhe do trabalho — recurso
+    exclusivo da Layfe). Cada avanço de etapa gera uma mensagem pronta pra
+    enviar à marca; o histórico guarda o que foi copiado/ignorado."""
+    STATUS_NEW = "new"
+    STATUS_COPIED = "copied"
+    STATUS_IGNORED = "ignored"
+    STATUS_CHOICES = [
+        (STATUS_NEW, "Nova"),
+        (STATUS_COPIED, "Copiada"),
+        (STATUS_IGNORED, "Ignorada"),
+    ]
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="update_messages")
+    stage_index = models.PositiveSmallIntegerField(default=0)
+    stage_label = models.CharField(max_length=80, blank=True, default="")
+    tone = models.CharField(max_length=20, default="neutro")
+    body = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW)
+    actioned_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    def __str__(self) -> str:
+        return f"{self.project.company} · {self.stage_label} · {self.status}"
 
 
 class FinanceEntry(WorkspaceOwnedModel):

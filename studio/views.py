@@ -52,15 +52,21 @@ from .forms import (
     WorkspaceSettingsForm,
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
-from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, Prospect, ServiceCategory
+from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ServiceCategory
 from .services import (
+    advance_campaign_stage,
+    campaign_detail_snapshot,
+    campaign_stage_message,
+    CAMPAIGN_TONES,
     confirm_follow_up_companies,
     dashboard_snapshot,
     distribution_snapshot,
     dismiss_follow_up_company,
+    ensure_campaign_started,
     finance_snapshot,
     get_or_create_workspace_for_user,
     infoproducts_snapshot,
+    is_layfe_account,
     jobs_snapshot_filtered,
     legal_snapshot,
     parse_month_value,
@@ -2192,6 +2198,83 @@ def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
     project.delete()
     messages.success(request, "Trabalho removido.")
     return redirect("jobs")
+
+
+# ── Detalhe do trabalho / Assistente de Atualizações (EXCLUSIVO Layfe) ──────
+# Toda entrada aqui passa por _layfe_project_or_404: qualquer conta que não
+# seja a da Layfe recebe 404 no servidor, mesmo adivinhando a URL.
+def _layfe_project_or_404(request: HttpRequest, pk: int) -> tuple:
+    workspace = _workspace(request)
+    if not is_layfe_account(workspace, request.user):
+        raise Http404("Pagina nao encontrada.")
+    project = get_object_or_404(Project, pk=pk, workspace=workspace)
+    return workspace, project
+
+
+@login_required
+def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, project = _layfe_project_or_404(request, pk)
+    ensure_campaign_started(project)
+    context = shell_context(
+        "jobs",
+        workspace,
+        f"{project.service_category_name} · {project.company}",
+        "Detalhe da campanha e assistente de atualizações.",
+        user=request.user,
+    )
+    context.update(campaign_detail_snapshot(project))
+    return render(request, "studio/project_detail.html", context)
+
+
+@login_required
+@require_POST
+def project_detail_advance(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, project = _layfe_project_or_404(request, pk)
+    message = advance_campaign_stage(project)
+    if message is None:
+        messages.info(request, "A campanha já está concluída.")
+    else:
+        messages.success(request, f'Etapa concluída · mensagem de "{message.stage_label}" pronta no assistente.')
+    return redirect("project_detail", pk=project.pk)
+
+
+@login_required
+@require_POST
+def project_detail_save(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, project = _layfe_project_or_404(request, pk)
+    project.contact_name = (request.POST.get("contact_name") or "").strip()[:120]
+    project.roteiro_link = (request.POST.get("roteiro_link") or "").strip()[:500]
+    project.delivery_link = (request.POST.get("delivery_link") or "").strip()[:500]
+    project.save(update_fields=["contact_name", "roteiro_link", "delivery_link", "updated_at"])
+    messages.success(request, "Dados da campanha atualizados.")
+    return redirect("project_detail", pk=project.pk)
+
+
+@login_required
+@require_POST
+def project_message_action(request: HttpRequest, pk: int, message_id: int) -> HttpResponse:
+    workspace, project = _layfe_project_or_404(request, pk)
+    message = get_object_or_404(
+        ProjectUpdateMessage, pk=message_id, project=project, workspace=workspace
+    )
+    action = request.POST.get("action")
+    if action in ("copy", "whatsapp"):
+        body = request.POST.get("body")
+        if body is not None:
+            message.body = body.strip()
+        tone = request.POST.get("tone")
+        if tone in CAMPAIGN_TONES:
+            message.tone = tone
+        message.status = ProjectUpdateMessage.STATUS_COPIED
+        message.actioned_at = timezone.now()
+        message.save(update_fields=["body", "tone", "status", "actioned_at", "updated_at"])
+        messages.success(request, "Mensagem marcada como enviada e salva no histórico.")
+    elif action == "ignore":
+        message.status = ProjectUpdateMessage.STATUS_IGNORED
+        message.actioned_at = timezone.now()
+        message.save(update_fields=["status", "actioned_at", "updated_at"])
+        messages.info(request, "Sugestão ignorada.")
+    return redirect("project_detail", pk=project.pk)
 
 
 @login_required
