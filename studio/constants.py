@@ -40,6 +40,17 @@ PROJECT_STATUS_TONES = {
     "Cancelado": "danger",
 }
 
+# Emoji de cada coluna padrao do kanban. So enfeite: o nome da coluna e o
+# status gravado no Project, entao o emoji fica FORA do dado e some sozinho
+# se o usuario renomear a coluna.
+PROJECT_STATUS_EMOJIS = {
+    "Briefing": "📝",
+    "Em produção": "🎬",
+    "Aguardando aprovação": "👀",
+    "Concluído": "✅",
+    "Cancelado": "❌",
+}
+
 LEGACY_PROJECT_STATUS_MAP = {
     "Aguardando produto": "Em produção",
     "Em gravacao": "Em produção",

@@ -1,6 +1,176 @@
 {% extends "studio/base.html" %}
 
 {% block content %}
+<style>
+    /* hidden com !important pra vencer display:flex das seções -----------*/
+    [data-jobs-view][hidden] { display: none !important; }
+
+    /* Toggle Lista/Kanban ------------------------------------------------ */
+    .jobs-view-toggle {
+        display: inline-flex;
+        background: #fff;
+        border: 0.5px solid rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 3px;
+        gap: 2px;
+        margin-bottom: 14px;
+    }
+    .jobs-view-toggle-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 14px;
+        border: none; background: transparent;
+        font-family: inherit; font-size: 12.5px; font-weight: 600;
+        color: #64748b; cursor: pointer;
+        border-radius: 7px;
+        transition: background .15s, color .15s;
+    }
+    .jobs-view-toggle-btn:hover { color: #1a2340; }
+    .jobs-view-toggle-btn.is-active {
+        background: #1a2340; color: #f5f0e8;
+    }
+
+    /* Kanban ------------------------------------------------------------- */
+    .jobs-kanban-wrap { margin-top: 8px; }
+    .jobs-kanban-board {
+        display: flex; gap: 12px; align-items: flex-start;
+        overflow-x: auto;
+        padding-bottom: 12px;
+    }
+    /* Mesma paleta do kanban de Prospeccao (.pipeline-column no app.css):
+       fundo #fafaf7, borda 0.06 e contador cinza. A bolinha reusa a classe
+       .pipeline-column-dot, entao o tema pinta as duas telas junto. */
+    .jobs-kanban-col {
+        background: #fafaf7;
+        border: 0.5px solid rgba(0,0,0,0.06);
+        border-radius: 10px;
+        width: 280px; flex-shrink: 0;
+        display: flex; flex-direction: column;
+        max-height: calc(100vh - 260px);
+    }
+    .jobs-kanban-col-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 11px 13px 10px;
+        border-bottom: 0.5px solid rgba(0,0,0,0.06);
+        border-radius: 10px 10px 0 0;
+    }
+    .jobs-kanban-col-name {
+        font-size: 12px; font-weight: 700; color: #1a2340;
+        letter-spacing: 0.2px;
+        display: inline-flex; align-items: center; gap: 6px; min-width: 0;
+    }
+    .jobs-kanban-col-emoji { font-size: 13px; line-height: 1; flex-shrink: 0; }
+    .jobs-kanban-col-count {
+        font-size: 11px; font-weight: 700; color: #555;
+        background: rgba(0,0,0,0.06); padding: 2px 8px; border-radius: 999px;
+        min-width: 22px; text-align: center;
+    }
+    .jobs-kanban-col-body {
+        padding: 9px; overflow-y: auto; flex: 1;
+        min-height: 60px;
+        display: flex; flex-direction: column; gap: 8px;
+    }
+    .jobs-kanban-col-body.is-dragover {
+        background: rgba(26,35,64,0.06);
+        outline: 1.5px dashed rgba(26,35,64,0.35);
+        outline-offset: -4px;
+    }
+    .jobs-kanban-card {
+        background: #fff;
+        border: 0.5px solid rgba(0,0,0,0.08);
+        border-left: 3px solid var(--card-accent, #1a2340);
+        border-radius: 8px;
+        padding: 10px 11px 9px;
+        cursor: grab;
+        transition: box-shadow .15s;
+    }
+    .jobs-kanban-card:hover { box-shadow: 0 3px 12px rgba(26,35,64,.08); }
+    .jobs-kanban-card:active { cursor: grabbing; }
+    .jobs-kanban-card.is-dragging { opacity: 0.4; }
+    .jobs-kanban-card-marca {
+        font-size: 12.5px; font-weight: 700; color: #1a2340;
+    }
+    .jobs-kanban-card-tipo {
+        font-size: 11px; color: #64748b; margin-top: 3px;
+    }
+    .jobs-kanban-card-meta {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-top: 8px; padding-top: 7px;
+        border-top: 0.5px solid rgba(0,0,0,0.06);
+    }
+    .jobs-kanban-card-prazo { font-size: 11px; color: #64748b; }
+    .jobs-kanban-card-prazo.is-overdue { color: #b84040; font-weight: 600; }
+    .jobs-kanban-card-valor {
+        font-size: 12px; font-weight: 700; color: #1a2340;
+    }
+    .jobs-kanban-card-actions {
+        display: flex; gap: 8px; margin-top: 6px;
+    }
+    .jobs-kanban-card-link {
+        font-size: 10.5px; font-weight: 600;
+        color: #64748b; text-decoration: none;
+        padding: 3px 0;
+    }
+    .jobs-kanban-card-link:hover { color: #1a2340; text-decoration: underline; }
+    .jobs-kanban-hint {
+        margin-top: 10px;
+        font-size: 12px; text-align: center;
+    }
+
+    /* Funis: tabs + botões de coluna --------------------------------------*/
+    .jobs-funnel-tabs {
+        display: flex; gap: 2px; margin-bottom: 16px;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        flex-wrap: wrap;
+    }
+    .jobs-funnel-tab {
+        padding: 10px 18px; background: transparent; border: none;
+        font-family: inherit; font-size: 13px; font-weight: 600; color: #64748b;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+    }
+    .jobs-funnel-tab:hover { color: #1a2340; }
+    .jobs-funnel-tab.is-active {
+        color: #1a2340; border-bottom-color: #1a2340;
+    }
+    .jobs-funnel-tab-add { color: #94a3b8; font-weight: 500; }
+    .jobs-funnel-tab-add:hover { color: #1a2340; }
+    .jobs-funnel-desc {
+        font-size: 12.5px; margin-bottom: 14px;
+    }
+
+    .jobs-kanban-col-name input {
+        border: none; background: transparent;
+        font: inherit; color: inherit;
+        width: 100%; outline: none;
+        padding: 0;
+    }
+    .jobs-kanban-col-name input:hover { background: rgba(255,251,234,0.5); }
+    .jobs-kanban-col-name input:focus {
+        background: #fffbea; border-radius: 4px; padding: 2px 4px; margin: -2px -4px;
+    }
+    .jobs-kanban-col-actions {
+        display: flex; align-items: center; gap: 6px;
+    }
+    .jobs-col-delete-btn {
+        background: transparent; border: none;
+        font-size: 16px; color: #cbd5e1; cursor: pointer;
+        padding: 0 4px; line-height: 1;
+    }
+    .jobs-col-delete-btn:hover { color: #b84040; }
+    .jobs-col-add {
+        background: #faf7f0;
+        border: 2px dashed rgba(0,0,0,0.1);
+        border-radius: 10px;
+        width: 280px; flex-shrink: 0;
+        padding: 14px; text-align: center;
+        cursor: pointer; color: #64748b;
+        font-family: inherit; font-size: 13px; font-weight: 600;
+        min-height: 100px; align-self: stretch;
+    }
+    .jobs-col-add:hover { background: #f0ebe1; color: #1a2340; }
+</style>
+
 <nav class="subtabs jobs-subtabs" aria-label="Tipos de trabalho">
     <button type="button" class="subtab subtab--active" aria-current="page">
         <span>Serviços</span>
@@ -18,7 +188,7 @@
 </nav>
 
 {% if not has_infoproducts_access %}
-    <section class="infoprodutos-empty">
+    <section class="infoprodutos-empty" data-jobs-view="lista">
         <div class="infoprodutos-empty-copy">
             <h3>Infoprodutos chegando em breve</h3>
             <p>Gerencie cursos, e-books, templates e outros produtos digitais em um só lugar.</p>
@@ -40,7 +210,7 @@
     </section>
 {% endif %}
 
-<article class="card jobs-filter-bar">
+<article class="card jobs-filter-bar" data-jobs-view="lista">
     <form method="get" class="jobs-filter-form" data-jobs-filter-form>
         {% if selected_month %}
             <input type="hidden" name="month" value="{{ selected_month.value }}">
@@ -69,7 +239,7 @@
     </form>
 </article>
 
-<section class="jobs-counters">
+<section class="jobs-counters" data-jobs-view="lista">
     {% for item in stats %}
         <button type="button" class="jobs-counter jobs-counter--{{ item.tone }}" data-jobs-kpi-open="{{ item.modal_id }}">
             <span class="jobs-counter-icon">
@@ -91,6 +261,18 @@
         </button>
     {% endfor %}
 </section>
+
+{# ============ VIEW TOGGLE Lista/Kanban ============ #}
+<div class="jobs-view-toggle" role="tablist" aria-label="Alternar visualização">
+    <button type="button" class="jobs-view-toggle-btn is-active" data-jobs-view-btn="lista" aria-selected="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Lista
+    </button>
+    <button type="button" class="jobs-view-toggle-btn" data-jobs-view-btn="kanban" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="10" y="3" width="6" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/></svg>
+        Kanban
+    </button>
+</div>
 
 {% for modal in stat_lists %}
     <div class="jobs-kpi-backdrop" data-jobs-kpi-modal="{{ modal.modal_id }}" hidden>
@@ -134,7 +316,7 @@
     </div>
 {% endfor %}
 
-<section class="stack-section jobs-section">
+<section class="stack-section jobs-section" data-jobs-view="lista">
     <div class="jobs-section-label jobs-section-label--danger">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Trabalhos atrasados
@@ -228,6 +410,79 @@
     {% endif %}
 </section>
 
+{# ============ KANBAN VIEW (hidden por padrão) ============ #}
+<section class="jobs-kanban-wrap" data-jobs-view="kanban" hidden>
+    {# Tabs de funis #}
+    <div class="jobs-funnel-tabs" data-funnel-tabs>
+        {% for funnel in funnels %}
+            <button type="button"
+                    class="jobs-funnel-tab{% if forloop.first %} is-active{% endif %}"
+                    data-funnel-tab="{{ funnel.id }}">{{ funnel.name }}</button>
+        {% endfor %}
+        <button type="button" class="jobs-funnel-tab jobs-funnel-tab-add" data-funnel-create title="Criar novo funil">+ Novo funil</button>
+    </div>
+
+    {# Boards, um por funil #}
+    {% for funnel in funnels %}
+        <div class="jobs-funnel-board" data-funnel-board="{{ funnel.id }}"{% if not forloop.first %} hidden{% endif %}>
+            {% if funnel.description %}
+                <p class="jobs-funnel-desc muted">{{ funnel.description }}</p>
+            {% endif %}
+            <div class="jobs-kanban-board">
+                {% for col in funnel.columns %}
+                    <div class="jobs-kanban-col" data-kanban-col="{{ col.id }}">
+                        <header class="jobs-kanban-col-head">
+                            <span class="jobs-kanban-col-name">
+                                <span class="pipeline-column-dot"></span>
+                                {% if col.emoji %}<span class="jobs-kanban-col-emoji" aria-hidden="true">{{ col.emoji }}</span>{% endif %}
+                                <input type="text"
+                                       value="{{ col.name }}"
+                                       data-column-rename="{{ col.id }}"
+                                       data-original="{{ col.name }}"
+                                       maxlength="80"
+                                       aria-label="Nome da coluna">
+                            </span>
+                            <span class="jobs-kanban-col-actions">
+                                <span class="jobs-kanban-col-count" data-kanban-count>{{ col.items|length }}</span>
+                                <button type="button" class="jobs-col-delete-btn"
+                                        data-column-delete="{{ col.id }}"
+                                        title="Remover coluna">&times;</button>
+                            </span>
+                        </header>
+                        <div class="jobs-kanban-col-body" data-kanban-drop="{{ col.name }}" data-kanban-col-id="{{ col.id }}">
+                            {% for item in col.items %}
+                                <article class="jobs-kanban-card"
+                                         draggable="true"
+                                         data-kanban-card="{{ item.id }}"
+                                         data-kanban-current="{{ item.status }}"
+                                         style="--card-accent: {{ item.accent }};">
+                                    <div class="jobs-kanban-card-marca">{{ item.company }}</div>
+                                    <div class="jobs-kanban-card-tipo">{{ item.service_category }}</div>
+                                    <div class="jobs-kanban-card-meta">
+                                        <span class="jobs-kanban-card-prazo{% if item.days_overdue %} is-overdue{% endif %}">Vence {{ item.due_text }}</span>
+                                        <span class="jobs-kanban-card-valor">{{ item.total_value }}</span>
+                                    </div>
+                                    <div class="jobs-kanban-card-actions">
+                                        <a href="{% url 'project_edit' item.id %}" class="jobs-kanban-card-link">Editar</a>
+                                        {% if is_layfe %}
+                                            <a href="{% url 'project_detail' item.id %}" class="jobs-kanban-card-link">Ver mais</a>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+                <button type="button" class="jobs-col-add" data-column-create="{{ funnel.id }}">+ Adicionar coluna</button>
+            </div>
+        </div>
+    {% empty %}
+        <p class="muted">Nenhum funil cadastrado ainda. Recarregue a página.</p>
+    {% endfor %}
+
+    <p class="muted jobs-kanban-hint">Arraste um card entre colunas para mudar o status. Clique no nome da coluna para renomear.</p>
+</section>
+
 <script>
     (() => {
         const form = document.querySelector("[data-jobs-filter-form]");
@@ -279,6 +534,257 @@
                 if (event.target === modal) {
                     closeAllModals();
                 }
+            });
+        });
+    })();
+
+    // Toggle Lista/Kanban + drag/drop --------------------------------------
+    (() => {
+        const toggleBtns = document.querySelectorAll("[data-jobs-view-btn]");
+        const views = document.querySelectorAll("[data-jobs-view]");
+        if (!toggleBtns.length || !views.length) return;
+
+        const STORAGE_KEY = "jobs.view";
+
+        const applyView = (view) => {
+            toggleBtns.forEach((btn) => {
+                const active = btn.dataset.jobsViewBtn === view;
+                btn.classList.toggle("is-active", active);
+                btn.setAttribute("aria-selected", active ? "true" : "false");
+            });
+            views.forEach((section) => {
+                section.hidden = section.dataset.jobsView !== view;
+            });
+            try { window.localStorage.setItem(STORAGE_KEY, view); } catch (e) {}
+        };
+
+        const initial = (() => {
+            try { return window.localStorage.getItem(STORAGE_KEY) || "lista"; }
+            catch (e) { return "lista"; }
+        })();
+        applyView(initial === "kanban" ? "kanban" : "lista");
+
+        toggleBtns.forEach((btn) => {
+            btn.addEventListener("click", () => applyView(btn.dataset.jobsViewBtn));
+        });
+
+        // Drag & drop -----------------------------------------------------
+        const csrfToken = (() => {
+            const el = document.querySelector("input[name=csrfmiddlewaretoken]");
+            return el ? el.value : "";
+        })();
+
+        const cards = document.querySelectorAll("[data-kanban-card]");
+        const dropZones = document.querySelectorAll("[data-kanban-drop]");
+
+        let dragCardEl = null;
+
+        cards.forEach((card) => {
+            card.addEventListener("dragstart", (e) => {
+                dragCardEl = card;
+                card.classList.add("is-dragging");
+                try { e.dataTransfer.setData("text/plain", card.dataset.kanbanCard); } catch (_) {}
+                if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+            });
+            card.addEventListener("dragend", () => {
+                card.classList.remove("is-dragging");
+                dropZones.forEach((z) => z.classList.remove("is-dragover"));
+                dragCardEl = null;
+            });
+        });
+
+        dropZones.forEach((zone) => {
+            zone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                zone.classList.add("is-dragover");
+                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+            });
+            zone.addEventListener("dragleave", (e) => {
+                if (!zone.contains(e.relatedTarget)) zone.classList.remove("is-dragover");
+            });
+            zone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                zone.classList.remove("is-dragover");
+                if (!dragCardEl) return;
+                const targetStatus = zone.dataset.kanbanDrop;
+                const currentStatus = dragCardEl.dataset.kanbanCurrent;
+                const projectId = dragCardEl.dataset.kanbanCard;
+                if (!targetStatus || !projectId || targetStatus === currentStatus) {
+                    return;
+                }
+
+                // Optimistic move + count update.
+                const originCol = dragCardEl.closest("[data-kanban-col]");
+                zone.appendChild(dragCardEl);
+                dragCardEl.dataset.kanbanCurrent = targetStatus;
+                const updateCount = (colEl) => {
+                    if (!colEl) return;
+                    const badge = colEl.querySelector("[data-kanban-count]");
+                    if (!badge) return;
+                    const body = colEl.querySelector("[data-kanban-drop]");
+                    badge.textContent = body ? body.querySelectorAll("[data-kanban-card]").length : 0;
+                };
+                updateCount(originCol);
+                updateCount(zone.closest("[data-kanban-col]"));
+
+                const formData = new FormData();
+                formData.append("status", targetStatus);
+                fetch(`/trabalhos/${projectId}/status/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    body: formData,
+                    credentials: "same-origin",
+                })
+                    .then((response) => {
+                        if (!response.ok) throw new Error("bad response");
+                        return response.json();
+                    })
+                    .then((data) => {
+                        if (!data.ok) throw new Error(data.error || "erro");
+                    })
+                    .catch(() => {
+                        // Rollback: reload for a clean state.
+                        window.location.reload();
+                    });
+            });
+        });
+
+        // Funnel tabs -----------------------------------------------------
+        const funnelTabs = document.querySelectorAll("[data-funnel-tab]");
+        const funnelBoards = document.querySelectorAll("[data-funnel-board]");
+        const FUNNEL_KEY = "jobs.funnel";
+        const showFunnel = (id) => {
+            let matched = false;
+            funnelTabs.forEach((tab) => {
+                const active = String(tab.dataset.funnelTab) === String(id);
+                tab.classList.toggle("is-active", active);
+                if (active) matched = true;
+            });
+            if (!matched && funnelTabs.length) {
+                funnelTabs[0].classList.add("is-active");
+                id = funnelTabs[0].dataset.funnelTab;
+            }
+            funnelBoards.forEach((board) => {
+                board.hidden = String(board.dataset.funnelBoard) !== String(id);
+            });
+            try { window.localStorage.setItem(FUNNEL_KEY, id); } catch (e) {}
+        };
+        let storedFunnel = null;
+        try { storedFunnel = window.localStorage.getItem(FUNNEL_KEY); } catch (e) {}
+        if (funnelTabs.length) {
+            showFunnel(storedFunnel || funnelTabs[0].dataset.funnelTab);
+        }
+        funnelTabs.forEach((tab) => {
+            tab.addEventListener("click", () => showFunnel(tab.dataset.funnelTab));
+        });
+
+        // Criar novo funil ------------------------------------------------
+        const funnelCreateBtn = document.querySelector("[data-funnel-create]");
+        if (funnelCreateBtn) {
+            funnelCreateBtn.addEventListener("click", () => {
+                const name = window.prompt("Nome do novo funil:");
+                if (!name || !name.trim()) return;
+                const fd = new FormData();
+                fd.append("name", name.trim());
+                fetch("/trabalhos/funis/novo/", {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    body: fd,
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro ao criar funil."); return; }
+                        window.location.reload();
+                    })
+                    .catch(() => alert("Falha de rede."));
+            });
+        }
+
+        // Renomear coluna (inline) ----------------------------------------
+        document.querySelectorAll("[data-column-rename]").forEach((input) => {
+            const persist = () => {
+                const newName = input.value.trim();
+                const original = input.dataset.original || "";
+                if (!newName || newName === original) {
+                    input.value = original;
+                    return;
+                }
+                const columnId = input.dataset.columnRename;
+                const fd = new FormData();
+                fd.append("name", newName);
+                fetch(`/trabalhos/funis/colunas/${columnId}/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    body: fd,
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro"); input.value = original; return; }
+                        input.dataset.original = newName;
+                        // Atualiza o data-kanban-drop do body dessa coluna e dos cards nela.
+                        const colEl = input.closest("[data-kanban-col]");
+                        if (colEl) {
+                            const body = colEl.querySelector("[data-kanban-drop]");
+                            if (body) {
+                                body.dataset.kanbanDrop = newName;
+                                body.querySelectorAll("[data-kanban-card]").forEach((c) => {
+                                    c.dataset.kanbanCurrent = newName;
+                                });
+                            }
+                        }
+                    })
+                    .catch(() => { alert("Falha de rede."); input.value = original; });
+            };
+            input.addEventListener("blur", persist);
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+                if (e.key === "Escape") { input.value = input.dataset.original || ""; input.blur(); }
+            });
+        });
+
+        // Adicionar coluna ------------------------------------------------
+        document.querySelectorAll("[data-column-create]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const name = window.prompt("Nome da nova coluna:");
+                if (!name || !name.trim()) return;
+                const funnelId = btn.dataset.columnCreate;
+                const fd = new FormData();
+                fd.append("name", name.trim());
+                fetch(`/trabalhos/funis/${funnelId}/colunas/novo/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    body: fd,
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro."); return; }
+                        window.location.reload();
+                    })
+                    .catch(() => alert("Falha de rede."));
+            });
+        });
+
+        // Remover coluna --------------------------------------------------
+        document.querySelectorAll("[data-column-delete]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const col = btn.closest("[data-kanban-col]");
+                const name = col ? col.querySelector("[data-column-rename]").value : "essa coluna";
+                if (!window.confirm(`Remover a coluna "${name}"? Os trabalhos nela vão para a primeira coluna do funil.`)) return;
+                const columnId = btn.dataset.columnDelete;
+                fetch(`/trabalhos/funis/colunas/${columnId}/excluir/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro."); return; }
+                        window.location.reload();
+                    })
+                    .catch(() => alert("Falha de rede."));
             });
         });
     })();

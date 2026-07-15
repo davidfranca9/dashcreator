@@ -729,7 +729,10 @@ class ProjectForm(forms.ModelForm):
                 "payment_due_day",
                 "entry_due_date",
                 "payment_due_date",
-                # --- Observações no final ---
+                # --- Informações complementares no final ---
+                "contrato_link",
+                "roteiro_link",
+                "delivery_link",
                 "note",
             ]
         )
@@ -968,6 +971,9 @@ class ProjectForm(forms.ModelForm):
             "extra_value",
             "withdrawal_date",
             "briefing",
+            "contrato_link",
+            "roteiro_link",
+            "delivery_link",
             "note",
         ]
         labels = {
@@ -1004,6 +1010,9 @@ class ProjectForm(forms.ModelForm):
             "extra_value": "Valor extra fixo",
             "withdrawal_date": "Data de saque",
             "briefing": "Briefing do contrato",
+            "contrato_link": "Contrato",
+            "roteiro_link": "Roteiro",
+            "delivery_link": "Link do drive",
             "note": "Observações",
         }
         widgets = {
@@ -1017,6 +1026,15 @@ class ProjectForm(forms.ModelForm):
             "withdrawal_date": forms.DateInput(attrs={"type": "date"}),
             "note": forms.Textarea(attrs={"rows": 5}),
             "briefing": forms.Textarea(attrs={"rows": 4}),
+            "contrato_link": forms.TextInput(
+                attrs={"class": "link-input", "placeholder": "ANEXE AQUI O LINK DO CONTRATO"}
+            ),
+            "roteiro_link": forms.TextInput(
+                attrs={"class": "link-input", "placeholder": "ANEXE AQUI O LINK DO ROTEIRO"}
+            ),
+            "delivery_link": forms.TextInput(
+                attrs={"class": "link-input", "placeholder": "ANEXE AQUI O LINK DO DRIVE"}
+            ),
         }
 
 

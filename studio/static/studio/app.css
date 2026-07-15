@@ -1547,6 +1547,14 @@ body.theme-dark .stat-card p {
     color: var(--muted);
 }
 
+/* Campos de link (contrato/roteiro/drive): placeholder mais claro que o
+   texto digitado, pra deixar claro que a instrucao nao e um valor salvo. */
+.project-form input.link-input::placeholder {
+    color: #9fb0c6;
+    letter-spacing: 0.04em;
+    opacity: 1;
+}
+
 .project-form-actions {
     display: flex;
     gap: 10px;

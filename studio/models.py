@@ -270,7 +270,16 @@ class Project(WorkspaceOwnedModel):
         blank=True,
     )
     stage = models.CharField(max_length=30, choices=PROJECT_STAGE_CHOICES, default="Fechado")
-    status = models.CharField(max_length=40, choices=PROJECT_STATUS_CHOICES, default="Briefing")
+    # status ainda tem PROJECT_STATUS_CHOICES como sugestão default dos forms,
+    # mas o Kanban aceita colunas customizadas do funil (validado no endpoint).
+    status = models.CharField(max_length=80, choices=PROJECT_STATUS_CHOICES, default="Briefing")
+    funnel = models.ForeignKey(
+        "Funnel",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="projects",
+    )
     total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     entry_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     received_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -315,6 +324,7 @@ class Project(WorkspaceOwnedModel):
     campaign_stage_dates = models.JSONField(default=dict, blank=True)
     roteiro_link = models.CharField(max_length=500, blank=True, default="")
     delivery_link = models.CharField(max_length=500, blank=True, default="")
+    contrato_link = models.CharField(max_length=500, blank=True, default="")
 
     class Meta:
         ordering = ["stage", "due_date", "-updated_at"]
@@ -369,6 +379,36 @@ class ProjectMonthlyStatus(WorkspaceOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.project.company} · {self.month.strftime('%b/%Y')} · {self.status}"
+
+
+class Funnel(WorkspaceOwnedModel):
+    """Funil de trabalho (kanban board). Cada workspace pode ter vários funis
+    (ex: 'Publicidade', 'Social Media', 'Consultoria'), com colunas próprias."""
+    name = models.CharField(max_length=80)
+    description = models.CharField(max_length=200, blank=True, default="")
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "name"]
+        unique_together = [("workspace", "name")]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class FunnelColumn(models.Model):
+    """Coluna de um funil (ex: 'Briefing', 'Em produção'). O nome da coluna vira
+    o valor do campo Project.status quando um card cai nela."""
+    funnel = models.ForeignKey(Funnel, on_delete=models.CASCADE, related_name="columns")
+    name = models.CharField(max_length=80)
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "name"]
+        unique_together = [("funnel", "name")]
+
+    def __str__(self) -> str:
+        return f"{self.funnel.name} / {self.name}"
 
 
 class ProjectUpdateMessage(WorkspaceOwnedModel):

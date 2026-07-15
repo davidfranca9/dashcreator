@@ -1209,6 +1209,8 @@ def follow_up_start_prospection(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def jobs(request: HttpRequest) -> HttpResponse:
+    from .constants import PROJECT_STATUS_EMOJIS
+
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
     context = shell_context(
@@ -1231,6 +1233,46 @@ def jobs(request: HttpRequest) -> HttpResponse:
             month_filter=month_filter,
         )
     )
+    from .models import Funnel
+
+    active_cards = context.get("active", [])
+    # Precisamos do funnel_id de cada projeto pra agrupar os cards nas colunas
+    # do funil correto. jobs_snapshot_filtered não traz esse campo hoje, então
+    # buscamos aqui em batch.
+    active_ids = [card["id"] for card in active_cards]
+    funnel_by_project = dict(
+        Project.objects.filter(id__in=active_ids).values_list("id", "funnel_id")
+    )
+    for card in active_cards:
+        card["funnel_id"] = funnel_by_project.get(card["id"])
+
+    funnels_qs = Funnel.objects.filter(workspace=workspace).prefetch_related("columns")
+    funnels_payload = []
+    for funnel in funnels_qs:
+        columns = []
+        for column in funnel.columns.all():
+            columns.append(
+                {
+                    "id": column.pk,
+                    "name": column.name,
+                    "emoji": PROJECT_STATUS_EMOJIS.get(column.name, ""),
+                    "items": [
+                        card
+                        for card in active_cards
+                        if card.get("funnel_id") == funnel.pk
+                        and card.get("status") == column.name
+                    ],
+                }
+            )
+        funnels_payload.append(
+            {
+                "id": funnel.pk,
+                "name": funnel.name,
+                "description": funnel.description,
+                "columns": columns,
+            }
+        )
+    context["funnels"] = funnels_payload
     return render(request, "studio/jobs.html", context)
 
 
@@ -2288,3 +2330,110 @@ def project_mark_delivered(request: HttpRequest, pk: int) -> HttpResponse:
     project.save(update_fields=["stage", "status", "progress", "updated_at"])
     messages.success(request, f"{project.company} marcado como entregue.")
     return redirect("jobs")
+
+
+@login_required
+@require_POST
+def project_set_status(request: HttpRequest, pk: int) -> JsonResponse:
+    from .models import Funnel, FunnelColumn
+
+    workspace = _workspace(request)
+    project = get_object_or_404(Project, pk=pk, workspace=workspace)
+    new_status = (request.POST.get("status") or "").strip()
+    if not new_status:
+        return JsonResponse({"ok": False, "error": "Status vazio."}, status=400)
+    # Valida contra as colunas do funil atual do projeto (se tiver funil).
+    if project.funnel_id:
+        valid = set(project.funnel.columns.values_list("name", flat=True))
+        if new_status not in valid:
+            return JsonResponse(
+                {"ok": False, "error": "Coluna não existe nesse funil."}, status=400
+            )
+    if project.status != new_status:
+        project.status = new_status
+        project.save(update_fields=["status", "updated_at"])
+    return JsonResponse({"ok": True, "status": new_status})
+
+
+@login_required
+@require_POST
+def funnel_create(request: HttpRequest) -> JsonResponse:
+    from .models import Funnel, FunnelColumn
+
+    workspace = _workspace(request)
+    name = (request.POST.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"ok": False, "error": "Informe um nome pro funil."}, status=400)
+    if Funnel.objects.filter(workspace=workspace, name=name).exists():
+        return JsonResponse({"ok": False, "error": "Já existe um funil com esse nome."}, status=400)
+    last_position = Funnel.objects.filter(workspace=workspace).count()
+    funnel = Funnel.objects.create(
+        workspace=workspace,
+        name=name,
+        description=(request.POST.get("description") or "").strip()[:200],
+        position=last_position,
+    )
+    # Cria uma primeira coluna vazia pro usuário customizar.
+    FunnelColumn.objects.create(funnel=funnel, name="Nova coluna", position=0)
+    return JsonResponse({"ok": True, "funnel_id": funnel.pk, "name": funnel.name})
+
+
+@login_required
+@require_POST
+def funnel_column_create(request: HttpRequest, funnel_id: int) -> JsonResponse:
+    from .models import Funnel, FunnelColumn
+
+    workspace = _workspace(request)
+    funnel = get_object_or_404(Funnel, pk=funnel_id, workspace=workspace)
+    name = (request.POST.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"ok": False, "error": "Informe um nome pra coluna."}, status=400)
+    if funnel.columns.filter(name=name).exists():
+        return JsonResponse({"ok": False, "error": "Já existe uma coluna com esse nome."}, status=400)
+    last_position = funnel.columns.count()
+    column = FunnelColumn.objects.create(funnel=funnel, name=name, position=last_position)
+    return JsonResponse({"ok": True, "column_id": column.pk, "name": column.name})
+
+
+@login_required
+@require_POST
+def funnel_column_update(request: HttpRequest, column_id: int) -> JsonResponse:
+    from .models import FunnelColumn, Project
+
+    workspace = _workspace(request)
+    column = get_object_or_404(FunnelColumn, pk=column_id, funnel__workspace=workspace)
+    new_name = (request.POST.get("name") or "").strip()
+    if not new_name:
+        return JsonResponse({"ok": False, "error": "Nome vazio."}, status=400)
+    if column.name == new_name:
+        return JsonResponse({"ok": True, "name": new_name})
+    if column.funnel.columns.filter(name=new_name).exclude(pk=column.pk).exists():
+        return JsonResponse({"ok": False, "error": "Já existe uma coluna com esse nome."}, status=400)
+    old_name = column.name
+    column.name = new_name
+    column.save(update_fields=["name"])
+    # Renomeia o status dos projetos que estavam nessa coluna.
+    Project.objects.filter(
+        workspace=workspace, funnel=column.funnel, status=old_name
+    ).update(status=new_name)
+    return JsonResponse({"ok": True, "name": new_name})
+
+
+@login_required
+@require_POST
+def funnel_column_delete(request: HttpRequest, column_id: int) -> JsonResponse:
+    from .models import FunnelColumn, Project
+
+    workspace = _workspace(request)
+    column = get_object_or_404(FunnelColumn, pk=column_id, funnel__workspace=workspace)
+    if column.funnel.columns.count() <= 1:
+        return JsonResponse(
+            {"ok": False, "error": "Um funil precisa de pelo menos uma coluna."}, status=400
+        )
+    # Move projetos dessa coluna pra primeira coluna restante do funil.
+    remaining = column.funnel.columns.exclude(pk=column.pk).order_by("position", "name").first()
+    Project.objects.filter(
+        workspace=workspace, funnel=column.funnel, status=column.name
+    ).update(status=remaining.name)
+    column.delete()
+    return JsonResponse({"ok": True, "moved_to": remaining.name})
