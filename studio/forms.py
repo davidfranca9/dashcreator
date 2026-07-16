@@ -541,6 +541,31 @@ class ProjectForm(forms.ModelForm):
                 self.initial["payment_due_day"] = payment_due_date.day
         self.fields["meeting_date"].widget.format = "%Y-%m-%d"
         self.fields["meeting_date"].input_formats = ["%Y-%m-%d"]
+        # Sincroniza as escolhas do dropdown 'Status' com as colunas do funil
+        # em que o projeto esta. Assim, ao mudar o status pelo form o Kanban
+        # ja reflete (o card cai na coluna correspondente). Se o workspace nao
+        # tem funil ainda, mantem PROJECT_STATUS_CHOICES.
+        if workspace is not None:
+            from .models import Funnel
+
+            current_funnel = None
+            if getattr(self.instance, "pk", None) and self.instance.funnel_id:
+                current_funnel = self.instance.funnel
+            else:
+                current_funnel = (
+                    Funnel.objects.filter(workspace=workspace).order_by("position", "name").first()
+                )
+            if current_funnel is not None:
+                columns = list(current_funnel.columns.all().order_by("position", "name"))
+                if columns:
+                    self.fields["status"].choices = [
+                        (col.name, f"{col.emoji} {col.name}".strip() if col.emoji else col.name)
+                        for col in columns
+                    ]
+                    # Grava o funil no instance pra novos projetos ficarem
+                    # ligados a essa coluna quando salvarem.
+                    if not getattr(self.instance, "funnel_id", None):
+                        self.instance.funnel = current_funnel
         service_category_choices = [("", "---------")]
         if workspace is not None:
             service_category_choices.extend(
@@ -933,6 +958,13 @@ class ProjectForm(forms.ModelForm):
             project.save()
             self.save_m2m()
         return project
+
+    def _get_validation_exclusions(self):
+        # Como as escolhas do 'status' vem do funil (colunas customizaveis),
+        # ignora a validacao de choices do model (que ainda tem os 5 padroes)
+        # no full_clean. A validacao real (nome pertence ao funil) e feita na
+        # UI/endpoint do Kanban; aqui deixamos qualquer nome de coluna passar.
+        return super()._get_validation_exclusions() | {"status"}
 
     class Meta:
         model = Project

@@ -149,6 +149,29 @@
     .jobs-kanban-col-name input:focus {
         background: #fffbea; border-radius: 4px; padding: 2px 4px; margin: -2px -4px;
     }
+    .jobs-kanban-col-emoji-input {
+        width: 24px !important; flex-shrink: 0;
+        text-align: center;
+        font-size: 14px !important;
+    }
+    .jobs-kanban-col-emoji-input::placeholder {
+        color: #cbd5e1; opacity: 0.6;
+    }
+    .jobs-kanban-col-grip {
+        cursor: grab;
+        color: #cbd5e1;
+        font-size: 11px; letter-spacing: -1px;
+        line-height: 1; user-select: none;
+        padding: 0 2px;
+        flex-shrink: 0;
+    }
+    .jobs-kanban-col-grip:hover { color: #64748b; }
+    .jobs-kanban-col-grip:active { cursor: grabbing; }
+    .jobs-kanban-col.is-dragging-col { opacity: 0.4; }
+    .jobs-kanban-col-head.is-drop-target {
+        background: #fffbea;
+        outline: 2px dashed #c9b99a; outline-offset: -3px;
+    }
     .jobs-kanban-col-actions {
         display: flex; align-items: center; gap: 6px;
     }
@@ -431,10 +454,18 @@
             <div class="jobs-kanban-board">
                 {% for col in funnel.columns %}
                     <div class="jobs-kanban-col" data-kanban-col="{{ col.id }}">
-                        <header class="jobs-kanban-col-head">
+                        <header class="jobs-kanban-col-head" data-col-drop-zone>
                             <span class="jobs-kanban-col-name">
+                                <span class="jobs-kanban-col-grip" data-col-grip title="Arrastar para reordenar" draggable="true">⋮⋮</span>
                                 <span class="pipeline-column-dot"></span>
-                                {% if col.emoji %}<span class="jobs-kanban-col-emoji" aria-hidden="true">{{ col.emoji }}</span>{% endif %}
+                                <input type="text"
+                                       class="jobs-kanban-col-emoji-input"
+                                       value="{{ col.emoji }}"
+                                       data-column-emoji="{{ col.id }}"
+                                       data-original="{{ col.emoji }}"
+                                       maxlength="4"
+                                       placeholder="😀"
+                                       aria-label="Emoji da coluna">
                                 <input type="text"
                                        value="{{ col.name }}"
                                        data-column-rename="{{ col.id }}"
@@ -744,6 +775,35 @@
             });
         });
 
+        // Editar emoji (inline) -------------------------------------------
+        document.querySelectorAll("[data-column-emoji]").forEach((input) => {
+            const persist = () => {
+                const newEmoji = input.value.trim();
+                const original = input.dataset.original || "";
+                if (newEmoji === original) return;
+                const columnId = input.dataset.columnEmoji;
+                const fd = new FormData();
+                fd.append("emoji", newEmoji);
+                fetch(`/trabalhos/funis/colunas/${columnId}/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    body: fd,
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro"); input.value = original; return; }
+                        input.dataset.original = newEmoji;
+                    })
+                    .catch(() => { alert("Falha de rede."); input.value = original; });
+            };
+            input.addEventListener("blur", persist);
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+                if (e.key === "Escape") { input.value = input.dataset.original || ""; input.blur(); }
+            });
+        });
+
         // Adicionar coluna ------------------------------------------------
         document.querySelectorAll("[data-column-create]").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -764,6 +824,67 @@
                         window.location.reload();
                     })
                     .catch(() => alert("Falha de rede."));
+            });
+        });
+
+        // Reordenar colunas (drag pelo grip) ------------------------------
+        document.querySelectorAll("[data-funnel-board]").forEach((board) => {
+            const funnelId = board.dataset.funnelBoard;
+            const grips = board.querySelectorAll("[data-col-grip]");
+            const dropZones = board.querySelectorAll("[data-col-drop-zone]");
+            let draggingCol = null;
+
+            grips.forEach((grip) => {
+                grip.addEventListener("dragstart", (e) => {
+                    draggingCol = grip.closest("[data-kanban-col]");
+                    if (!draggingCol) return;
+                    draggingCol.classList.add("is-dragging-col");
+                    try { e.dataTransfer.setData("text/col", draggingCol.dataset.kanbanCol); } catch (_) {}
+                    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+                });
+                grip.addEventListener("dragend", () => {
+                    if (draggingCol) draggingCol.classList.remove("is-dragging-col");
+                    dropZones.forEach((z) => z.classList.remove("is-drop-target"));
+                    draggingCol = null;
+                });
+            });
+
+            dropZones.forEach((zone) => {
+                zone.addEventListener("dragover", (e) => {
+                    if (!draggingCol) return;
+                    e.preventDefault();
+                    zone.classList.add("is-drop-target");
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                });
+                zone.addEventListener("dragleave", (e) => {
+                    if (!zone.contains(e.relatedTarget)) zone.classList.remove("is-drop-target");
+                });
+                zone.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    zone.classList.remove("is-drop-target");
+                    if (!draggingCol) return;
+                    const targetCol = zone.closest("[data-kanban-col]");
+                    if (!targetCol || targetCol === draggingCol) return;
+                    // Insere a coluna arrastada antes da alvo.
+                    targetCol.parentNode.insertBefore(draggingCol, targetCol);
+                    // Coleta a nova ordem de IDs.
+                    const newOrder = Array.from(
+                        board.querySelectorAll("[data-kanban-col]")
+                    ).map((c) => c.dataset.kanbanCol);
+                    const fd = new FormData();
+                    fd.append("column_ids", newOrder.join(","));
+                    fetch(`/trabalhos/funis/${funnelId}/colunas/ordem/`, {
+                        method: "POST",
+                        headers: { "X-CSRFToken": csrfToken },
+                        body: fd,
+                        credentials: "same-origin",
+                    })
+                        .then((r) => r.json())
+                        .then((data) => {
+                            if (!data.ok) { alert(data.error || "Erro ao salvar ordem."); window.location.reload(); }
+                        })
+                        .catch(() => { alert("Falha de rede."); window.location.reload(); });
+                });
             });
         });
 

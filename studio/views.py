@@ -2386,37 +2386,81 @@ def funnel_column_create(request: HttpRequest, funnel_id: int) -> JsonResponse:
     workspace = _workspace(request)
     funnel = get_object_or_404(Funnel, pk=funnel_id, workspace=workspace)
     name = (request.POST.get("name") or "").strip()
+    emoji = (request.POST.get("emoji") or "").strip()[:8]
     if not name:
         return JsonResponse({"ok": False, "error": "Informe um nome pra coluna."}, status=400)
     if funnel.columns.filter(name=name).exists():
         return JsonResponse({"ok": False, "error": "Já existe uma coluna com esse nome."}, status=400)
     last_position = funnel.columns.count()
-    column = FunnelColumn.objects.create(funnel=funnel, name=name, position=last_position)
-    return JsonResponse({"ok": True, "column_id": column.pk, "name": column.name})
+    column = FunnelColumn.objects.create(
+        funnel=funnel, name=name, emoji=emoji, position=last_position
+    )
+    return JsonResponse({"ok": True, "column_id": column.pk, "name": column.name, "emoji": column.emoji})
 
 
 @login_required
 @require_POST
 def funnel_column_update(request: HttpRequest, column_id: int) -> JsonResponse:
+    """Atualiza nome e/ou emoji da coluna. Ambos opcionais no POST:
+    - Se vier 'name', renomeia (e propaga pro Project.status).
+    - Se vier 'emoji', atualiza o emoji (aceita string vazia pra remover)."""
     from .models import FunnelColumn, Project
 
     workspace = _workspace(request)
     column = get_object_or_404(FunnelColumn, pk=column_id, funnel__workspace=workspace)
-    new_name = (request.POST.get("name") or "").strip()
-    if not new_name:
-        return JsonResponse({"ok": False, "error": "Nome vazio."}, status=400)
-    if column.name == new_name:
-        return JsonResponse({"ok": True, "name": new_name})
-    if column.funnel.columns.filter(name=new_name).exclude(pk=column.pk).exists():
-        return JsonResponse({"ok": False, "error": "Já existe uma coluna com esse nome."}, status=400)
-    old_name = column.name
-    column.name = new_name
-    column.save(update_fields=["name"])
-    # Renomeia o status dos projetos que estavam nessa coluna.
-    Project.objects.filter(
-        workspace=workspace, funnel=column.funnel, status=old_name
-    ).update(status=new_name)
-    return JsonResponse({"ok": True, "name": new_name})
+    update_fields = []
+
+    if "name" in request.POST:
+        new_name = (request.POST.get("name") or "").strip()
+        if not new_name:
+            return JsonResponse({"ok": False, "error": "Nome vazio."}, status=400)
+        if column.name != new_name:
+            if column.funnel.columns.filter(name=new_name).exclude(pk=column.pk).exists():
+                return JsonResponse({"ok": False, "error": "Já existe uma coluna com esse nome."}, status=400)
+            old_name = column.name
+            column.name = new_name
+            update_fields.append("name")
+            # Propaga rename pros projetos.
+            Project.objects.filter(
+                workspace=workspace, funnel=column.funnel, status=old_name
+            ).update(status=new_name)
+
+    if "emoji" in request.POST:
+        new_emoji = (request.POST.get("emoji") or "").strip()[:8]
+        if column.emoji != new_emoji:
+            column.emoji = new_emoji
+            update_fields.append("emoji")
+
+    if update_fields:
+        column.save(update_fields=update_fields)
+    return JsonResponse({"ok": True, "name": column.name, "emoji": column.emoji})
+
+
+@login_required
+@require_POST
+def funnel_column_reorder(request: HttpRequest, funnel_id: int) -> JsonResponse:
+    """Recebe uma lista ordenada de IDs de colunas no POST['column_ids']
+    (separados por virgula) e reescreve o campo `position` de cada uma."""
+    from .models import Funnel, FunnelColumn
+
+    workspace = _workspace(request)
+    funnel = get_object_or_404(Funnel, pk=funnel_id, workspace=workspace)
+    raw = (request.POST.get("column_ids") or "").strip()
+    ids: list[int] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if token.isdigit():
+            ids.append(int(token))
+    if not ids:
+        return JsonResponse({"ok": False, "error": "Nenhum ID valido."}, status=400)
+    valid_ids = set(funnel.columns.values_list("pk", flat=True))
+    if not set(ids).issubset(valid_ids):
+        return JsonResponse(
+            {"ok": False, "error": "Alguma coluna nao pertence a esse funil."}, status=400
+        )
+    for position, col_id in enumerate(ids):
+        FunnelColumn.objects.filter(pk=col_id).update(position=position)
+    return JsonResponse({"ok": True})
 
 
 @login_required

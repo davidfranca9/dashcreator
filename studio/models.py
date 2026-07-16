@@ -401,6 +401,7 @@ class FunnelColumn(models.Model):
     o valor do campo Project.status quando um card cai nela."""
     funnel = models.ForeignKey(Funnel, on_delete=models.CASCADE, related_name="columns")
     name = models.CharField(max_length=80)
+    emoji = models.CharField(max_length=8, blank=True, default="")
     position = models.PositiveIntegerField(default=0)
 
     class Meta:
