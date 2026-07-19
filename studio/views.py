@@ -1154,38 +1154,71 @@ def planning(request: HttpRequest) -> HttpResponse:
         "urgentes": sum(1 for p in payload if p["priority"] in ("urgente", "alta")),
     }
 
-    # Resumo semanal: contadores da semana corrente (segunda a domingo).
+    # Calendario mensal: navegacao por ?mes=YYYY-MM. Default = mes atual.
     from datetime import timedelta
+    import calendar
 
-    monday = today - timedelta(days=today.weekday())
-    sunday = monday + timedelta(days=6)
-    done_this_week = Task.objects.filter(
-        workspace=workspace,
-        dismissed=False,
-        done=True,
-        done_at__date__gte=monday,
-        done_at__date__lte=sunday,
-    ).count()
-    due_this_week = sum(
-        1 for p in payload
-        if p["due_date"] and monday <= p["due_date"] <= sunday and p["status"] != "atrasada"
-    )
-    weekly_summary = {
-        "monday": monday,
-        "sunday": sunday,
-        "range_label": f"{monday.day}/{monday.month} a {sunday.day}/{sunday.month}",
-        "abertas": counts["todas"],
-        "hoje": counts["hoje"],
-        "atrasadas": counts["atrasadas"],
-        "urgentes": counts["urgentes"],
-        "concluidas": done_this_week,
-        "prazo_semana": due_this_week,
+    mes_raw = (request.GET.get("mes") or "").strip()
+    try:
+        year, month = [int(x) for x in mes_raw.split("-")]
+        first_day = date(year, month, 1)
+    except (ValueError, TypeError):
+        first_day = today.replace(day=1)
+    year, month = first_day.year, first_day.month
+
+    # Descobre prev/next mes.
+    prev_last = first_day - timedelta(days=1)
+    prev_month_label = f"{prev_last.year}-{prev_last.month:02d}"
+    last_day_num = calendar.monthrange(year, month)[1]
+    next_first = date(year, month, last_day_num) + timedelta(days=1)
+    next_month_label = f"{next_first.year}-{next_first.month:02d}"
+
+    meses_pt = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+    ]
+    month_label = f"{meses_pt[month - 1]} de {year}"
+
+    # Monta as celulas: cada semana e uma lista de 7 celulas (segunda a domingo).
+    # Cada celula: {"date": date, "in_month": bool, "is_today": bool, "items": [payloads]}.
+    # Descobre a segunda que abre a primeira semana (talvez do mes anterior).
+    start = first_day - timedelta(days=first_day.weekday())
+    # Descobre o domingo que fecha a ultima semana.
+    last_day = date(year, month, last_day_num)
+    end = last_day + timedelta(days=(6 - last_day.weekday()))
+
+    items_by_date: dict[date, list] = {}
+    for p in payload:
+        if p["due_date"]:
+            items_by_date.setdefault(p["due_date"], []).append(p)
+
+    weeks = []
+    cursor = start
+    while cursor <= end:
+        week = []
+        for i in range(7):
+            d = cursor + timedelta(days=i)
+            week.append({
+                "date": d,
+                "in_month": d.month == month,
+                "is_today": d == today,
+                "items": items_by_date.get(d, []),
+            })
+        weeks.append(week)
+        cursor += timedelta(days=7)
+
+    calendar_ctx = {
+        "month_label": month_label,
+        "prev_month": prev_month_label,
+        "next_month": next_month_label,
+        "weeks": weeks,
+        "week_headers": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
     }
 
     context.update({
         "pendencias": payload,
         "counts": counts,
-        "weekly_summary": weekly_summary,
+        "calendar": calendar_ctx,
     })
     return render(request, "studio/planning.html", context)
 
