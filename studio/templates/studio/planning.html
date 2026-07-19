@@ -160,15 +160,10 @@
 
 <div data-pendencias>
 
-    <div class="pend-title-row">
-        <span class="pend-title">Pendências</span>
-    </div>
-    <div class="pend-title-underline"></div>
-
     <div class="pend-count-pills">
         <span class="pend-count-pill is-open">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
-            {{ counts.abertas }} abertas
+            {{ counts.hoje }} para hoje
         </span>
         {% if counts.urgentes %}
             <span class="pend-count-pill is-urgent">
@@ -185,9 +180,8 @@
 
     <div class="pend-tabs" data-tabs>
         <button type="button" class="pend-tab is-active" data-tab="todas">Todas <span class="pend-tab-count">{{ counts.todas }}</span></button>
-        <button type="button" class="pend-tab" data-tab="aberta">Abertas <span class="pend-tab-count">{{ counts.abertas }}</span></button>
-        <button type="button" class="pend-tab" data-tab="agendada">Agendadas <span class="pend-tab-count">{{ counts.agendadas }}</span></button>
-        <button type="button" class="pend-tab" data-tab="concluida">Concluídas <span class="pend-tab-count">{{ counts.concluidas }}</span></button>
+        <button type="button" class="pend-tab" data-tab="hoje">Hoje <span class="pend-tab-count">{{ counts.hoje }}</span></button>
+        <button type="button" class="pend-tab" data-tab="atrasada">Atrasadas <span class="pend-tab-count">{{ counts.atrasadas }}</span></button>
     </div>
 
     <div class="pend-cats" data-cats>
@@ -237,7 +231,7 @@
                     {% endif %}
                     {% if p.priority == 'urgente' %}<span class="pend-chip pri-urgente">Urgente</span>{% endif %}
                     {% if p.priority == 'alta' %}<span class="pend-chip pri-alta">Alta</span>{% endif %}
-                    <span class="pend-chip status-{{ p.status }}">{% if p.status == 'aberta' %}Aberta{% elif p.status == 'agendada' %}Agendada{% else %}Concluída{% endif %}</span>
+                    {% if p.status == 'atrasada' %}<span class="pend-chip pri-urgente">Atrasada</span>{% endif %}
                 </div>
                 <div class="pend-actions">
                     <button type="button" class="pend-action-btn is-primary" data-task-schedule="{{ p.id }}">

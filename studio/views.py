@@ -1106,21 +1106,21 @@ def planning(request: HttpRequest) -> HttpResponse:
     sync_dashboard_auto_tasks(workspace)
 
     tasks = list(
-        Task.objects.filter(workspace=workspace, dismissed=False)
+        Task.objects.filter(workspace=workspace, dismissed=False, done=False)
         .select_related("project")
     )
     today = timezone.localdate()
     priority_rank = {"urgente": 0, "alta": 1, "media": 2, "baixa": 3}
 
-    def _status(t: "Task") -> str:
-        if t.done:
-            return "concluida"
-        return "agendada" if t.due_date else "aberta"
+    def _bucket(t: "Task") -> str:
+        # 'atrasada' se venceu, senao 'hoje' (inclui sem data e vence hoje).
+        if t.due_date and t.due_date < today:
+            return "atrasada"
+        return "hoje"
 
     payload = []
     for t in tasks:
-        st = _status(t)
-        is_overdue = bool(t.due_date and t.due_date < today and not t.done)
+        bucket = _bucket(t)
         payload.append({
             "id": t.pk,
             "title": t.title,
@@ -1128,13 +1128,13 @@ def planning(request: HttpRequest) -> HttpResponse:
             "category": t.category or ("Profissional" if t.auto_key else ""),
             "duration": t.estimated_duration_min,
             "due_date": t.due_date,
-            "status": st,
-            "is_overdue": is_overdue,
+            "status": bucket,  # hoje | atrasada
+            "is_overdue": bucket == "atrasada",
             "is_auto": bool(t.auto_key),
             "brand": t.project.company if t.project else "",
         })
     payload.sort(key=lambda p: (
-        {"aberta": 0, "agendada": 1, "concluida": 2}[p["status"]],
+        {"hoje": 0, "atrasada": 1}[p["status"]],
         priority_rank.get(p["priority"], 4),
         p["due_date"] or today,
         -p["id"],
@@ -1142,10 +1142,9 @@ def planning(request: HttpRequest) -> HttpResponse:
 
     counts = {
         "todas": len(payload),
-        "abertas": sum(1 for p in payload if p["status"] == "aberta"),
-        "agendadas": sum(1 for p in payload if p["status"] == "agendada"),
-        "concluidas": sum(1 for p in payload if p["status"] == "concluida"),
-        "urgentes": sum(1 for p in payload if p["priority"] in ("urgente", "alta") and p["status"] != "concluida"),
+        "hoje": sum(1 for p in payload if p["status"] == "hoje"),
+        "atrasadas": sum(1 for p in payload if p["status"] == "atrasada"),
+        "urgentes": sum(1 for p in payload if p["priority"] in ("urgente", "alta")),
     }
 
     # Categorias: as fixas + as customizadas que aparecerem no workspace.
