@@ -80,6 +80,17 @@ _FRIENDLY_LABELS = {
     "sou-marca": "Sou marca",
     "ver-portfolio": "Ver portfólio",
     "whatsapp-marca": "WhatsApp da marca",
+    # fluxo "Sou marca" (layfeamorim.com)
+    "marca-quero-social": "Marca · Quero social",
+    "marca-enviou-social": "Marca · ENVIOU o formulário social",
+    "marca-enviar-proposta": "Marca · Enviar proposta por e-mail",
+    # fluxo "Sou creator" (layfeamorim.com)
+    "creator-lista-espera": "Creator · Abriu lista de espera",
+    "creator-enviou-lista": "Creator · ENTROU na lista de espera",
+    "creator-ver-cronograma": "Creator · Ver cronograma da mentoria",
+    "creator-conhecer-app": "Creator · Conhecer o app",
+    "creator-ver-planner": "Creator · Ver planner",
+    "creator-conhecer-clube": "Creator · Conhecer o clube",
     # origens (utm_content)
     "link_in_bio": "Link na bio",
     "link-in-bio": "Link na bio",

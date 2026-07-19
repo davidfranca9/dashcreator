@@ -1040,7 +1040,7 @@
         <span class="choice-icon" aria-hidden="true">📈</span>
         <h3 class="choice-title">Social Media</h3>
         <p class="choice-desc">Estratégia e gestão para o seu Instagram.</p>
-        <button type="button" class="choice-button" onclick="openSocial()">Quero social</button>
+        <button type="button" class="choice-button" data-track="marca-quero-social" onclick="openSocial()">Quero social</button>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">💬</span>
@@ -1052,7 +1052,7 @@
         <span class="choice-icon" aria-hidden="true">📩</span>
         <h3 class="choice-title">Enviar proposta personalizada</h3>
         <p class="choice-desc">Tem uma proposta específica? Envia ela pra mim!</p>
-        <a class="choice-button" href="mailto:ugclayfeamorim@gmail.com">Enviar proposta</a>
+        <a class="choice-button" data-track="marca-enviar-proposta" href="mailto:ugclayfeamorim@gmail.com">Enviar proposta</a>
       </article>
     </div>
   </div>
@@ -1090,31 +1090,31 @@
         <span class="choice-icon" aria-hidden="true">🎓</span>
         <h3 class="choice-title">Lista de Espera</h3>
         <p class="choice-desc">Entre na lista da próxima turma da mentoria UGC e receba os detalhes em primeira mão.</p>
-        <button type="button" class="choice-button" onclick="openWaitlist()">Entrar na lista</button>
+        <button type="button" class="choice-button" data-track="creator-lista-espera" onclick="openWaitlist()">Entrar na lista</button>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">🗓️</span>
         <h3 class="choice-title">Cronograma</h3>
         <p class="choice-desc">Veja como funciona o acompanhamento, os encontros e o caminho da mentoria.</p>
-        <a class="choice-button" href="https://wa.me/5571997238419?text=Quero%20ver%20o%20cronograma%20da%20mentoria%20UGC" target="_blank" rel="noopener">Ver cronograma</a>
+        <a class="choice-button" data-track="creator-ver-cronograma" href="https://wa.me/5571997238419?text=Quero%20ver%20o%20cronograma%20da%20mentoria%20UGC" target="_blank" rel="noopener">Ver cronograma</a>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">💻</span>
         <h3 class="choice-title">Dash Creator</h3>
         <p class="choice-desc">App de gestão para creators organizarem projetos, rotina, entregas e financeiro.</p>
-        <a class="choice-button" href="https://thecreatorsclub.com.br/dashcreator/" target="_blank" rel="noopener">Conhecer app</a>
+        <a class="choice-button" data-track="creator-conhecer-app" href="https://thecreatorsclub.com.br/dashcreator/" target="_blank" rel="noopener">Conhecer app</a>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">📝</span>
         <h3 class="choice-title">Planner Creator</h3>
         <p class="choice-desc">Organize sua produção de conteúdo, ideias, metas e próximos passos como creator.</p>
-        <a class="choice-button" href="https://thecreatorsclub.com.br/planner/" target="_blank" rel="noopener">Ver planner</a>
+        <a class="choice-button" data-track="creator-ver-planner" href="https://thecreatorsclub.com.br/planner/" target="_blank" rel="noopener">Ver planner</a>
       </article>
       <article class="choice-card">
         <span class="choice-icon" aria-hidden="true">✨</span>
         <h3 class="choice-title">The Creators Club</h3>
         <p class="choice-desc">Comunidade para creators que querem pensar estratégia, conteúdo e negócio com clareza.</p>
-        <a class="choice-button" href="https://thecreatorsclub.com.br" target="_blank" rel="noopener">Conhecer clube</a>
+        <a class="choice-button" data-track="creator-conhecer-clube" href="https://thecreatorsclub.com.br" target="_blank" rel="noopener">Conhecer clube</a>
       </article>
     </div>
   </div>
@@ -1155,7 +1155,7 @@
         <label class="field-label" for="wl-email">E-mail</label>
         <input id="wl-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email">
       </div>
-      <button type="submit" class="modal-submit">Entrar na lista</button>
+      <button type="submit" class="modal-submit" data-track="creator-enviou-lista">Entrar na lista</button>
       <p class="modal-note">Seus dados são usados apenas para o contato da mentoria.</p>
     </form>
 
@@ -1194,7 +1194,7 @@
         <label class="field-label" for="sm-msg">O que você precisa?</label>
         <input id="sm-msg" name="mensagem" type="text" placeholder="Ex: gestão de Instagram, conteúdo…" autocomplete="off">
       </div>
-      <button type="submit" class="modal-submit">Quero social media</button>
+      <button type="submit" class="modal-submit" data-track="marca-enviou-social">Quero social media</button>
       <p class="modal-note">Seus dados são usados apenas para esse contato.</p>
     </form>
 
