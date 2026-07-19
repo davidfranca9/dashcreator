@@ -261,8 +261,8 @@ class StoriesPanelTests(TestCase):
         self.assertEqual(profiles["layfe"], 2)
         self.assertEqual(profiles["tcc"], 1)
         names = {r["label"] for r in st["stories"]}
-        self.assertIn("layfe · promo", names)
-        self.assertIn("tcc · bastidores", names)
+        self.assertIn("@layfeamorim · promo", names)
+        self.assertIn("@thecreatorssclubb · bastidores", names)
 
     def test_without_story_name_groups_by_day(self):
         PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe", visitor="v1", session="s1")
@@ -270,7 +270,7 @@ class StoriesPanelTests(TestCase):
         st = self._ctx()["stories"]
         self.assertEqual(st["views"], 2)
         # vira "layfe · dd/mm"
-        self.assertTrue(any(r["label"].startswith("layfe · ") for r in st["stories"]))
+        self.assertTrue(any(r["label"].startswith("@layfeamorim · ") for r in st["stories"]))
 
     def test_counts_cta_clicks_from_story_sessions(self):
         PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe", visitor="v1", session="s1")
@@ -288,3 +288,29 @@ class StoriesPanelTests(TestCase):
         PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v3", session="s3")
         pages = {r["path"]: r["n"] for r in self._ctx()["top_pages"]}
         self.assertEqual(pages["/dashcreator/"], 3)
+
+    def test_fixed_profile_registry(self):
+        """Tags sao fixas: cada perfil tem a sua, e tag fora da lista
+        aparece marcada como nao cadastrada (em vez de sumir)."""
+        from studio.metrics import _profile_name, INSTAGRAM_PROFILES
+        self.assertIn("layfe", INSTAGRAM_PROFILES)
+        self.assertEqual(_profile_name("layfe"), "@layfeamorim")
+        self.assertEqual(_profile_name("tcc"), "@thecreatorssclubb")
+        self.assertIn("não cadastrada", _profile_name("layfee"))  # erro de digitacao
+
+    def test_registered_profile_shows_handle(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfee", visitor="v2", session="s2")
+        st = self._ctx()["stories"]
+        labels = {r["label"] for r in st["profiles"]}
+        self.assertIn("@layfeamorim", labels)
+        # a tag errada nao se mistura com a certa e fica visivel pra correcao
+        self.assertTrue(any("não cadastrada" in l for l in labels))
+
+    def test_tag_guide_lists_ready_links(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d", visitor="v1", session="s1")
+        resp = self.c.get(reverse("metrics_dashboard") + "?site=dash&days=30")
+        guide = resp.context["stories"]["tag_guide"]
+        urls = {g["tag"]: g["url"] for g in guide}
+        self.assertEqual(urls["layfe"], "thecreatorsclub.com.br/dashcreator#layfe")
+        self.assertContains(resp, "Suas tags fixas")

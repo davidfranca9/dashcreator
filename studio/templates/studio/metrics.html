@@ -49,6 +49,11 @@
     .kpi--meta .n{ color:#1877F2; }
     .kpi--org .n{ color:#2d7a5f; }
     .kpi--story .n{ color:#b8437f; }
+    .taglist{ list-style:none; display:flex; flex-direction:column; gap:10px; }
+    .taglist li{ display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+      padding:10px 12px; background:var(--paper); border:1px solid var(--line); }
+    .tag-profile{ font-size:13px; font-weight:700; color:var(--navy); min-width:150px; }
+    .tag-url{ font-size:12.5px; color:var(--ink-soft); word-break:break-all; }
     .note{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
     @media(max-width:720px){ .kpis.k4{ grid-template-columns:1fr 1fr; } }
 
@@ -186,16 +191,27 @@
       {% else %}
         <div class="card empty">
           <div class="big">Nenhum story marcado ainda</div>
-          <p class="muted">
-            No sticker de link do story, use o endereço com uma tag no fim.<br><br>
-            Só o perfil (o painel separa por dia sozinho):<br>
-            <code>thecreatorsclub.com.br/dashcreator#layfe</code><br><br>
-            Perfil e nome do story:<br>
-            <code>thecreatorsclub.com.br/dashcreator#layfe.bastidores</code><br><br>
-            Use uma tag diferente para cada perfil seu do Instagram.
-          </p>
+          <p class="muted">Use no sticker de link do story um dos endereços fixos abaixo.</p>
         </div>
       {% endif %}
+
+      <div class="card">
+        <h2>Suas tags fixas</h2>
+        <ul class="taglist">
+          {% for item in stories.tag_guide %}
+            <li>
+              <span class="tag-profile">{{ item.profile }}</span>
+              <code class="tag-url">{{ item.url }}</code>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="note">
+          Cole o endereço do perfil correspondente no sticker de link do story. A tag é sempre a mesma,
+          não precisa mudar a cada post: o painel separa cada story por dia automaticamente.<br>
+          Se quiser diferenciar dois stories do mesmo dia, acrescente um ponto e um nome no fim,
+          por exemplo <code>{{ stories.tag_guide.0.url }}.bastidores</code>.
+        </p>
+      </div>
 
       <!-- ── PAINEL 1: ORGÂNICO ──────────────────────────────────────── -->
       <div class="sec-head">

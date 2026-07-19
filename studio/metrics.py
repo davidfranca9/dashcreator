@@ -153,6 +153,29 @@ _PAGE_ANCHORS = {
 }
 
 
+# Registro FIXO de tags: uma tag por perfil do Instagram. Só o que estiver
+# aqui é considerado perfil conhecido. Tag fora da lista continua sendo
+# contada, porém marcada como "não cadastrada", para você notar erro de
+# digitação em vez de perder a visita silenciosamente.
+INSTAGRAM_PROFILES = {
+    "layfe": "@layfeamorim",
+    "tcc": "@thecreatorssclubb",
+}
+
+# Endereço base de cada site, usado para montar o link pronto de cada perfil.
+SITE_BASE_URL = {
+    "layfe": "layfeamorim.com",
+    "tcc": "thecreatorsclub.com.br",
+    "dash": "thecreatorsclub.com.br/dashcreator",
+    "portfolio": "layfeamorim.com/portfolio",
+}
+
+
+def _profile_name(tag: str) -> str:
+    """Nome de exibição do perfil a partir da tag fixa."""
+    return INSTAGRAM_PROFILES.get(tag, f"#{tag} (não cadastrada)")
+
+
 def _story_tag(path: str) -> tuple[str, str] | None:
     """Extrai (perfil, story) do #tag do link. None quando não há tag ou
     quando é âncora de seção da própria página."""
@@ -184,7 +207,8 @@ def _stories_stats(base, clicks, total_views) -> dict:
         profile, story = _story_tag(path)
         by_profile[profile] += 1
         # sem nome de story, separa por dia (cada post vira uma linha)
-        key = f"{profile} · {story}" if story else f"{profile} · {created_at.strftime('%d/%m')}"
+        nome = _profile_name(profile)
+        key = f"{nome} · {story}" if story else f"{nome} · {created_at.strftime('%d/%m')}"
         by_story[key] += 1
 
     story_sessions = {s for _p, _c, s in rows if s}
@@ -198,7 +222,10 @@ def _stories_stats(base, clicks, total_views) -> dict:
         if story_sessions
         else 0
     )
-    profiles = [{"label": _pretty_label(p), "raw": p, "n": n} for p, n in by_profile.most_common(15)]
+    profiles = [
+        {"label": _profile_name(p), "raw": p, "n": n, "known": p in INSTAGRAM_PROFILES}
+        for p, n in by_profile.most_common(15)
+    ]
     stories = [{"label": k, "raw": k, "n": n} for k, n in by_story.most_common(15)]
     return {
         "views": views,
@@ -352,6 +379,11 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
     # Pago = link marcado com utm_medium=paid/cpc/ppc (único sinal confiável).
     # Orgânico = veio do Meta mas sem essa marcação (bio, story, post, DM).
     stories = _stories_stats(base, clicks, total_views)
+    base_url = SITE_BASE_URL.get(site, "")
+    stories["tag_guide"] = [
+        {"tag": tag, "profile": nome, "url": f"{base_url}#{tag}"}
+        for tag, nome in INSTAGRAM_PROFILES.items()
+    ]
     paid = _segment_stats(base, clicks, total_views, _META_FILTER & _PAID_FILTER, series_labels)
     organic = _segment_stats(base, clicks, total_views, _META_FILTER & ~_PAID_FILTER, series_labels)
 
