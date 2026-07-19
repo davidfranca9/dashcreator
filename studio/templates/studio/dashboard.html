@@ -2,6 +2,89 @@
 {% load studio_extras %}
 
 {% block content %}
+<style>
+    /* Card 'O que temos pra hoje?' -- escopo total no .dash-tasks pra nao
+       vazar em outras telas. */
+    .dash-tasks {
+        background: #fff;
+        border: 1px solid #ddd6cb;
+        border-radius: 12px;
+        margin-top: 20px;
+        overflow: hidden;
+    }
+    .dash-tasks-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 22px;
+        background: #ede8df;
+        border-bottom: 1px solid #ddd6cb;
+    }
+    .dash-tasks-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 17px; color: #1a2340; }
+    .dash-tasks-meta { font-size: 12px; color: #8a7d6b; font-style: italic; margin-top: 2px; }
+    .dash-tasks-progress { display: flex; align-items: center; gap: 10px; }
+    .dash-tp-bar { width: 120px; height: 6px; background: #ddd6cb; border-radius: 3px; overflow: hidden; }
+    .dash-tp-fill { height: 100%; background: #2d7a5f; transition: width .3s; }
+    .dash-tp-pct { font-size: 12px; color: #8a7d6b; font-style: italic; min-width: 34px; }
+    .dash-task-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 22px;
+        border-bottom: 0.5px solid #ddd6cb;
+        position: relative; transition: background .12s;
+    }
+    .dash-task-item:last-child { border-bottom: none; }
+    .dash-task-item:hover { background: #fbf9f5; }
+    .dash-task-item.is-done { opacity: 0.45; }
+    .dash-task-item.is-done .dash-task-name { text-decoration: line-through; text-decoration-color: #ccc4b8; }
+    .dash-task-prio { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .dash-task-prio.p-alta { background: #b84040; }
+    .dash-task-prio.p-media { background: #b07d2a; }
+    .dash-task-prio.p-baixa { background: #c9b99a; }
+    .dash-task-box {
+        width: 18px; height: 18px; border: 1px solid #ccc4b8;
+        background: #fff; cursor: pointer; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 3px;
+        transition: all .15s;
+    }
+    .dash-task-box:hover { border-color: #1a2340; }
+    .dash-task-box.is-on { background: #1a2340; border-color: #1a2340; }
+    .dash-task-box svg { display: none; }
+    .dash-task-box.is-on svg { display: block; }
+    .dash-task-body { flex: 1; min-width: 0; }
+    .dash-task-name { font-size: 14px; color: #1a2340; }
+    .dash-task-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8a7d6b; margin-top: 3px; font-style: italic; }
+    .dash-task-prazo {
+        font-size: 11px; font-weight: 600;
+        padding: 3px 11px; border-radius: 99px;
+        white-space: nowrap; flex-shrink: 0;
+    }
+    .dash-task-prazo.pz-atrasado { background: #fdf0f0; color: #b84040; }
+    .dash-task-prazo.pz-hoje { background: #eff3fb; color: #2a5fb0; }
+    .dash-task-prazo.pz-done { background: #eef7f3; color: #2d7a5f; }
+    .dash-task-del {
+        background: transparent; border: none;
+        color: #ccc4b8; cursor: pointer;
+        font-size: 16px; line-height: 1;
+        padding: 4px 6px;
+        opacity: 0; transition: opacity .12s;
+    }
+    .dash-task-item:hover .dash-task-del { opacity: 1; }
+    .dash-task-del:hover { color: #b84040; }
+    .dash-tasks-foot {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 22px;
+        background: #ede8df; border-top: 1px solid #ddd6cb;
+    }
+    .dash-tasks-add {
+        display: flex; align-items: center; gap: 6px;
+        background: transparent; border: none;
+        font-family: inherit; font-size: 13px; color: #8a7d6b;
+        cursor: pointer;
+    }
+    .dash-tasks-add:hover { color: #1a2340; }
+    .dash-tasks-count { font-size: 12px; color: #b8b0a5; font-style: italic; }
+    .dash-tasks-empty { padding: 22px; text-align: center; color: #8a7d6b; font-size: 13px; }
+</style>
+
 <section class="stats-grid">
     {% for item in stats %}
         <article class="stat-card{% if item.blank %} stat-card--blank{% endif %}{% if item.tone %} stat-card--{{ item.tone }}{% endif %}">
@@ -121,4 +204,143 @@
         </article>
     </div>
 </section>
+
+{# ================ Card 'O que temos pra hoje?' ================ #}
+<section class="dash-tasks" data-dash-tasks>
+    <div class="dash-tasks-head">
+        <div>
+            <div class="dash-tasks-title">O que temos pra hoje?</div>
+            <div class="dash-tasks-meta">
+                {{ today_label }} · {{ today_tasks_total }} tarefa{{ today_tasks_total|pluralize }}{% if today_tasks_overdue %} · {{ today_tasks_overdue }} atrasada{{ today_tasks_overdue|pluralize }}{% endif %}
+            </div>
+        </div>
+        <div class="dash-tasks-progress">
+            <div class="dash-tp-bar"><div class="dash-tp-fill" data-tp-fill style="width: {{ today_tasks_pct }}%;"></div></div>
+            <span class="dash-tp-pct" data-tp-pct>{{ today_tasks_pct }}%</span>
+        </div>
+    </div>
+
+    <div data-tasks-list>
+        {% for task in today_tasks %}
+            <div class="dash-task-item{% if task.done %} is-done{% endif %}" data-task-id="{{ task.id }}">
+                <span class="dash-task-prio p-{{ task.priority }}"></span>
+                <div class="dash-task-box{% if task.done %} is-on{% endif %}" data-task-toggle="{{ task.id }}" role="checkbox" aria-checked="{{ task.done|yesno:'true,false' }}" tabindex="0">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="dash-task-body">
+                    <div class="dash-task-name">{{ task.title }}</div>
+                    {% if task.brand %}<div class="dash-task-meta">{{ task.brand }}</div>{% endif %}
+                </div>
+                <span class="dash-task-prazo pz-{{ task.prazo_cls }}">{{ task.prazo_label }}</span>
+                <button type="button" class="dash-task-del" data-task-delete="{{ task.id }}" title="Excluir tarefa">&times;</button>
+            </div>
+        {% empty %}
+            <div class="dash-tasks-empty" data-tasks-empty>Sem tarefas por enquanto. Adicione uma abaixo.</div>
+        {% endfor %}
+    </div>
+
+    <div class="dash-tasks-foot">
+        <button type="button" class="dash-tasks-add" data-task-add>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar tarefa
+        </button>
+        <span class="dash-tasks-count" data-tasks-count>{{ today_tasks_done }} de {{ today_tasks_total }} concluída{{ today_tasks_total|pluralize }}</span>
+    </div>
+</section>
+
+<script>
+(() => {
+    const root = document.querySelector("[data-dash-tasks]");
+    if (!root) return;
+    const csrfToken = (() => {
+        const el = document.querySelector("input[name=csrfmiddlewaretoken]");
+        return el ? el.value : "";
+    })();
+
+    const post = (url, data) => {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(data || {})) fd.append(k, v);
+        return fetch(url, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+            body: fd,
+            credentials: "same-origin",
+        }).then((r) => r.json());
+    };
+
+    const bindToggle = (box) => {
+        const handler = () => {
+            const id = box.dataset.taskToggle;
+            const item = box.closest("[data-task-id]");
+            const willBeOn = !box.classList.contains("is-on");
+            box.classList.toggle("is-on", willBeOn);
+            item.classList.toggle("is-done", willBeOn);
+            // Atualiza o chip de prazo pra "Feito" (verde) na hora, sem F5.
+            const prazo = item.querySelector(".dash-task-prazo");
+            if (prazo) {
+                if (willBeOn) {
+                    prazo.dataset.origLabel = prazo.textContent;
+                    prazo.dataset.origCls = Array.from(prazo.classList).find((c) => c.startsWith("pz-")) || "";
+                    prazo.classList.remove("pz-atrasado", "pz-hoje", "pz-done");
+                    prazo.classList.add("pz-done");
+                    prazo.textContent = "Feito";
+                } else if (prazo.dataset.origLabel) {
+                    prazo.classList.remove("pz-done");
+                    if (prazo.dataset.origCls) prazo.classList.add(prazo.dataset.origCls);
+                    prazo.textContent = prazo.dataset.origLabel;
+                }
+            }
+            post(`/dashboard/tarefas/${id}/toggle/`).then((data) => {
+                if (!data.ok) window.location.reload();
+                updateProgress();
+            }).catch(() => window.location.reload());
+        };
+        box.addEventListener("click", handler);
+        box.addEventListener("keydown", (e) => {
+            if (e.key === " " || e.key === "Enter") { e.preventDefault(); handler(); }
+        });
+    };
+
+    const bindDelete = (btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!window.confirm("Excluir essa tarefa?")) return;
+            const id = btn.dataset.taskDelete;
+            const item = btn.closest("[data-task-id]");
+            item.remove();
+            updateProgress();
+            post(`/dashboard/tarefas/${id}/excluir/`).catch(() => window.location.reload());
+        });
+    };
+
+    const updateProgress = () => {
+        const items = root.querySelectorAll("[data-task-id]");
+        const done = root.querySelectorAll("[data-task-id].is-done").length;
+        const total = items.length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        root.querySelector("[data-tp-fill]").style.width = pct + "%";
+        root.querySelector("[data-tp-pct]").textContent = pct + "%";
+        const countEl = root.querySelector("[data-tasks-count]");
+        if (countEl) {
+            const plural = total === 1 ? "" : "s";
+            countEl.textContent = `${done} de ${total} concluída${plural}`;
+        }
+    };
+
+    root.querySelectorAll("[data-task-toggle]").forEach(bindToggle);
+    root.querySelectorAll("[data-task-delete]").forEach(bindDelete);
+
+    const addBtn = root.querySelector("[data-task-add]");
+    if (addBtn) {
+        addBtn.addEventListener("click", () => {
+            const title = window.prompt("Nova tarefa (deixe simples):");
+            if (!title || !title.trim()) return;
+            post("/dashboard/tarefas/nova/", { title: title.trim() }).then((data) => {
+                if (!data.ok) { alert(data.error || "Erro."); return; }
+                window.location.reload();
+            }).catch(() => alert("Falha de rede."));
+        });
+    }
+})();
+</script>
 {% endblock %}

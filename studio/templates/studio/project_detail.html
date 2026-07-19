@@ -108,9 +108,6 @@
     <a class="cd-back" href="{% url 'jobs' %}">‹ Trabalhos</a>
     <div class="cd-tabs">
       <span class="cd-tab cd-tab--active">Campanha</span>
-      <span class="cd-tab cd-tab--muted" title="Em breve">Financeiro</span>
-      <span class="cd-tab cd-tab--muted" title="Em breve">Jurídico</span>
-      <span class="cd-tab cd-tab--muted" title="Em breve">Atualizações{% if active_messages %}<b class="cd-tab-badge">{{ active_messages|length }}</b>{% endif %}</span>
     </div>
     <form class="cd-advance-form" method="post" action="{% url 'project_detail_advance' project.id %}">
       {% csrf_token %}
@@ -149,31 +146,6 @@
         <button type="submit" class="cd-save">Salvar</button>
       </form>
 
-      <div class="cd-sec-title">Etapas da campanha <span class="cd-sec-sub">{{ done_count }} de {{ total_count }} concluídas</span></div>
-      <ul class="cd-etapas">
-        {% for stage in stages %}
-          <li class="cd-etapa cd-etapa--{{ stage.state }}">
-            <div class="cd-tl">
-              <div class="cd-dot cd-dot--{{ stage.state }}">
-                {% if stage.state == 'done' %}<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{% endif %}
-              </div>
-              {% if not forloop.last %}<div class="cd-tl-line"></div>{% endif %}
-            </div>
-            <div class="cd-etapa-info">
-              <div class="cd-etapa-name">{{ stage.name }}</div>
-              <div class="cd-etapa-date">
-                {% if stage.state == 'done' %}Concluído{% if stage.date_text %} em {{ stage.date_text }}{% endif %}{% elif stage.state == 'active' %}Em andamento{% else %}Aguardando{% endif %}
-              </div>
-            </div>
-            {% if stage.state == 'active' and can_advance %}
-              <form method="post" action="{% url 'project_detail_advance' project.id %}">
-                {% csrf_token %}
-                <button type="submit" class="cd-etapa-btn">Concluir ›</button>
-              </form>
-            {% endif %}
-          </li>
-        {% endfor %}
-      </ul>
     </div>
 
     <!-- RIGHT: ASSISTENTE -->

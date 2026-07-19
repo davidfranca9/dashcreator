@@ -412,6 +412,40 @@ class FunnelColumn(models.Model):
         return f"{self.funnel.name} / {self.name}"
 
 
+class Task(WorkspaceOwnedModel):
+    """Tarefa simples do dia a dia, exibida no card 'O que temos pra hoje?' do
+    Dashboard. Pode opcionalmente estar ligada a um Project (mostra o nome da
+    marca no card)."""
+    PRIORITY_HIGH = "alta"
+    PRIORITY_MEDIUM = "media"
+    PRIORITY_LOW = "baixa"
+    PRIORITY_CHOICES = [
+        (PRIORITY_HIGH, "Alta"),
+        (PRIORITY_MEDIUM, "Média"),
+        (PRIORITY_LOW, "Baixa"),
+    ]
+
+    title = models.CharField(max_length=200)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
+    due_date = models.DateField(null=True, blank=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
+    )
+    done = models.BooleanField(default=False)
+    done_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["done", "due_date", "priority", "-created_at"]
+
+    def __str__(self) -> str:
+        marker = "[x]" if self.done else "[ ]"
+        return f"{marker} {self.title}"
+
+
 class ProjectUpdateMessage(WorkspaceOwnedModel):
     """Mensagem do Assistente de Atualizações (detalhe do trabalho — recurso
     exclusivo da Layfe). Cada avanço de etapa gera uma mensagem pronta pra

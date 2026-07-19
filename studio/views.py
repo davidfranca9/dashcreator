@@ -4,7 +4,7 @@ import calendar
 import json
 import mimetypes
 import re
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from html import escape, unescape
 from pathlib import Path
@@ -1087,6 +1087,9 @@ def _redirect_preserving_month(request: HttpRequest, view_name: str, *args, **kw
 
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
+    from .models import Task
+    from django.db.models import Q
+
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
     context = shell_context(
@@ -1098,6 +1101,70 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         month_filter=month_filter,
     )
     context.update(dashboard_snapshot(workspace, month_filter))
+
+    # Card "O que temos pra hoje?": tarefas ainda nao feitas com prazo <= hoje
+    # (inclui atrasadas) + tarefas ja feitas HOJE (pra mostrar o riscado).
+    today = timezone.localdate()
+    today_tasks_qs = (
+        Task.objects.filter(workspace=workspace)
+        .filter(
+            Q(done=False, due_date__lte=today)
+            | Q(done=False, due_date__isnull=True)
+            | Q(done=True, done_at__date=today)
+        )
+        .select_related("project")
+    )
+    priority_rank = {"alta": 0, "media": 1, "baixa": 2}
+    today_tasks = list(today_tasks_qs)
+    today_tasks.sort(
+        key=lambda t: (
+            t.done,
+            priority_rank.get(t.priority, 3),
+            t.due_date or today,
+            -t.pk,
+        )
+    )
+
+    def _task_prazo(t):
+        if t.done:
+            return {"label": "Feito", "cls": "done"}
+        if t.due_date and t.due_date < today:
+            days = (today - t.due_date).days
+            return {"label": f"{days}d atrasado" if days > 1 else "Atrasado", "cls": "atrasado"}
+        return {"label": "Hoje", "cls": "hoje"}
+
+    tasks_payload = []
+    for t in today_tasks:
+        prazo = _task_prazo(t)
+        tasks_payload.append({
+            "id": t.pk,
+            "title": t.title,
+            "priority": t.priority,
+            "done": t.done,
+            "prazo_label": prazo["label"],
+            "prazo_cls": prazo["cls"],
+            "brand": t.project.company if t.project else "",
+        })
+
+    done_count = sum(1 for t in tasks_payload if t["done"])
+    overdue_count = sum(
+        1 for t in today_tasks
+        if not t.done and t.due_date and t.due_date < today
+    )
+    context["today_tasks"] = tasks_payload
+    context["today_tasks_done"] = done_count
+    context["today_tasks_total"] = len(tasks_payload)
+    context["today_tasks_overdue"] = overdue_count
+    context["today_tasks_pct"] = round((done_count / len(tasks_payload)) * 100) if tasks_payload else 0
+
+    dias_pt = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    meses_pt = [
+        "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+        "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+    ]
+    context["today_label"] = f"{dias_pt[today.weekday()]}-feira, {today.day} de {meses_pt[today.month - 1]}" \
+        if today.weekday() < 5 else f"{dias_pt[today.weekday()]}, {today.day} de {meses_pt[today.month - 1]}"
+
     return render(request, "studio/dashboard.html", context)
 
 
@@ -2481,3 +2548,62 @@ def funnel_column_delete(request: HttpRequest, column_id: int) -> JsonResponse:
     ).update(status=remaining.name)
     column.delete()
     return JsonResponse({"ok": True, "moved_to": remaining.name})
+
+
+# =============================================================================
+# Tasks do card "O que temos pra hoje?" no Dashboard
+# =============================================================================
+
+
+@login_required
+@require_POST
+def task_create(request: HttpRequest) -> JsonResponse:
+    from .models import Task
+
+    workspace = _workspace(request)
+    title = (request.POST.get("title") or "").strip()
+    if not title:
+        return JsonResponse({"ok": False, "error": "Titulo vazio."}, status=400)
+    priority = (request.POST.get("priority") or Task.PRIORITY_MEDIUM).strip()
+    if priority not in {p for p, _ in Task.PRIORITY_CHOICES}:
+        priority = Task.PRIORITY_MEDIUM
+    due_raw = (request.POST.get("due_date") or "").strip()
+    due_date = None
+    if due_raw:
+        try:
+            due_date = datetime.strptime(due_raw, "%Y-%m-%d").date()
+        except ValueError:
+            due_date = None
+    if due_date is None:
+        due_date = timezone.localdate()
+    task = Task.objects.create(
+        workspace=workspace,
+        title=title[:200],
+        priority=priority,
+        due_date=due_date,
+    )
+    return JsonResponse({"ok": True, "task_id": task.pk})
+
+
+@login_required
+@require_POST
+def task_toggle(request: HttpRequest, pk: int) -> JsonResponse:
+    from .models import Task
+
+    workspace = _workspace(request)
+    task = get_object_or_404(Task, pk=pk, workspace=workspace)
+    task.done = not task.done
+    task.done_at = timezone.now() if task.done else None
+    task.save(update_fields=["done", "done_at", "updated_at"])
+    return JsonResponse({"ok": True, "done": task.done})
+
+
+@login_required
+@require_POST
+def task_delete(request: HttpRequest, pk: int) -> JsonResponse:
+    from .models import Task
+
+    workspace = _workspace(request)
+    task = get_object_or_404(Task, pk=pk, workspace=workspace)
+    task.delete()
+    return JsonResponse({"ok": True})
