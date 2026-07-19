@@ -104,12 +104,12 @@
 
       <div class="cols">
         <div class="card">
-          <h2>Elementos mais clicados</h2>
+          <h2>Onde as pessoas clicaram</h2>
           {% if top_clicks %}
             <ul class="rank">
               {% for row in top_clicks %}
                 <li>
-                  <span class="name">{{ row.label }}</span>
+                  <span class="name" title="{{ row.raw|default:row.label }}">{{ row.label }}</span>
                   <span class="val">{{ row.n }}</span>
                   <div class="bar"><span style="width:{% widthratio row.n max_click 100 %}%"></span></div>
                 </li>
@@ -153,13 +153,13 @@
             <ul class="rank">
               {% for row in organic.creatives %}
                 <li>
-                  <span class="name">{{ row.label }}</span>
+                  <span class="name" title="{{ row.raw|default:row.label }}">{{ row.label }}</span>
                   <span class="val">{{ row.n }}</span>
                   <div class="bar"><span style="width:{% widthratio row.n organic.max_creative 100 %}%"></span></div>
                 </li>
               {% endfor %}
             </ul>
-            <p class="note">Ex.: <code>link_in_bio</code> é o link da bio. Marque cada link com <code>utm_content</code> pra saber o que rende mais.</p>
+            <p class="note">Marque cada link que você publica (bio, stories, posts) com <code>utm_content</code> para saber qual rende mais.</p>
           </div>
           <div class="card">
             <h2>Desempenho</h2>
@@ -196,7 +196,7 @@
             <ul class="rank">
               {% for row in paid.campaigns %}
                 <li>
-                  <span class="name">{{ row.label }}</span>
+                  <span class="name" title="{{ row.raw|default:row.label }}">{{ row.label }}</span>
                   <span class="val">{{ row.n }}</span>
                   <div class="bar"><span style="width:{% widthratio row.n paid.max_campaign 100 %}%"></span></div>
                 </li>
@@ -209,7 +209,7 @@
             <ul class="rank">
               {% for row in paid.creatives %}
                 <li>
-                  <span class="name">{{ row.label }}</span>
+                  <span class="name" title="{{ row.raw|default:row.label }}">{{ row.label }}</span>
                   <span class="val">{{ row.n }}</span>
                   <div class="bar"><span style="width:{% widthratio row.n paid.max_creative 100 %}%"></span></div>
                 </li>

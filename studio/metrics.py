@@ -64,6 +64,62 @@ _PAID_FILTER = (
 )
 
 
+# Nomes legíveis para os rótulos técnicos gravados pelo tracking. O que não
+# estiver aqui cai no fallback (troca traço/underline por espaço e capitaliza).
+_FRIENDLY_LABELS = {
+    # botões dos sites (data-track)
+    "a-comunidade": "A comunidade",
+    "cadastre-se": "Cadastre-se",
+    "conhecer-dash": "Conhecer o Dash",
+    "conhecer-planner": "Conhecer o Planner",
+    "fazer-parte-header": "Quero fazer parte (topo)",
+    "fazer-parte-hero": "Quero fazer parte (destaque)",
+    "login": "Login",
+    "quero-acompanhamento": "Quero acompanhamento",
+    "sou-creator": "Sou creator",
+    "sou-marca": "Sou marca",
+    "ver-portfolio": "Ver portfólio",
+    "whatsapp-marca": "WhatsApp da marca",
+    # origens (utm_content)
+    "link_in_bio": "Link na bio",
+    "link-in-bio": "Link na bio",
+    "linkinbio": "Link na bio",
+    "bio": "Link na bio",
+    "stories": "Stories",
+    "story": "Stories",
+    "post": "Post no feed",
+    "reels": "Reels",
+    "whatsapp": "WhatsApp",
+}
+# Sufixos que indicam ONDE na página estava o botão.
+_POSITION_SUFFIX = {"header": "topo", "hero": "destaque", "footer": "rodapé", "final": "final", "menu": "menu"}
+_PLACEHOLDER_LABELS = {
+    "(sem utm_campaign)": "Sem campanha marcada",
+    "(sem utm_content)": "Origem não identificada",
+}
+
+
+def _pretty_label(raw: str) -> str:
+    """Converte o rótulo técnico ('fazer-parte-header') no nome que a pessoa
+    entende ('Quero fazer parte (topo)')."""
+    value = (raw or "").strip()
+    if not value:
+        return "Sem identificação"
+    if value in _PLACEHOLDER_LABELS:
+        return _PLACEHOLDER_LABELS[value]
+    key = value.lower()
+    if key in _FRIENDLY_LABELS:
+        return _FRIENDLY_LABELS[key]
+    parts = [p for p in key.replace("_", "-").split("-") if p]
+    if not parts:
+        return value
+    suffix = ""
+    if len(parts) > 1 and parts[-1] in _POSITION_SUFFIX:
+        suffix = f" ({_POSITION_SUFFIX[parts.pop()]})"
+    text = " ".join(parts)
+    return text[:1].upper() + text[1:] + suffix
+
+
 def _utm_value(path: str, key: str) -> str:
     """Lê um parâmetro UTM do path gravado (o track.js salva pathname+search)."""
     if not path or "?" not in path:
@@ -76,7 +132,10 @@ def _utm_value(path: str, key: str) -> str:
 
 def _rank_by_utm(paths, key: str, fallback: str, limit: int = 10) -> list[dict]:
     counter = Counter(_utm_value(p, key) or fallback for p in paths)
-    return [{"label": label, "n": n} for label, n in counter.most_common(limit)]
+    return [
+        {"label": _pretty_label(label), "raw": label, "n": n}
+        for label, n in counter.most_common(limit)
+    ]
 
 
 def _segment_stats(base, clicks, total_views, seg_filter, series_labels) -> dict:
@@ -195,12 +254,13 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
     series_values = [row["n"] for row in by_day]
 
     # Rankings
-    top_clicks = list(
-        clicks.exclude(label="")
+    top_clicks = [
+        {"label": _pretty_label(row["label"]), "raw": row["label"], "n": row["n"]}
+        for row in clicks.exclude(label="")
         .values("label")
         .annotate(n=Count("id"))
         .order_by("-n")[:15]
-    )
+    ]
     top_pages = list(
         views.values("path").annotate(n=Count("id")).order_by("-n")[:15]
     )

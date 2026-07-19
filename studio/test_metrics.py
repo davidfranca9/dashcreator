@@ -57,7 +57,7 @@ class MetricsTests(TestCase):
         PageEvent.objects.create(site="tcc", kind="click", label="quero-fazer-parte", visitor="a")
         resp = c.get(reverse("metrics_dashboard") + "?site=tcc&days=30")
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "quero-fazer-parte")
+        self.assertContains(resp, "Quero fazer parte")
         self.assertContains(resp, "Visitas por dia")
 
 
@@ -164,12 +164,14 @@ class MetaAdsPanelTests(TestCase):
         self.assertEqual(ctx["organic"]["visitors"], 2)
         self.assertEqual(ctx["paid"]["views"], 1)
 
-        org_creatives = {r["label"]: r["n"] for r in ctx["organic"]["creatives"]}
-        paid_campaigns = {r["label"]: r["n"] for r in ctx["paid"]["campaigns"]}
+        org_creatives = {r["raw"]: r["n"] for r in ctx["organic"]["creatives"]}
+        paid_campaigns = {r["raw"]: r["n"] for r in ctx["paid"]["campaigns"]}
         self.assertEqual(org_creatives["link_in_bio"], 1)
         self.assertEqual(paid_campaigns["julho"], 1)
         # a campanha do anúncio NÃO pode vazar pro painel orgânico
-        self.assertNotIn("julho", {r["label"] for r in ctx["organic"]["campaigns"]})
+        self.assertNotIn("julho", {r["raw"] for r in ctx["organic"]["campaigns"]})
+        # e o nome exibido é o legível
+        self.assertIn("Link na bio", {r["label"] for r in ctx["organic"]["creatives"]})
 
     def test_clicks_counted_per_segment(self):
         # orgânico: entra pela bio e clica no CTA (clique já sem parâmetro)
@@ -197,3 +199,28 @@ class MetaAdsPanelTests(TestCase):
         self.assertFalse(resp.context["paid"]["has_data"])
         self.assertContains(resp, "Orgânico · Facebook / Instagram")
         self.assertContains(resp, "Nenhum anúncio rodando")
+
+
+class PrettyLabelTests(TestCase):
+    """Tradução dos rótulos técnicos para nomes que a pessoa entende."""
+
+    def test_known_labels(self):
+        from studio.metrics import _pretty_label
+        self.assertEqual(_pretty_label("fazer-parte-header"), "Quero fazer parte (topo)")
+        self.assertEqual(_pretty_label("quero-acompanhamento"), "Quero acompanhamento")
+        self.assertEqual(_pretty_label("conhecer-dash"), "Conhecer o Dash")
+        self.assertEqual(_pretty_label("link_in_bio"), "Link na bio")
+        self.assertEqual(_pretty_label("ver-portfolio"), "Ver portfólio")
+
+    def test_unknown_label_falls_back_readable(self):
+        from studio.metrics import _pretty_label
+        self.assertEqual(_pretty_label("botao-novo-qualquer"), "Botao novo qualquer")
+        self.assertEqual(_pretty_label("promo_verao"), "Promo verao")
+        # sufixo de posição vira parênteses
+        self.assertEqual(_pretty_label("assinar-footer"), "Assinar (rodapé)")
+
+    def test_placeholders_and_empty(self):
+        from studio.metrics import _pretty_label
+        self.assertEqual(_pretty_label("(sem utm_content)"), "Origem não identificada")
+        self.assertEqual(_pretty_label("(sem utm_campaign)"), "Sem campanha marcada")
+        self.assertEqual(_pretty_label(""), "Sem identificação")
