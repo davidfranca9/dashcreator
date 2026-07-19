@@ -47,6 +47,7 @@
     .sec-head .sub{ font-size:12px; color:var(--muted); }
     .kpis.k4{ grid-template-columns:repeat(4,1fr); }
     .kpi--meta .n{ color:#1877F2; }
+    .kpi--org .n{ color:#2d7a5f; }
     .note{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
     @media(max-width:720px){ .kpis.k4{ grid-template-columns:1fr 1fr; } }
 
@@ -134,66 +135,105 @@
       </div>
 
       <!-- ── PAINEL META ADS ─────────────────────────────────────────── -->
+      <!-- ── PAINEL 1: ORGÂNICO ──────────────────────────────────────── -->
       <div class="sec-head">
-        <h2>Meta · Facebook / Instagram</h2>
-        <span class="sub">inclui tráfego orgânico (bio, stories, posts) e de anúncios</span>
+        <h2>Orgânico · Facebook / Instagram</h2>
+        <span class="sub">bio, stories, posts e DMs — sem gastar com anúncio</span>
       </div>
 
-      {% if has_meta %}
+      {% if organic.has_data %}
         <div class="kpis k4">
-          <div class="kpi kpi--meta"><div class="n">{{ meta_paid_views }}</div><div class="l">Anúncios (pago)</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ meta_organic_views }}</div><div class="l">Orgânico (bio/story/post)</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ meta_clicks }}</div><div class="l">Cliques em CTA</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ meta_share }}%</div><div class="l">do tráfego total</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.views }}</div><div class="l">Visitas</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.visitors }}</div><div class="l">Visitantes únicos</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.clicks }}</div><div class="l">Cliques em CTA</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.share }}%</div><div class="l">do tráfego total</div></div>
         </div>
-        <p class="note" style="margin:-10px 0 20px">
-          Total vindo do Meta: <strong>{{ meta_views }}</strong> visitas · <strong>{{ meta_visitors }}</strong> visitantes únicos.
-        </p>
+        <div class="cols">
+          <div class="card">
+            <h2>De onde vieram</h2>
+            <ul class="rank">
+              {% for row in organic.creatives %}
+                <li>
+                  <span class="name">{{ row.label }}</span>
+                  <span class="val">{{ row.n }}</span>
+                  <div class="bar"><span style="width:{% widthratio row.n organic.max_creative 100 %}%"></span></div>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="note">Ex.: <code>link_in_bio</code> é o link da bio. Marque cada link com <code>utm_content</code> pra saber o que rende mais.</p>
+          </div>
+          <div class="card">
+            <h2>Desempenho</h2>
+            <p class="note" style="margin:0">
+              <strong>Taxa de clique:</strong> {{ organic.ctr }}% ({{ organic.clicks }} cliques em {{ organic.views }} visitas).<br><br>
+              Este é o tráfego que você conquista com conteúdo, <strong>sem custo de mídia</strong>. Se ele converte bem, vale
+              transformar o conteúdo que mais traz gente em anúncio.
+            </p>
+          </div>
+        </div>
+      {% else %}
+        <div class="card empty">
+          <div class="big">Sem tráfego orgânico do Meta</div>
+          <p class="muted">Quando alguém chegar pelo link da bio, story ou post, aparece aqui.</p>
+        </div>
+      {% endif %}
 
+      <!-- ── PAINEL 2: TRÁFEGO PAGO ──────────────────────────────────── -->
+      <div class="sec-head">
+        <h2>Tráfego pago · Meta Ads</h2>
+        <span class="sub">visitas vindas de anúncio</span>
+      </div>
+
+      {% if paid.has_data %}
+        <div class="kpis k4">
+          <div class="kpi kpi--meta"><div class="n">{{ paid.views }}</div><div class="l">Visitas</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.visitors }}</div><div class="l">Visitantes únicos</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.clicks }}</div><div class="l">Cliques em CTA</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.share }}%</div><div class="l">do tráfego total</div></div>
+        </div>
         <div class="cols">
           <div class="card">
             <h2>Campanhas</h2>
             <ul class="rank">
-              {% for row in meta_campaigns %}
+              {% for row in paid.campaigns %}
                 <li>
                   <span class="name">{{ row.label }}</span>
                   <span class="val">{{ row.n }}</span>
-                  <div class="bar"><span style="width:{% widthratio row.n max_campaign 100 %}%"></span></div>
+                  <div class="bar"><span style="width:{% widthratio row.n paid.max_campaign 100 %}%"></span></div>
                 </li>
               {% endfor %}
             </ul>
             <p class="note">Vem do <code>utm_campaign</code> do link do anúncio.</p>
           </div>
-
           <div class="card">
             <h2>Criativos / anúncios</h2>
             <ul class="rank">
-              {% for row in meta_creatives %}
+              {% for row in paid.creatives %}
                 <li>
                   <span class="name">{{ row.label }}</span>
                   <span class="val">{{ row.n }}</span>
-                  <div class="bar"><span style="width:{% widthratio row.n max_creative 100 %}%"></span></div>
+                  <div class="bar"><span style="width:{% widthratio row.n paid.max_creative 100 %}%"></span></div>
                 </li>
               {% endfor %}
             </ul>
             <p class="note">Vem do <code>utm_content</code> do link do anúncio.</p>
           </div>
         </div>
-
         <div class="card">
           <p class="note" style="margin:0">
-            <strong>Taxa de clique do tráfego Meta:</strong> {{ meta_ctr }}% ({{ meta_clicks }} cliques em {{ meta_views }} visitas).<br>
-            <strong>Como separamos pago de orgânico:</strong> só conta como <em>anúncio</em> quando o link traz <code>utm_medium=paid</code>.
-            O <code>fbclid</code> e o referrer do Meta aparecem também em clique de bio, story e post, então sozinhos não provam que foi anúncio.<br>
-            Estes números são medidos <strong>no seu site</strong>. Valor investido, CPM e CPC ficam no Gerenciador de Anúncios do Meta.
+            <strong>Taxa de clique:</strong> {{ paid.ctr }}% ({{ paid.clicks }} cliques em {{ paid.views }} visitas).<br>
+            Medido <strong>no seu site</strong>. Valor investido, CPM e CPC ficam no Gerenciador de Anúncios do Meta.
           </p>
         </div>
       {% else %}
         <div class="card empty">
-          <div class="big">Nenhuma visita do Meta ainda</div>
+          <div class="big">Nenhum anúncio rodando</div>
           <p class="muted">
-            Assim que alguém clicar no seu anúncio e cair no site, aparece aqui.<br>
-            Identificamos pelo <code>fbclid</code> (que o Meta adiciona sozinho no link), por <code>utm_source</code> e pelo referrer do Facebook/Instagram.
+            Só entra aqui quem chega por um link marcado como mídia paga. Ao criar o anúncio no Meta,
+            cole isto no campo <strong>“Parâmetros de URL”</strong>:<br>
+            <code>{% verbatim %}utm_source=meta&amp;utm_medium=paid&amp;utm_campaign={{campaign.name}}&amp;utm_content={{ad.name}}{% endverbatim %}</code><br><br>
+            Sem essa marcação não dá pra separar anúncio de tráfego orgânico: o <code>fbclid</code> e o referrer do Meta
+            aparecem também em clique de bio, story e post.
           </p>
         </div>
       {% endif %}
@@ -223,8 +263,15 @@
             fill: true, tension: .32, borderWidth: 2,
             pointRadius: 3, pointBackgroundColor: '#c9956a'
           }, {
-            label: 'Vindas do Meta Ads',
-            data: {{ meta_series_values_json|safe }},
+            label: 'Orgânico (FB/IG)',
+            data: {{ organic_series_json|safe }},
+            borderColor: '#2d7a5f',
+            backgroundColor: 'rgba(45,122,95,.10)',
+            fill: true, tension: .32, borderWidth: 2,
+            pointRadius: 3, pointBackgroundColor: '#2d7a5f'
+          }, {
+            label: 'Tráfego pago (Meta Ads)',
+            data: {{ paid_series_json|safe }},
             borderColor: '#1877F2',
             backgroundColor: 'rgba(24,119,242,.12)',
             fill: true, tension: .32, borderWidth: 2,

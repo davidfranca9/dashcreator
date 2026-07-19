@@ -79,6 +79,42 @@ def _rank_by_utm(paths, key: str, fallback: str, limit: int = 10) -> list[dict]:
     return [{"label": label, "n": n} for label, n in counter.most_common(limit)]
 
 
+def _segment_stats(base, clicks, total_views, seg_filter, series_labels) -> dict:
+    """Números de um recorte de tráfego (orgânico do Meta ou tráfego pago).
+
+    Cliques são contados por SESSÃO que entrou pelo recorte — mais fiel do que
+    exigir o parâmetro na URL do clique, que se perde ao navegar na página.
+    """
+    events = base.filter(seg_filter)
+    views_qs = events.filter(kind="pageview")
+    views = views_qs.count()
+    sessions = events.exclude(session="").values("session")
+    seg_clicks = clicks.exclude(session="").filter(session__in=sessions).count()
+    paths = list(views_qs.values_list("path", flat=True))
+    campaigns = _rank_by_utm(paths, "utm_campaign", "(sem utm_campaign)")
+    creatives = _rank_by_utm(paths, "utm_content", "(sem utm_content)")
+    by_day = {
+        row["day"].strftime("%d/%m"): row["n"]
+        for row in views_qs.annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(n=Count("id"))
+        .order_by("day")
+    }
+    return {
+        "views": views,
+        "visitors": views_qs.values("visitor").distinct().count(),
+        "clicks": seg_clicks,
+        "share": round(views / total_views * 100) if total_views else 0,
+        "ctr": round(seg_clicks / views * 100, 1) if views else 0,
+        "campaigns": campaigns,
+        "creatives": creatives,
+        "max_campaign": campaigns[0]["n"] if campaigns else 0,
+        "max_creative": creatives[0]["n"] if creatives else 0,
+        "series": [by_day.get(label, 0) for label in series_labels],
+        "has_data": views > 0,
+    }
+
+
 def _cors_headers(response: HttpResponse, origin: str) -> HttpResponse:
     if origin in ALLOWED_TRACK_ORIGINS:
         response["Access-Control-Allow-Origin"] = origin
@@ -172,38 +208,13 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
     max_click = top_clicks[0]["n"] if top_clicks else 0
     max_page = top_pages[0]["n"] if top_pages else 0
 
-    # ── Painel Meta Ads ─────────────────────────────────────────────────────
-    # Só o que dá pra saber pelo próprio site (o gasto/CPM fica no Gerenciador).
-    meta_events = base.filter(_META_FILTER)
-    meta_views_qs = meta_events.filter(kind="pageview")
-    meta_views = meta_views_qs.count()
-    meta_visitors = meta_views_qs.values("visitor").distinct().count()
-    # Cliques contados por SESSÃO que entrou pelo Meta (mais fiel do que exigir
-    # o fbclid na URL do clique, que se perde ao navegar).
-    meta_sessions = meta_events.exclude(session="").values("session")
-    meta_clicks = clicks.exclude(session="").filter(session__in=meta_sessions).count()
-    meta_share = round(meta_views / total_views * 100) if total_views else 0
-    meta_ctr = round(meta_clicks / meta_views * 100, 1) if meta_views else 0
+    # ── Dois recortes independentes: ORGÂNICO e TRÁFEGO PAGO ────────────────
+    # Pago = link marcado com utm_medium=paid/cpc/ppc (único sinal confiável).
+    # Orgânico = veio do Meta mas sem essa marcação (bio, story, post, DM).
+    paid = _segment_stats(base, clicks, total_views, _META_FILTER & _PAID_FILTER, series_labels)
+    organic = _segment_stats(base, clicks, total_views, _META_FILTER & ~_PAID_FILTER, series_labels)
 
-    # Pago x orgânico: sem a marcação de mídia paga no link, é tráfego orgânico
-    # do Meta (bio, story, post) — não anúncio.
-    meta_paid_views = meta_views_qs.filter(_PAID_FILTER).count()
-    meta_organic_views = meta_views - meta_paid_views
-
-    meta_paths = list(meta_views_qs.values_list("path", flat=True))
-    meta_campaigns = _rank_by_utm(meta_paths, "utm_campaign", "(sem utm_campaign)")
-    meta_creatives = _rank_by_utm(meta_paths, "utm_content", "(sem utm_content)")
-    max_campaign = meta_campaigns[0]["n"] if meta_campaigns else 0
-    max_creative = meta_creatives[0]["n"] if meta_creatives else 0
-
-    meta_by_day = list(
-        meta_views_qs.annotate(day=TruncDate("created_at"))
-        .values("day")
-        .annotate(n=Count("id"))
-        .order_by("day")
-    )
-    meta_day_map = {row["day"].strftime("%d/%m"): row["n"] for row in meta_by_day}
-    meta_series_values = [meta_day_map.get(label, 0) for label in series_labels]
+    meta_views = paid["views"] + organic["views"]
 
     context = {
         "site": site,
@@ -220,19 +231,15 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
         "max_click": max_click,
         "max_page": max_page,
         "has_data": total_views > 0 or total_clicks > 0,
-        # Meta Ads
+        # Meta: dois painéis independentes
+        "organic": organic,
+        "paid": paid,
+        "organic_series_json": json.dumps(organic["series"]),
+        "paid_series_json": json.dumps(paid["series"]),
+        # agregados (compatibilidade / visão geral)
         "meta_views": meta_views,
-        "meta_paid_views": meta_paid_views,
-        "meta_organic_views": meta_organic_views,
-        "meta_visitors": meta_visitors,
-        "meta_clicks": meta_clicks,
-        "meta_share": meta_share,
-        "meta_ctr": meta_ctr,
-        "meta_campaigns": meta_campaigns,
-        "meta_creatives": meta_creatives,
-        "max_campaign": max_campaign,
-        "max_creative": max_creative,
-        "meta_series_values_json": json.dumps(meta_series_values),
+        "meta_paid_views": paid["views"],
+        "meta_organic_views": organic["views"],
         "has_meta": meta_views > 0,
     }
     return render(request, "studio/metrics.html", context)

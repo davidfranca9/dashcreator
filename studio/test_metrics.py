@@ -122,89 +122,78 @@ class PipelineIconsTest(TestCase):
 
 
 class MetaAdsPanelTests(TestCase):
-    """Painel de Meta Ads no /metricas: identifica tráfego do Facebook/Instagram
-    por fbclid, utm_source e referrer — sem precisar da API do Meta."""
+    """Dois painéis separados no /metricas: Orgânico (bio/story/post) e
+    Tráfego pago (anúncio). Só conta como pago quando o link traz
+    utm_medium=paid — fbclid e referrer do Meta aparecem no orgânico também."""
 
     def setUp(self):
         get_user_model().objects.create_user("boss", password="x", is_staff=True)
         self.c = Client()
         self.c.login(username="boss", password="x")
 
-    def _url(self):
-        return reverse("metrics_dashboard") + "?site=dash&days=30"
+    def _resp(self):
+        return self.c.get(reverse("metrics_dashboard") + "?site=dash&days=30")
 
     def test_detects_meta_traffic_by_fbclid_utm_and_referrer(self):
-        # 3 visitas do Meta (uma por sinal) + 1 orgânica
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?fbclid=ABC123", visitor="v1", session="s1")
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?utm_source=instagram&utm_campaign=lancamento", visitor="v2", session="s2")
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v3", session="s3", referrer="https://l.facebook.com/")
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v4", session="s4", referrer="https://google.com/")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=ABC", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?utm_source=instagram", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/", visitor="v3", session="s3", referrer="https://l.facebook.com/")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/", visitor="v4", session="s4", referrer="https://google.com/")
 
-        ctx = self.c.get(self._url()).context
-        self.assertEqual(ctx["meta_views"], 3)
-        self.assertEqual(ctx["meta_visitors"], 3)
-        self.assertEqual(ctx["total_views"], 4)
-        self.assertEqual(ctx["meta_share"], 75)
+        ctx = self._resp().context
+        self.assertEqual(ctx["meta_views"], 3)   # 3 vieram do Meta
+        self.assertEqual(ctx["total_views"], 4)  # o do Google não
         self.assertTrue(ctx["has_meta"])
+        # nenhum traz utm_medium=paid -> tudo orgânico, nada de anúncio
+        self.assertEqual(ctx["organic"]["views"], 3)
+        self.assertEqual(ctx["paid"]["views"], 0)
 
-    def test_counts_cta_clicks_from_meta_sessions(self):
-        # visita pelo Meta e depois clica no CTA (clique já sem o fbclid na URL)
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?fbclid=X", visitor="v1", session="s1")
-        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", path="/dashcreator/", visitor="v1", session="s1")
-        # visitante orgânico que também clica (não deve contar no Meta)
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v2", session="s2")
-        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", path="/dashcreator/", visitor="v2", session="s2")
-
-        ctx = self.c.get(self._url()).context
-        self.assertEqual(ctx["meta_clicks"], 1)
-        self.assertEqual(ctx["total_clicks"], 2)
-        self.assertEqual(ctx["meta_ctr"], 100.0)
-
-    def test_breaks_down_by_campaign_and_creative(self):
-        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=1&utm_campaign=black&utm_content=video-a", visitor="v1", session="s1")
-        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=2&utm_campaign=black&utm_content=video-b", visitor="v2", session="s2")
-        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=3&utm_campaign=julho&utm_content=video-a", visitor="v3", session="s3")
-
-        ctx = self.c.get(self._url()).context
-        campaigns = {row["label"]: row["n"] for row in ctx["meta_campaigns"]}
-        creatives = {row["label"]: row["n"] for row in ctx["meta_creatives"]}
-        self.assertEqual(campaigns["black"], 2)
-        self.assertEqual(campaigns["julho"], 1)
-        self.assertEqual(creatives["video-a"], 2)
-
-    def test_panel_renders_empty_state_without_meta_traffic(self):
-        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v1", session="s1")
-        resp = self.c.get(self._url())
-        self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Meta Ads")
-        self.assertContains(resp, "Nenhuma visita do Meta ainda")
-        self.assertFalse(resp.context["has_meta"])
-
-    def test_organic_meta_traffic_is_not_counted_as_paid(self):
-        """Link da bio / story / post chegam com fbclid e referrer do Meta, mas
-        NÃO são anúncio. Só conta como pago quem tem utm_medium=paid."""
-        # link da bio do Instagram (orgânico) — caso real que apareceu no painel
+    def test_organic_and_paid_do_not_mix(self):
+        # bio do Instagram (orgânico) — caso real que apareceu no painel
         PageEvent.objects.create(site="dash", kind="pageview", visitor="v1", session="s1",
-                                 path="/dashcreator/?fbclid=AAA&utm_content=link_in_bio",
-                                 referrer="https://l.instagram.com/")
-        # story orgânico
+                                 path="/d/?fbclid=A&utm_content=link_in_bio", referrer="https://l.instagram.com/")
+        # story (orgânico)
         PageEvent.objects.create(site="dash", kind="pageview", visitor="v2", session="s2",
-                                 path="/dashcreator/?fbclid=BBB", referrer="https://l.facebook.com/")
-        # anúncio de verdade (link com marcação de mídia paga)
+                                 path="/d/?fbclid=B", referrer="https://l.facebook.com/")
+        # anúncio de verdade (pago)
         PageEvent.objects.create(site="dash", kind="pageview", visitor="v3", session="s3",
-                                 path="/dashcreator/?fbclid=CCC&utm_source=meta&utm_medium=paid&utm_campaign=julho")
+                                 path="/d/?fbclid=C&utm_source=meta&utm_medium=paid&utm_campaign=julho&utm_content=video-a")
 
-        ctx = self.c.get(self._url()).context
-        self.assertEqual(ctx["meta_views"], 3)          # os 3 vieram do Meta
-        self.assertEqual(ctx["meta_paid_views"], 1)     # mas só 1 é anúncio
-        self.assertEqual(ctx["meta_organic_views"], 2)  # bio + story = orgânico
+        ctx = self._resp().context
+        self.assertEqual(ctx["organic"]["views"], 2)
+        self.assertEqual(ctx["organic"]["visitors"], 2)
+        self.assertEqual(ctx["paid"]["views"], 1)
 
-    def test_no_ads_running_shows_zero_paid(self):
-        """Cenário do usuário: nenhum anúncio rodando -> pago = 0."""
+        org_creatives = {r["label"]: r["n"] for r in ctx["organic"]["creatives"]}
+        paid_campaigns = {r["label"]: r["n"] for r in ctx["paid"]["campaigns"]}
+        self.assertEqual(org_creatives["link_in_bio"], 1)
+        self.assertEqual(paid_campaigns["julho"], 1)
+        # a campanha do anúncio NÃO pode vazar pro painel orgânico
+        self.assertNotIn("julho", {r["label"] for r in ctx["organic"]["campaigns"]})
+
+    def test_clicks_counted_per_segment(self):
+        # orgânico: entra pela bio e clica no CTA (clique já sem parâmetro)
+        PageEvent.objects.create(site="dash", kind="pageview", visitor="v1", session="s1",
+                                 path="/d/?fbclid=A", referrer="https://l.instagram.com/")
+        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", visitor="v1", session="s1", path="/d/")
+        # pago: entra por anúncio e clica
+        PageEvent.objects.create(site="dash", kind="pageview", visitor="v2", session="s2",
+                                 path="/d/?utm_source=meta&utm_medium=paid")
+        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", visitor="v2", session="s2", path="/d/")
+
+        ctx = self._resp().context
+        self.assertEqual(ctx["organic"]["clicks"], 1)
+        self.assertEqual(ctx["paid"]["clicks"], 1)
+        self.assertEqual(ctx["organic"]["ctr"], 100.0)
+
+    def test_no_ads_running_shows_empty_paid_panel(self):
+        """Cenário do usuário: só tráfego da bio, nenhum anúncio rodando."""
         for i in range(5):
             PageEvent.objects.create(site="dash", kind="pageview", visitor=f"v{i}", session=f"s{i}",
-                                     path="/dashcreator/?fbclid=X&utm_content=link_in_bio",
-                                     referrer="https://l.instagram.com/")
-        ctx = self.c.get(self._url()).context
-        self.assertEqual(ctx["meta_paid_views"], 0)
-        self.assertEqual(ctx["meta_organic_views"], 5)
+                                     path="/d/?fbclid=X&utm_content=link_in_bio", referrer="https://l.instagram.com/")
+        resp = self._resp()
+        self.assertEqual(resp.context["organic"]["views"], 5)
+        self.assertEqual(resp.context["paid"]["views"], 0)
+        self.assertFalse(resp.context["paid"]["has_data"])
+        self.assertContains(resp, "Orgânico · Facebook / Instagram")
+        self.assertContains(resp, "Nenhum anúncio rodando")
