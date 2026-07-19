@@ -4177,6 +4177,26 @@ body.page-finance .message {
     height: 7px;
 }
 
+/* Caixa de data reusável do Financeiro (dia grande + mes serif). Segue o
+   mesmo padrao do .pl-prazo-date do Planejamento. */
+.fd-date-box {
+    display: flex; flex-direction: column; align-items: center;
+    line-height: 1; flex-shrink: 0;
+    width: 40px;
+    padding: 2px 0;
+}
+.fd-date-box-day {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px; font-weight: 700; color: #1a2340;
+}
+.fd-date-box-month {
+    font-size: 8.5px; color: #8a7d6b;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-top: 2px; font-weight: 600;
+}
+.fd-date-box.is-red .fd-date-box-day { color: #b84040; }
+.fd-date-box.is-red .fd-date-box-month { color: #b84040; }
+
 .fd-dist-label {
     flex: 1 1 auto;
     color: var(--fd-muted);

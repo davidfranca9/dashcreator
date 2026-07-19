@@ -2943,7 +2943,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         {
             "id": item.pk,
             "description": item.description or "Despesa / investimento",
-            "detail": f"{short_date(item.occurred_on)} · Saída avulsa",
+            "detail": "Saída avulsa",
+            "date_obj": item.occurred_on,
             "amount_text": f"−{currency(item.amount)}",
         }
         for item in sorted(month_entries, key=lambda entry: entry.occurred_on, reverse=True)
