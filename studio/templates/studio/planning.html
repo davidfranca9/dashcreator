@@ -208,54 +208,6 @@
         </div>
     </div>
 
-    <aside class="pl-side">
-        <div>
-            <div class="pl-sec-title">Próximos prazos</div>
-            <div class="pl-card">
-                {% for item in upcoming %}
-                    <a href="{% url 'project_edit' item.id %}" class="pl-prazo-row{% if item.is_urgent %} is-urgent{% endif %}">
-                        <div class="pl-prazo-date">
-                            <div class="pl-prazo-day">{{ item.day }}</div>
-                            <div class="pl-prazo-month">{{ item.month }}</div>
-                        </div>
-                        <div>
-                            <div class="pl-prazo-name">{{ item.company }}</div>
-                            <div class="pl-prazo-brand">{{ item.service_category }}</div>
-                        </div>
-                        {% if item.is_today %}
-                            <span class="pl-prazo-chip is-today">Hoje</span>
-                        {% elif item.days_left <= 2 %}
-                            <span class="pl-prazo-chip is-soon">Em {{ item.days_left }}d</span>
-                        {% else %}
-                            <span class="pl-prazo-chip is-later">Em {{ item.days_left }}d</span>
-                        {% endif %}
-                    </a>
-                {% empty %}
-                    <div class="pl-empty">Sem prazos nos próximos 21 dias.</div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div>
-            <div class="pl-sec-title">Resumo da semana</div>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <div class="pl-stat-card">
-                    <span class="pl-stat-label">Feitas</span>
-                    <span class="pl-stat-val ok">{{ week_done }}</span>
-                </div>
-                <div class="pl-stat-card">
-                    <span class="pl-stat-label">Pendentes</span>
-                    <span class="pl-stat-val">{{ week_total|add:"-"|add:week_done }}</span>
-                </div>
-                {% if week_overdue %}
-                <div class="pl-stat-card">
-                    <span class="pl-stat-label">Atrasadas</span>
-                    <span class="pl-stat-val warn">{{ week_overdue }}</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </aside>
 </div>
 
 <script>
