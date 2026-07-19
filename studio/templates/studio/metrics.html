@@ -41,6 +41,14 @@
     .kpi{ background:var(--card); border:1px solid var(--line); padding:22px 24px; }
     .kpi .n{ font-family:'Playfair Display',serif; font-weight:600; font-size:38px; color:var(--navy); line-height:1; }
     .kpi .l{ margin-top:8px; font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    /* Painel Meta Ads */
+    .sec-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:30px 0 14px; padding-top:24px; border-top:1px solid var(--line); }
+    .sec-head h2{ font-family:'Playfair Display',serif; font-size:22px; color:var(--navy); }
+    .sec-head .sub{ font-size:12px; color:var(--muted); }
+    .kpis.k4{ grid-template-columns:repeat(4,1fr); }
+    .kpi--meta .n{ color:#1877F2; }
+    .note{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
+    @media(max-width:720px){ .kpis.k4{ grid-template-columns:1fr 1fr; } }
 
     .card{ background:var(--card); border:1px solid var(--line); padding:24px; margin-bottom:22px; }
     .card h2{ font-family:'Playfair Display',serif; font-weight:600; font-size:20px; color:var(--navy); margin-bottom:18px; }
@@ -124,6 +132,66 @@
           {% else %}<p class="muted">Sem dados.</p>{% endif %}
         </div>
       </div>
+
+      <!-- ── PAINEL META ADS ─────────────────────────────────────────── -->
+      <div class="sec-head">
+        <h2>Meta Ads</h2>
+        <span class="sub">tráfego que chegou por Facebook / Instagram</span>
+      </div>
+
+      {% if has_meta %}
+        <div class="kpis k4">
+          <div class="kpi kpi--meta"><div class="n">{{ meta_views }}</div><div class="l">Visitas do Meta</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ meta_visitors }}</div><div class="l">Visitantes únicos</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ meta_clicks }}</div><div class="l">Cliques em CTA</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ meta_share }}%</div><div class="l">do tráfego total</div></div>
+        </div>
+
+        <div class="cols">
+          <div class="card">
+            <h2>Campanhas</h2>
+            <ul class="rank">
+              {% for row in meta_campaigns %}
+                <li>
+                  <span class="name">{{ row.label }}</span>
+                  <span class="val">{{ row.n }}</span>
+                  <div class="bar"><span style="width:{% widthratio row.n max_campaign 100 %}%"></span></div>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="note">Vem do <code>utm_campaign</code> do link do anúncio.</p>
+          </div>
+
+          <div class="card">
+            <h2>Criativos / anúncios</h2>
+            <ul class="rank">
+              {% for row in meta_creatives %}
+                <li>
+                  <span class="name">{{ row.label }}</span>
+                  <span class="val">{{ row.n }}</span>
+                  <div class="bar"><span style="width:{% widthratio row.n max_creative 100 %}%"></span></div>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="note">Vem do <code>utm_content</code> do link do anúncio.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="note" style="margin:0">
+            <strong>Taxa de clique do tráfego Meta:</strong> {{ meta_ctr }}% ({{ meta_clicks }} cliques em {{ meta_views }} visitas).<br>
+            Estes números são medidos <strong>no seu site</strong>. Valor investido, CPM e CPC ficam no Gerenciador de Anúncios do Meta.
+          </p>
+        </div>
+      {% else %}
+        <div class="card empty">
+          <div class="big">Nenhuma visita do Meta ainda</div>
+          <p class="muted">
+            Assim que alguém clicar no seu anúncio e cair no site, aparece aqui.<br>
+            Identificamos pelo <code>fbclid</code> (que o Meta adiciona sozinho no link), por <code>utm_source</code> e pelo referrer do Facebook/Instagram.
+          </p>
+        </div>
+      {% endif %}
     {% else %}
       <div class="card empty">
         <div class="big">Ainda sem dados</div>
@@ -143,16 +211,24 @@
         data: {
           labels: {{ series_labels_json|safe }},
           datasets: [{
+            label: 'Todas as visitas',
             data: {{ series_values_json|safe }},
             borderColor: '#0a2463',
             backgroundColor: 'rgba(201,149,106,.18)',
             fill: true, tension: .32, borderWidth: 2,
             pointRadius: 3, pointBackgroundColor: '#c9956a'
+          }, {
+            label: 'Vindas do Meta Ads',
+            data: {{ meta_series_values_json|safe }},
+            borderColor: '#1877F2',
+            backgroundColor: 'rgba(24,119,242,.12)',
+            fill: true, tension: .32, borderWidth: 2,
+            pointRadius: 3, pointBackgroundColor: '#1877F2'
           }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
           scales: {
             y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(26,20,16,.06)' } },
             x: { grid: { display: false } }

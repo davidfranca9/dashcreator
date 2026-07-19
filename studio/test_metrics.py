@@ -119,3 +119,63 @@ class PipelineIconsTest(TestCase):
         # deve ter pelo menos 6 <svg dentro dos icones (um por etapa)
         self.assertGreaterEqual(html.count('class="pipeline-kpi-icon'), 6)
         self.assertIn("<svg", html)
+
+
+class MetaAdsPanelTests(TestCase):
+    """Painel de Meta Ads no /metricas: identifica tráfego do Facebook/Instagram
+    por fbclid, utm_source e referrer — sem precisar da API do Meta."""
+
+    def setUp(self):
+        get_user_model().objects.create_user("boss", password="x", is_staff=True)
+        self.c = Client()
+        self.c.login(username="boss", password="x")
+
+    def _url(self):
+        return reverse("metrics_dashboard") + "?site=dash&days=30"
+
+    def test_detects_meta_traffic_by_fbclid_utm_and_referrer(self):
+        # 3 visitas do Meta (uma por sinal) + 1 orgânica
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?fbclid=ABC123", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?utm_source=instagram&utm_campaign=lancamento", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v3", session="s3", referrer="https://l.facebook.com/")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v4", session="s4", referrer="https://google.com/")
+
+        ctx = self.c.get(self._url()).context
+        self.assertEqual(ctx["meta_views"], 3)
+        self.assertEqual(ctx["meta_visitors"], 3)
+        self.assertEqual(ctx["total_views"], 4)
+        self.assertEqual(ctx["meta_share"], 75)
+        self.assertTrue(ctx["has_meta"])
+
+    def test_counts_cta_clicks_from_meta_sessions(self):
+        # visita pelo Meta e depois clica no CTA (clique já sem o fbclid na URL)
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?fbclid=X", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", path="/dashcreator/", visitor="v1", session="s1")
+        # visitante orgânico que também clica (não deve contar no Meta)
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", path="/dashcreator/", visitor="v2", session="s2")
+
+        ctx = self.c.get(self._url()).context
+        self.assertEqual(ctx["meta_clicks"], 1)
+        self.assertEqual(ctx["total_clicks"], 2)
+        self.assertEqual(ctx["meta_ctr"], 100.0)
+
+    def test_breaks_down_by_campaign_and_creative(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=1&utm_campaign=black&utm_content=video-a", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=2&utm_campaign=black&utm_content=video-b", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d/?fbclid=3&utm_campaign=julho&utm_content=video-a", visitor="v3", session="s3")
+
+        ctx = self.c.get(self._url()).context
+        campaigns = {row["label"]: row["n"] for row in ctx["meta_campaigns"]}
+        creatives = {row["label"]: row["n"] for row in ctx["meta_creatives"]}
+        self.assertEqual(campaigns["black"], 2)
+        self.assertEqual(campaigns["julho"], 1)
+        self.assertEqual(creatives["video-a"], 2)
+
+    def test_panel_renders_empty_state_without_meta_traffic(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v1", session="s1")
+        resp = self.c.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Meta Ads")
+        self.assertContains(resp, "Nenhuma visita do Meta ainda")
+        self.assertFalse(resp.context["has_meta"])
