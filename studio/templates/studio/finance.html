@@ -125,7 +125,10 @@
                         {% for item in finance_desktop.latest_movements %}
                             <div class="fd-row">
                                 <div class="fd-row-left">
-                                    <span class="fd-row-dot {% if item.tone == 'up' %}fd-dot-green{% else %}fd-dot-red{% endif %}"></span>
+                                    <div class="fd-date-box{% if item.tone == 'down' %} is-red{% endif %}">
+                                        <span class="fd-date-box-day">{{ item.date_obj|date:"d" }}</span>
+                                        <span class="fd-date-box-month">{{ item.date_obj|date:"b"|upper }}</span>
+                                    </div>
                                     <span class="fd-row-info">
                                         <strong>{{ item.name }}</strong>
                                         <small>{{ item.detail }}</small>

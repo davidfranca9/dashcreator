@@ -2956,7 +2956,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                 {
                     "tone": "up",
                     "name": item["description"].replace("Recebido no trabalho de ", ""),
-                    "detail": f"{item['date_text']} · {item['label']}",
+                    "detail": item["label"],
+                    "date_obj": item["sort_date"],
                     "amount_text": f"+{item['amount_text']}",
                 }
             )
@@ -2965,7 +2966,8 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
                 {
                     "tone": "down",
                     "name": item["description"],
-                    "detail": f"{item['date_text']} · Saída",
+                    "detail": "Saída",
+                    "date_obj": item["sort_date"],
                     "amount_text": f"−{item['amount_text']}",
                 }
             )
