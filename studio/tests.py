@@ -4303,3 +4303,46 @@ class LayfeCampaignDetailTest(TestCase):
         self.client.post(reverse("project_message_action", args=[self.project.pk, msg.pk]), {"action": "ignore"})
         msg.refresh_from_db()
         self.assertEqual(msg.status, "ignored")
+
+
+class FinancePageWithMovementsTest(TestCase):
+    """Regressão: /financeiro/ quebrava com KeyError 'sort_date' sempre que
+    havia movimentação no mês (o código apagava a chave e depois a lia)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="finuser", password="segura123")
+        self.workspace = get_or_create_workspace_for_user(self.user)
+        self.niche = Niche.objects.get(workspace=self.workspace, name="Beleza e Maquiagem")
+        self.category = ServiceCategory.objects.create(workspace=self.workspace, name="Pacote de videos")
+
+    def test_finance_page_opens_with_incoming_and_outgoing(self):
+        today = date.today()
+        # entrada: trabalho com valor recebido
+        Project.objects.create(
+            workspace=self.workspace, company="Marca Paga", niche=self.niche,
+            service_category=self.category, stage="Fechado", status="Briefing",
+            total_value=1000, entry_value=1000, received_value=1000, deliverables_count=1,
+            close_date=today, due_date=today,
+        )
+        # saída avulsa
+        FinanceEntry.objects.create(
+            workspace=self.workspace, description="Equipamento",
+            amount=250, occurred_on=today, kind="outgoing",
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("finance"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_ledger_keeps_sort_date_for_latest_movements(self):
+        today = date.today()
+        FinanceEntry.objects.create(
+            workspace=self.workspace, description="Equipamento",
+            amount=250, occurred_on=today, kind="outgoing",
+        )
+        snap = finance_snapshot(self.workspace, None)
+        self.assertTrue(snap["ledger"])
+        # a data precisa sobreviver para as "Últimas movimentações"
+        self.assertIn("sort_date", snap["ledger"][0])
+        movements = snap["finance_desktop"]["latest_movements"]
+        self.assertTrue(movements)
+        self.assertIsNotNone(movements[0]["date_obj"])

@@ -2818,9 +2818,10 @@ def finance_snapshot(workspace: Workspace, month_filter: str | None = None) -> d
         }
         for sale in infoproduct_month_sales
     )
+    # NÃO remover "sort_date": ele é lido mais abaixo para montar as "Últimas
+    # movimentações" (date_obj). Apagar aqui quebrava a página com KeyError
+    # sempre que houvesse alguma movimentação no mês.
     ledger.sort(key=lambda item: item["sort_date"], reverse=True)
-    for item in ledger:
-        item.pop("sort_date", None)
 
     workspace_settings = settings_map(workspace)
     pro_labore_amount = _decimal_setting(workspace_settings, "ops_pro_labore_amount", Decimal("5000"))
