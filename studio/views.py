@@ -1086,6 +1086,118 @@ def _redirect_preserving_month(request: HttpRequest, view_name: str, *args, **kw
 
 
 @login_required
+@login_required
+def planning(request: HttpRequest) -> HttpResponse:
+    """Overview da semana: tarefas por dia + proximos prazos de projetos."""
+    from datetime import timedelta
+    from .models import Task, Project
+    from .services import sync_dashboard_auto_tasks
+    from django.db.models import Q
+
+    workspace = _workspace(request)
+    context = shell_context(
+        "planning",
+        workspace,
+        "Planejamento",
+        "Overview da sua semana.",
+        user=request.user,
+    )
+
+    # Reusa o mesmo gerador de auto tarefas do Dashboard (idempotente).
+    sync_dashboard_auto_tasks(workspace)
+
+    today = timezone.localdate()
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+
+    # Tarefas da semana: prazo entre segunda e domingo, ou sem prazo E ainda
+    # nao feitas (aparecem no dia de hoje). Descarta as dispensadas.
+    week_tasks = list(
+        Task.objects.filter(workspace=workspace, dismissed=False)
+        .filter(
+            Q(due_date__gte=monday, due_date__lte=sunday)
+            | Q(due_date__isnull=True, done=False)
+        )
+        .select_related("project")
+    )
+
+    days_pt = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    days_short_pt = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    priority_rank = {"alta": 0, "media": 1, "baixa": 2}
+
+    days_payload = []
+    for i in range(7):
+        day = monday + timedelta(days=i)
+        day_tasks = [
+            t for t in week_tasks
+            if (t.due_date == day) or (t.due_date is None and day == today and not t.done)
+        ]
+        day_tasks.sort(key=lambda t: (t.done, priority_rank.get(t.priority, 3), -t.pk))
+        payload_tasks = []
+        for t in day_tasks:
+            payload_tasks.append({
+                "id": t.pk,
+                "title": t.title,
+                "priority": t.priority,
+                "done": t.done,
+                "brand": t.project.company if t.project else "",
+                "is_auto": bool(t.auto_key),
+            })
+        days_payload.append({
+            "date": day,
+            "day_name": days_pt[day.weekday()],
+            "day_short": days_short_pt[day.weekday()],
+            "is_today": day == today,
+            "is_past": day < today,
+            "tasks": payload_tasks,
+            "done_count": sum(1 for t in payload_tasks if t["done"]),
+            "total_count": len(payload_tasks),
+        })
+
+    # Proximos prazos dos projetos: dos ativos que tem due_date entre hoje e +21 dias.
+    horizon = today + timedelta(days=21)
+    upcoming_projects = list(
+        Project.objects.filter(
+            workspace=workspace,
+            stage="Fechado",
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).order_by("due_date")[:8]
+    )
+    meses_pt_short = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
+    upcoming_payload = []
+    for p in upcoming_projects:
+        days_left = (p.due_date - today).days
+        upcoming_payload.append({
+            "id": p.pk,
+            "company": p.company,
+            "service_category": p.service_category_name,
+            "day": p.due_date.day,
+            "month": meses_pt_short[p.due_date.month - 1],
+            "days_left": days_left,
+            "is_today": days_left == 0,
+            "is_urgent": days_left <= 2,
+        })
+
+    total_week = sum(d["total_count"] for d in days_payload)
+    done_week = sum(d["done_count"] for d in days_payload)
+    overdue_week = sum(
+        1 for t in week_tasks
+        if not t.done and t.due_date and t.due_date < today
+    )
+
+    context.update({
+        "week_days": days_payload,
+        "week_range_label": f"{monday.day} a {sunday.day} de {['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][sunday.month - 1]}",
+        "week_total": total_week,
+        "week_done": done_week,
+        "week_overdue": overdue_week,
+        "week_pct": round((done_week / total_week) * 100) if total_week else 0,
+        "upcoming": upcoming_payload,
+    })
+    return render(request, "studio/planning.html", context)
+
+
 def dashboard(request: HttpRequest) -> HttpResponse:
     from .models import Task
     from .services import sync_dashboard_auto_tasks
@@ -1111,7 +1223,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     # (inclui atrasadas) + tarefas ja feitas HOJE (pra mostrar o riscado).
     today = timezone.localdate()
     today_tasks_qs = (
-        Task.objects.filter(workspace=workspace)
+        Task.objects.filter(workspace=workspace, dismissed=False)
         .filter(
             Q(done=False, due_date__lte=today)
             | Q(done=False, due_date__isnull=True)
@@ -2611,5 +2723,11 @@ def task_delete(request: HttpRequest, pk: int) -> JsonResponse:
 
     workspace = _workspace(request)
     task = get_object_or_404(Task, pk=pk, workspace=workspace)
-    task.delete()
+    if task.auto_key:
+        # Auto tasks: soft-delete pra o sync do dashboard nao recriar de novo.
+        task.dismissed = True
+        task.save(update_fields=["dismissed", "updated_at"])
+    else:
+        # Manuais: apaga de vez.
+        task.delete()
     return JsonResponse({"ok": True})

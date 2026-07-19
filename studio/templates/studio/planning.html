@@ -1,0 +1,241 @@
+{% extends "studio/base.html" %}
+
+{% block content %}
+<style>
+    .pl-wrap { display: flex; gap: 24px; align-items: flex-start; }
+    .pl-main { flex: 1; min-width: 0; }
+    .pl-side { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
+
+    .pl-week-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        margin-bottom: 12px; gap: 12px; flex-wrap: wrap;
+    }
+    .pl-week-title { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-weight: 600; color: #1a2340; }
+    .pl-week-meta { font-size: 12.5px; color: #8a7d6b; font-style: italic; }
+    .pl-week-progress { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .pl-tp-bar { width: 140px; height: 6px; background: #ddd6cb; border-radius: 3px; overflow: hidden; }
+    .pl-tp-fill { height: 100%; background: #2d7a5f; transition: width .3s; }
+    .pl-tp-pct { font-size: 12px; color: #8a7d6b; font-style: italic; min-width: 34px; }
+
+    .pl-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+    @media (max-width: 1100px) { .pl-days { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (max-width: 720px) { .pl-days { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    .pl-day {
+        background: #fff; border: 0.5px solid #ddd6cb;
+        border-radius: 10px;
+        display: flex; flex-direction: column;
+        min-height: 180px;
+    }
+    .pl-day.is-today { border: 1.5px solid #1a2340; box-shadow: 0 4px 12px rgba(26,35,64,0.08); }
+    .pl-day.is-past { opacity: 0.7; }
+    .pl-day-head {
+        padding: 10px 12px 8px;
+        border-bottom: 0.5px solid #ddd6cb;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .pl-day-name { font-size: 11px; font-weight: 700; color: #1a2340; letter-spacing: 0.5px; text-transform: uppercase; }
+    .pl-day.is-today .pl-day-name { color: #b07d2a; }
+    .pl-day-date { font-family: 'Playfair Display', Georgia, serif; font-size: 16px; font-weight: 700; color: #1a2340; margin-top: 1px; line-height: 1; }
+    .pl-day-badge { font-size: 10px; font-weight: 700; background: #f5f0e8; color: #5c5143; padding: 2px 7px; border-radius: 99px; }
+    .pl-day-body { padding: 8px 8px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
+    .pl-day-empty { color: #b8b0a5; font-size: 11px; text-align: center; padding: 18px 8px; font-style: italic; }
+
+    .pl-task {
+        background: #f9f7f2; border-left: 3px solid #c9b99a;
+        border-radius: 4px;
+        padding: 7px 9px 7px 10px;
+        font-size: 12px; color: #1a2340;
+        cursor: pointer;
+        position: relative;
+        transition: background .12s;
+    }
+    .pl-task:hover { background: #f2ede2; }
+    .pl-task.is-done { opacity: 0.45; }
+    .pl-task.is-done .pl-task-title { text-decoration: line-through; }
+    .pl-task.p-alta { border-left-color: #b84040; }
+    .pl-task.p-media { border-left-color: #b07d2a; }
+    .pl-task.p-baixa { border-left-color: #c9b99a; }
+    .pl-task-title { font-weight: 500; line-height: 1.3; padding-right: 14px; }
+    .pl-task-brand { font-size: 10.5px; color: #8a7d6b; font-style: italic; margin-top: 2px; }
+    .pl-task-check {
+        position: absolute; top: 8px; right: 7px;
+        width: 14px; height: 14px;
+        border: 0.5px solid #ccc4b8; background: #fff;
+        border-radius: 3px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .pl-task-check.is-on { background: #1a2340; border-color: #1a2340; }
+    .pl-task-check svg { display: none; }
+    .pl-task-check.is-on svg { display: block; }
+    .pl-task-auto {
+        display: inline-block; font-size: 9px; font-weight: 700;
+        background: rgba(201,185,154,0.25); color: #8a6a3a;
+        padding: 1px 5px; border-radius: 3px; margin-right: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .pl-sec-title { font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 600; color: #1a2340; margin-bottom: 10px; }
+    .pl-card { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px; overflow: hidden; }
+    .pl-prazo-row {
+        display: grid; grid-template-columns: 42px 1fr auto;
+        align-items: center; gap: 12px;
+        padding: 11px 14px;
+        border-bottom: 0.5px solid #ddd6cb;
+        transition: background .12s;
+        text-decoration: none; color: inherit;
+    }
+    .pl-prazo-row:last-child { border-bottom: none; }
+    .pl-prazo-row:hover { background: #faf7f0; }
+    .pl-prazo-date { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .pl-prazo-day { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 700; color: #1a2340; }
+    .pl-prazo-row.is-urgent .pl-prazo-day { color: #b84040; }
+    .pl-prazo-month { font-size: 8.5px; color: #8a7d6b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; font-weight: 600; }
+    .pl-prazo-name { font-size: 12.5px; font-weight: 600; color: #1a2340; margin-bottom: 1px; }
+    .pl-prazo-brand { font-size: 11px; color: #8a7d6b; font-style: italic; }
+    .pl-prazo-chip { font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+    .pl-prazo-chip.is-today { background: #fdf0f0; color: #b84040; }
+    .pl-prazo-chip.is-soon { background: #fdf6e8; color: #b07d2a; }
+    .pl-prazo-chip.is-later { background: #eff3fb; color: #2a5fb0; }
+    .pl-empty { padding: 20px; text-align: center; color: #8a7d6b; font-size: 12.5px; font-style: italic; }
+
+    .pl-stat-card { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: baseline; }
+    .pl-stat-label { font-size: 12px; color: #5c5143; }
+    .pl-stat-val { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 700; color: #1a2340; }
+    .pl-stat-val.warn { color: #b84040; }
+    .pl-stat-val.ok { color: #2d7a5f; }
+</style>
+
+<form style="display:none">{% csrf_token %}</form>
+
+<div class="pl-wrap" data-planning>
+    <div class="pl-main">
+        <div class="pl-week-head">
+            <div>
+                <div class="pl-week-title">Semana de {{ week_range_label }}</div>
+                <div class="pl-week-meta">
+                    {{ week_total }} tarefa{{ week_total|pluralize }} na semana
+                    {% if week_overdue %} · <strong style="color:#b84040">{{ week_overdue }} atrasada{{ week_overdue|pluralize }}</strong>{% endif %}
+                </div>
+            </div>
+            <div class="pl-week-progress">
+                <div class="pl-tp-bar"><div class="pl-tp-fill" style="width: {{ week_pct }}%;"></div></div>
+                <span class="pl-tp-pct">{{ week_pct }}%</span>
+            </div>
+        </div>
+
+        <div class="pl-days">
+            {% for day in week_days %}
+                <div class="pl-day{% if day.is_today %} is-today{% endif %}{% if day.is_past %} is-past{% endif %}">
+                    <div class="pl-day-head">
+                        <div>
+                            <div class="pl-day-name">{% if day.is_today %}Hoje{% else %}{{ day.day_short }}{% endif %}</div>
+                            <div class="pl-day-date">{{ day.date|date:"j/n" }}</div>
+                        </div>
+                        {% if day.total_count %}
+                            <span class="pl-day-badge">{{ day.done_count }}/{{ day.total_count }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="pl-day-body">
+                        {% for task in day.tasks %}
+                            <div class="pl-task p-{{ task.priority }}{% if task.done %} is-done{% endif %}" data-task-id="{{ task.id }}">
+                                <div class="pl-task-check{% if task.done %} is-on{% endif %}" data-task-toggle="{{ task.id }}" role="checkbox" aria-checked="{{ task.done|yesno:'true,false' }}" tabindex="0">
+                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                                <div class="pl-task-title">
+                                    {% if task.is_auto %}<span class="pl-task-auto">Auto</span>{% endif %}{{ task.title }}
+                                </div>
+                                {% if task.brand %}<div class="pl-task-brand">{{ task.brand }}</div>{% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="pl-day-empty">{% if day.is_past %}Sem tarefas{% else %}Livre{% endif %}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <aside class="pl-side">
+        <div>
+            <div class="pl-sec-title">Próximos prazos</div>
+            <div class="pl-card">
+                {% for item in upcoming %}
+                    <a href="{% url 'project_edit' item.id %}" class="pl-prazo-row{% if item.is_urgent %} is-urgent{% endif %}">
+                        <div class="pl-prazo-date">
+                            <div class="pl-prazo-day">{{ item.day }}</div>
+                            <div class="pl-prazo-month">{{ item.month }}</div>
+                        </div>
+                        <div>
+                            <div class="pl-prazo-name">{{ item.company }}</div>
+                            <div class="pl-prazo-brand">{{ item.service_category }}</div>
+                        </div>
+                        {% if item.is_today %}
+                            <span class="pl-prazo-chip is-today">Hoje</span>
+                        {% elif item.days_left <= 2 %}
+                            <span class="pl-prazo-chip is-soon">Em {{ item.days_left }}d</span>
+                        {% else %}
+                            <span class="pl-prazo-chip is-later">Em {{ item.days_left }}d</span>
+                        {% endif %}
+                    </a>
+                {% empty %}
+                    <div class="pl-empty">Sem prazos nos próximos 21 dias.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <div class="pl-sec-title">Resumo da semana</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="pl-stat-card">
+                    <span class="pl-stat-label">Feitas</span>
+                    <span class="pl-stat-val ok">{{ week_done }}</span>
+                </div>
+                <div class="pl-stat-card">
+                    <span class="pl-stat-label">Pendentes</span>
+                    <span class="pl-stat-val">{{ week_total|add:"-"|add:week_done }}</span>
+                </div>
+                {% if week_overdue %}
+                <div class="pl-stat-card">
+                    <span class="pl-stat-label">Atrasadas</span>
+                    <span class="pl-stat-val warn">{{ week_overdue }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+(() => {
+    const root = document.querySelector("[data-planning]");
+    if (!root) return;
+    const csrfToken = (() => {
+        const el = document.querySelector("input[name=csrfmiddlewaretoken]");
+        return el ? el.value : "";
+    })();
+    root.querySelectorAll("[data-task-toggle]").forEach((box) => {
+        const handler = () => {
+            const id = box.dataset.taskToggle;
+            const item = box.closest("[data-task-id]");
+            const willBeOn = !box.classList.contains("is-on");
+            box.classList.toggle("is-on", willBeOn);
+            item.classList.toggle("is-done", willBeOn);
+            const fd = new FormData();
+            fetch(`/dashboard/tarefas/${id}/toggle/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrfToken },
+                body: fd,
+                credentials: "same-origin",
+            }).then((r) => r.json()).then((data) => {
+                if (!data.ok) window.location.reload();
+            }).catch(() => window.location.reload());
+        };
+        box.addEventListener("click", handler);
+        box.addEventListener("keydown", (e) => {
+            if (e.key === " " || e.key === "Enter") { e.preventDefault(); handler(); }
+        });
+    });
+})();
+</script>
+{% endblock %}

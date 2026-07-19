@@ -188,9 +188,7 @@
                     {% if task.brand %}<div class="dash-task-meta">{{ task.brand }}</div>{% endif %}
                 </div>
                 <span class="dash-task-prazo pz-{{ task.prazo_cls }}">{{ task.prazo_label }}</span>
-                {% if not task.is_auto %}
-                    <button type="button" class="dash-task-del" data-task-delete="{{ task.id }}" title="Excluir tarefa">&times;</button>
-                {% endif %}
+                <button type="button" class="dash-task-del" data-task-delete="{{ task.id }}" title="{% if task.is_auto %}Dispensar tarefa (não volta){% else %}Excluir tarefa{% endif %}">&times;</button>
             </div>
         {% empty %}
             <div class="dash-tasks-empty" data-tasks-empty>Sem tarefas por enquanto. Adicione uma abaixo.</div>

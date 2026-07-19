@@ -1715,6 +1715,9 @@ def sync_dashboard_auto_tasks(workspace: Workspace) -> None:
     # 1. Cria/atualiza as esperadas.
     for key, spec in expected.items():
         current = existing_by_key.pop(key, None)
+        if current is not None and current.dismissed:
+            # User dispensou: nao ressuscita.
+            continue
         if current is None:
             Task.objects.create(
                 workspace=workspace,

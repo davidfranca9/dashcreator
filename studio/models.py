@@ -442,6 +442,10 @@ class Task(WorkspaceOwnedModel):
     # varias manuais por workspace; auto_key preenchido e unico por workspace
     # entao a geracao ficou idempotente.
     auto_key = models.CharField(max_length=80, null=True, blank=True, db_index=True)
+    # Auto tasks "excluidas" pelo usuario ficam com dismissed=True.
+    # O sync respeita esse flag e nao recria a tarefa (nao fica reaparecendo
+    # cada vez que a Layfe apaga). Manuais quando excluidas somem do DB direto.
+    dismissed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["done", "due_date", "priority", "-created_at"]

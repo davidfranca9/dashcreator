@@ -2,6 +2,7 @@ from __future__ import annotations
 
 NAV_ITEMS = [
     {"key": "dashboard", "label": "Dashboard", "subtitle": "Visão executiva do negócio UGC.", "url_name": "dashboard", "icon": "dashboard"},
+    {"key": "planning", "label": "Planejamento", "subtitle": "Overview da sua semana.", "url_name": "planning", "icon": "calendar"},
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs", "icon": "briefcase"},
     {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociações em aberto.", "url_name": "prospection", "icon": "target"},
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance", "icon": "cash"},
@@ -14,7 +15,7 @@ NAV_ITEMS = [
 ]
 
 NAV_GROUPS = [
-    {"label": "Principal", "keys": ["dashboard", "jobs", "prospection"]},
+    {"label": "Principal", "keys": ["dashboard", "planning", "jobs", "prospection"]},
     {"label": "Gestão", "keys": ["finance", "distribution", "legal", "infoproducts", "reports"]},
     {"label": "Conta", "keys": ["profile", "settings"]},
 ]
