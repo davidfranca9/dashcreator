@@ -124,6 +124,57 @@
         .pend-cal-more { display: none; }
     }
 
+    /* Cell interativo */
+    .pend-cal-cell { cursor: pointer; transition: background .12s; }
+    .pend-cal-cell:hover { background: #fdf8ee; }
+    .pend-cal-cell.is-selected { box-shadow: inset 0 0 0 2px #1a2340; }
+    .pend-cal-num {
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .pend-cal-count {
+        font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700;
+        background: #1a2340; color: #f5f0e8;
+        border-radius: 99px; padding: 1px 7px;
+        line-height: 1.4;
+    }
+
+    /* Painel do dia clicado */
+    .pend-cal-day {
+        background: #fff; border-top: 0.5px solid #ddd6cb;
+    }
+    .pend-cal-day-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 18px;
+        background: #f5f0e8; border-bottom: 0.5px solid #ddd6cb;
+    }
+    .pend-cal-day-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 15px; font-weight: 600; color: #1a2340;
+    }
+    .pend-cal-day-close {
+        background: transparent; border: none;
+        color: #8a7d6b; cursor: pointer; font-size: 22px; line-height: 1; padding: 0 6px;
+    }
+    .pend-cal-day-close:hover { color: #1a2340; }
+    .pend-cal-day-list { padding: 12px 18px; display: flex; flex-direction: column; gap: 8px; }
+    .pend-cal-day-empty { color: #8a7d6b; font-style: italic; font-size: 13px; text-align: center; padding: 20px; }
+    .pend-cal-day-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px;
+        background: #fafaf7; border: 0.5px solid #e6dfd2; border-radius: 8px;
+        border-left: 3px solid #ccc4b8;
+    }
+    .pend-cal-day-item.p-urgente { border-left-color: #b84040; background: #fdf0f0; }
+    .pend-cal-day-item.p-alta { border-left-color: #b07d2a; background: #fdf6e8; }
+    .pend-cal-day-item.p-media { border-left-color: #c9b99a; }
+    .pend-cal-day-item.p-baixa { border-left-color: #cbd5e1; }
+    .pend-cal-day-item-title { font-size: 13px; font-weight: 600; color: #1a2340; flex: 1; }
+    .pend-cal-day-item-brand { font-size: 11.5px; color: #8a7d6b; font-style: italic; margin-top: 2px; }
+    .pend-cal-day-item-chip {
+        font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+        background: #fdf0f0; color: #b84040; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+
     /* Meta -------------------------------------------------------------- */
     .pend-meta { font-size: 12px; color: #8a7d6b; font-style: italic; margin-bottom: 10px; }
 
@@ -265,8 +316,13 @@
             {% for h in calendar.week_headers %}<div class="pend-cal-h">{{ h }}</div>{% endfor %}
             {% for week in calendar.weeks %}
                 {% for cell in week %}
-                    <div class="pend-cal-cell{% if not cell.in_month %} is-out{% endif %}{% if cell.is_today %} is-today{% endif %}">
-                        <div class="pend-cal-num">{{ cell.date.day }}</div>
+                    <div class="pend-cal-cell{% if not cell.in_month %} is-out{% endif %}{% if cell.is_today %} is-today{% endif %}"
+                         data-cal-cell="{{ cell.date_iso }}"
+                         role="button" tabindex="0">
+                        <div class="pend-cal-num">
+                            {{ cell.date.day }}
+                            {% if cell.items %}<span class="pend-cal-count">{{ cell.items|length }}</span>{% endif %}
+                        </div>
                         {% for it in cell.items|slice:":3" %}
                             <div class="pend-cal-item p-{{ it.priority }}" title="{{ it.title }}">{{ it.title|truncatechars:20 }}</div>
                         {% endfor %}
@@ -277,6 +333,18 @@
                 {% endfor %}
             {% endfor %}
         </div>
+
+        {# Painel do dia selecionado (aparece embaixo do calendario). #}
+        <div class="pend-cal-day" data-cal-day hidden>
+            <div class="pend-cal-day-head">
+                <span class="pend-cal-day-title" data-cal-day-title>Selecione um dia</span>
+                <button type="button" class="pend-cal-day-close" data-cal-day-close aria-label="Fechar">&times;</button>
+            </div>
+            <div class="pend-cal-day-list" data-cal-day-list></div>
+        </div>
+
+        {# Dados por data pro JS montar o painel do dia. #}
+        {{ calendar.by_date_json|json_script:"cal-by-date" }}
     </div>
 
     <div class="pend-list" data-list data-view="list-only">
@@ -378,6 +446,52 @@
         viewBtn.addEventListener("click", () => {
             const current = calBlock && !calBlock.hidden ? "cal" : "list";
             applyView(current === "cal" ? "list" : "cal");
+        });
+    }
+
+    // Clicar num dia do calendario abre o painel embaixo -------------------
+    const calByDateEl = document.getElementById("cal-by-date");
+    const calByDate = calByDateEl ? JSON.parse(calByDateEl.textContent || "{}") : {};
+    const dayPanel = root.querySelector("[data-cal-day]");
+    const dayTitle = root.querySelector("[data-cal-day-title]");
+    const dayList = root.querySelector("[data-cal-day-list]");
+    const dayClose = root.querySelector("[data-cal-day-close]");
+    const renderDay = (iso) => {
+        if (!dayPanel) return;
+        const info = calByDate[iso];
+        root.querySelectorAll("[data-cal-cell]").forEach((c) => c.classList.toggle("is-selected", c.dataset.calCell === iso));
+        if (info && info.items && info.items.length) {
+            dayTitle.textContent = `${info.label} · ${info.items.length} pendência${info.items.length === 1 ? "" : "s"}`;
+            dayList.innerHTML = "";
+            info.items.forEach((it) => {
+                const div = document.createElement("div");
+                div.className = `pend-cal-day-item p-${it.priority}`;
+                div.innerHTML = `
+                    <div style="flex:1">
+                        <div class="pend-cal-day-item-title">${it.title}</div>
+                        ${it.brand ? `<div class="pend-cal-day-item-brand">${it.brand}</div>` : ""}
+                    </div>
+                    ${it.is_overdue ? `<span class="pend-cal-day-item-chip">Atrasada</span>` : ""}
+                `;
+                dayList.appendChild(div);
+            });
+        } else {
+            dayTitle.textContent = info ? info.label : "Dia sem pendências";
+            dayList.innerHTML = `<div class="pend-cal-day-empty">Sem pendências pra esse dia.</div>`;
+        }
+        dayPanel.hidden = false;
+    };
+    root.querySelectorAll("[data-cal-cell]").forEach((cell) => {
+        const iso = cell.dataset.calCell;
+        cell.addEventListener("click", () => renderDay(iso));
+        cell.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); renderDay(iso); }
+        });
+    });
+    if (dayClose) {
+        dayClose.addEventListener("click", () => {
+            dayPanel.hidden = true;
+            root.querySelectorAll("[data-cal-cell]").forEach((c) => c.classList.remove("is-selected"));
         });
     }
 

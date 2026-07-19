@@ -1200,6 +1200,7 @@ def planning(request: HttpRequest) -> HttpResponse:
             d = cursor + timedelta(days=i)
             week.append({
                 "date": d,
+                "date_iso": d.isoformat(),
                 "in_month": d.month == month,
                 "is_today": d == today,
                 "items": items_by_date.get(d, []),
@@ -1207,12 +1208,31 @@ def planning(request: HttpRequest) -> HttpResponse:
         weeks.append(week)
         cursor += timedelta(days=7)
 
+    # Payload JSON pra o JS renderizar o painel do dia clicado no calendario.
+    dias_pt = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    cal_by_date_json = {}
+    for d, its in items_by_date.items():
+        cal_by_date_json[d.isoformat()] = {
+            "label": f"{dias_pt[d.weekday()]}, {d.day} de {meses_pt[d.month - 1]}",
+            "items": [
+                {
+                    "id": it["id"],
+                    "title": it["title"],
+                    "priority": it["priority"],
+                    "brand": it["brand"],
+                    "is_overdue": it["is_overdue"],
+                    "done": False,
+                }
+                for it in its
+            ],
+        }
     calendar_ctx = {
         "month_label": month_label,
         "prev_month": prev_month_label,
         "next_month": next_month_label,
         "weeks": weeks,
         "week_headers": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+        "by_date_json": cal_by_date_json,
     }
 
     context.update({
