@@ -159,8 +159,10 @@
 </section>
 
 {# ================ Card 'O que temos pra hoje?' ================ #}
-{# Form invisivel so pra o {% csrf_token %} deixar o token no DOM.
-   O JS abaixo le esse token pra autenticar as chamadas de toggle/create/delete. #}
+{% comment %}
+Form invisivel so pra o csrf_token deixar o token no DOM. O JS abaixo le esse
+token pra autenticar as chamadas de toggle/create/delete.
+{% endcomment %}
 <form style="display:none">{% csrf_token %}</form>
 <section class="dash-tasks" data-dash-tasks>
     <div class="dash-tasks-head">
