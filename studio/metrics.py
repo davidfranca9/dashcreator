@@ -37,11 +37,11 @@ VALID_KINDS = {choice[0] for choice in PageEvent.KIND_CHOICES}
 _BOT_MARKERS = ("bot", "spider", "crawl", "slurp", "headless", "preview", "monitor", "curl", "wget")
 
 # ── Meta (Facebook / Instagram) ─────────────────────────────────────────────
-# ATENÇÃO: isto identifica tráfego vindo do Meta em geral — inclui ORGÂNICO
+# ATENÇÃO: isto identifica tráfego vindo do Meta em geral, inclui ORGÂNICO
 # (link da bio, story, post, DM). O fbclid NÃO serve para separar anúncio:
 # o Meta adiciona esse parâmetro em qualquer link clicado dentro dele.
 # Para "pago" existe só um sinal confiável: a marcação de mídia paga que VOCÊ
-# coloca no link do anúncio (utm_medium=paid) — ver _PAID_FILTER abaixo.
+# coloca no link do anúncio (utm_medium=paid). Ver _PAID_FILTER abaixo.
 _META_FILTER = (
     Q(path__icontains="fbclid=")
     | Q(path__icontains="utm_source=facebook")
@@ -82,7 +82,7 @@ def _rank_by_utm(paths, key: str, fallback: str, limit: int = 10) -> list[dict]:
 def _segment_stats(base, clicks, total_views, seg_filter, series_labels) -> dict:
     """Números de um recorte de tráfego (orgânico do Meta ou tráfego pago).
 
-    Cliques são contados por SESSÃO que entrou pelo recorte — mais fiel do que
+    Cliques são contados por SESSÃO que entrou pelo recorte, mais fiel do que
     exigir o parâmetro na URL do clique, que se perde ao navegar na página.
     """
     events = base.filter(seg_filter)
