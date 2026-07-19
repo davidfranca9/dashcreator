@@ -159,6 +159,9 @@
 </section>
 
 {# ================ Card 'O que temos pra hoje?' ================ #}
+{# Form invisivel so pra o {% csrf_token %} deixar o token no DOM.
+   O JS abaixo le esse token pra autenticar as chamadas de toggle/create/delete. #}
+<form style="display:none">{% csrf_token %}</form>
 <section class="dash-tasks" data-dash-tasks>
     <div class="dash-tasks-head">
         <div>
@@ -185,7 +188,9 @@
                     {% if task.brand %}<div class="dash-task-meta">{{ task.brand }}</div>{% endif %}
                 </div>
                 <span class="dash-task-prazo pz-{{ task.prazo_cls }}">{{ task.prazo_label }}</span>
-                <button type="button" class="dash-task-del" data-task-delete="{{ task.id }}" title="Excluir tarefa">&times;</button>
+                {% if not task.is_auto %}
+                    <button type="button" class="dash-task-del" data-task-delete="{{ task.id }}" title="Excluir tarefa">&times;</button>
+                {% endif %}
             </div>
         {% empty %}
             <div class="dash-tasks-empty" data-tasks-empty>Sem tarefas por enquanto. Adicione uma abaixo.</div>

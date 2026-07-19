@@ -1149,6 +1149,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "prazo_label": prazo["label"],
             "prazo_cls": prazo["cls"],
             "brand": t.project.company if t.project else "",
+            "is_auto": bool(t.auto_key),
         })
 
     done_count = sum(1 for t in tasks_payload if t["done"])
