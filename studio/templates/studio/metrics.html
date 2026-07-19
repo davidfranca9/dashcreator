@@ -40,6 +40,8 @@
     .kpis{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
     .kpi{ background:var(--card); border:1px solid var(--line); padding:22px 24px; }
     .kpi .n{ font-family:'Playfair Display',serif; font-weight:600; font-size:38px; color:var(--navy); line-height:1; }
+    .kpi .h{ margin-top:6px; font-size:11px; color:var(--muted); line-height:1.35;
+      font-weight:400; text-transform:none; letter-spacing:0; }
     .kpi .l{ margin-top:8px; font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
     /* Painéis de origem: orgânico e tráfego pago */
     .sec-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:30px 0 14px; padding-top:24px; border-top:1px solid var(--line); }
@@ -54,6 +56,10 @@
       padding:10px 12px; background:var(--paper); border:1px solid var(--line); }
     .tag-profile{ font-size:13px; font-weight:700; color:var(--navy); min-width:150px; }
     .tag-url{ font-size:12.5px; color:var(--ink-soft); word-break:break-all; }
+    .glossario{ display:grid; gap:4px 0; }
+    .glossario dt{ font-size:13px; font-weight:700; color:var(--navy); margin-top:12px; }
+    .glossario dt:first-child{ margin-top:0; }
+    .glossario dd{ font-size:12.5px; color:var(--ink-soft); line-height:1.6; }
     .note{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
     @media(max-width:720px){ .kpis.k4{ grid-template-columns:1fr 1fr; } }
 
@@ -98,9 +104,41 @@
 
     {% if has_data %}
       <div class="kpis">
-        <div class="kpi"><div class="n">{{ total_views }}</div><div class="l">Visitas</div></div>
-        <div class="kpi"><div class="n">{{ unique_visitors }}</div><div class="l">Visitantes únicos</div></div>
-        <div class="kpi"><div class="n">{{ total_clicks }}</div><div class="l">Cliques</div></div>
+        <div class="kpi"><div class="n">{{ total_views }}</div><div class="l">Visitas</div><div class="h">cada vez que a página abriu</div></div>
+        <div class="kpi"><div class="n">{{ unique_visitors }}</div><div class="l">Visitantes únicos</div><div class="h">pessoas diferentes</div></div>
+        <div class="kpi"><div class="n">{{ total_clicks }}</div><div class="l">Cliques</div><div class="h">botões clicados dentro do site</div></div>
+      </div>
+
+
+      <div class="card">
+        <h2>Como ler este painel</h2>
+        <dl class="glossario">
+          <dt>Visita</dt>
+          <dd>Cada vez que a página abriu. A mesma pessoa entrando 3 vezes conta 3 visitas.</dd>
+
+          <dt>Visitante único</dt>
+          <dd>Pessoas diferentes. A mesma pessoa voltando 10 vezes conta 1.
+              Contado por navegador, então a mesma pessoa no celular e no computador aparece como 2.</dd>
+
+          <dt>Clique em CTA</dt>
+          <dd>Quando a pessoa, <strong>já dentro do site</strong>, clica num botão de ação
+              (Cadastre-se, Quero fazer parte, Sou creator, Conhecer o Dash, entre outros).
+              Resumindo: <strong>visita é chegou, CTA é se interessou e agiu.</strong>
+              Clicar no link do story não é CTA, isso é a visita.</dd>
+
+          <dt>Taxa de clique</dt>
+          <dd>Cliques em CTA divididos pelas visitas. Mostra se a página está convencendo.
+              Muita visita com pouco CTA significa que o story atraiu, mas a página não converteu.</dd>
+
+          <dt>Orgânico x Tráfego pago</dt>
+          <dd>Orgânico é quem veio sem você pagar (bio, stories, posts). Pago só conta quem chega
+              por link de anúncio marcado com <code>utm_medium=paid</code>.</dd>
+        </dl>
+        <p class="note">
+          Os números são medidos no seu site. Bloqueador de anúncios pode impedir o registro de alguns
+          acessos, então o número real tende a ser um pouco maior. Serve para acompanhar tendência,
+          não como número contábil exato.
+        </p>
       </div>
 
       <div class="card">
@@ -148,10 +186,10 @@
 
       {% if stories.has_data %}
         <div class="kpis k4">
-          <div class="kpi kpi--story"><div class="n">{{ stories.views }}</div><div class="l">Visitas de stories</div></div>
-          <div class="kpi kpi--story"><div class="n">{{ stories.visitors }}</div><div class="l">Visitantes únicos</div></div>
-          <div class="kpi kpi--story"><div class="n">{{ stories.clicks }}</div><div class="l">Cliques em CTA</div></div>
-          <div class="kpi kpi--story"><div class="n">{{ stories.share }}%</div><div class="l">do tráfego total</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.views }}</div><div class="l">Visitas de stories</div><div class="h">chegaram pelo link do story</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.visitors }}</div><div class="l">Visitantes únicos</div><div class="h">pessoas diferentes</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.clicks }}</div><div class="l">Cliques em CTA</div><div class="h">clicaram num botão depois de entrar</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.share }}%</div><div class="l">do tráfego total</div><div class="h">fatia do total do período</div></div>
         </div>
         <div class="cols">
           <div class="card">
@@ -221,10 +259,10 @@
 
       {% if organic.has_data %}
         <div class="kpis k4">
-          <div class="kpi kpi--org"><div class="n">{{ organic.views }}</div><div class="l">Visitas</div></div>
-          <div class="kpi kpi--org"><div class="n">{{ organic.visitors }}</div><div class="l">Visitantes únicos</div></div>
-          <div class="kpi kpi--org"><div class="n">{{ organic.clicks }}</div><div class="l">Cliques em CTA</div></div>
-          <div class="kpi kpi--org"><div class="n">{{ organic.share }}%</div><div class="l">do tráfego total</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.views }}</div><div class="l">Visitas</div><div class="h">cada vez que a página abriu</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.visitors }}</div><div class="l">Visitantes únicos</div><div class="h">pessoas diferentes</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.clicks }}</div><div class="l">Cliques em CTA</div><div class="h">clicaram num botão depois de entrar</div></div>
+          <div class="kpi kpi--org"><div class="n">{{ organic.share }}%</div><div class="l">do tráfego total</div><div class="h">fatia do total do período</div></div>
         </div>
         <div class="cols">
           <div class="card">
@@ -264,10 +302,10 @@
 
       {% if paid.has_data %}
         <div class="kpis k4">
-          <div class="kpi kpi--meta"><div class="n">{{ paid.views }}</div><div class="l">Visitas</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ paid.visitors }}</div><div class="l">Visitantes únicos</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ paid.clicks }}</div><div class="l">Cliques em CTA</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ paid.share }}%</div><div class="l">do tráfego total</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.views }}</div><div class="l">Visitas</div><div class="h">cada vez que a página abriu</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.visitors }}</div><div class="l">Visitantes únicos</div><div class="h">pessoas diferentes</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.clicks }}</div><div class="l">Cliques em CTA</div><div class="h">clicaram num botão depois de entrar</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ paid.share }}%</div><div class="l">do tráfego total</div><div class="h">fatia do total do período</div></div>
         </div>
         <div class="cols">
           <div class="card">
