@@ -160,6 +160,7 @@ _PAGE_ANCHORS = {
 INSTAGRAM_PROFILES = {
     "layfe": "@layfeamorim",
     "tcc": "@thecreatorssclubb",
+    "dash": "@dashhcreator_",
 }
 
 # Endereço base de cada site, usado para montar o link pronto de cada perfil.

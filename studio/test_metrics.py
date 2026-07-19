@@ -296,6 +296,8 @@ class StoriesPanelTests(TestCase):
         self.assertIn("layfe", INSTAGRAM_PROFILES)
         self.assertEqual(_profile_name("layfe"), "@layfeamorim")
         self.assertEqual(_profile_name("tcc"), "@thecreatorssclubb")
+        self.assertEqual(_profile_name("dash"), "@dashhcreator_")
+        self.assertEqual(len(INSTAGRAM_PROFILES), 3)
         self.assertIn("não cadastrada", _profile_name("layfee"))  # erro de digitacao
 
     def test_registered_profile_shows_handle(self):
