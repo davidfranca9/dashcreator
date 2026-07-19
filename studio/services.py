@@ -27,7 +27,7 @@ from .constants import (
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
 )
-from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, ProjectUpdateMessage, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import CashBox, FinanceEntry, FixedCost, InfoLead, InfoLeadEvent, InfoLeadTask, InfoProduct, InfoProductSale, Membership, Niche, Project, ProjectInstallment, ProjectUpdateMessage, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 def _today() -> date:
@@ -3403,3 +3403,98 @@ def reports_snapshot(
 def average_project_days(projects: list[Project]) -> float:
     values = [max((item.due_date - item.close_date).days, 1) for item in projects]
     return round(sum(values) / len(values), 1) if values else 0.0
+
+
+# ── CRM comercial de Infoprodutos (kanban, exclusivo Layfe) ─────────────────
+# Modelo copiado do funil de vendas do Quantum: etapas fixas, card arrastável.
+INFO_CRM_STAGES = [
+    {"id": "prospec", "name": "Prospecção", "color": "#4f7cff"},
+    {"id": "qualif", "name": "Qualificação", "color": "#fbbf24"},
+    {"id": "proposta", "name": "Proposta Enviada", "color": "#2dd4cf"},
+    {"id": "negoc", "name": "Negociação", "color": "#8b5cf6"},
+    {"id": "fechado", "name": "Fechado", "color": "#34d399"},
+    {"id": "perdido", "name": "Perdido", "color": "#f87171"},
+]
+INFO_CRM_STAGE_IDS = {stage["id"] for stage in INFO_CRM_STAGES}
+INFO_CRM_ORIGINS = ["Instagram", "Story", "WhatsApp", "Indicação", "Site", "E-mail", "Anúncio", "Evento"]
+INFO_CRM_LOSS_REASONS = [
+    "Achou caro", "Sem verba no momento", "Foi com concorrente",
+    "Sem retorno", "Não era o momento", "Não era o perfil",
+]
+
+
+def info_crm_stage_name(stage_id: str) -> str:
+    for stage in INFO_CRM_STAGES:
+        if stage["id"] == stage_id:
+            return stage["name"]
+    return stage_id
+
+
+def log_info_lead(lead: InfoLead, text: str) -> None:
+    """Grava uma linha no histórico do lead."""
+    InfoLeadEvent.objects.create(workspace_id=lead.workspace_id, lead=lead, text=text[:240])
+
+
+def _info_lead_card(lead: InfoLead) -> dict:
+    contact = " · ".join(
+        part for part in [lead.instagram, lead.whatsapp, lead.email] if part
+    )
+    open_tasks = sum(1 for task in lead.tasks.all() if not task.done)
+    return {
+        "id": lead.pk,
+        "name": lead.name,
+        "value": lead.value,
+        "value_text": currency(lead.value) if lead.value else "",
+        "contact": contact,
+        "product": lead.product.name if lead.product_id else "",
+        "origin": lead.origin,
+        "next_action": lead.next_action,
+        "open_tasks": open_tasks,
+        "stage": lead.stage,
+    }
+
+
+def infoproducts_crm_snapshot(workspace: Workspace, search: str = "") -> dict:
+    leads = (
+        InfoLead.objects.filter(workspace=workspace)
+        .select_related("product")
+        .prefetch_related("tasks")
+    )
+    term = (search or "").strip()
+    if term:
+        leads = leads.filter(
+            Q(name__icontains=term)
+            | Q(instagram__icontains=term)
+            | Q(whatsapp__icontains=term)
+            | Q(email__icontains=term)
+            | Q(origin__icontains=term)
+        )
+    leads = list(leads)
+
+    columns = []
+    for stage in INFO_CRM_STAGES:
+        cards = [_info_lead_card(lead) for lead in leads if lead.stage == stage["id"]]
+        total = sum((card["value"] or ZERO) for card in cards)
+        columns.append({
+            **stage,
+            "count": len(cards),
+            "total_text": currency(total) if total else "",
+            "cards": cards,
+        })
+
+    won = [lead for lead in leads if lead.stage == InfoLead.STAGE_FECHADO]
+    open_leads = [
+        lead for lead in leads
+        if lead.stage not in (InfoLead.STAGE_FECHADO, InfoLead.STAGE_PERDIDO)
+    ]
+    return {
+        "crm_columns": columns,
+        "crm_search": term,
+        "crm_origins": INFO_CRM_ORIGINS,
+        "crm_products": list(InfoProduct.objects.filter(workspace=workspace).order_by("name")),
+        "crm_total_leads": len(leads),
+        "crm_open_count": len(open_leads),
+        "crm_open_value": currency(sum((lead.value or ZERO) for lead in open_leads)),
+        "crm_won_value": currency(sum((lead.value or ZERO) for lead in won)),
+        "crm_won_count": len(won),
+    }

@@ -1,0 +1,166 @@
+{% extends "studio/base.html" %}
+
+{% block extra_head %}
+<style>
+.lead-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.lead-back { font-size: 12px; color: var(--tcc-muted); text-decoration: none; }
+.lead-back:hover { color: var(--tcc-navy); }
+.lead-stagebar { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+.lead-stage { flex: 1; min-width: 118px; text-align: center; font-size: 11px; font-weight: 600;
+  padding: 9px 6px; border: 1px solid var(--tcc-line); background: #fff; color: var(--tcc-muted); cursor: pointer; }
+.lead-stage.is-current { color: #fff; border-color: transparent; }
+.lead-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .lead-grid { grid-template-columns: 1fr; } }
+.lead-card { background: var(--tcc-card); border: 1px solid var(--tcc-line); padding: 18px; margin-bottom: 18px; }
+.lead-card h3 { font-family: var(--font-display); font-size: 16px; color: var(--tcc-navy); margin-bottom: 14px; }
+.lead-field { margin-bottom: 12px; }
+.lead-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--tcc-muted); margin-bottom: 4px; }
+.lead-field input, .lead-field select, .lead-field textarea {
+  width: 100%; border: 1px solid var(--tcc-line); background: #fff; padding: 8px 10px; font: inherit; font-size: 13px; }
+.lead-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lead-hist { list-style: none; margin: 0; padding: 0; }
+.lead-hist li { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--tcc-line); font-size: 12.5px; color: var(--tcc-ink-soft); }
+.lead-hist li:last-child { border-bottom: none; }
+.lead-hist time { color: var(--tcc-muted); font-size: 11px; white-space: nowrap; }
+.lead-tasks { list-style: none; margin: 0 0 12px; padding: 0; }
+.lead-tasks li { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--tcc-line); font-size: 13px; }
+.lead-tasks li:last-child { border-bottom: none; }
+.lead-tasks .done { text-decoration: line-through; color: var(--tcc-muted); }
+.lead-task-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.lead-task-form input[type=text] { flex: 1; min-width: 150px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lead-top">
+  <a class="lead-back" href="{% url 'infoproducts' %}?tab=crm">‹ Voltar para o CRM</a>
+</div>
+
+<div class="lead-stagebar">
+  {% for stage in stages %}
+    <form method="post" action="{% url 'infoproducts_crm_lead_update' lead.pk %}" style="flex:1;min-width:118px;">
+      {% csrf_token %}
+      <input type="hidden" name="name" value="{{ lead.name }}">
+      <input type="hidden" name="instagram" value="{{ lead.instagram }}">
+      <input type="hidden" name="whatsapp" value="{{ lead.whatsapp }}">
+      <input type="hidden" name="email" value="{{ lead.email }}">
+      <input type="hidden" name="origin" value="{{ lead.origin }}">
+      <input type="hidden" name="next_action" value="{{ lead.next_action }}">
+      <input type="hidden" name="note" value="{{ lead.note }}">
+      <input type="hidden" name="value" value="{{ lead.value }}">
+      <input type="hidden" name="product" value="{{ lead.product_id|default:'' }}">
+      <input type="hidden" name="loss_reason" value="{{ lead.loss_reason }}">
+      <input type="hidden" name="stage" value="{{ stage.id }}">
+      <button type="submit" class="lead-stage{% if lead.stage == stage.id %} is-current{% endif %}"
+              {% if lead.stage == stage.id %}style="background:{{ stage.color }}"{% endif %}>
+        {{ stage.name }}
+      </button>
+    </form>
+  {% endfor %}
+</div>
+
+<div class="lead-grid">
+  <div>
+    <div class="lead-card">
+      <h3>Dados da negociação</h3>
+      <form method="post" action="{% url 'infoproducts_crm_lead_update' lead.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="stage" value="{{ lead.stage }}">
+        <div class="lead-field"><label for="f-name">Nome</label>
+          <input id="f-name" type="text" name="name" value="{{ lead.name }}" required maxlength="160"></div>
+        <div class="lead-2col">
+          <div class="lead-field"><label for="f-insta">Instagram</label>
+            <input id="f-insta" type="text" name="instagram" value="{{ lead.instagram }}" maxlength="80"></div>
+          <div class="lead-field"><label for="f-whats">WhatsApp</label>
+            <input id="f-whats" type="text" name="whatsapp" value="{{ lead.whatsapp }}" maxlength="40"></div>
+        </div>
+        <div class="lead-field"><label for="f-email">E-mail</label>
+          <input id="f-email" type="text" name="email" value="{{ lead.email }}" maxlength="160"></div>
+        <div class="lead-2col">
+          <div class="lead-field"><label for="f-prod">Produto de interesse</label>
+            <select id="f-prod" name="product">
+              <option value="">Não definido</option>
+              {% for p in products %}
+                <option value="{{ p.pk }}"{% if lead.product_id == p.pk %} selected{% endif %}>{{ p.name }}</option>
+              {% endfor %}
+            </select></div>
+          <div class="lead-field"><label for="f-value">Valor (R$)</label>
+            <input id="f-value" type="text" name="value" value="{{ lead.value }}" inputmode="decimal"></div>
+        </div>
+        <div class="lead-2col">
+          <div class="lead-field"><label for="f-origin">Origem</label>
+            <select id="f-origin" name="origin">
+              <option value="">Não informada</option>
+              {% for o in origins %}
+                <option value="{{ o }}"{% if lead.origin == o %} selected{% endif %}>{{ o }}</option>
+              {% endfor %}
+            </select></div>
+          <div class="lead-field"><label for="f-next">Próxima ação</label>
+            <input id="f-next" type="text" name="next_action" value="{{ lead.next_action }}" maxlength="160"></div>
+        </div>
+        {% if lead.stage == "perdido" %}
+          <div class="lead-field"><label for="f-loss">Motivo da perda</label>
+            <select id="f-loss" name="loss_reason">
+              <option value="">Não informado</option>
+              {% for r in loss_reasons %}
+                <option value="{{ r }}"{% if lead.loss_reason == r %} selected{% endif %}>{{ r }}</option>
+              {% endfor %}
+            </select></div>
+        {% endif %}
+        <div class="lead-field"><label for="f-note">Observações</label>
+          <textarea id="f-note" name="note" rows="4">{{ lead.note }}</textarea></div>
+        <button type="submit" class="primary-button small">Salvar</button>
+      </form>
+    </div>
+
+    <div class="lead-card">
+      <h3>Tarefas</h3>
+      <ul class="lead-tasks">
+        {% for task in tasks %}
+          <li>
+            <form method="post" action="{% url 'infoproducts_crm_task' lead.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle">
+              <input type="hidden" name="task_id" value="{{ task.pk }}">
+              <button type="submit" class="ghost-button small">{% if task.done %}✓{% else %}○{% endif %}</button>
+            </form>
+            <span class="{% if task.done %}done{% endif %}">{{ task.title }}{% if task.due_date %} · {{ task.due_date|date:"d/m" }}{% endif %}</span>
+          </li>
+        {% empty %}
+          <li><span class="muted">Nenhuma tarefa ainda.</span></li>
+        {% endfor %}
+      </ul>
+      <form method="post" action="{% url 'infoproducts_crm_task' lead.pk %}" class="lead-task-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <input type="text" name="title" placeholder="Ex.: mandar proposta" required maxlength="180">
+        <input type="date" name="due_date">
+        <button type="submit" class="ghost-button small">Adicionar</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="lead-card">
+      <h3>Histórico</h3>
+      <ul class="lead-hist">
+        {% for event in events %}
+          <li><time>{{ event.created_at|date:"d/m H:i" }}</time><span>{{ event.text }}</span></li>
+        {% empty %}
+          <li><span class="muted">Sem movimentações ainda.</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="lead-card">
+      <h3>Remover</h3>
+      <p class="muted" style="font-size:12px;margin-bottom:12px;">Apaga o lead e todo o histórico dele. Não dá para desfazer.</p>
+      <form method="post" action="{% url 'infoproducts_crm_delete' lead.pk %}"
+            onsubmit="return confirm('Excluir o lead {{ lead.name|escapejs }}? Não dá para desfazer.');">
+        {% csrf_token %}
+        <button type="submit" class="ghost-button small">Excluir lead</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

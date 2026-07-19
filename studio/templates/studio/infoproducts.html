@@ -9,6 +9,7 @@
             <button type="button" class="subtab subtab--active" data-infoproduct-tab="overview" aria-current="page">Visão geral</button>
             <button type="button" class="subtab" data-infoproduct-tab="entries">Entradas</button>
             <button type="button" class="subtab" data-infoproduct-tab="buyers">Alunas / Compradores</button>
+            <button type="button" class="subtab" data-infoproduct-tab="crm">CRM comercial</button>
         </nav>
         <div class="infoproducts-actions" data-infoproduct-overview-actions>
             <button type="button" class="primary-button small" data-infoproduct-modal-open="product">Novo produto</button>
@@ -313,6 +314,101 @@
     </form>
 </div>
 
+
+    <!-- ── CRM COMERCIAL (kanban, modelo do Quantum) ────────────────────── -->
+    <section class="infoproduct-panel" data-infoproduct-panel="crm">
+      <div class="crm-kpis">
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_open_count }}</span><span class="crm-kpi-l">Em negociação</span></div>
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_open_value }}</span><span class="crm-kpi-l">Valor em aberto</span></div>
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_won_count }}</span><span class="crm-kpi-l">Fechados</span></div>
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_won_value }}</span><span class="crm-kpi-l">Valor fechado</span></div>
+      </div>
+
+      <div class="crm-bar">
+        <form method="get" class="crm-search">
+          <input type="hidden" name="tab" value="crm">
+          <input type="search" name="q" value="{{ crm_search }}" placeholder="Buscar por nome, @, WhatsApp ou e-mail...">
+        </form>
+        <button type="button" class="primary-button small" data-crm-new>+ Novo lead</button>
+      </div>
+
+      <p class="crm-hint">Arraste o card entre as colunas para mudar a etapa. Clique no card para abrir a negociação.</p>
+
+      <div class="crm-board" data-crm-board>
+        {% for col in crm_columns %}
+          <div class="crm-col" data-stage="{{ col.id }}">
+            <div class="crm-col-head">
+              <span class="crm-dot" style="background:{{ col.color }}"></span>
+              <span class="crm-col-nome">{{ col.name }}</span>
+              <span class="crm-count" data-crm-count>{{ col.count }}</span>
+            </div>
+            {% if col.total_text %}<div class="crm-col-total">{{ col.total_text }}</div>{% endif %}
+            <div class="crm-col-body" data-crm-drop>
+              {% for card in col.cards %}
+                <a class="crm-card" href="{% url 'infoproducts_crm_lead' card.id %}"
+                   draggable="true" data-crm-card data-id="{{ card.id }}"
+                   style="border-left-color:{{ col.color }}">
+                  <span class="crm-card-nome">
+                    <span>{{ card.name }}</span>
+                    {% if card.value_text %}<span class="crm-card-val">{{ card.value_text }}</span>{% endif %}
+                  </span>
+                  {% if card.contact %}<span class="crm-card-sub">{{ card.contact }}</span>{% endif %}
+                  <span class="crm-card-tags">
+                    {% if card.product %}<span class="crm-tag crm-tag--prod">{{ card.product }}</span>{% endif %}
+                    {% if card.origin %}<span class="crm-tag">{{ card.origin }}</span>{% endif %}
+                    {% if card.next_action %}<span class="crm-tag crm-tag--warn">{{ card.next_action }}</span>{% endif %}
+                    {% if card.open_tasks %}<span class="crm-tag crm-tag--task">{{ card.open_tasks }} tarefa{{ card.open_tasks|pluralize:",s" }}</span>{% endif %}
+                  </span>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if not crm_total_leads %}
+        <p class="muted crm-empty">Nenhum lead ainda. Clique em "+ Novo lead" para começar o funil.</p>
+      {% endif %}
+    </section>
+
+    <!-- modal: novo lead -->
+    <div class="jobs-kpi-backdrop" data-crm-modal hidden>
+      <div class="jobs-kpi-modal" role="dialog" aria-modal="true">
+        <button type="button" class="jobs-kpi-modal-close" data-crm-modal-close aria-label="Fechar">&times;</button>
+        <div class="jobs-kpi-modal-header"><div>
+          <span class="meeting-popup-badge">CRM</span>
+          <h3>Novo lead</h3>
+          <p class="muted">Entra na primeira etapa do funil (Prospecção).</p>
+        </div></div>
+        <form method="post" action="{% url 'infoproducts_crm_create' %}" class="auth-form-stack">
+          {% csrf_token %}
+          <div class="form-field"><label for="crm-name">Nome</label>
+            <input id="crm-name" type="text" name="name" required maxlength="160"></div>
+          <div class="form-field"><label for="crm-insta">Instagram</label>
+            <input id="crm-insta" type="text" name="instagram" placeholder="@perfil" maxlength="80"></div>
+          <div class="form-field"><label for="crm-whats">WhatsApp</label>
+            <input id="crm-whats" type="text" name="whatsapp" maxlength="40"></div>
+          <div class="form-field"><label for="crm-email">E-mail</label>
+            <input id="crm-email" type="text" name="email" maxlength="160"></div>
+          <div class="form-field"><label for="crm-prod">Produto de interesse</label>
+            <select id="crm-prod" name="product">
+              <option value="">Não definido</option>
+              {% for p in crm_products %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
+            </select></div>
+          <div class="form-field"><label for="crm-value">Valor (R$)</label>
+            <input id="crm-value" type="text" name="value" inputmode="decimal" placeholder="0,00"></div>
+          <div class="form-field"><label for="crm-origin">Origem</label>
+            <select id="crm-origin" name="origin">
+              <option value="">Não informada</option>
+              {% for o in crm_origins %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+            </select></div>
+          <div class="form-field"><label for="crm-next">Próxima ação</label>
+            <input id="crm-next" type="text" name="next_action" placeholder="Ex.: mandar proposta terça" maxlength="160"></div>
+          <div class="form-actions"><button type="submit" class="primary-button">Adicionar lead</button></div>
+        </form>
+      </div>
+    </div>
+
 <script>
 (() => {
     const page = document.querySelector("[data-infoproducts-page]");
@@ -336,7 +432,7 @@
     });
     // Mantém a aba ao recarregar (?tab=entries|buyers).
     const urlTab = new URLSearchParams(window.location.search).get("tab");
-    if (urlTab === "entries" || urlTab === "buyers") activate(urlTab);
+    if (urlTab === "entries" || urlTab === "buyers" || urlTab === "crm") activate(urlTab);
 
     const listOverlay = document.querySelector("[data-infoproduct-list-overlay]");
     const listPanels = document.querySelectorAll("[data-infoproduct-list-panel]");
@@ -480,4 +576,100 @@
     });
 })();
 </script>
+
+<script>
+/* CRM comercial: arrastar card entre colunas (modelo do Quantum) */
+(() => {
+    const board = document.querySelector("[data-crm-board]");
+    if (!board) return;
+    const tokenField = document.querySelector("[name=csrfmiddlewaretoken]");
+    const csrf = tokenField ? tokenField.value : "";
+    let dragged = null;
+
+    const refreshCounts = () => {
+        board.querySelectorAll(".crm-col").forEach((col) => {
+            const badge = col.querySelector("[data-crm-count]");
+            if (badge) badge.textContent = col.querySelectorAll("[data-crm-card]").length;
+        });
+    };
+
+    board.querySelectorAll("[data-crm-card]").forEach((card) => {
+        card.addEventListener("dragstart", (event) => {
+            dragged = card;
+            card.classList.add("dragging");
+            event.dataTransfer.effectAllowed = "move";
+        });
+        card.addEventListener("dragend", () => {
+            card.classList.remove("dragging");
+            dragged = null;
+        });
+        // se acabou de arrastar, nao abre o lead
+        card.addEventListener("click", (event) => {
+            if (card.dataset.moved === "1") {
+                event.preventDefault();
+                card.dataset.moved = "";
+            }
+        });
+    });
+
+    board.querySelectorAll("[data-crm-drop]").forEach((body) => {
+        const col = body.closest(".crm-col");
+        body.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            col.classList.add("dragover");
+        });
+        body.addEventListener("dragleave", () => col.classList.remove("dragover"));
+        body.addEventListener("drop", (event) => {
+            event.preventDefault();
+            col.classList.remove("dragover");
+            if (!dragged) return;
+            const card = dragged;
+            card.dataset.moved = "1";
+            body.appendChild(card);
+            const dot = col.querySelector(".crm-dot");
+            if (dot) card.style.borderLeftColor = dot.style.background;
+            refreshCounts();
+            fetch(`/infoprodutos/crm/${card.dataset.id}/mover/`, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrf,
+                },
+                body: "stage=" + encodeURIComponent(col.dataset.stage),
+                credentials: "same-origin",
+            })
+                .then((response) => { if (!response.ok) window.location.reload(); })
+                .catch(() => window.location.reload());
+        });
+    });
+
+    const modal = document.querySelector("[data-crm-modal]");
+    const closeModal = () => {
+        if (!modal) return;
+        modal.hidden = true;
+        document.body.classList.remove("has-popup-open");
+    };
+    const newButton = document.querySelector("[data-crm-new]");
+    if (newButton && modal) {
+        newButton.addEventListener("click", () => {
+            modal.hidden = false;
+            document.body.classList.add("has-popup-open");
+        });
+        modal.querySelectorAll("[data-crm-modal-close]").forEach((b) => b.addEventListener("click", closeModal));
+        modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+        window.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
+    }
+
+    const search = document.querySelector(".crm-search input");
+    if (search) {
+        let timer = null;
+        search.addEventListener("input", () => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(() => search.form.submit(), 400);
+        });
+    }
+})();
+</script>
+
 {% endblock %}

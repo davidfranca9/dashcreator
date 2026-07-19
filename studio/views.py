@@ -5,7 +5,7 @@ import json
 import mimetypes
 import re
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from html import escape, unescape
 from pathlib import Path
 from io import BytesIO
@@ -52,7 +52,7 @@ from .forms import (
     WorkspaceSettingsForm,
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
-from .models import CashBox, FinanceEntry, FixedCost, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ServiceCategory
+from .models import CashBox, FinanceEntry, FixedCost, InfoLead, InfoLeadEvent, InfoLeadTask, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ServiceCategory
 from .services import (
     advance_campaign_stage,
     campaign_detail_snapshot,
@@ -66,6 +66,13 @@ from .services import (
     finance_snapshot,
     get_or_create_workspace_for_user,
     infoproducts_snapshot,
+    infoproducts_crm_snapshot,
+    info_crm_stage_name,
+    log_info_lead,
+    INFO_CRM_STAGES,
+    INFO_CRM_STAGE_IDS,
+    INFO_CRM_ORIGINS,
+    INFO_CRM_LOSS_REASONS,
     is_layfe_account,
     jobs_snapshot_filtered,
     legal_snapshot,
@@ -1518,7 +1525,7 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
             open_buyer_modal = action == "create_buyer"
 
     sale_is_promo = bool(editing_sale and Decimal(editing_sale.amount or 0) != Decimal(editing_sale.product.price or 0))
-    active_subtab = request.GET.get("tab") if request.GET.get("tab") in {"entries", "buyers"} else ""
+    active_subtab = request.GET.get("tab") if request.GET.get("tab") in {"entries", "buyers", "crm"} else ""
 
     context = shell_context(
         "infoproducts",
@@ -1529,6 +1536,7 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
         month_filter=month_filter,
     )
     context.update(infoproducts_snapshot(workspace, month_filter))
+    context.update(infoproducts_crm_snapshot(workspace, request.GET.get("q", "")))
     context["product_form"] = product_form
     context["sale_form"] = sale_form
     context["editing_product"] = editing_product
@@ -2741,3 +2749,166 @@ def task_delete(request: HttpRequest, pk: int) -> JsonResponse:
         # Manuais: apaga de vez.
         task.delete()
     return JsonResponse({"ok": True})
+
+
+def _decimal_or_zero(raw) -> Decimal:
+    """Converte o valor digitado em Decimal, aceitando 1.200,50 ou 1200.50."""
+    text = str(raw or "").strip()
+    if not text:
+        return Decimal("0")
+    text = text.replace("R$", "").replace(" ", "")
+    if "," in text:
+        text = text.replace(".", "").replace(",", ".")
+    try:
+        return Decimal(text)
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
+
+
+# ── CRM comercial de Infoprodutos (kanban) ─────────────────────────────────
+# Mesma trava da aba Infoprodutos: só a conta da Layfe entra. Qualquer outra
+# recebe 404 no servidor, mesmo sabendo a URL.
+def _crm_workspace_or_404(request: HttpRequest):
+    workspace = _workspace(request)
+    if not workspace_has_infoproducts_access(workspace, request.user):
+        raise Http404("Pagina nao encontrada.")
+    return workspace
+
+
+def _crm_lead_or_404(request: HttpRequest, pk: int):
+    workspace = _crm_workspace_or_404(request)
+    return workspace, get_object_or_404(InfoLead, pk=pk, workspace=workspace)
+
+
+def _crm_redirect(extra: str = "") -> HttpResponse:
+    return redirect(f"{reverse('infoproducts')}?tab=crm{extra}")
+
+
+@login_required
+@require_POST
+def infoproducts_crm_move(request: HttpRequest, pk: int) -> HttpResponse:
+    """Arrastar o card para outra coluna."""
+    workspace, lead = _crm_lead_or_404(request, pk)
+    stage = request.POST.get("stage", "")
+    if stage not in INFO_CRM_STAGE_IDS:
+        return JsonResponse({"ok": False, "error": "etapa inválida"}, status=400)
+    if stage != lead.stage:
+        lead.stage = stage
+        if stage != InfoLead.STAGE_PERDIDO:
+            lead.loss_reason = ""
+        lead.save(update_fields=["stage", "loss_reason", "updated_at"])
+        log_info_lead(lead, f'moveu para "{info_crm_stage_name(stage)}"')
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "stage": lead.stage})
+    return _crm_redirect()
+
+
+@login_required
+@require_POST
+def infoproducts_crm_create(request: HttpRequest) -> HttpResponse:
+    workspace = _crm_workspace_or_404(request)
+    name = (request.POST.get("name") or "").strip()
+    if not name:
+        messages.error(request, "Informe o nome do lead.")
+        return _crm_redirect()
+    product_id = request.POST.get("product") or ""
+    product = None
+    if product_id.isdigit():
+        product = InfoProduct.objects.filter(pk=int(product_id), workspace=workspace).first()
+    lead = InfoLead.objects.create(
+        workspace=workspace,
+        name=name[:160],
+        instagram=(request.POST.get("instagram") or "").strip()[:80],
+        whatsapp=(request.POST.get("whatsapp") or "").strip()[:40],
+        email=(request.POST.get("email") or "").strip()[:160],
+        origin=(request.POST.get("origin") or "").strip()[:60],
+        next_action=(request.POST.get("next_action") or "").strip()[:160],
+        note=(request.POST.get("note") or "").strip(),
+        value=_decimal_or_zero(request.POST.get("value")),
+        product=product,
+    )
+    log_info_lead(lead, "lead criado")
+    messages.success(request, f"Lead {lead.name} adicionado.")
+    return _crm_redirect()
+
+
+@login_required
+def infoproducts_crm_lead(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, lead = _crm_lead_or_404(request, pk)
+    context = shell_context(
+        "infoproducts", workspace, lead.name,
+        "Negociação do CRM de infoprodutos.", user=request.user,
+    )
+    context.update({
+        "lead": lead,
+        "stages": INFO_CRM_STAGES,
+        "events": list(lead.events.all()[:60]),
+        "tasks": list(lead.tasks.all()),
+        "origins": INFO_CRM_ORIGINS,
+        "loss_reasons": INFO_CRM_LOSS_REASONS,
+        "products": list(InfoProduct.objects.filter(workspace=workspace).order_by("name")),
+    })
+    return render(request, "studio/infoproducts_lead.html", context)
+
+
+@login_required
+@require_POST
+def infoproducts_crm_lead_update(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, lead = _crm_lead_or_404(request, pk)
+    lead.name = (request.POST.get("name") or lead.name).strip()[:160]
+    lead.instagram = (request.POST.get("instagram") or "").strip()[:80]
+    lead.whatsapp = (request.POST.get("whatsapp") or "").strip()[:40]
+    lead.email = (request.POST.get("email") or "").strip()[:160]
+    lead.origin = (request.POST.get("origin") or "").strip()[:60]
+    lead.next_action = (request.POST.get("next_action") or "").strip()[:160]
+    lead.note = (request.POST.get("note") or "").strip()
+    lead.value = _decimal_or_zero(request.POST.get("value"))
+    product_id = request.POST.get("product") or ""
+    lead.product = (
+        InfoProduct.objects.filter(pk=int(product_id), workspace=workspace).first()
+        if product_id.isdigit() else None
+    )
+    stage = request.POST.get("stage", "")
+    if stage in INFO_CRM_STAGE_IDS and stage != lead.stage:
+        lead.stage = stage
+        log_info_lead(lead, f'moveu para "{info_crm_stage_name(stage)}"')
+    if lead.stage == InfoLead.STAGE_PERDIDO:
+        lead.loss_reason = (request.POST.get("loss_reason") or "").strip()[:160]
+    else:
+        lead.loss_reason = ""
+    lead.save()
+    log_info_lead(lead, "dados atualizados")
+    messages.success(request, "Lead atualizado.")
+    return redirect("infoproducts_crm_lead", pk=lead.pk)
+
+
+@login_required
+@require_POST
+def infoproducts_crm_task(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, lead = _crm_lead_or_404(request, pk)
+    action = request.POST.get("action")
+    if action == "add":
+        title = (request.POST.get("title") or "").strip()
+        if title:
+            due = request.POST.get("due_date") or None
+            InfoLeadTask.objects.create(
+                workspace=workspace, lead=lead, title=title[:180],
+                due_date=due if due else None,
+            )
+            log_info_lead(lead, f"tarefa criada: {title[:80]}")
+    elif action == "toggle":
+        task = get_object_or_404(InfoLeadTask, pk=request.POST.get("task_id"), lead=lead, workspace=workspace)
+        task.done = not task.done
+        task.save(update_fields=["done", "updated_at"])
+        log_info_lead(lead, ("concluiu" if task.done else "reabriu") + f" a tarefa: {task.title[:80]}")
+    return redirect("infoproducts_crm_lead", pk=lead.pk)
+
+
+@login_required
+@require_POST
+def infoproducts_crm_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    workspace, lead = _crm_lead_or_404(request, pk)
+    name = lead.name
+    lead.delete()
+    messages.success(request, f"Lead {name} removido.")
+    return _crm_redirect()

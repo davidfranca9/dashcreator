@@ -7410,3 +7410,35 @@ body.page-legal .legal-dismiss-btn:hover {
     background: #16306e !important;
     border-color: #16306e !important;
 }
+
+/* ── CRM comercial de Infoprodutos (kanban, modelo do Quantum) ───────────── */
+.crm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.crm-kpi { background: var(--tcc-card); border: 1px solid var(--tcc-line); padding: 14px 16px; }
+.crm-kpi-n { display: block; font-family: var(--font-ui); font-size: 22px; font-weight: 700; color: var(--tcc-navy); }
+.crm-kpi-l { display: block; margin-top: 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--tcc-muted); }
+.crm-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.crm-search { flex: 1; min-width: 220px; }
+.crm-search input { width: 100%; border: 1px solid var(--tcc-line); background: #fff; padding: 9px 12px; font: inherit; font-size: 13px; }
+.crm-hint { font-size: 11.5px; color: var(--tcc-muted); margin-bottom: 12px; }
+.crm-board { display: flex; gap: 12px; overflow-x: auto; align-items: flex-start; padding-bottom: 14px; }
+.crm-col { width: 252px; min-width: 252px; background: var(--tcc-paper-dk); border: 1px solid var(--tcc-line); padding: 10px; }
+.crm-col.dragover { border-color: var(--tcc-accent); box-shadow: 0 0 0 2px rgba(201, 149, 106, .25); }
+.crm-col-head { display: flex; align-items: center; gap: 8px; padding: 2px 4px 6px; }
+.crm-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.crm-col-nome { font-size: 11px; font-weight: 700; color: var(--tcc-navy); letter-spacing: .08em; text-transform: uppercase; }
+.crm-count { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--tcc-muted); background: #fff; border: 1px solid var(--tcc-line); border-radius: 20px; padding: 1px 8px; }
+.crm-col-total { font-size: 11px; color: var(--tcc-muted); padding: 0 4px 8px; }
+.crm-col-body { max-height: 60vh; overflow-y: auto; min-height: 44px; padding-right: 4px; }
+.crm-card { display: block; background: #fff; border: 1px solid var(--tcc-line); border-left: 3px solid var(--tcc-accent); padding: 10px 12px; margin-bottom: 8px; cursor: grab; text-decoration: none; box-shadow: 0 1px 2px rgba(10, 36, 99, .06); }
+.crm-card:hover { border-color: var(--tcc-navy); }
+.crm-card.dragging { opacity: .45; }
+.crm-card-nome { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 13px; color: var(--tcc-navy); }
+.crm-card-val { color: #258f64; font-weight: 700; font-size: 12px; white-space: nowrap; }
+.crm-card-sub { display: block; font-size: 11.5px; color: var(--tcc-muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.crm-tag { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: var(--tcc-paper-dk); color: var(--tcc-ink-soft); border: 1px solid var(--tcc-line); }
+.crm-tag--prod { background: rgba(10, 36, 99, .08); color: var(--tcc-navy); }
+.crm-tag--warn { background: rgba(245, 154, 61, .16); color: #8a5a12; }
+.crm-tag--task { background: rgba(60, 134, 254, .12); color: #1d4ed8; }
+.crm-empty { margin-top: 14px; }
+@media (max-width: 820px) { .crm-kpis { grid-template-columns: 1fr 1fr; } }

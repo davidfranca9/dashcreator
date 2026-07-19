@@ -463,6 +463,75 @@ class Task(WorkspaceOwnedModel):
         return f"{marker} {self.title}"
 
 
+class InfoLead(WorkspaceOwnedModel):
+    """Lead do CRM comercial de infoprodutos (aba Infoprodutos, exclusivo
+    Layfe). Modelo espelhado no kanban do Quantum: um funil de vendas com
+    etapas fixas, card arrastável entre elas."""
+
+    STAGE_PROSPEC = "prospec"
+    STAGE_QUALIF = "qualif"
+    STAGE_PROPOSTA = "proposta"
+    STAGE_NEGOC = "negoc"
+    STAGE_FECHADO = "fechado"
+    STAGE_PERDIDO = "perdido"
+    STAGE_CHOICES = [
+        (STAGE_PROSPEC, "Prospecção"),
+        (STAGE_QUALIF, "Qualificação"),
+        (STAGE_PROPOSTA, "Proposta Enviada"),
+        (STAGE_NEGOC, "Negociação"),
+        (STAGE_FECHADO, "Fechado"),
+        (STAGE_PERDIDO, "Perdido"),
+    ]
+
+    name = models.CharField(max_length=160)
+    instagram = models.CharField(max_length=80, blank=True, default="")
+    whatsapp = models.CharField(max_length=40, blank=True, default="")
+    email = models.CharField(max_length=160, blank=True, default="")
+    product = models.ForeignKey(
+        "InfoProduct", on_delete=models.SET_NULL, null=True, blank=True, related_name="leads"
+    )
+    stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default=STAGE_PROSPEC, db_index=True)
+    value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    origin = models.CharField(max_length=60, blank=True, default="")
+    next_action = models.CharField(max_length=160, blank=True, default="")
+    note = models.TextField(blank=True, default="")
+    loss_reason = models.CharField(max_length=160, blank=True, default="")
+
+    class Meta:
+        ordering = ["-updated_at", "-pk"]
+
+    def __str__(self) -> str:
+        return f"{self.name} · {self.get_stage_display()}"
+
+
+class InfoLeadEvent(WorkspaceOwnedModel):
+    """Linha do histórico do lead (quem moveu, quando, o que aconteceu)."""
+
+    lead = models.ForeignKey(InfoLead, on_delete=models.CASCADE, related_name="events")
+    text = models.CharField(max_length=240)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    def __str__(self) -> str:
+        return self.text
+
+
+class InfoLeadTask(WorkspaceOwnedModel):
+    """Tarefa/próximo passo do lead."""
+
+    lead = models.ForeignKey(InfoLead, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=180)
+    due_date = models.DateField(null=True, blank=True)
+    done = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["done", "due_date", "pk"]
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class ProjectUpdateMessage(WorkspaceOwnedModel):
     """Mensagem do Assistente de Atualizações (detalhe do trabalho — recurso
     exclusivo da Layfe). Cada avanço de etapa gera uma mensagem pronta pra
