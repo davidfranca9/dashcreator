@@ -1088,6 +1088,7 @@ def _redirect_preserving_month(request: HttpRequest, view_name: str, *args, **kw
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     from .models import Task
+    from .services import sync_dashboard_auto_tasks
     from django.db.models import Q
 
     workspace = _workspace(request)
@@ -1101,6 +1102,10 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         month_filter=month_filter,
     )
     context.update(dashboard_snapshot(workspace, month_filter))
+
+    # Gera as tarefas AUTOMATICAS baseado no estado dos trabalhos ativos
+    # (idempotente: nao duplica; limpa as que nao fazem mais sentido).
+    sync_dashboard_auto_tasks(workspace)
 
     # Card "O que temos pra hoje?": tarefas ainda nao feitas com prazo <= hoje
     # (inclui atrasadas) + tarefas ja feitas HOJE (pra mostrar o riscado).

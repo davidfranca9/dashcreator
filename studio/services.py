@@ -1651,6 +1651,100 @@ def start_follow_up_prospection(workspace: Workspace, company_key: str) -> Prosp
     return prospect
 
 
+def sync_dashboard_auto_tasks(workspace: Workspace) -> None:
+    """Gera/atualiza as tarefas AUTOMATICAS do card 'O que temos pra hoje?'
+    baseado no estado dos trabalhos ativos do workspace. Idempotente: rodar
+    varias vezes nao duplica.
+
+    Regras (uma tarefa por projeto ativo, dependendo do status):
+    - Briefing            -> 'Enviar/receber briefing de {marca}'
+    - Em produção         -> 'Produzir conteudo para {marca}'
+    - Aguardando aprovação -> 'Cobrar aprovacao de {marca}'
+    - Concluído           -> 'Emitir nota fiscal de {marca}' (se total > 0)
+    - Se meeting_scheduled=True e meeting_date=hoje -> 'Reuniao com {marca}'
+
+    Prioridade: alta se atrasado (due_date < hoje) ou reuniao hoje, senao media.
+    Prazo (due_date): due_date do projeto (ou hoje pra NF).
+
+    Regras de limpeza: se existir uma auto task cujo auto_key nao bate mais
+    com o estado atual do projeto, ela e apagada (a menos que ja tenha sido
+    marcada como feita: nesse caso preserva o historico).
+    """
+    from .models import Project, Task
+
+    today = _today()
+    active_projects = list(
+        Project.objects.filter(workspace=workspace, stage="Fechado").select_related(
+            "service_category"
+        )
+    )
+
+    expected: dict[str, dict] = {}
+
+    def _add(key: str, title: str, priority: str, due: date, project_id: int) -> None:
+        expected[key] = {
+            "title": title,
+            "priority": priority,
+            "due_date": due,
+            "project_id": project_id,
+        }
+
+    for project in active_projects:
+        is_overdue = bool(project.due_date and project.due_date < today)
+        base_priority = "alta" if is_overdue else "media"
+        marca = project.company or "trabalho"
+        base_due = project.due_date or today
+
+        status = project.status or ""
+        if status == "Briefing":
+            _add(f"briefing:{project.pk}", f"Preparar briefing e roteiro de {marca}", base_priority, base_due, project.pk)
+        elif status == "Em produção":
+            _add(f"produzir:{project.pk}", f"Produzir conteudo de {marca}", base_priority, base_due, project.pk)
+        elif status == "Aguardando aprovação":
+            _add(f"aprovacao:{project.pk}", f"Cobrar aprovacao de {marca}", base_priority, base_due, project.pk)
+        elif status == "Concluído" and Decimal(project.total_value or 0) > 0:
+            _add(f"nf:{project.pk}", f"Emitir nota fiscal de {marca}", "media", today, project.pk)
+
+        if project.meeting_scheduled and project.meeting_date == today:
+            _add(f"reuniao:{project.pk}:{today.isoformat()}", f"Reuniao com {marca} hoje", "alta", today, project.pk)
+
+    # Reconcilia as auto tasks existentes com o esperado.
+    existing_qs = Task.objects.filter(workspace=workspace).exclude(auto_key__isnull=True).exclude(auto_key="")
+    existing_by_key = {t.auto_key: t for t in existing_qs}
+
+    # 1. Cria/atualiza as esperadas.
+    for key, spec in expected.items():
+        current = existing_by_key.pop(key, None)
+        if current is None:
+            Task.objects.create(
+                workspace=workspace,
+                title=spec["title"],
+                priority=spec["priority"],
+                due_date=spec["due_date"],
+                project_id=spec["project_id"],
+                auto_key=key,
+            )
+        else:
+            update_fields = []
+            if not current.done and current.title != spec["title"]:
+                current.title = spec["title"]
+                update_fields.append("title")
+            if not current.done and current.priority != spec["priority"]:
+                current.priority = spec["priority"]
+                update_fields.append("priority")
+            if not current.done and current.due_date != spec["due_date"]:
+                current.due_date = spec["due_date"]
+                update_fields.append("due_date")
+            if update_fields:
+                current.save(update_fields=update_fields + ["updated_at"])
+
+    # 2. Apaga as auto tasks nao mais esperadas (project mudou de status).
+    #    Preserva as ja feitas (historico).
+    for key, orphan in existing_by_key.items():
+        if not orphan.done:
+            orphan.delete()
+
+
 def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) -> dict:
     projects = list(Project.objects.filter(workspace=workspace).order_by("close_date", "due_date"))
     month_options = month_options_for_workspace(workspace)

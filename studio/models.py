@@ -437,9 +437,15 @@ class Task(WorkspaceOwnedModel):
     )
     done = models.BooleanField(default=False)
     done_at = models.DateTimeField(null=True, blank=True)
+    # Tarefas geradas automaticamente pelo Dashboard tem auto_key preenchido
+    # (ex: "briefing:348"). Tarefas manuais tem auto_key=NULL. NULL permite
+    # varias manuais por workspace; auto_key preenchido e unico por workspace
+    # entao a geracao ficou idempotente.
+    auto_key = models.CharField(max_length=80, null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["done", "due_date", "priority", "-created_at"]
+        unique_together = [("workspace", "auto_key")]
 
     def __str__(self) -> str:
         marker = "[x]" if self.done else "[ ]"
