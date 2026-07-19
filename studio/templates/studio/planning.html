@@ -50,15 +50,46 @@
         font-size: 10.5px; font-weight: 700; opacity: 0.7;
     }
 
-    .pend-cats { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-    .pend-cat {
-        background: transparent; border: 0.5px solid #e6dfd2;
-        padding: 4px 12px; border-radius: 99px;
-        font-family: inherit; font-size: 11.5px; font-weight: 500;
-        color: #5c5143; cursor: pointer;
+    /* Resumo semanal ------------------------------------------------------ */
+    .pend-summary {
+        background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px;
+        padding: 12px 16px; margin: 12px 0 14px;
     }
-    .pend-cat:hover { border-color: #b8a589; color: #1a2340; }
-    .pend-cat.is-active { background: #fdf0f0; color: #b84040; border-color: #f2c7c7; }
+    .pend-summary-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    .pend-summary-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 14px; font-weight: 600; color: #1a2340;
+    }
+    .pend-summary-range { font-size: 11.5px; color: #8a7d6b; font-style: italic; }
+    .pend-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+    }
+    @media (max-width: 720px) { .pend-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 480px) { .pend-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .pend-summary-cell {
+        display: flex; flex-direction: column; align-items: center;
+        padding: 8px 4px;
+        background: #faf7f0; border-radius: 8px;
+    }
+    .pend-summary-cell.is-warn { background: #fdf6e8; }
+    .pend-summary-cell.is-urgent { background: #fdf0f0; }
+    .pend-summary-cell.is-ok { background: #eef7f3; }
+    .pend-summary-num {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 22px; font-weight: 700; color: #1a2340; line-height: 1;
+    }
+    .pend-summary-cell.is-warn .pend-summary-num { color: #b07d2a; }
+    .pend-summary-cell.is-urgent .pend-summary-num { color: #b84040; }
+    .pend-summary-cell.is-ok .pend-summary-num { color: #2d7a5f; }
+    .pend-summary-lbl {
+        font-size: 10.5px; color: #5c5143; margin-top: 4px;
+        text-align: center; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600;
+    }
 
     /* Meta -------------------------------------------------------------- */
     .pend-meta { font-size: 12px; color: #8a7d6b; font-style: italic; margin-bottom: 10px; }
@@ -184,11 +215,33 @@
         <button type="button" class="pend-tab" data-tab="atrasada">Atrasadas <span class="pend-tab-count">{{ counts.atrasadas }}</span></button>
     </div>
 
-    <div class="pend-cats" data-cats>
-        <button type="button" class="pend-cat is-active" data-cat="__all">Todas</button>
-        {% for cat in categories %}
-            <button type="button" class="pend-cat" data-cat="{{ cat }}">{{ cat }}</button>
-        {% endfor %}
+    <div class="pend-summary">
+        <div class="pend-summary-head">
+            <span class="pend-summary-title">Resumo semanal</span>
+            <span class="pend-summary-range">{{ weekly_summary.range_label }}</span>
+        </div>
+        <div class="pend-summary-grid">
+            <div class="pend-summary-cell">
+                <span class="pend-summary-num">{{ weekly_summary.abertas }}</span>
+                <span class="pend-summary-lbl">Abertas</span>
+            </div>
+            <div class="pend-summary-cell">
+                <span class="pend-summary-num">{{ weekly_summary.prazo_semana }}</span>
+                <span class="pend-summary-lbl">Vencem na semana</span>
+            </div>
+            <div class="pend-summary-cell{% if weekly_summary.atrasadas %} is-warn{% endif %}">
+                <span class="pend-summary-num">{{ weekly_summary.atrasadas }}</span>
+                <span class="pend-summary-lbl">Atrasadas</span>
+            </div>
+            <div class="pend-summary-cell{% if weekly_summary.urgentes %} is-urgent{% endif %}">
+                <span class="pend-summary-num">{{ weekly_summary.urgentes }}</span>
+                <span class="pend-summary-lbl">Urgentes</span>
+            </div>
+            <div class="pend-summary-cell is-ok">
+                <span class="pend-summary-num">{{ weekly_summary.concluidas }}</span>
+                <span class="pend-summary-lbl">Feitas esta semana</span>
+            </div>
+        </div>
     </div>
 
     <div class="pend-meta" data-total-line>{{ counts.todas }} pendência{{ counts.todas|pluralize }}</div>
@@ -271,9 +324,8 @@
         }).then((r) => r.json());
     };
 
-    // Filtros (busca + tab de status + tab de categoria)
+    // Filtros (busca + tab de status)
     let currentStatus = "todas";
-    let currentCategory = "__all";
     let searchTerm = "";
     const totalLine = root.querySelector("[data-total-line]");
     const items = () => root.querySelectorAll("[data-item]");
@@ -282,12 +334,10 @@
         let visible = 0;
         items().forEach((el) => {
             const st = el.dataset.status;
-            const cat = el.dataset.category || "";
             const title = el.dataset.title || "";
             const okStatus = currentStatus === "todas" || st === currentStatus;
-            const okCat = currentCategory === "__all" || cat === currentCategory;
             const okSearch = !searchTerm || title.includes(searchTerm);
-            const show = okStatus && okCat && okSearch;
+            const show = okStatus && okSearch;
             el.style.display = show ? "" : "none";
             if (show) visible++;
         });
@@ -299,14 +349,6 @@
             root.querySelectorAll("[data-tab]").forEach((b) => b.classList.remove("is-active"));
             btn.classList.add("is-active");
             currentStatus = btn.dataset.tab;
-            applyFilters();
-        });
-    });
-    root.querySelectorAll("[data-cat]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            root.querySelectorAll("[data-cat]").forEach((b) => b.classList.remove("is-active"));
-            btn.classList.add("is-active");
-            currentCategory = btn.dataset.cat;
             applyFilters();
         });
     });

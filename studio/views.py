@@ -1147,15 +1147,38 @@ def planning(request: HttpRequest) -> HttpResponse:
         "urgentes": sum(1 for p in payload if p["priority"] in ("urgente", "alta")),
     }
 
-    # Categorias: as fixas + as customizadas que aparecerem no workspace.
-    used_cats = {p["category"] for p in payload if p["category"]}
-    extra = [c for c in used_cats if c not in PENDENCIA_CATEGORIES]
-    all_categories = PENDENCIA_CATEGORIES + sorted(extra)
+    # Resumo semanal: contadores da semana corrente (segunda a domingo).
+    from datetime import timedelta
+
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    done_this_week = Task.objects.filter(
+        workspace=workspace,
+        dismissed=False,
+        done=True,
+        done_at__date__gte=monday,
+        done_at__date__lte=sunday,
+    ).count()
+    due_this_week = sum(
+        1 for p in payload
+        if p["due_date"] and monday <= p["due_date"] <= sunday and p["status"] != "atrasada"
+    )
+    weekly_summary = {
+        "monday": monday,
+        "sunday": sunday,
+        "range_label": f"{monday.day}/{monday.month} a {sunday.day}/{sunday.month}",
+        "abertas": counts["todas"],
+        "hoje": counts["hoje"],
+        "atrasadas": counts["atrasadas"],
+        "urgentes": counts["urgentes"],
+        "concluidas": done_this_week,
+        "prazo_semana": due_this_week,
+    }
 
     context.update({
         "pendencias": payload,
         "counts": counts,
-        "categories": all_categories,
+        "weekly_summary": weekly_summary,
     })
     return render(request, "studio/planning.html", context)
 
