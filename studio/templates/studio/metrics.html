@@ -48,6 +48,7 @@
     .kpis.k4{ grid-template-columns:repeat(4,1fr); }
     .kpi--meta .n{ color:#1877F2; }
     .kpi--org .n{ color:#2d7a5f; }
+    .kpi--story .n{ color:#b8437f; }
     .note{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
     @media(max-width:720px){ .kpis.k4{ grid-template-columns:1fr 1fr; } }
 
@@ -133,6 +134,68 @@
           {% else %}<p class="muted">Sem dados.</p>{% endif %}
         </div>
       </div>
+
+      <!-- ── PAINEL: STORIES DO INSTAGRAM ────────────────────────────── -->
+      <div class="sec-head">
+        <h2>Stories do Instagram</h2>
+        <span class="sub">por perfil e por story, usando a #tag no link</span>
+      </div>
+
+      {% if stories.has_data %}
+        <div class="kpis k4">
+          <div class="kpi kpi--story"><div class="n">{{ stories.views }}</div><div class="l">Visitas de stories</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.visitors }}</div><div class="l">Visitantes únicos</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.clicks }}</div><div class="l">Cliques em CTA</div></div>
+          <div class="kpi kpi--story"><div class="n">{{ stories.share }}%</div><div class="l">do tráfego total</div></div>
+        </div>
+        <div class="cols">
+          <div class="card">
+            <h2>Por perfil</h2>
+            <ul class="rank">
+              {% for row in stories.profiles %}
+                <li>
+                  <span class="name" title="#{{ row.raw }}">{{ row.label }}</span>
+                  <span class="val">{{ row.n }}</span>
+                  <div class="bar"><span style="width:{% widthratio row.n stories.max_profile 100 %}%"></span></div>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="note">Cada perfil do Instagram usa uma tag própria no fim do link.</p>
+          </div>
+          <div class="card">
+            <h2>Por story</h2>
+            <ul class="rank">
+              {% for row in stories.stories %}
+                <li>
+                  <span class="name">{{ row.label }}</span>
+                  <span class="val">{{ row.n }}</span>
+                  <div class="bar"><span style="width:{% widthratio row.n stories.max_story 100 %}%"></span></div>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="note">Sem nome de story na tag, cada dia vira uma linha.</p>
+          </div>
+        </div>
+        <div class="card">
+          <p class="note" style="margin:0">
+            <strong>Comparativo:</strong> os stories trouxeram <strong>{{ stories.views }}</strong> das
+            <strong>{{ total_views }}</strong> visitas do período ({{ stories.share }}%), com taxa de clique de
+            <strong>{{ stories.ctr }}%</strong>.
+          </p>
+        </div>
+      {% else %}
+        <div class="card empty">
+          <div class="big">Nenhum story marcado ainda</div>
+          <p class="muted">
+            No sticker de link do story, use o endereço com uma tag no fim.<br><br>
+            Só o perfil (o painel separa por dia sozinho):<br>
+            <code>thecreatorsclub.com.br/dashcreator#layfe</code><br><br>
+            Perfil e nome do story:<br>
+            <code>thecreatorsclub.com.br/dashcreator#layfe.bastidores</code><br><br>
+            Use uma tag diferente para cada perfil seu do Instagram.
+          </p>
+        </div>
+      {% endif %}
 
       <!-- ── PAINEL 1: ORGÂNICO ──────────────────────────────────────── -->
       <div class="sec-head">

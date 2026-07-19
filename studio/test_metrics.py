@@ -224,3 +224,67 @@ class PrettyLabelTests(TestCase):
         self.assertEqual(_pretty_label("(sem utm_content)"), "Origem não identificada")
         self.assertEqual(_pretty_label("(sem utm_campaign)"), "Sem campanha marcada")
         self.assertEqual(_pretty_label(""), "Sem identificação")
+
+
+class StoriesPanelTests(TestCase):
+    """Painel de stories: identifica perfil e story pela #tag do link."""
+
+    def setUp(self):
+        get_user_model().objects.create_user("boss", password="x", is_staff=True)
+        self.c = Client()
+        self.c.login(username="boss", password="x")
+
+    def _ctx(self):
+        return self.c.get(reverse("metrics_dashboard") + "?site=dash&days=30").context
+
+    def test_tag_parsing(self):
+        from studio.metrics import _story_tag
+        self.assertEqual(_story_tag("/dashcreator#layfe"), ("layfe", ""))
+        self.assertEqual(_story_tag("/dashcreator#layfe.bastidores"), ("layfe", "bastidores"))
+        self.assertEqual(_story_tag("/dashcreator?x=1#tcc.promo"), ("tcc", "promo"))
+        # ancora de secao da propria pagina NAO e story
+        self.assertIsNone(_story_tag("/dashcreator#modulos"))
+        self.assertIsNone(_story_tag("/dashcreator#top"))
+        self.assertIsNone(_story_tag("/dashcreator"))
+
+    def test_separates_by_profile_and_story(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe.promo", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe.promo", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#tcc.bastidores", visitor="v3", session="s3")
+        # visita normal e ancora de secao nao entram
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d", visitor="v4", session="s4")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#modulos", visitor="v5", session="s5")
+
+        st = self._ctx()["stories"]
+        self.assertEqual(st["views"], 3)
+        profiles = {r["raw"]: r["n"] for r in st["profiles"]}
+        self.assertEqual(profiles["layfe"], 2)
+        self.assertEqual(profiles["tcc"], 1)
+        names = {r["label"] for r in st["stories"]}
+        self.assertIn("layfe · promo", names)
+        self.assertIn("tcc · bastidores", names)
+
+    def test_without_story_name_groups_by_day(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe", visitor="v2", session="s2")
+        st = self._ctx()["stories"]
+        self.assertEqual(st["views"], 2)
+        # vira "layfe · dd/mm"
+        self.assertTrue(any(r["label"].startswith("layfe · ") for r in st["stories"]))
+
+    def test_counts_cta_clicks_from_story_sessions(self):
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d#layfe", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", path="/d", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/d", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="click", label="cadastre-se", path="/d", visitor="v2", session="s2")
+        st = self._ctx()["stories"]
+        self.assertEqual(st["clicks"], 1)
+        self.assertEqual(st["ctr"], 100.0)
+
+    def test_page_ranking_ignores_query_and_tag(self):
+        """Paginas mais vistas agrupa pela pagina limpa."""
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/#layfe", visitor="v1", session="s1")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/?fbclid=X", visitor="v2", session="s2")
+        PageEvent.objects.create(site="dash", kind="pageview", path="/dashcreator/", visitor="v3", session="s3")
+        pages = {r["path"]: r["n"] for r in self._ctx()["top_pages"]}
+        self.assertEqual(pages["/dashcreator/"], 3)

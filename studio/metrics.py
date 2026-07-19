@@ -138,6 +138,82 @@ def _rank_by_utm(paths, key: str, fallback: str, limit: int = 10) -> list[dict]:
     ]
 
 
+# ── Stories do Instagram (#tag no link) ─────────────────────────────────────
+# A pessoa põe no sticker de link do story uma URL terminada em #tag, ex.:
+#   thecreatorsclub.com.br/dashcreator#layfe          (só o perfil)
+#   thecreatorsclub.com.br/dashcreator#layfe.promo    (perfil + nome do story)
+# Sem o nome do story, o painel separa por DIA, então cada story aparece
+# sozinho mesmo sem inventar um nome novo a cada post.
+#
+# Âncoras de seção das próprias páginas NÃO podem virar tag de story.
+_PAGE_ANCHORS = {
+    "top", "modulos", "comunidade", "manifesto", "caminhos", "galeria",
+    "organicos", "vendas", "arc-b", "arc-t", "cta", "depoimentos", "filosofia",
+    "founder", "plano", "planos", "porque", "problema", "faq", "inicio",
+}
+
+
+def _story_tag(path: str) -> tuple[str, str] | None:
+    """Extrai (perfil, story) do #tag do link. None quando não há tag ou
+    quando é âncora de seção da própria página."""
+    if not path or "#" not in path:
+        return None
+    fragment = path.split("#", 1)[1].strip().lower()
+    if not fragment or fragment in _PAGE_ANCHORS or fragment.startswith("_"):
+        return None
+    profile, _, story = fragment.partition(".")
+    profile = profile.strip()[:40]
+    if not profile:
+        return None
+    return profile, story.strip()[:40]
+
+
+def _stories_stats(base, clicks, total_views) -> dict:
+    """Visitas vindas de story, quebradas por perfil e por story."""
+    rows = [
+        (path, created_at, session)
+        for path, created_at, session in base.filter(kind="pageview").values_list(
+            "path", "created_at", "session"
+        )
+        if _story_tag(path)
+    ]
+    views = len(rows)
+    by_profile = Counter()
+    by_story = Counter()
+    for path, created_at, _session in rows:
+        profile, story = _story_tag(path)
+        by_profile[profile] += 1
+        # sem nome de story, separa por dia (cada post vira uma linha)
+        key = f"{profile} · {story}" if story else f"{profile} · {created_at.strftime('%d/%m')}"
+        by_story[key] += 1
+
+    story_sessions = {s for _p, _c, s in rows if s}
+    story_clicks = (
+        clicks.exclude(session="").filter(session__in=story_sessions).count()
+        if story_sessions
+        else 0
+    )
+    visitors = (
+        base.filter(kind="pageview", session__in=story_sessions).values("visitor").distinct().count()
+        if story_sessions
+        else 0
+    )
+    profiles = [{"label": _pretty_label(p), "raw": p, "n": n} for p, n in by_profile.most_common(15)]
+    stories = [{"label": k, "raw": k, "n": n} for k, n in by_story.most_common(15)]
+    return {
+        "views": views,
+        "visitors": visitors,
+        "clicks": story_clicks,
+        "share": round(views / total_views * 100) if total_views else 0,
+        "ctr": round(story_clicks / views * 100, 1) if views else 0,
+        "profiles": profiles,
+        "stories": stories,
+        "max_profile": profiles[0]["n"] if profiles else 0,
+        "max_story": stories[0]["n"] if stories else 0,
+        "has_data": views > 0,
+    }
+
+
 def _segment_stats(base, clicks, total_views, seg_filter, series_labels) -> dict:
     """Números de um recorte de tráfego (orgânico do Meta ou tráfego pago).
 
@@ -261,9 +337,13 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
         .annotate(n=Count("id"))
         .order_by("-n")[:15]
     ]
-    top_pages = list(
-        views.values("path").annotate(n=Count("id")).order_by("-n")[:15]
+    # Agrupa pela página "limpa": sem ?query e sem #tag, senão cada fbclid
+    # ou tag de story viraria uma linha diferente no ranking.
+    _pages = Counter(
+        (p or "/").split("?")[0].split("#")[0] or "/"
+        for p in views.values_list("path", flat=True)
     )
+    top_pages = [{"path": path, "n": n} for path, n in _pages.most_common(15)]
 
     max_click = top_clicks[0]["n"] if top_clicks else 0
     max_page = top_pages[0]["n"] if top_pages else 0
@@ -271,6 +351,7 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
     # ── Dois recortes independentes: ORGÂNICO e TRÁFEGO PAGO ────────────────
     # Pago = link marcado com utm_medium=paid/cpc/ppc (único sinal confiável).
     # Orgânico = veio do Meta mas sem essa marcação (bio, story, post, DM).
+    stories = _stories_stats(base, clicks, total_views)
     paid = _segment_stats(base, clicks, total_views, _META_FILTER & _PAID_FILTER, series_labels)
     organic = _segment_stats(base, clicks, total_views, _META_FILTER & ~_PAID_FILTER, series_labels)
 
@@ -294,6 +375,7 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
         # Meta: dois painéis independentes
         "organic": organic,
         "paid": paid,
+        "stories": stories,
         "organic_series_json": json.dumps(organic["series"]),
         "paid_series_json": json.dumps(paid["series"]),
         # agregados (compatibilidade / visão geral)

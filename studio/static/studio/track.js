@@ -31,7 +31,10 @@
     var data = {
       site: SITE,
       kind: kind,
-      path: location.pathname + location.search,
+      // Inclui o #tag: é o que identifica de qual perfil/story do Instagram
+      // a visita veio. O navegador não manda o "#" pro servidor sozinho,
+      // por isso enviamos aqui explicitamente.
+      path: location.pathname + location.search + location.hash,
       label: (label || "").slice(0, 80),
       visitor: visitor,
       session: session,
