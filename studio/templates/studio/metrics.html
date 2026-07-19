@@ -135,17 +135,20 @@
 
       <!-- ── PAINEL META ADS ─────────────────────────────────────────── -->
       <div class="sec-head">
-        <h2>Meta Ads</h2>
-        <span class="sub">tráfego que chegou por Facebook / Instagram</span>
+        <h2>Meta · Facebook / Instagram</h2>
+        <span class="sub">inclui tráfego orgânico (bio, stories, posts) e de anúncios</span>
       </div>
 
       {% if has_meta %}
         <div class="kpis k4">
-          <div class="kpi kpi--meta"><div class="n">{{ meta_views }}</div><div class="l">Visitas do Meta</div></div>
-          <div class="kpi kpi--meta"><div class="n">{{ meta_visitors }}</div><div class="l">Visitantes únicos</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ meta_paid_views }}</div><div class="l">Anúncios (pago)</div></div>
+          <div class="kpi kpi--meta"><div class="n">{{ meta_organic_views }}</div><div class="l">Orgânico (bio/story/post)</div></div>
           <div class="kpi kpi--meta"><div class="n">{{ meta_clicks }}</div><div class="l">Cliques em CTA</div></div>
           <div class="kpi kpi--meta"><div class="n">{{ meta_share }}%</div><div class="l">do tráfego total</div></div>
         </div>
+        <p class="note" style="margin:-10px 0 20px">
+          Total vindo do Meta: <strong>{{ meta_views }}</strong> visitas · <strong>{{ meta_visitors }}</strong> visitantes únicos.
+        </p>
 
         <div class="cols">
           <div class="card">
@@ -180,6 +183,8 @@
         <div class="card">
           <p class="note" style="margin:0">
             <strong>Taxa de clique do tráfego Meta:</strong> {{ meta_ctr }}% ({{ meta_clicks }} cliques em {{ meta_views }} visitas).<br>
+            <strong>Como separamos pago de orgânico:</strong> só conta como <em>anúncio</em> quando o link traz <code>utm_medium=paid</code>.
+            O <code>fbclid</code> e o referrer do Meta aparecem também em clique de bio, story e post, então sozinhos não provam que foi anúncio.<br>
             Estes números são medidos <strong>no seu site</strong>. Valor investido, CPM e CPC ficam no Gerenciador de Anúncios do Meta.
           </p>
         </div>

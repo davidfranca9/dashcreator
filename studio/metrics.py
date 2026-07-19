@@ -36,12 +36,12 @@ VALID_SITES = {choice[0] for choice in PageEvent.SITE_CHOICES}
 VALID_KINDS = {choice[0] for choice in PageEvent.KIND_CHOICES}
 _BOT_MARKERS = ("bot", "spider", "crawl", "slurp", "headless", "preview", "monitor", "curl", "wget")
 
-# ── Meta Ads ────────────────────────────────────────────────────────────────
-# Identifica a visita como vinda do Meta (Facebook/Instagram) por três sinais:
-# 1) fbclid na URL  — parâmetro que o próprio Meta adiciona ao clicar no anúncio
-#    (sinal mais forte e automático);
-# 2) utm_source=facebook/instagram/meta/fb — quando a campanha usa UTM;
-# 3) referrer do facebook/instagram — tráfego vindo do app/site deles.
+# ── Meta (Facebook / Instagram) ─────────────────────────────────────────────
+# ATENÇÃO: isto identifica tráfego vindo do Meta em geral — inclui ORGÂNICO
+# (link da bio, story, post, DM). O fbclid NÃO serve para separar anúncio:
+# o Meta adiciona esse parâmetro em qualquer link clicado dentro dele.
+# Para "pago" existe só um sinal confiável: a marcação de mídia paga que VOCÊ
+# coloca no link do anúncio (utm_medium=paid) — ver _PAID_FILTER abaixo.
 _META_FILTER = (
     Q(path__icontains="fbclid=")
     | Q(path__icontains="utm_source=facebook")
@@ -51,6 +51,16 @@ _META_FILTER = (
     | Q(referrer__icontains="facebook.com")
     | Q(referrer__icontains="instagram.com")
     | Q(referrer__icontains="fb.com")
+)
+
+
+# Só conta como ANÚNCIO quando o link traz marcação de mídia paga. É o único
+# sinal confiável: sem isso, é impossível distinguir clique em anúncio de
+# clique no link da bio/story (ambos chegam com fbclid e referrer do Meta).
+_PAID_FILTER = (
+    Q(path__icontains="utm_medium=paid")
+    | Q(path__icontains="utm_medium=cpc")
+    | Q(path__icontains="utm_medium=ppc")
 )
 
 
@@ -175,6 +185,11 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
     meta_share = round(meta_views / total_views * 100) if total_views else 0
     meta_ctr = round(meta_clicks / meta_views * 100, 1) if meta_views else 0
 
+    # Pago x orgânico: sem a marcação de mídia paga no link, é tráfego orgânico
+    # do Meta (bio, story, post) — não anúncio.
+    meta_paid_views = meta_views_qs.filter(_PAID_FILTER).count()
+    meta_organic_views = meta_views - meta_paid_views
+
     meta_paths = list(meta_views_qs.values_list("path", flat=True))
     meta_campaigns = _rank_by_utm(meta_paths, "utm_campaign", "(sem utm_campaign)")
     meta_creatives = _rank_by_utm(meta_paths, "utm_content", "(sem utm_content)")
@@ -207,6 +222,8 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
         "has_data": total_views > 0 or total_clicks > 0,
         # Meta Ads
         "meta_views": meta_views,
+        "meta_paid_views": meta_paid_views,
+        "meta_organic_views": meta_organic_views,
         "meta_visitors": meta_visitors,
         "meta_clicks": meta_clicks,
         "meta_share": meta_share,

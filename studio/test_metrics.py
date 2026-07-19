@@ -179,3 +179,32 @@ class MetaAdsPanelTests(TestCase):
         self.assertContains(resp, "Meta Ads")
         self.assertContains(resp, "Nenhuma visita do Meta ainda")
         self.assertFalse(resp.context["has_meta"])
+
+    def test_organic_meta_traffic_is_not_counted_as_paid(self):
+        """Link da bio / story / post chegam com fbclid e referrer do Meta, mas
+        NÃO são anúncio. Só conta como pago quem tem utm_medium=paid."""
+        # link da bio do Instagram (orgânico) — caso real que apareceu no painel
+        PageEvent.objects.create(site="dash", kind="pageview", visitor="v1", session="s1",
+                                 path="/dashcreator/?fbclid=AAA&utm_content=link_in_bio",
+                                 referrer="https://l.instagram.com/")
+        # story orgânico
+        PageEvent.objects.create(site="dash", kind="pageview", visitor="v2", session="s2",
+                                 path="/dashcreator/?fbclid=BBB", referrer="https://l.facebook.com/")
+        # anúncio de verdade (link com marcação de mídia paga)
+        PageEvent.objects.create(site="dash", kind="pageview", visitor="v3", session="s3",
+                                 path="/dashcreator/?fbclid=CCC&utm_source=meta&utm_medium=paid&utm_campaign=julho")
+
+        ctx = self.c.get(self._url()).context
+        self.assertEqual(ctx["meta_views"], 3)          # os 3 vieram do Meta
+        self.assertEqual(ctx["meta_paid_views"], 1)     # mas só 1 é anúncio
+        self.assertEqual(ctx["meta_organic_views"], 2)  # bio + story = orgânico
+
+    def test_no_ads_running_shows_zero_paid(self):
+        """Cenário do usuário: nenhum anúncio rodando -> pago = 0."""
+        for i in range(5):
+            PageEvent.objects.create(site="dash", kind="pageview", visitor=f"v{i}", session=f"s{i}",
+                                     path="/dashcreator/?fbclid=X&utm_content=link_in_bio",
+                                     referrer="https://l.instagram.com/")
+        ctx = self.c.get(self._url()).context
+        self.assertEqual(ctx["meta_paid_views"], 0)
+        self.assertEqual(ctx["meta_organic_views"], 5)
