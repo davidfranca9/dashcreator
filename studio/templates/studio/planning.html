@@ -5,10 +5,14 @@
     .pl-wrap { display: flex; gap: 24px; align-items: flex-start; }
     .pl-main { flex: 1; min-width: 0; }
     .pl-side { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
+    @media (max-width: 1000px) {
+        .pl-wrap { flex-direction: column; }
+        .pl-side { width: 100%; }
+    }
 
     .pl-week-head {
         display: flex; align-items: baseline; justify-content: space-between;
-        margin-bottom: 12px; gap: 12px; flex-wrap: wrap;
+        margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
     }
     .pl-week-title { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-weight: 600; color: #1a2340; }
     .pl-week-meta { font-size: 12.5px; color: #8a7d6b; font-style: italic; }
@@ -17,64 +21,108 @@
     .pl-tp-fill { height: 100%; background: #2d7a5f; transition: width .3s; }
     .pl-tp-pct { font-size: 12px; color: #8a7d6b; font-style: italic; min-width: 34px; }
 
-    .pl-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
-    @media (max-width: 1100px) { .pl-days { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-    @media (max-width: 720px) { .pl-days { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    /* Lista vertical agrupada por dia -------------------------------------- */
+    .pl-list { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 12px; overflow: hidden; }
 
-    .pl-day {
-        background: #fff; border: 0.5px solid #ddd6cb;
-        border-radius: 10px;
-        display: flex; flex-direction: column;
-        min-height: 180px;
-    }
-    .pl-day.is-today { border: 1.5px solid #1a2340; box-shadow: 0 4px 12px rgba(26,35,64,0.08); }
-    .pl-day.is-past { opacity: 0.7; }
-    .pl-day-head {
-        padding: 10px 12px 8px;
-        border-bottom: 0.5px solid #ddd6cb;
-        display: flex; align-items: center; justify-content: space-between;
-    }
-    .pl-day-name { font-size: 11px; font-weight: 700; color: #1a2340; letter-spacing: 0.5px; text-transform: uppercase; }
-    .pl-day.is-today .pl-day-name { color: #b07d2a; }
-    .pl-day-date { font-family: 'Playfair Display', Georgia, serif; font-size: 16px; font-weight: 700; color: #1a2340; margin-top: 1px; line-height: 1; }
-    .pl-day-badge { font-size: 10px; font-weight: 700; background: #f5f0e8; color: #5c5143; padding: 2px 7px; border-radius: 99px; }
-    .pl-day-body { padding: 8px 8px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
-    .pl-day-empty { color: #b8b0a5; font-size: 11px; text-align: center; padding: 18px 8px; font-style: italic; }
+    .pl-day-block { border-bottom: 0.5px solid #e6dfd2; }
+    .pl-day-block:last-child { border-bottom: none; }
 
-    .pl-task {
-        background: #f9f7f2; border-left: 3px solid #c9b99a;
-        border-radius: 4px;
-        padding: 7px 9px 7px 10px;
-        font-size: 12px; color: #1a2340;
-        cursor: pointer;
+    .pl-day-header {
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 20px;
+        background: #f5f0e8;
+        border-bottom: 0.5px solid #e6dfd2;
+        position: sticky; top: 0; z-index: 2;
+    }
+    .pl-day-block.is-today .pl-day-header {
+        background: #1a2340; color: #f5f0e8;
+    }
+    .pl-day-block.is-today .pl-day-name { color: #c9b99a; }
+    .pl-day-block.is-today .pl-day-date { color: #fff; }
+    .pl-day-block.is-past .pl-day-header { background: #efeae0; opacity: 0.85; }
+    .pl-day-block.is-past .pl-task-row { opacity: 0.7; }
+
+    .pl-day-marker {
+        width: 8px; height: 8px; border-radius: 50%; background: #c9b99a;
+        flex-shrink: 0;
+    }
+    .pl-day-block.is-today .pl-day-marker { background: #c9b99a; box-shadow: 0 0 0 3px rgba(201,185,154,0.35); }
+    .pl-day-name {
+        font-size: 11px; font-weight: 700;
+        color: #1a2340; letter-spacing: 0.6px; text-transform: uppercase;
+    }
+    .pl-day-date {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 15px; font-weight: 600; color: #1a2340; margin-left: 2px;
+    }
+    .pl-day-count {
+        margin-left: auto;
+        font-size: 11.5px; color: #8a7d6b; font-style: italic;
+    }
+    .pl-day-block.is-today .pl-day-count { color: rgba(245,240,232,0.7); }
+    .pl-day-empty {
+        padding: 12px 24px 14px;
+        font-size: 12.5px; color: #b8b0a5; font-style: italic;
+    }
+
+    /* Cada tarefa (row) ---------------------------------------------------- */
+    .pl-task-row {
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 20px;
+        border-bottom: 0.5px solid #eee7d9;
         position: relative;
         transition: background .12s;
     }
-    .pl-task:hover { background: #f2ede2; }
-    .pl-task.is-done { opacity: 0.45; }
-    .pl-task.is-done .pl-task-title { text-decoration: line-through; }
-    .pl-task.p-alta { border-left-color: #b84040; }
-    .pl-task.p-media { border-left-color: #b07d2a; }
-    .pl-task.p-baixa { border-left-color: #c9b99a; }
-    .pl-task-title { font-weight: 500; line-height: 1.3; padding-right: 14px; }
-    .pl-task-brand { font-size: 10.5px; color: #8a7d6b; font-style: italic; margin-top: 2px; }
+    .pl-task-row:last-child { border-bottom: none; }
+    .pl-task-row:hover { background: #faf7f0; }
+    .pl-task-row.is-done { opacity: 0.5; }
+    .pl-task-row.is-done .pl-task-name { text-decoration: line-through; text-decoration-color: #ccc4b8; }
+
+    .pl-task-prio {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    }
+    .pl-task-prio.p-alta { background: #b84040; }
+    .pl-task-prio.p-media { background: #b07d2a; }
+    .pl-task-prio.p-baixa { background: #c9b99a; }
+
     .pl-task-check {
-        position: absolute; top: 8px; right: 7px;
-        width: 14px; height: 14px;
+        width: 18px; height: 18px; flex-shrink: 0;
         border: 0.5px solid #ccc4b8; background: #fff;
         border-radius: 3px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
+        transition: all .15s;
     }
+    .pl-task-check:hover { border-color: #1a2340; }
     .pl-task-check.is-on { background: #1a2340; border-color: #1a2340; }
     .pl-task-check svg { display: none; }
     .pl-task-check.is-on svg { display: block; }
-    .pl-task-auto {
-        display: inline-block; font-size: 9px; font-weight: 700;
-        background: rgba(201,185,154,0.25); color: #8a6a3a;
-        padding: 1px 5px; border-radius: 3px; margin-right: 4px;
-        letter-spacing: 0.5px;
-    }
 
+    .pl-task-body { flex: 1; min-width: 0; }
+    .pl-task-name {
+        font-size: 13.5px; color: #1a2340;
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .pl-task-brand {
+        font-size: 11.5px; color: #8a7d6b; font-style: italic;
+        margin-top: 3px;
+    }
+    .pl-task-auto {
+        display: inline-block; font-size: 9.5px; font-weight: 700;
+        background: rgba(201,185,154,0.28); color: #8a6a3a;
+        padding: 2px 7px; border-radius: 3px;
+        letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .pl-task-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .pl-task-del {
+        background: transparent; border: none;
+        color: #ccc4b8; cursor: pointer;
+        font-size: 18px; line-height: 1; padding: 4px 6px;
+        opacity: 0; transition: opacity .12s, color .12s;
+    }
+    .pl-task-row:hover .pl-task-del { opacity: 1; }
+    .pl-task-del:hover { color: #b84040; }
+
+    /* Coluna direita ------------------------------------------------------- */
     .pl-sec-title { font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 600; color: #1a2340; margin-bottom: 10px; }
     .pl-card { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px; overflow: hidden; }
     .pl-prazo-row {
@@ -124,33 +172,37 @@
             </div>
         </div>
 
-        <div class="pl-days">
+        <div class="pl-list">
             {% for day in week_days %}
-                <div class="pl-day{% if day.is_today %} is-today{% endif %}{% if day.is_past %} is-past{% endif %}">
-                    <div class="pl-day-head">
-                        <div>
-                            <div class="pl-day-name">{% if day.is_today %}Hoje{% else %}{{ day.day_short }}{% endif %}</div>
-                            <div class="pl-day-date">{{ day.date|date:"j/n" }}</div>
-                        </div>
+                <div class="pl-day-block{% if day.is_today %} is-today{% endif %}{% if day.is_past %} is-past{% endif %}">
+                    <div class="pl-day-header">
+                        <span class="pl-day-marker"></span>
+                        <span class="pl-day-name">{% if day.is_today %}Hoje ·{% else %}{{ day.day_name }} ·{% endif %}</span>
+                        <span class="pl-day-date">{{ day.date|date:"j/n" }}</span>
                         {% if day.total_count %}
-                            <span class="pl-day-badge">{{ day.done_count }}/{{ day.total_count }}</span>
+                            <span class="pl-day-count">{{ day.done_count }} de {{ day.total_count }} concluída{{ day.total_count|pluralize }}</span>
                         {% endif %}
                     </div>
-                    <div class="pl-day-body">
-                        {% for task in day.tasks %}
-                            <div class="pl-task p-{{ task.priority }}{% if task.done %} is-done{% endif %}" data-task-id="{{ task.id }}">
-                                <div class="pl-task-check{% if task.done %} is-on{% endif %}" data-task-toggle="{{ task.id }}" role="checkbox" aria-checked="{{ task.done|yesno:'true,false' }}" tabindex="0">
-                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                                <div class="pl-task-title">
-                                    {% if task.is_auto %}<span class="pl-task-auto">Auto</span>{% endif %}{{ task.title }}
+                    {% for task in day.tasks %}
+                        <div class="pl-task-row{% if task.done %} is-done{% endif %}" data-task-id="{{ task.id }}">
+                            <span class="pl-task-prio p-{{ task.priority }}"></span>
+                            <div class="pl-task-check{% if task.done %} is-on{% endif %}" data-task-toggle="{{ task.id }}" role="checkbox" aria-checked="{{ task.done|yesno:'true,false' }}" tabindex="0">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                            <div class="pl-task-body">
+                                <div class="pl-task-name">
+                                    {% if task.is_auto %}<span class="pl-task-auto">Auto</span>{% endif %}
+                                    <span>{{ task.title }}</span>
                                 </div>
                                 {% if task.brand %}<div class="pl-task-brand">{{ task.brand }}</div>{% endif %}
                             </div>
-                        {% empty %}
-                            <div class="pl-day-empty">{% if day.is_past %}Sem tarefas{% else %}Livre{% endif %}</div>
-                        {% endfor %}
-                    </div>
+                            <div class="pl-task-actions">
+                                <button type="button" class="pl-task-del" data-task-delete="{{ task.id }}" title="{% if task.is_auto %}Dispensar (não volta){% else %}Excluir{% endif %}">&times;</button>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="pl-day-empty">{% if day.is_past %}Sem tarefas{% else %}Livre{% endif %}</div>
+                    {% endfor %}
                 </div>
             {% endfor %}
         </div>
@@ -214,6 +266,14 @@
         const el = document.querySelector("input[name=csrfmiddlewaretoken]");
         return el ? el.value : "";
     })();
+
+    const post = (url) => fetch(url, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken },
+        body: new FormData(),
+        credentials: "same-origin",
+    }).then((r) => r.json());
+
     root.querySelectorAll("[data-task-toggle]").forEach((box) => {
         const handler = () => {
             const id = box.dataset.taskToggle;
@@ -221,19 +281,24 @@
             const willBeOn = !box.classList.contains("is-on");
             box.classList.toggle("is-on", willBeOn);
             item.classList.toggle("is-done", willBeOn);
-            const fd = new FormData();
-            fetch(`/dashboard/tarefas/${id}/toggle/`, {
-                method: "POST",
-                headers: { "X-CSRFToken": csrfToken },
-                body: fd,
-                credentials: "same-origin",
-            }).then((r) => r.json()).then((data) => {
+            post(`/dashboard/tarefas/${id}/toggle/`).then((data) => {
                 if (!data.ok) window.location.reload();
             }).catch(() => window.location.reload());
         };
         box.addEventListener("click", handler);
         box.addEventListener("keydown", (e) => {
             if (e.key === " " || e.key === "Enter") { e.preventDefault(); handler(); }
+        });
+    });
+
+    root.querySelectorAll("[data-task-delete]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!window.confirm("Excluir/dispensar essa tarefa?")) return;
+            const id = btn.dataset.taskDelete;
+            const item = btn.closest("[data-task-id]");
+            item.remove();
+            post(`/dashboard/tarefas/${id}/excluir/`).catch(() => window.location.reload());
         });
     });
 })();
