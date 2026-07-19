@@ -156,53 +156,6 @@
         </div>
     </article>
 
-    <div class="dashboard-lower-grid">
-        <article class="card">
-            <div class="card-header">
-                <div><h3>Atividades Recentes</h3></div>
-                <a class="link-inline" href="{% url 'jobs' %}">Ver trabalhos</a>
-            </div>
-            {% if activities %}
-                <div class="activity-list">
-                    {% for item in activities %}
-                        <article class="activity-line">
-                            <span class="activity-avatar" style="background: {{ item.accent }}22; color: {{ item.accent }};">{{ item.company|slice:":1" }}</span>
-                            <div class="activity-info">
-                                <strong>{{ item.service_category }}</strong>
-                                <span class="muted">{{ item.company }}</span>
-                            </div>
-                            <div class="activity-meta">
-                                <small class="muted">{{ item.date }}</small>
-                                <small class="muted">{{ item.company }}</small>
-                            </div>
-                            <span class="activity-percent muted">{{ item.progress }}%</span>
-                            <div class="activity-bar"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="muted">Nenhuma atividade recente ainda.</p>
-            {% endif %}
-        </article>
-
-        <article class="card">
-            <div class="card-header">
-                <div><h3>Pipeline de Trabalhos</h3></div>
-                <a class="link-inline" href="{% url 'jobs' %}">Ver trabalhos</a>
-            </div>
-            <div class="pipeline-list">
-                {% for item in pipeline %}
-                    <article class="pipeline-line">
-                        <span class="pipeline-dot" style="background: {{ item.accent }};"></span>
-                        <strong class="pipeline-stage">{{ item.stage }}</strong>
-                        <span class="muted pipeline-count">{{ item.count }} itens</span>
-                        {% if item.amount_text %}<strong class="pipeline-amount">{{ item.amount_text }}</strong>{% endif %}
-                        <div class="pipeline-bar"><span style="width: {{ item.progress }}%; background: {{ item.accent }};"></span></div>
-                    </article>
-                {% endfor %}
-            </div>
-        </article>
-    </div>
 </section>
 
 {# ================ Card 'O que temos pra hoje?' ================ #}
