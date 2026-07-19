@@ -1085,115 +1085,78 @@ def _redirect_preserving_month(request: HttpRequest, view_name: str, *args, **kw
     return redirect(url)
 
 
-@login_required
+PENDENCIA_CATEGORIES = ["Profissional", "Saúde", "Atividade Física", "Pessoal"]
+
+
 @login_required
 def planning(request: HttpRequest) -> HttpResponse:
-    """Overview da semana: tarefas por dia + proximos prazos de projetos."""
-    from datetime import timedelta
-    from .models import Task, Project
+    """Pendencias: coisas que precisam ser feitas mas ainda nao tem data
+    definida. Filtros por status (abertas/agendadas/concluidas) e categoria."""
+    from .models import Task
     from .services import sync_dashboard_auto_tasks
-    from django.db.models import Q
 
     workspace = _workspace(request)
     context = shell_context(
         "planning",
         workspace,
         "Planejamento",
-        "Overview da sua semana.",
+        "Pendências: o que precisa ser feito.",
         user=request.user,
     )
-
-    # Reusa o mesmo gerador de auto tarefas do Dashboard (idempotente).
     sync_dashboard_auto_tasks(workspace)
 
-    today = timezone.localdate()
-    monday = today - timedelta(days=today.weekday())
-    sunday = monday + timedelta(days=6)
-
-    # Tarefas da semana: prazo entre segunda e domingo, ou sem prazo E ainda
-    # nao feitas (aparecem no dia de hoje). Descarta as dispensadas.
-    week_tasks = list(
+    tasks = list(
         Task.objects.filter(workspace=workspace, dismissed=False)
-        .filter(
-            Q(due_date__gte=monday, due_date__lte=sunday)
-            | Q(due_date__isnull=True, done=False)
-        )
         .select_related("project")
     )
+    today = timezone.localdate()
+    priority_rank = {"urgente": 0, "alta": 1, "media": 2, "baixa": 3}
 
-    days_pt = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
-    days_short_pt = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
-    priority_rank = {"alta": 0, "media": 1, "baixa": 2}
+    def _status(t: "Task") -> str:
+        if t.done:
+            return "concluida"
+        return "agendada" if t.due_date else "aberta"
 
-    days_payload = []
-    for i in range(7):
-        day = monday + timedelta(days=i)
-        day_tasks = [
-            t for t in week_tasks
-            if (t.due_date == day) or (t.due_date is None and day == today and not t.done)
-        ]
-        day_tasks.sort(key=lambda t: (t.done, priority_rank.get(t.priority, 3), -t.pk))
-        payload_tasks = []
-        for t in day_tasks:
-            payload_tasks.append({
-                "id": t.pk,
-                "title": t.title,
-                "priority": t.priority,
-                "done": t.done,
-                "brand": t.project.company if t.project else "",
-                "is_auto": bool(t.auto_key),
-            })
-        days_payload.append({
-            "date": day,
-            "day_name": days_pt[day.weekday()],
-            "day_short": days_short_pt[day.weekday()],
-            "is_today": day == today,
-            "is_past": day < today,
-            "tasks": payload_tasks,
-            "done_count": sum(1 for t in payload_tasks if t["done"]),
-            "total_count": len(payload_tasks),
+    payload = []
+    for t in tasks:
+        st = _status(t)
+        is_overdue = bool(t.due_date and t.due_date < today and not t.done)
+        payload.append({
+            "id": t.pk,
+            "title": t.title,
+            "priority": t.priority,
+            "category": t.category or ("Profissional" if t.auto_key else ""),
+            "duration": t.estimated_duration_min,
+            "due_date": t.due_date,
+            "status": st,
+            "is_overdue": is_overdue,
+            "is_auto": bool(t.auto_key),
+            "brand": t.project.company if t.project else "",
         })
+    payload.sort(key=lambda p: (
+        {"aberta": 0, "agendada": 1, "concluida": 2}[p["status"]],
+        priority_rank.get(p["priority"], 4),
+        p["due_date"] or today,
+        -p["id"],
+    ))
 
-    # Proximos prazos dos projetos: dos ativos que tem due_date entre hoje e +21 dias.
-    horizon = today + timedelta(days=21)
-    upcoming_projects = list(
-        Project.objects.filter(
-            workspace=workspace,
-            stage="Fechado",
-            due_date__gte=today,
-            due_date__lte=horizon,
-        ).order_by("due_date")[:8]
-    )
-    meses_pt_short = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
-    upcoming_payload = []
-    for p in upcoming_projects:
-        days_left = (p.due_date - today).days
-        upcoming_payload.append({
-            "id": p.pk,
-            "company": p.company,
-            "service_category": p.service_category_name,
-            "day": p.due_date.day,
-            "month": meses_pt_short[p.due_date.month - 1],
-            "days_left": days_left,
-            "is_today": days_left == 0,
-            "is_urgent": days_left <= 2,
-        })
+    counts = {
+        "todas": len(payload),
+        "abertas": sum(1 for p in payload if p["status"] == "aberta"),
+        "agendadas": sum(1 for p in payload if p["status"] == "agendada"),
+        "concluidas": sum(1 for p in payload if p["status"] == "concluida"),
+        "urgentes": sum(1 for p in payload if p["priority"] in ("urgente", "alta") and p["status"] != "concluida"),
+    }
 
-    total_week = sum(d["total_count"] for d in days_payload)
-    done_week = sum(d["done_count"] for d in days_payload)
-    overdue_week = sum(
-        1 for t in week_tasks
-        if not t.done and t.due_date and t.due_date < today
-    )
+    # Categorias: as fixas + as customizadas que aparecerem no workspace.
+    used_cats = {p["category"] for p in payload if p["category"]}
+    extra = [c for c in used_cats if c not in PENDENCIA_CATEGORIES]
+    all_categories = PENDENCIA_CATEGORIES + sorted(extra)
 
     context.update({
-        "week_days": days_payload,
-        "week_range_label": f"{monday.day} a {sunday.day} de {['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][sunday.month - 1]}",
-        "week_total": total_week,
-        "week_done": done_week,
-        "week_overdue": overdue_week,
-        "week_pct": round((done_week / total_week) * 100) if total_week else 0,
-        "upcoming": upcoming_payload,
+        "pendencias": payload,
+        "counts": counts,
+        "categories": all_categories,
     })
     return render(request, "studio/planning.html", context)
 
@@ -2692,13 +2655,18 @@ def task_create(request: HttpRequest) -> JsonResponse:
             due_date = datetime.strptime(due_raw, "%Y-%m-%d").date()
         except ValueError:
             due_date = None
-    if due_date is None:
+    # Se veio pendencia=1, cria SEM data (fica em Abertas). Dashboard nao passa
+    # esse flag e recebe due_date=today por default.
+    is_pendencia = (request.POST.get("pendencia") or "").strip() == "1"
+    if due_date is None and not is_pendencia:
         due_date = timezone.localdate()
+    category = (request.POST.get("category") or "").strip()[:40]
     task = Task.objects.create(
         workspace=workspace,
         title=title[:200],
         priority=priority,
         due_date=due_date,
+        category=category,
     )
     return JsonResponse({"ok": True, "task_id": task.pk})
 
@@ -2714,6 +2682,26 @@ def task_toggle(request: HttpRequest, pk: int) -> JsonResponse:
     task.done_at = timezone.now() if task.done else None
     task.save(update_fields=["done", "done_at", "updated_at"])
     return JsonResponse({"ok": True, "done": task.done})
+
+
+@login_required
+@require_POST
+def task_schedule(request: HttpRequest, pk: int) -> JsonResponse:
+    """Adiciona uma pendencia a agenda: seta due_date pra a data recebida."""
+    from .models import Task
+
+    workspace = _workspace(request)
+    task = get_object_or_404(Task, pk=pk, workspace=workspace)
+    due_raw = (request.POST.get("due_date") or "").strip()
+    if not due_raw:
+        return JsonResponse({"ok": False, "error": "Informe a data."}, status=400)
+    try:
+        due_date = datetime.strptime(due_raw, "%Y-%m-%d").date()
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Data invalida (use YYYY-MM-DD)."}, status=400)
+    task.due_date = due_date
+    task.save(update_fields=["due_date", "updated_at"])
+    return JsonResponse({"ok": True, "due_date": due_date.isoformat()})
 
 
 @login_required

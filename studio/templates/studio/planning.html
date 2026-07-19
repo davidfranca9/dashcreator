@@ -2,240 +2,338 @@
 
 {% block content %}
 <style>
-    .pl-wrap { display: flex; gap: 24px; align-items: flex-start; }
-    .pl-main { flex: 1; min-width: 0; }
-    .pl-side { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
-    @media (max-width: 1000px) {
-        .pl-wrap { flex-direction: column; }
-        .pl-side { width: 100%; }
-    }
-
-    .pl-week-head {
-        display: flex; align-items: baseline; justify-content: space-between;
-        margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
-    }
-    .pl-week-title { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-weight: 600; color: #1a2340; }
-    .pl-week-meta { font-size: 12.5px; color: #8a7d6b; font-style: italic; }
-    .pl-week-progress { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-    .pl-tp-bar { width: 140px; height: 6px; background: #ddd6cb; border-radius: 3px; overflow: hidden; }
-    .pl-tp-fill { height: 100%; background: #2d7a5f; transition: width .3s; }
-    .pl-tp-pct { font-size: 12px; color: #8a7d6b; font-style: italic; min-width: 34px; }
-
-    /* Lista vertical agrupada por dia -------------------------------------- */
-    .pl-list { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 12px; overflow: hidden; }
-
-    .pl-day-block { border-bottom: 0.5px solid #e6dfd2; }
-    .pl-day-block:last-child { border-bottom: none; }
-
-    .pl-day-header {
-        display: flex; align-items: center; gap: 14px;
-        padding: 12px 20px;
-        background: #f5f0e8;
-        border-bottom: 0.5px solid #e6dfd2;
-        position: sticky; top: 0; z-index: 2;
-    }
-    .pl-day-block.is-today .pl-day-header {
-        background: #1a2340; color: #f5f0e8;
-    }
-    .pl-day-block.is-today .pl-day-name { color: #c9b99a; }
-    .pl-day-block.is-today .pl-day-date { color: #fff; }
-    .pl-day-block.is-past .pl-day-header { background: #efeae0; opacity: 0.85; }
-    .pl-day-block.is-past .pl-task-row { opacity: 0.7; }
-
-    .pl-day-marker {
-        width: 8px; height: 8px; border-radius: 50%; background: #c9b99a;
-        flex-shrink: 0;
-    }
-    .pl-day-block.is-today .pl-day-marker { background: #c9b99a; box-shadow: 0 0 0 3px rgba(201,185,154,0.35); }
-    .pl-day-name {
-        font-size: 11px; font-weight: 700;
-        color: #1a2340; letter-spacing: 0.6px; text-transform: uppercase;
-    }
-    .pl-day-date {
+    /* Header ------------------------------------------------------------- */
+    .pend-title-row { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; flex-wrap: wrap; }
+    .pend-title {
         font-family: 'Playfair Display', Georgia, serif;
-        font-size: 15px; font-weight: 600; color: #1a2340; margin-left: 2px;
+        font-size: 34px; font-weight: 600; color: #1a2340; font-style: italic;
+        line-height: 1;
     }
-    .pl-day-count {
-        margin-left: auto;
-        font-size: 11.5px; color: #8a7d6b; font-style: italic;
+    .pend-title-underline {
+        display: inline-block; margin-top: 2px;
+        width: 90px; height: 3px;
+        background: #b84040; border-radius: 2px;
     }
-    .pl-day-block.is-today .pl-day-count { color: rgba(245,240,232,0.7); }
-    .pl-day-empty {
-        padding: 12px 24px 14px;
-        font-size: 12.5px; color: #b8b0a5; font-style: italic;
+    .pend-count-pills { display: flex; gap: 10px; margin: 10px 0 18px; }
+    .pend-count-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 12px; border-radius: 99px;
+        font-size: 12px; font-weight: 600;
+    }
+    .pend-count-pill.is-open { background: #eff3fb; color: #2a5fb0; }
+    .pend-count-pill.is-urgent { background: #fdf0f0; color: #b84040; }
+
+    /* Search + Filters --------------------------------------------------- */
+    .pend-search {
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 14px;
+        background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px;
+        margin-bottom: 12px;
+    }
+    .pend-search input {
+        flex: 1; border: none; outline: none; background: transparent;
+        font-family: inherit; font-size: 13px; color: #1a2340;
+    }
+    .pend-search input::placeholder { color: #b8b0a5; }
+
+    .pend-tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .pend-tab {
+        background: transparent; border: 0.5px solid #ddd6cb;
+        padding: 6px 14px; border-radius: 8px;
+        font-family: inherit; font-size: 12.5px; font-weight: 600;
+        color: #5a6b88; cursor: pointer;
+    }
+    .pend-tab:hover { border-color: #1a2340; color: #1a2340; }
+    .pend-tab.is-active { background: #1a2340; color: #fff; border-color: #1a2340; }
+    .pend-tab-count {
+        display: inline-block; margin-left: 6px;
+        font-size: 10.5px; font-weight: 700; opacity: 0.7;
     }
 
-    /* Cada tarefa (row) ---------------------------------------------------- */
-    .pl-task-row {
-        display: flex; align-items: center; gap: 14px;
-        padding: 12px 20px;
-        border-bottom: 0.5px solid #eee7d9;
+    .pend-cats { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .pend-cat {
+        background: transparent; border: 0.5px solid #e6dfd2;
+        padding: 4px 12px; border-radius: 99px;
+        font-family: inherit; font-size: 11.5px; font-weight: 500;
+        color: #5c5143; cursor: pointer;
+    }
+    .pend-cat:hover { border-color: #b8a589; color: #1a2340; }
+    .pend-cat.is-active { background: #fdf0f0; color: #b84040; border-color: #f2c7c7; }
+
+    /* Meta -------------------------------------------------------------- */
+    .pend-meta { font-size: 12px; color: #8a7d6b; font-style: italic; margin-bottom: 10px; }
+
+    /* Card ------------------------------------------------------------- */
+    .pend-list { display: flex; flex-direction: column; gap: 10px; }
+    .pend-card {
+        background: #fff; border: 0.5px solid #ddd6cb;
+        border-left: 3px solid #ccc4b8;
+        border-radius: 10px;
+        padding: 14px 16px 12px;
         position: relative;
-        transition: background .12s;
     }
-    .pl-task-row:last-child { border-bottom: none; }
-    .pl-task-row:hover { background: #faf7f0; }
-    .pl-task-row.is-done { opacity: 0.5; }
-    .pl-task-row.is-done .pl-task-name { text-decoration: line-through; text-decoration-color: #ccc4b8; }
+    .pend-card.p-urgente { border-left-color: #b84040; }
+    .pend-card.p-alta { border-left-color: #b07d2a; }
+    .pend-card.p-media { border-left-color: #c9b99a; }
+    .pend-card.p-baixa { border-left-color: #cbd5e1; }
+    .pend-card.is-done { opacity: 0.55; }
+    .pend-card.is-done .pend-card-title { text-decoration: line-through; text-decoration-color: #b8b0a5; }
 
-    .pl-task-prio {
-        position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    .pend-card-head {
+        display: flex; align-items: center; gap: 9px;
+        margin-bottom: 6px;
     }
-    .pl-task-prio.p-alta { background: #b84040; }
-    .pl-task-prio.p-media { background: #b07d2a; }
-    .pl-task-prio.p-baixa { background: #c9b99a; }
-
-    .pl-task-check {
-        width: 18px; height: 18px; flex-shrink: 0;
+    .pend-card-check {
+        width: 17px; height: 17px; flex-shrink: 0;
         border: 0.5px solid #ccc4b8; background: #fff;
         border-radius: 3px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        transition: all .15s;
     }
-    .pl-task-check:hover { border-color: #1a2340; }
-    .pl-task-check.is-on { background: #1a2340; border-color: #1a2340; }
-    .pl-task-check svg { display: none; }
-    .pl-task-check.is-on svg { display: block; }
-
-    .pl-task-body { flex: 1; min-width: 0; }
-    .pl-task-name {
-        font-size: 13.5px; color: #1a2340;
-        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .pl-task-brand {
-        font-size: 11.5px; color: #8a7d6b; font-style: italic;
-        margin-top: 3px;
-    }
-    .pl-task-auto {
-        display: inline-block; font-size: 9.5px; font-weight: 700;
-        background: rgba(201,185,154,0.28); color: #8a6a3a;
-        padding: 2px 7px; border-radius: 3px;
-        letter-spacing: 0.5px; text-transform: uppercase;
-    }
-    .pl-task-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .pl-task-del {
+    .pend-card-check.is-on { background: #1a2340; border-color: #1a2340; }
+    .pend-card-check svg { display: none; }
+    .pend-card-check.is-on svg { display: block; }
+    .pend-card-title { font-size: 13.5px; font-weight: 600; color: #1a2340; flex: 1; }
+    .pend-card-del {
         background: transparent; border: none;
-        color: #ccc4b8; cursor: pointer;
-        font-size: 18px; line-height: 1; padding: 4px 6px;
-        opacity: 0; transition: opacity .12s, color .12s;
+        color: #ccc4b8; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px;
     }
-    .pl-task-row:hover .pl-task-del { opacity: 1; }
-    .pl-task-del:hover { color: #b84040; }
+    .pend-card-del:hover { color: #b84040; }
 
-    /* Coluna direita ------------------------------------------------------- */
-    .pl-sec-title { font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 600; color: #1a2340; margin-bottom: 10px; }
-    .pl-card { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px; overflow: hidden; }
-    .pl-prazo-row {
-        display: grid; grid-template-columns: 42px 1fr auto;
-        align-items: center; gap: 12px;
-        padding: 11px 14px;
-        border-bottom: 0.5px solid #ddd6cb;
-        transition: background .12s;
-        text-decoration: none; color: inherit;
+    .pend-card-info {
+        display: flex; flex-wrap: wrap; gap: 12px;
+        font-size: 11.5px; color: #8a7d6b;
+        margin-bottom: 10px; padding-left: 26px;
     }
-    .pl-prazo-row:last-child { border-bottom: none; }
-    .pl-prazo-row:hover { background: #faf7f0; }
-    .pl-prazo-date { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-    .pl-prazo-day { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 700; color: #1a2340; }
-    .pl-prazo-row.is-urgent .pl-prazo-day { color: #b84040; }
-    .pl-prazo-month { font-size: 8.5px; color: #8a7d6b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; font-weight: 600; }
-    .pl-prazo-name { font-size: 12.5px; font-weight: 600; color: #1a2340; margin-bottom: 1px; }
-    .pl-prazo-brand { font-size: 11px; color: #8a7d6b; font-style: italic; }
-    .pl-prazo-chip { font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
-    .pl-prazo-chip.is-today { background: #fdf0f0; color: #b84040; }
-    .pl-prazo-chip.is-soon { background: #fdf6e8; color: #b07d2a; }
-    .pl-prazo-chip.is-later { background: #eff3fb; color: #2a5fb0; }
-    .pl-empty { padding: 20px; text-align: center; color: #8a7d6b; font-size: 12.5px; font-style: italic; }
+    .pend-card-info span { display: inline-flex; align-items: center; gap: 4px; }
+    .pend-card-info svg { flex-shrink: 0; }
 
-    .pl-stat-card { background: #fff; border: 0.5px solid #ddd6cb; border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: baseline; }
-    .pl-stat-label { font-size: 12px; color: #5c5143; }
-    .pl-stat-val { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 700; color: #1a2340; }
-    .pl-stat-val.warn { color: #b84040; }
-    .pl-stat-val.ok { color: #2d7a5f; }
+    .pend-chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; padding-left: 26px; }
+    .pend-chip {
+        font-size: 10.5px; font-weight: 600;
+        padding: 3px 10px; border-radius: 99px;
+        border: 0.5px solid transparent;
+    }
+    .pend-chip.cat-Profissional { background: #f0e9ff; color: #6d4bcc; border-color: #dcc9ff; }
+    .pend-chip.cat-Saúde { background: #e6f5ec; color: #2d7a5f; border-color: #b7dfc7; }
+    .pend-chip.cat-Atividade { background: #e5f0fb; color: #2a5fb0; border-color: #b6d1eb; }
+    .pend-chip.cat-Pessoal { background: #fef2e6; color: #b8722b; border-color: #f0c898; }
+    .pend-chip.cat-default { background: #f5f0e8; color: #5c5143; border-color: #ddd6cb; }
+    .pend-chip.pri-urgente { background: #fdf0f0; color: #b84040; border-color: #f2c7c7; }
+    .pend-chip.pri-alta { background: #fdf6e8; color: #b07d2a; border-color: #f0d99a; }
+    .pend-chip.status-aberta { background: #eff3fb; color: #2a5fb0; border-color: #b6d1eb; }
+    .pend-chip.status-agendada { background: #f0e9ff; color: #6d4bcc; border-color: #dcc9ff; }
+    .pend-chip.status-concluida { background: #e6f5ec; color: #2d7a5f; border-color: #b7dfc7; }
+
+    .pend-actions { display: flex; gap: 8px; padding-left: 26px; }
+    .pend-action-btn {
+        background: transparent; border: 0.5px solid #b6d1eb;
+        color: #2a5fb0;
+        padding: 5px 12px; border-radius: 8px;
+        font-family: inherit; font-size: 11.5px; font-weight: 600;
+        cursor: pointer;
+        display: inline-flex; align-items: center; gap: 5px;
+    }
+    .pend-action-btn:hover { background: #eff3fb; }
+    .pend-action-btn.is-primary { background: #eff3fb; }
+
+    .pend-empty {
+        padding: 40px 20px; text-align: center;
+        color: #8a7d6b; font-size: 13px; font-style: italic;
+        background: #faf7f0; border-radius: 10px;
+        border: 1px dashed #ddd6cb;
+    }
+
+    .pend-add-wrap {
+        margin-top: 14px; display: flex; justify-content: flex-end;
+    }
+    .pend-add-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #1a2340; color: #f5f0e8;
+        border: none; padding: 8px 16px; border-radius: 8px;
+        font-family: inherit; font-size: 13px; font-weight: 600;
+        cursor: pointer;
+    }
+    .pend-add-btn:hover { background: #243050; }
 </style>
 
 <form style="display:none">{% csrf_token %}</form>
 
-<div class="pl-wrap" data-planning>
-    <div class="pl-main">
-        <div class="pl-week-head">
-            <div>
-                <div class="pl-week-title">Semana de {{ week_range_label }}</div>
-                <div class="pl-week-meta">
-                    {{ week_total }} tarefa{{ week_total|pluralize }} na semana
-                    {% if week_overdue %} · <strong style="color:#b84040">{{ week_overdue }} atrasada{{ week_overdue|pluralize }}</strong>{% endif %}
-                </div>
-            </div>
-            <div class="pl-week-progress">
-                <div class="pl-tp-bar"><div class="pl-tp-fill" style="width: {{ week_pct }}%;"></div></div>
-                <span class="pl-tp-pct">{{ week_pct }}%</span>
-            </div>
-        </div>
+<div data-pendencias>
 
-        <div class="pl-list">
-            {% for day in week_days %}
-                <div class="pl-day-block{% if day.is_today %} is-today{% endif %}{% if day.is_past %} is-past{% endif %}">
-                    <div class="pl-day-header">
-                        <span class="pl-day-marker"></span>
-                        <span class="pl-day-name">{% if day.is_today %}Hoje ·{% else %}{{ day.day_name }} ·{% endif %}</span>
-                        <span class="pl-day-date">{{ day.date|date:"j/n" }}</span>
-                        {% if day.total_count %}
-                            <span class="pl-day-count">{{ day.done_count }} de {{ day.total_count }} concluída{{ day.total_count|pluralize }}</span>
-                        {% endif %}
-                    </div>
-                    {% for task in day.tasks %}
-                        <div class="pl-task-row{% if task.done %} is-done{% endif %}" data-task-id="{{ task.id }}">
-                            <span class="pl-task-prio p-{{ task.priority }}"></span>
-                            <div class="pl-task-check{% if task.done %} is-on{% endif %}" data-task-toggle="{{ task.id }}" role="checkbox" aria-checked="{{ task.done|yesno:'true,false' }}" tabindex="0">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </div>
-                            <div class="pl-task-body">
-                                <div class="pl-task-name">
-                                    {% if task.is_auto %}<span class="pl-task-auto">Auto</span>{% endif %}
-                                    <span>{{ task.title }}</span>
-                                </div>
-                                {% if task.brand %}<div class="pl-task-brand">{{ task.brand }}</div>{% endif %}
-                            </div>
-                            <div class="pl-task-actions">
-                                <button type="button" class="pl-task-del" data-task-delete="{{ task.id }}" title="{% if task.is_auto %}Dispensar (não volta){% else %}Excluir{% endif %}">&times;</button>
-                            </div>
-                        </div>
-                    {% empty %}
-                        <div class="pl-day-empty">{% if day.is_past %}Sem tarefas{% else %}Livre{% endif %}</div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
+    <div class="pend-title-row">
+        <span class="pend-title">Pendências</span>
+    </div>
+    <div class="pend-title-underline"></div>
+
+    <div class="pend-count-pills">
+        <span class="pend-count-pill is-open">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+            {{ counts.abertas }} abertas
+        </span>
+        {% if counts.urgentes %}
+            <span class="pend-count-pill is-urgent">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>
+                {{ counts.urgentes }} urgentes
+            </span>
+        {% endif %}
     </div>
 
+    <div class="pend-search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b8b0a5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar pendências..." data-search>
+    </div>
+
+    <div class="pend-tabs" data-tabs>
+        <button type="button" class="pend-tab is-active" data-tab="todas">Todas <span class="pend-tab-count">{{ counts.todas }}</span></button>
+        <button type="button" class="pend-tab" data-tab="aberta">Abertas <span class="pend-tab-count">{{ counts.abertas }}</span></button>
+        <button type="button" class="pend-tab" data-tab="agendada">Agendadas <span class="pend-tab-count">{{ counts.agendadas }}</span></button>
+        <button type="button" class="pend-tab" data-tab="concluida">Concluídas <span class="pend-tab-count">{{ counts.concluidas }}</span></button>
+    </div>
+
+    <div class="pend-cats" data-cats>
+        <button type="button" class="pend-cat is-active" data-cat="__all">Todas</button>
+        {% for cat in categories %}
+            <button type="button" class="pend-cat" data-cat="{{ cat }}">{{ cat }}</button>
+        {% endfor %}
+    </div>
+
+    <div class="pend-meta" data-total-line>{{ counts.todas }} pendência{{ counts.todas|pluralize }}</div>
+
+    <div class="pend-list" data-list>
+        {% for p in pendencias %}
+            <div class="pend-card p-{{ p.priority }}{% if p.status == 'concluida' %} is-done{% endif %}"
+                 data-item
+                 data-item-id="{{ p.id }}"
+                 data-status="{{ p.status }}"
+                 data-category="{{ p.category }}"
+                 data-title="{{ p.title|lower }}">
+                <div class="pend-card-head">
+                    <div class="pend-card-check{% if p.status == 'concluida' %} is-on{% endif %}" data-task-toggle="{{ p.id }}" role="checkbox" tabindex="0">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="pend-card-title">{{ p.title }}</div>
+                    <button type="button" class="pend-card-del" data-task-delete="{{ p.id }}" title="Excluir/dispensar">&times;</button>
+                </div>
+                <div class="pend-card-info">
+                    {% if p.duration %}
+                        <span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+                            {% if p.duration >= 60 %}{{ p.duration|floatformat:0|slice:"0"|add:"h" }}{% else %}{{ p.duration }}min{% endif %}
+                        </span>
+                    {% endif %}
+                    {% if p.due_date %}
+                        <span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            {% if p.is_overdue %}<strong style="color:#b84040">Atrasada · {{ p.due_date|date:"d/m/Y" }}</strong>{% else %}Prazo: {{ p.due_date|date:"d/m/Y" }}{% endif %}
+                        </span>
+                    {% endif %}
+                    {% if p.brand %}
+                        <span style="font-style:italic">{{ p.brand }}</span>
+                    {% endif %}
+                </div>
+                <div class="pend-chip-row">
+                    {% if p.category %}
+                        <span class="pend-chip {% if p.category == 'Profissional' %}cat-Profissional{% elif p.category == 'Saúde' %}cat-Saúde{% elif p.category == 'Atividade Física' %}cat-Atividade{% elif p.category == 'Pessoal' %}cat-Pessoal{% else %}cat-default{% endif %}">{{ p.category }}</span>
+                    {% endif %}
+                    {% if p.priority == 'urgente' %}<span class="pend-chip pri-urgente">Urgente</span>{% endif %}
+                    {% if p.priority == 'alta' %}<span class="pend-chip pri-alta">Alta</span>{% endif %}
+                    <span class="pend-chip status-{{ p.status }}">{% if p.status == 'aberta' %}Aberta{% elif p.status == 'agendada' %}Agendada{% else %}Concluída{% endif %}</span>
+                </div>
+                <div class="pend-actions">
+                    <button type="button" class="pend-action-btn is-primary" data-task-schedule="{{ p.id }}">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {% if p.due_date %}Reagendar{% else %}Adicionar à agenda{% endif %}
+                    </button>
+                </div>
+            </div>
+        {% empty %}
+            <div class="pend-empty">Sem pendências ainda. Adicione uma abaixo.</div>
+        {% endfor %}
+    </div>
+
+    <div class="pend-add-wrap">
+        <button type="button" class="pend-add-btn" data-add-pendencia>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova pendência
+        </button>
+    </div>
 </div>
 
 <script>
 (() => {
-    const root = document.querySelector("[data-planning]");
+    const root = document.querySelector("[data-pendencias]");
     if (!root) return;
+
     const csrfToken = (() => {
         const el = document.querySelector("input[name=csrfmiddlewaretoken]");
         return el ? el.value : "";
     })();
+    const post = (url, data) => {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(data || {})) fd.append(k, v);
+        return fetch(url, {
+            method: "POST", headers: { "X-CSRFToken": csrfToken },
+            body: fd, credentials: "same-origin",
+        }).then((r) => r.json());
+    };
 
-    const post = (url) => fetch(url, {
-        method: "POST",
-        headers: { "X-CSRFToken": csrfToken },
-        body: new FormData(),
-        credentials: "same-origin",
-    }).then((r) => r.json());
+    // Filtros (busca + tab de status + tab de categoria)
+    let currentStatus = "todas";
+    let currentCategory = "__all";
+    let searchTerm = "";
+    const totalLine = root.querySelector("[data-total-line]");
+    const items = () => root.querySelectorAll("[data-item]");
 
+    const applyFilters = () => {
+        let visible = 0;
+        items().forEach((el) => {
+            const st = el.dataset.status;
+            const cat = el.dataset.category || "";
+            const title = el.dataset.title || "";
+            const okStatus = currentStatus === "todas" || st === currentStatus;
+            const okCat = currentCategory === "__all" || cat === currentCategory;
+            const okSearch = !searchTerm || title.includes(searchTerm);
+            const show = okStatus && okCat && okSearch;
+            el.style.display = show ? "" : "none";
+            if (show) visible++;
+        });
+        if (totalLine) totalLine.textContent = `${visible} pendência${visible === 1 ? "" : "s"}`;
+    };
+
+    root.querySelectorAll("[data-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            root.querySelectorAll("[data-tab]").forEach((b) => b.classList.remove("is-active"));
+            btn.classList.add("is-active");
+            currentStatus = btn.dataset.tab;
+            applyFilters();
+        });
+    });
+    root.querySelectorAll("[data-cat]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            root.querySelectorAll("[data-cat]").forEach((b) => b.classList.remove("is-active"));
+            btn.classList.add("is-active");
+            currentCategory = btn.dataset.cat;
+            applyFilters();
+        });
+    });
+    const searchInp = root.querySelector("[data-search]");
+    if (searchInp) {
+        searchInp.addEventListener("input", () => {
+            searchTerm = searchInp.value.trim().toLowerCase();
+            applyFilters();
+        });
+    }
+
+    // Toggle concluída
     root.querySelectorAll("[data-task-toggle]").forEach((box) => {
         const handler = () => {
             const id = box.dataset.taskToggle;
-            const item = box.closest("[data-task-id]");
+            const item = box.closest("[data-item]");
             const willBeOn = !box.classList.contains("is-on");
             box.classList.toggle("is-on", willBeOn);
             item.classList.toggle("is-done", willBeOn);
-            post(`/dashboard/tarefas/${id}/toggle/`).then((data) => {
-                if (!data.ok) window.location.reload();
-            }).catch(() => window.location.reload());
+            item.dataset.status = willBeOn ? "concluida" : (item.querySelector(".pend-card-info svg + span, .pend-card-info span") ? "agendada" : "aberta");
+            post(`/dashboard/tarefas/${id}/toggle/`).catch(() => window.location.reload());
         };
         box.addEventListener("click", handler);
         box.addEventListener("keydown", (e) => {
@@ -243,16 +341,47 @@
         });
     });
 
+    // Excluir/dispensar
     root.querySelectorAll("[data-task-delete]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (!window.confirm("Excluir/dispensar essa tarefa?")) return;
+            if (!window.confirm("Excluir/dispensar esta pendência?")) return;
             const id = btn.dataset.taskDelete;
-            const item = btn.closest("[data-task-id]");
-            item.remove();
+            btn.closest("[data-item]").remove();
             post(`/dashboard/tarefas/${id}/excluir/`).catch(() => window.location.reload());
         });
     });
+
+    // Adicionar à agenda (prompt de data)
+    root.querySelectorAll("[data-task-schedule]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const id = btn.dataset.taskSchedule;
+            const today = new Date().toISOString().slice(0, 10);
+            const dateStr = window.prompt(
+                "Data pra colocar na agenda (YYYY-MM-DD):",
+                today
+            );
+            if (!dateStr) return;
+            post(`/dashboard/tarefas/${id}/agendar/`, { due_date: dateStr }).then((data) => {
+                if (!data.ok) { alert(data.error || "Erro."); return; }
+                window.location.reload();
+            }).catch(() => alert("Falha de rede."));
+        });
+    });
+
+    // Adicionar nova pendência (prompt de titulo)
+    const addBtn = root.querySelector("[data-add-pendencia]");
+    if (addBtn) {
+        addBtn.addEventListener("click", () => {
+            const title = window.prompt("Nova pendência (título):");
+            if (!title || !title.trim()) return;
+            // Cria sem data (aberta). Se quiser data, usa "Adicionar a agenda" depois.
+            post("/dashboard/tarefas/nova/", { title: title.trim(), pendencia: "1" }).then((data) => {
+                if (!data.ok) { alert(data.error || "Erro."); return; }
+                window.location.reload();
+            }).catch(() => alert("Falha de rede."));
+        });
+    }
 })();
 </script>
 {% endblock %}

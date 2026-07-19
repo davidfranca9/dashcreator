@@ -446,6 +446,13 @@ class Task(WorkspaceOwnedModel):
     # O sync respeita esse flag e nao recria a tarefa (nao fica reaparecendo
     # cada vez que a Layfe apaga). Manuais quando excluidas somem do DB direto.
     dismissed = models.BooleanField(default=False)
+    # Categoria pra agrupar/filtrar na tela de Pendencias.
+    # Ex: Profissional, Saude, Atividade fisica, Pessoal. Livre pra digitar
+    # custom. Auto tasks preenchem com "Profissional" por padrao.
+    category = models.CharField(max_length=40, blank=True, default="")
+    # Duracao estimada em minutos (opcional). Serve pra o algoritmo de
+    # sugerir horario (a implementar). Ex: 15, 60, 90.
+    estimated_duration_min = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ["done", "due_date", "priority", "-created_at"]
