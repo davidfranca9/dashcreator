@@ -430,9 +430,13 @@
     page.querySelectorAll("[data-infoproduct-go-tab]").forEach((button) => {
         button.addEventListener("click", () => activate(button.dataset.infoproductGoTab));
     });
-    // Mantém a aba ao recarregar (?tab=entries|buyers).
+    // Mantém a aba ao recarregar (?tab=entries|buyers|crm). Caso contrário,
+    // sempre garante que overview está ativa (é o default). Não depender só
+    // do HTML inicial: se algum outro JS/CSS externo tirar o `is-active`, o
+    // painel some. Forçando aqui todo load a página fica determinística.
     const urlTab = new URLSearchParams(window.location.search).get("tab");
-    if (urlTab === "entries" || urlTab === "buyers" || urlTab === "crm") activate(urlTab);
+    const initialTab = ["entries", "buyers", "crm"].includes(urlTab) ? urlTab : "overview";
+    activate(initialTab);
 
     const listOverlay = document.querySelector("[data-infoproduct-list-overlay]");
     const listPanels = document.querySelectorAll("[data-infoproduct-list-panel]");
