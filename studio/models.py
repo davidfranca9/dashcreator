@@ -297,6 +297,10 @@ class Project(WorkspaceOwnedModel):
     )
     close_date = models.DateField()
     due_date = models.DateField()
+    # Data em que o trabalho foi marcado como Entregue. Usado para o Kanban
+    # e a lista de "Concluidos" filtrarem pelo mes real da conclusao (nao pelo
+    # close_date). Se null, cai no updated_at como fallback.
+    delivered_at = models.DateField(null=True, blank=True)
 
     # Campos específicos por tipo de serviço (brief Dash Creator seção 4).
     # Cada um aparece no form apenas para os tipos que listam o campo;

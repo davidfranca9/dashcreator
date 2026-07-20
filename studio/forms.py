@@ -952,8 +952,15 @@ class ProjectForm(forms.ModelForm):
         project = super().save(commit=False)
         project.project_name = project.service_category_name
         project.content_type = ""
+        was_entregue = self.instance.pk and Project.objects.filter(
+            pk=self.instance.pk, stage="Entregue"
+        ).exists()
         project.stage = "Entregue" if project.status == "Concluído" else "Fechado"
         project.progress = STATUS_PROGRESS_MAP.get(project.status, project.progress)
+        # Marca delivered_at na transicao Fechado -> Entregue (concluiu agora).
+        # Se ja era Entregue, preserva o delivered_at existente.
+        if project.stage == "Entregue" and not was_entregue and not project.delivered_at:
+            project.delivered_at = timezone.localdate()
         if commit:
             project.save()
             self.save_m2m()

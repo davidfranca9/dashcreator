@@ -2310,10 +2310,18 @@ def jobs_snapshot_filtered(
 
     filtered_projects = list(projects_query.order_by("due_date"))
     if selected_month is not None:
+        # Regra: nao concluido (stage=Fechado) IGNORA o filtro de mes -- sempre
+        # aparece no Kanban/Lista pra nao ficar "perdido" em outro mes.
+        # Ja concluido (stage=Entregue) so aparece no mes em que foi concluido
+        # (delivered_at). Fallback: usa updated_at pra deliveries antigos.
+        def _delivered_in_selected(project):
+            ref = project.delivered_at or (project.updated_at.date() if project.updated_at else None)
+            return ref is not None and ref.year == selected_month.year and ref.month == selected_month.month
+
         filtered_projects = [
             item
             for item in filtered_projects
-            if _project_matches_contract_month(item, selected_month)
+            if (item.stage != "Entregue" or _delivered_in_selected(item))
         ]
     overdue_projects = list(
         overdue_projects_query.filter(stage="Fechado", due_date__lt=_today())

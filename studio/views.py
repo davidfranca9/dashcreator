@@ -2558,7 +2558,8 @@ def project_mark_delivered(request: HttpRequest, pk: int) -> HttpResponse:
     project.stage = "Entregue"
     project.status = "Concluído"
     project.progress = 100
-    project.save(update_fields=["stage", "status", "progress", "updated_at"])
+    project.delivered_at = timezone.localdate()
+    project.save(update_fields=["stage", "status", "progress", "delivered_at", "updated_at"])
     messages.success(request, f"{project.company} marcado como entregue.")
     return redirect("jobs")
 
