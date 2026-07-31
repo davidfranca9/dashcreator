@@ -188,6 +188,62 @@
             {% endif %}
         </article>
     </section>
+
+    <!-- ── CRM COMERCIAL (kanban, modelo do Quantum) ────────────────────── -->
+    <section class="infoproduct-panel" data-infoproduct-panel="crm">
+      <div class="crm-kpis">
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_open_count }}</span><span class="crm-kpi-l">Em negociação</span></div>
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_open_value }}</span><span class="crm-kpi-l">Valor em aberto</span></div>
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_won_count }}</span><span class="crm-kpi-l">Fechados</span></div>
+        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_won_value }}</span><span class="crm-kpi-l">Valor fechado</span></div>
+      </div>
+
+      <div class="crm-bar">
+        <form method="get" class="crm-search">
+          <input type="hidden" name="tab" value="crm">
+          <input type="search" name="q" value="{{ crm_search }}" placeholder="Buscar por nome, @, WhatsApp ou e-mail...">
+        </form>
+        <button type="button" class="primary-button small" data-crm-new>+ Novo lead</button>
+      </div>
+
+      <p class="crm-hint">Arraste o card entre as colunas para mudar a etapa. Clique no card para abrir a negociação.</p>
+
+      <div class="crm-board" data-crm-board>
+        {% for col in crm_columns %}
+          <div class="crm-col" data-stage="{{ col.id }}">
+            <div class="crm-col-head">
+              <span class="crm-dot" style="background:{{ col.color }}"></span>
+              <span class="crm-col-nome">{{ col.name }}</span>
+              <span class="crm-count" data-crm-count>{{ col.count }}</span>
+            </div>
+            {% if col.total_text %}<div class="crm-col-total">{{ col.total_text }}</div>{% endif %}
+            <div class="crm-col-body" data-crm-drop>
+              {% for card in col.cards %}
+                <a class="crm-card" href="{% url 'infoproducts_crm_lead' card.id %}"
+                   draggable="true" data-crm-card data-id="{{ card.id }}"
+                   style="border-left-color:{{ col.color }}">
+                  <span class="crm-card-nome">
+                    <span>{{ card.name }}</span>
+                    {% if card.value_text %}<span class="crm-card-val">{{ card.value_text }}</span>{% endif %}
+                  </span>
+                  {% if card.contact %}<span class="crm-card-sub">{{ card.contact }}</span>{% endif %}
+                  <span class="crm-card-tags">
+                    {% if card.product %}<span class="crm-tag crm-tag--prod">{{ card.product }}</span>{% endif %}
+                    {% if card.origin %}<span class="crm-tag">{{ card.origin }}</span>{% endif %}
+                    {% if card.next_action %}<span class="crm-tag crm-tag--warn">{{ card.next_action }}</span>{% endif %}
+                    {% if card.open_tasks %}<span class="crm-tag crm-tag--task">{{ card.open_tasks }} tarefa{{ card.open_tasks|pluralize:",s" }}</span>{% endif %}
+                  </span>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if not crm_total_leads %}
+        <p class="muted crm-empty">Nenhum lead ainda. Clique em "+ Novo lead" para começar o funil.</p>
+      {% endif %}
+    </section>
 </section>
 
 <div class="ip-list-overlay" data-infoproduct-list-overlay hidden>
@@ -314,62 +370,6 @@
     </form>
 </div>
 
-
-    <!-- ── CRM COMERCIAL (kanban, modelo do Quantum) ────────────────────── -->
-    <section class="infoproduct-panel" data-infoproduct-panel="crm">
-      <div class="crm-kpis">
-        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_open_count }}</span><span class="crm-kpi-l">Em negociação</span></div>
-        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_open_value }}</span><span class="crm-kpi-l">Valor em aberto</span></div>
-        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_won_count }}</span><span class="crm-kpi-l">Fechados</span></div>
-        <div class="crm-kpi"><span class="crm-kpi-n">{{ crm_won_value }}</span><span class="crm-kpi-l">Valor fechado</span></div>
-      </div>
-
-      <div class="crm-bar">
-        <form method="get" class="crm-search">
-          <input type="hidden" name="tab" value="crm">
-          <input type="search" name="q" value="{{ crm_search }}" placeholder="Buscar por nome, @, WhatsApp ou e-mail...">
-        </form>
-        <button type="button" class="primary-button small" data-crm-new>+ Novo lead</button>
-      </div>
-
-      <p class="crm-hint">Arraste o card entre as colunas para mudar a etapa. Clique no card para abrir a negociação.</p>
-
-      <div class="crm-board" data-crm-board>
-        {% for col in crm_columns %}
-          <div class="crm-col" data-stage="{{ col.id }}">
-            <div class="crm-col-head">
-              <span class="crm-dot" style="background:{{ col.color }}"></span>
-              <span class="crm-col-nome">{{ col.name }}</span>
-              <span class="crm-count" data-crm-count>{{ col.count }}</span>
-            </div>
-            {% if col.total_text %}<div class="crm-col-total">{{ col.total_text }}</div>{% endif %}
-            <div class="crm-col-body" data-crm-drop>
-              {% for card in col.cards %}
-                <a class="crm-card" href="{% url 'infoproducts_crm_lead' card.id %}"
-                   draggable="true" data-crm-card data-id="{{ card.id }}"
-                   style="border-left-color:{{ col.color }}">
-                  <span class="crm-card-nome">
-                    <span>{{ card.name }}</span>
-                    {% if card.value_text %}<span class="crm-card-val">{{ card.value_text }}</span>{% endif %}
-                  </span>
-                  {% if card.contact %}<span class="crm-card-sub">{{ card.contact }}</span>{% endif %}
-                  <span class="crm-card-tags">
-                    {% if card.product %}<span class="crm-tag crm-tag--prod">{{ card.product }}</span>{% endif %}
-                    {% if card.origin %}<span class="crm-tag">{{ card.origin }}</span>{% endif %}
-                    {% if card.next_action %}<span class="crm-tag crm-tag--warn">{{ card.next_action }}</span>{% endif %}
-                    {% if card.open_tasks %}<span class="crm-tag crm-tag--task">{{ card.open_tasks }} tarefa{{ card.open_tasks|pluralize:",s" }}</span>{% endif %}
-                  </span>
-                </a>
-              {% endfor %}
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-
-      {% if not crm_total_leads %}
-        <p class="muted crm-empty">Nenhum lead ainda. Clique em "+ Novo lead" para começar o funil.</p>
-      {% endif %}
-    </section>
 
     <!-- modal: novo lead -->
     <div class="jobs-kpi-backdrop" data-crm-modal hidden>
