@@ -2547,12 +2547,12 @@ def reconcile_computed_installments(project: Project) -> None:
     - só remove parcelas computadas (com label) que sumiram do cronograma e que
       ainda não foram pagas.
 
-    Não toca em projetos de publicidade (auto-gerados) nem em parcelas manuais
-    sem label.
+    Publicidade tambem passa por aqui: se as mensalidades ja foram geradas
+    por _sync_auto_monthly_installments (sem label), o codigo abaixo reetiqueta
+    elas com Mensalidade N. Se o cronograma calculado tiver algo que ainda
+    nao foi materializado (ex: publi avulsa com duration=1), cria a parcela
+    faltante pra o botao 'Confirmar' aparecer no Financeiro.
     """
-    if project.service_type in _AUTO_INSTALLMENT_SERVICE_TYPES:
-        return
-
     desired = _compute_project_schedule(project)
     existing = list(project.installments.all())
 

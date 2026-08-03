@@ -2104,8 +2104,10 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
         _sync_project_monthly_statuses(project, workspace)
-        if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
-            reconcile_computed_installments(project)
+        # SEMPRE reconcilia pra garantir que toda parcela do cronograma calculado
+        # exista como ProjectInstallment (senao o botao 'Confirmar' nao aparece
+        # no Financeiro). Idempotente: nao duplica, nao apaga o que ja tem.
+        reconcile_computed_installments(project)
         from django.utils import timezone as _tz
         prospect.stage = "Fechado"
         prospect.archive_reason = "fechado"
@@ -2399,8 +2401,8 @@ def project_create(request: HttpRequest) -> HttpResponse:
             has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
         )
         _sync_project_monthly_statuses(project, workspace)
-        if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
-            reconcile_computed_installments(project)
+        # SEMPRE reconcilia (ver comentario em prospect_convert).
+        reconcile_computed_installments(project)
         messages.success(request, "Trabalho salvo com sucesso.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
@@ -2445,8 +2447,8 @@ def project_edit(request: HttpRequest, pk: int) -> HttpResponse:
         )
         _sync_project_monthly_statuses(project, workspace)
         _save_monthly_statuses(project, request.POST)
-        if form.cleaned_data.get("has_installments") != HAS_INSTALLMENTS_YES:
-            reconcile_computed_installments(project)
+        # SEMPRE reconcilia (ver comentario em prospect_convert).
+        reconcile_computed_installments(project)
         messages.success(request, "Trabalho atualizado.")
         if project.content_distribution == "Ads" and project.image_license_term_days:
             messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
