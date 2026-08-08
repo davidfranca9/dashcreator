@@ -64,11 +64,15 @@ LEGACY_PROJECT_STATUS_MAP = {
 PROSPECT_STAGE_CHOICES = [
     ("Rascunho", "Rascunho"),
     ("Prospeccao", "Prospecção"),
-    ("Aguardando retorno", "Aguardando retorno"),
     ("Follow-up", "Follow-up"),
     ("Negociacao", "Negociação"),
     ("Fechado", "Fechado"),
+    ("Sem Retorno", "Sem Retorno"),
 ]
+
+# Regras auto: 7 dias em "Prospeccao" sem atividade -> move para "Sem Retorno".
+# "Sem Retorno" que ultrapassar a virada do mes -> arquiva no Banco (sem_retorno).
+PROSPECT_TO_SEM_RETORNO_DAYS = 7
 
 PROSPECT_ARCHIVE_REASON_CHOICES = [
     ("", "Ativo"),

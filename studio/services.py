@@ -1818,7 +1818,7 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
     )
     total_closed = sum_money(_project_cash_value(item) for item in active_projects)
 
-    open_prospection_stages = {"Rascunho", "Prospeccao", "Aguardando retorno"}
+    open_prospection_stages = {"Rascunho", "Prospeccao", "Sem Retorno"}
     pipeline = [
         {"stage": "Prospecção", "count": sum(1 for item in prospects if item.stage in open_prospection_stages), "amount_text": "", "icon_label": "P", "accent": "#4d8cff", "progress": 54},
         {"stage": "Negociação", "count": sum(1 for item in prospects if item.stage == "Negociacao"), "amount_text": "", "icon_label": "N", "accent": "#4d8cff", "progress": 33},
@@ -1872,10 +1872,10 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
 PIPELINE_STAGES = [
     ("Rascunho", "Rascunho", "draft"),
     ("Prospeccao", "Prospecção", "prospect"),
-    ("Aguardando retorno", "Ag. retorno", "waiting"),
-    ("Negociacao", "Negociação", "negotiation"),
     ("Follow-up", "Follow-up", "follow-up"),
+    ("Negociacao", "Negociação", "negotiation"),
     ("Fechado", "Fechados ✓", "closed"),
+    ("Sem Retorno", "Sem Retorno", "waiting"),
 ]
 
 
@@ -1883,10 +1883,10 @@ PROSPECT_STAGE_LABELS = dict(PROSPECT_STAGE_CHOICES)
 PROSPECT_STAGE_STATUS_CLASSES = {
     "Rascunho": "draft",
     "Prospeccao": "prospect",
-    "Aguardando retorno": "waiting",
     "Follow-up": "follow-up",
     "Negociacao": "negotiation",
     "Fechado": "closed",
+    "Sem Retorno": "waiting",
 }
 
 
@@ -1897,21 +1897,44 @@ def _prospect_last_activity(item: Prospect) -> date:
 
 
 def auto_archive_stale_prospects(workspace: Workspace, today: date | None = None) -> int:
-    """Move leads em Prospecção/Aguardando retorno parados +30 dias pro Banco
-    de Marcas com status 'Sem retorno'. Roda preguiçosamente toda vez que o
-    usuário abre a página."""
+    """Aplica DUAS regras automáticas sequenciais toda vez que a pagina de
+    Prospecção é aberta:
+
+    1) Prospects em 'Prospeccao' sem atividade nos últimos N dias (default 7)
+       viram 'Sem Retorno'. Não arquiva; só muda de coluna.
+
+    2) Prospects em 'Sem Retorno' cuja última atividade foi em MES ANTERIOR
+       ao atual são arquivados no Banco de Marcas com motivo 'sem_retorno'.
+
+    Retorna o total de operações realizadas (para o caller opcionalmente
+    exibir mensagem)."""
     from django.utils import timezone as _tz
-    from .constants import PROSPECT_AUTO_ARCHIVE_DAYS
+    from .constants import PROSPECT_TO_SEM_RETORNO_DAYS
     today = today or _today()
-    cutoff = today - timedelta(days=PROSPECT_AUTO_ARCHIVE_DAYS)
+    cutoff = today - timedelta(days=PROSPECT_TO_SEM_RETORNO_DAYS)
     moved = 0
-    qs = Prospect.objects.filter(
+
+    # Regra 1: Prospeccao parado 7+ dias -> Sem Retorno
+    stuck = Prospect.objects.filter(
         workspace=workspace,
         archive_reason="",
-        stage__in=["Prospeccao", "Aguardando retorno"],
+        stage="Prospeccao",
     )
-    for item in qs:
+    for item in stuck:
         if _prospect_last_activity(item) <= cutoff:
+            item.stage = "Sem Retorno"
+            item.save(update_fields=["stage", "updated_at"])
+            moved += 1
+
+    # Regra 2: Sem Retorno de mes(es) anterior(es) -> Banco (sem_retorno)
+    stale_sem_retorno = Prospect.objects.filter(
+        workspace=workspace,
+        archive_reason="",
+        stage="Sem Retorno",
+    )
+    for item in stale_sem_retorno:
+        last = _prospect_last_activity(item)
+        if last.year < today.year or (last.year == today.year and last.month < today.month):
             item.archive_reason = "sem_retorno"
             item.archived_at = _tz.now()
             item.save(update_fields=["archive_reason", "archived_at", "updated_at"])
@@ -1967,7 +1990,7 @@ def _serialize_pipeline_prospect(item: Prospect) -> dict:
         "note": item.note,
         "stage": item.stage,
         "days_since_last": days_since,
-        "is_stale": days_since >= 28 and item.stage in {"Prospeccao", "Aguardando retorno"},
+        "is_stale": days_since >= 5 and item.stage == "Prospeccao",
         "proposal_value": item.proposal_value,
         "accent": accent,
     }
@@ -2058,7 +2081,7 @@ def prospection_snapshot(
             "overflow": overflow,
         })
 
-    stale_alert = [_serialize_pipeline_prospect(p) for p in active if (_today() - _prospect_last_activity(p)).days >= 28 and p.stage in {"Prospeccao", "Aguardando retorno"}]
+    stale_alert = [_serialize_pipeline_prospect(p) for p in active if (_today() - _prospect_last_activity(p)).days >= 5 and p.stage == "Prospeccao"]
 
     banco_sorted = sorted(
         banco_prospects,
@@ -2126,7 +2149,7 @@ def prospection_snapshot(
         "stats": [
             {"title": "Rascunho", "value": str(sum(1 for p in active if p.stage == "Rascunho")), "icon_label": "R"},
             {"title": "Prospecção", "value": str(sum(1 for p in active if p.stage == "Prospeccao")), "icon_label": "P"},
-            {"title": "Aguardando retorno", "value": str(sum(1 for p in active if p.stage == "Aguardando retorno")), "icon_label": "A"},
+            {"title": "Sem Retorno", "value": str(sum(1 for p in active if p.stage == "Sem Retorno")), "icon_label": "A"},
             {"title": "Negociação", "value": str(sum(1 for p in active if p.stage == "Negociacao")), "icon_label": "N"},
         ],
         "columns": [],  # legado

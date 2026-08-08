@@ -55,8 +55,8 @@
         {% if stale_alert %}
             <article class="banner banner--warning stale-alert">
                 <div>
-                    <strong>{{ stale_alert|length }} lead{{ stale_alert|length|pluralize:",s" }} sem resposta há +30 dias</strong>
-                    <p class="muted">Serão movidos automaticamente para o Banco de Marcas com status “Sem retorno”.</p>
+                    <strong>{{ stale_alert|length }} lead{{ stale_alert|length|pluralize:",s" }} sem resposta há +5 dias em Prospecção</strong>
+                    <p class="muted">Aos 7 dias eles caem automaticamente para a coluna “Sem Retorno”.</p>
                 </div>
                 <a class="ghost-button small" href="#stale-list">Ver agora</a>
             </article>
@@ -126,10 +126,10 @@
                                         {% if column.key == "Rascunho" %}
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Prospeccao"><button class="primary-button xsmall" type="submit">Prospectar</button></form>
-                                        {% elif column.key == "Aguardando retorno" %}
+                                        {% elif column.key == "Sem Retorno" %}
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
-                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Follow-up"><button class="primary-button xsmall" type="submit">Follow-up</button></form>
+                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Arquivar</button></form>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Prospeccao"><button class="primary-button xsmall" type="submit">Reativar</button></form>
                                         {% elif column.key == "Follow-up" %}
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
                                             <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
@@ -292,20 +292,20 @@
         <article class="card logica-funnel">
             <h3>Fases do lead</h3>
             <ol class="logica-steps">
-                <li><span class="logica-num">1</span><div><strong>Rascunho</strong> — Lead criado, ainda não contatado. Você pesquisa a marca, anota contatos, prepara abordagem.</div></li>
-                <li><span class="logica-num">2</span><div><strong>Prospecção</strong> — Primeiro contato enviado. Aguardando resposta inicial.</div></li>
-                <li><span class="logica-num">3</span><div><strong>Aguardando retorno</strong> — A marca respondeu mas ainda não há decisão. Você manda follow-up periodicamente.</div></li>
-                <li><span class="logica-num">★</span><div><strong>Follow-up</strong> — Contato ativo de retomada. Pode ser automático (30d sem resposta) ou manual.</div></li>
-                <li><span class="logica-num">4</span><div><strong>Negociação</strong> — Proposta enviada, valores sendo discutidos. Próximo do fechamento.</div></li>
-                <li><span class="logica-num logica-num--check">✓</span><div><strong>Fechado</strong> → vai para Trabalhos. <strong>Sem retorno (30d)</strong> → vai para Banco de Marcas automaticamente. <strong>Não tem interesse / Pausado</strong> → você decide manualmente.</div></li>
+                <li><span class="logica-num">1</span><div><strong>Rascunho</strong>. Lead criado, ainda não contatado. Você pesquisa a marca, anota contatos, prepara abordagem.</div></li>
+                <li><span class="logica-num">2</span><div><strong>Prospecção</strong>. Primeiro contato enviado. Aguardando resposta inicial.</div></li>
+                <li><span class="logica-num">★</span><div><strong>Follow-up</strong>. Contato ativo de retomada.</div></li>
+                <li><span class="logica-num">3</span><div><strong>Negociação</strong>. Proposta enviada, valores sendo discutidos. Próximo do fechamento.</div></li>
+                <li><span class="logica-num logica-num--check">✓</span><div><strong>Fechado</strong> vai para Trabalhos.</div></li>
+                <li><span class="logica-num">↺</span><div><strong>Sem Retorno</strong>. Coluna intermediária: leads que ficaram 7+ dias em Prospecção sem atividade caem aqui automaticamente. Se virar o mês sem retomar, arquivam no Banco de Marcas.</div></li>
             </ol>
         </article>
 
         <section class="logica-grid">
             <article class="card logica-tile">
                 <div class="logica-icon">⏱</div>
-                <h4>Regra dos 30 dias</h4>
-                <p class="muted">Se um lead em “Prospecção” ou “Aguardando retorno” ficar 30 dias sem nenhuma interação registrada, o sistema move automaticamente para o Banco de Marcas com status <strong>“Sem retorno”</strong>. Um alerta aparece 2 dias antes para você decidir se quer fazer um follow-up antes.</p>
+                <h4>Regra dos 7 dias</h4>
+                <p class="muted">Se um lead em <strong>Prospecção</strong> ficar 7 dias sem nenhuma interação registrada, o sistema move automaticamente para a coluna <strong>Sem Retorno</strong>. Depois, quando virar o mês, ele arquiva no Banco de Marcas com status <strong>“Sem retorno”</strong>.</p>
             </article>
             <article class="card logica-tile">
                 <div class="logica-icon">🗂</div>
@@ -413,7 +413,7 @@
         const STAGE_ENDPOINTS = {
             "Rascunho":             { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Rascunho" } },
             "Prospeccao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Prospeccao" } },
-            "Aguardando retorno":   { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Aguardando retorno" } },
+            "Sem Retorno":   { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Sem Retorno" } },
             "Follow-up":            { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Follow-up" } },
             "Negociacao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Negociacao" } },
             "Fechado":              { url: "{% url 'prospect_archive' 0 %}",   body: { reason: "fechado" } },
