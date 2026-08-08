@@ -2050,6 +2050,36 @@ body.theme-dark .chart-gridline {
     grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
 }
 
+.chart-scroll-hint {
+    display: none;
+}
+
+.chart-visual-wrap {
+    position: relative;
+    min-width: 0;
+}
+
+.chart-fade {
+    display: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 28px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.chart-fade--left {
+    left: 0;
+    background: linear-gradient(to right, var(--card), transparent);
+}
+
+.chart-fade--right {
+    right: 0;
+    background: linear-gradient(to left, var(--card), transparent);
+}
+
 .progress-track {
     width: 100%;
     height: 10px;
@@ -3381,6 +3411,18 @@ body.theme-dark .danger-button {
     .chart-axis {
         font-size: 11px;
         gap: 18px;
+    }
+
+    .chart-scroll-hint {
+        display: block;
+        margin: 2px 0 0;
+        font-size: 11px;
+        color: var(--muted);
+        transition: opacity 0.2s ease;
+    }
+
+    .chart-fade {
+        display: block;
     }
 
     .chart-visual {

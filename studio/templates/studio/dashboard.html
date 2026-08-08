@@ -118,6 +118,7 @@
         <div class="card-header">
             <div>
                 <h3>Faturamento anual</h3>
+                <p class="chart-scroll-hint">Arraste para o lado para ver todos os meses &rarr;</p>
             </div>
             {% if revenue.has_infoproducts %}
                 <div class="chart-legend">
@@ -132,26 +133,30 @@
                     <span>{{ step.label }}</span>
                 {% endfor %}
             </div>
-            <div class="chart-visual">
-                <svg class="chart-svg" viewBox="0 0 {{ revenue.chart_width }} {{ revenue.chart_height }}" preserveAspectRatio="none" aria-label="Grafico de faturamento anual">
-                    {% for step in revenue.steps %}
-                        {% if not forloop.last %}
-                            <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 revenue.chart_height %}" x2="{{ revenue.chart_width }}" y2="{% widthratio forloop.counter0 3 revenue.chart_height %}"></line>
+            <div class="chart-visual-wrap">
+                <div class="chart-visual" data-chart-visual>
+                    <svg class="chart-svg" viewBox="0 0 {{ revenue.chart_width }} {{ revenue.chart_height }}" preserveAspectRatio="none" aria-label="Grafico de faturamento anual">
+                        {% for step in revenue.steps %}
+                            {% if not forloop.last %}
+                                <line class="chart-gridline" x1="0" y1="{% widthratio forloop.counter0 3 revenue.chart_height %}" x2="{{ revenue.chart_width }}" y2="{% widthratio forloop.counter0 3 revenue.chart_height %}"></line>
+                            {% endif %}
+                        {% endfor %}
+                        <path class="chart-line" d="{{ revenue.path }}"></path>
+                        {% if revenue.has_infoproducts %}
+                            <path class="chart-line chart-line--ip" d="{{ revenue.infoproduct_path }}"></path>
                         {% endif %}
-                    {% endfor %}
-                    <path class="chart-line" d="{{ revenue.path }}"></path>
-                    {% if revenue.has_infoproducts %}
-                        <path class="chart-line chart-line--ip" d="{{ revenue.infoproduct_path }}"></path>
-                    {% endif %}
-                </svg>
-                <div class="chart-labels">
-                    {% for point in revenue.points %}
-                        <div class="chart-label">
-                            <strong class="chart-money-value">{{ point.total_amount|money }}</strong>
-                            <span>{{ point.label }}</span>
-                        </div>
-                    {% endfor %}
+                    </svg>
+                    <div class="chart-labels">
+                        {% for point in revenue.points %}
+                            <div class="chart-label">
+                                <strong class="chart-money-value">{{ point.total_amount|money }}</strong>
+                                <span>{{ point.label }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
+                <span class="chart-fade chart-fade--left" data-chart-fade="left" aria-hidden="true"></span>
+                <span class="chart-fade chart-fade--right" data-chart-fade="right" aria-hidden="true"></span>
             </div>
         </div>
     </article>
@@ -299,6 +304,27 @@ token pra autenticar as chamadas de toggle/create/delete.
             }).catch(() => alert("Falha de rede."));
         });
     }
+})();
+
+(() => {
+    const wrap = document.querySelector(".chart-visual-wrap");
+    const visual = wrap && wrap.querySelector("[data-chart-visual]");
+    if (!wrap || !visual) return;
+    const leftFade = wrap.querySelector('[data-chart-fade="left"]');
+    const rightFade = wrap.querySelector('[data-chart-fade="right"]');
+    const hint = document.querySelector(".chart-scroll-hint");
+
+    const update = () => {
+        const max = visual.scrollWidth - visual.clientWidth;
+        const left = visual.scrollLeft;
+        if (leftFade) leftFade.style.opacity = left > 4 ? "1" : "0";
+        if (rightFade) rightFade.style.opacity = max - left > 4 ? "1" : "0";
+        if (hint) hint.style.opacity = left > 4 ? "0" : "1";
+    };
+
+    visual.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
 })();
 </script>
 {% endblock %}
