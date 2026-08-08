@@ -71,7 +71,7 @@ from .views import (
     settings,
     signup,
 )
-from .metrics import metrics_dashboard, track
+from .metrics import metrics_dashboard, track, portfolio_lead
 
 
 urlpatterns = [
@@ -143,5 +143,6 @@ urlpatterns = [
     path("checkout/erro/", checkout_failure, name="checkout_failure"),
     path("checkout/<slug:product_key>/", checkout_page, name="checkout_page"),
     path("api/track/", track, name="track"),
+    path("api/portfolio-lead/", portfolio_lead, name="portfolio_lead"),
     path("metricas/", metrics_dashboard, name="metrics_dashboard"),
 ]

@@ -316,3 +316,60 @@ class StoriesPanelTests(TestCase):
         urls = {g["tag"]: g["url"] for g in guide}
         self.assertEqual(urls["layfe"], "thecreatorsclub.com.br/dashcreator#layfe")
         self.assertContains(resp, "Suas tags fixas")
+
+
+class PortfolioLeadTests(TestCase):
+    """Popup do portfólio -> cria lead na Prospecção da Layfe."""
+
+    def setUp(self):
+        import studio.metrics as m
+        m._LEAD_WORKSPACE_CACHE.clear()  # evita cache de workspace entre testes
+        from studio.services import get_or_create_workspace_for_user
+        self.layfe = get_user_model().objects.create_user("layfeamorim", password="x")
+        self.ws = get_or_create_workspace_for_user(self.layfe)
+
+    def _post(self, payload, **extra):
+        return self.client.post(reverse("portfolio_lead"), data=json.dumps(payload),
+                                content_type="text/plain", **extra)
+
+    def test_valid_lead_creates_prospect(self):
+        from studio.models import Prospect
+        r = self._post({"name": "Marina", "company": "Loja X", "whatsapp": "(71) 99999-8888",
+                        "instagram": "@lojax", "message": "quero UGC"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()["ok"])
+        p = Prospect.objects.get(workspace=self.ws)
+        self.assertEqual(p.contact, "Marina")
+        self.assertEqual(p.company, "Loja X")
+        self.assertEqual(p.stage, "Prospeccao")
+        self.assertEqual(p.channel, "Portfólio")
+        self.assertIn("portfólio", p.note.lower())
+        self.assertIn("quero UGC", p.note)
+
+    def test_honeypot_blocks_bot(self):
+        from studio.models import Prospect
+        r = self._post({"name": "Bot", "whatsapp": "71999998888", "site": "http://spam"})
+        self.assertEqual(r.status_code, 200)  # finge sucesso
+        self.assertFalse(Prospect.objects.exists())
+
+    def test_bot_user_agent_blocked(self):
+        from studio.models import Prospect
+        self._post({"name": "Bot", "whatsapp": "71999998888"}, HTTP_USER_AGENT="python-requests/bot")
+        self.assertFalse(Prospect.objects.exists())
+
+    def test_missing_data_is_rejected(self):
+        from studio.models import Prospect
+        self.assertEqual(self._post({"name": "Ana", "whatsapp": "123"}).status_code, 400)  # whats curto
+        self.assertEqual(self._post({"name": "", "whatsapp": "71999998888"}).status_code, 400)  # sem nome
+        self.assertFalse(Prospect.objects.exists())
+
+    def test_dedupe_same_whatsapp_within_6h(self):
+        from studio.models import Prospect
+        self._post({"name": "Marina", "whatsapp": "71999998888"})
+        self._post({"name": "Marina de novo", "whatsapp": "71999998888"})
+        self.assertEqual(Prospect.objects.filter(whatsapp="71999998888").count(), 1)
+
+    def test_company_defaults_when_blank(self):
+        from studio.models import Prospect
+        self._post({"name": "Sem Marca", "whatsapp": "71988887777"})
+        self.assertIn("não informada", Prospect.objects.get().company)

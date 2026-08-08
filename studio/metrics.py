@@ -10,17 +10,18 @@ import json
 from collections import Counter
 from urllib.parse import parse_qs, urlparse
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import PageEvent
+from .models import PageEvent, Prospect
 
 # Origens autorizadas a enviar eventos (os sites estáticos).
 ALLOWED_TRACK_ORIGINS = {
@@ -429,3 +430,80 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
         "has_meta": meta_views > 0,
     }
     return render(request, "studio/metrics.html", context)
+
+
+# ── Lead do portfólio da Layfe → cai na Prospecção dela ─────────────────────
+# Endpoint público chamado pelo popup do portfólio (layfeamorim.com/portfolio).
+# Cria um Prospect na conta da Layfe, etapa "Prospeccao", canal "Portfólio".
+_LEAD_WORKSPACE_CACHE = {}
+
+
+def _layfe_workspace():
+    """Resolve o workspace da Layfe (dono do portfólio). Cacheia em memória."""
+    if "ws" in _LEAD_WORKSPACE_CACHE:
+        return _LEAD_WORKSPACE_CACHE["ws"]
+    user = get_user_model().objects.filter(username="layfeamorim").first()
+    membership = user.memberships.select_related("workspace").first() if user else None
+    ws = membership.workspace if membership else None
+    if ws is not None:
+        _LEAD_WORKSPACE_CACHE["ws"] = ws
+    return ws
+
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def portfolio_lead(request: HttpRequest) -> HttpResponse:
+    origin = request.headers.get("Origin", "")
+    if request.method == "OPTIONS":
+        return _cors_headers(HttpResponse(status=204), origin)
+
+    ua = request.headers.get("User-Agent", "")[:300]
+    if any(marker in ua.lower() for marker in _BOT_MARKERS):
+        return _cors_headers(JsonResponse({"ok": True}), origin)  # bot: finge sucesso
+
+    try:
+        payload = json.loads((request.body or b"{}").decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        return _cors_headers(JsonResponse({"ok": False}, status=400), origin)
+
+    # Honeypot: campo invisível preenchido = robô.
+    if str(payload.get("site", "")).strip():
+        return _cors_headers(JsonResponse({"ok": True}), origin)
+
+    name = str(payload.get("name", "")).strip()[:160]
+    whatsapp = str(payload.get("whatsapp", "")).strip()[:40]
+    if len(name) < 2 or sum(ch.isdigit() for ch in whatsapp) < 8:
+        return _cors_headers(JsonResponse({"ok": False, "error": "dados incompletos"}, status=400), origin)
+
+    company = str(payload.get("company", "")).strip()[:160] or "(marca não informada)"
+    instagram = str(payload.get("instagram", "")).strip()[:160]
+    message = str(payload.get("message", "")).strip()[:2000]
+
+    workspace = _layfe_workspace()
+    if workspace is None:
+        return _cors_headers(JsonResponse({"ok": False}, status=503), origin)
+
+    today = timezone.localdate()
+    # Anti-duplicata: mesmo WhatsApp nas últimas 6h não cria de novo.
+    recent = Prospect.objects.filter(
+        workspace=workspace, whatsapp=whatsapp,
+        created_at__gte=timezone.now() - timezone.timedelta(hours=6),
+    ).exists()
+    if not recent:
+        note = f"Veio pelo portfólio (layfeamorim.com/portfolio)."
+        if message:
+            note += f"\n\nMensagem: {message}"
+        Prospect.objects.create(
+            workspace=workspace,
+            company=company,
+            contact=name,
+            contact_type="Marca",
+            stage="Prospeccao",
+            contact_date=today,
+            last_activity_at=timezone.now(),
+            whatsapp=whatsapp,
+            instagram=instagram,
+            channel="Portfólio",
+            note=note,
+        )
+    return _cors_headers(JsonResponse({"ok": True}), origin)
