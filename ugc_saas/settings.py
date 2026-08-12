@@ -34,12 +34,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "studio",
+    "tcc_portal",
 ]
 
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "tcc_portal.middleware.TccPortalCorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -148,3 +150,11 @@ APIBRASIL_CNPJ_TIMEOUT = env_int("APIBRASIL_CNPJ_TIMEOUT", 8)
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+TCC_PORTAL_ADMIN_PASSWORD = os.getenv("TCC_PORTAL_ADMIN_PASSWORD", "tcc-admin-2026")
+TCC_PORTAL_ALLOWED_ORIGINS = set(
+    env_list(
+        "TCC_PORTAL_ALLOWED_ORIGINS",
+        "https://portal.thecreatorsclub.com.br,http://localhost:5500,http://127.0.0.1:5500,null",
+    )
+)
