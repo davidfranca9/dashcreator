@@ -5,67 +5,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Checkout · Dash Creator</title>
 <meta name="description" content="Finalize sua compra do Dash Creator com segurança.">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-    --navy: #0A2463;
-    --cream: #EAE4D4;
-    --paper: #F5F1E8;
-    --terra: #C9956A;
-    --dark: #1A1410;
-    --border: rgba(10, 36, 99, 0.12);
+    /* Mesmos tokens de cor do site thecreatorsclub.com.br/dashcreator/ */
+    --navy: oklch(0.295 0.078 265);
+    --navy-soft: oklch(0.28 0.068 265);
+    --cream: oklch(0.975 0.01 84.5);
+    --paper: oklch(0.972 0.011 84.5);
+    --card: oklch(0.988 0.006 84.5);
+    --terra: oklch(0.702 0.086 61);
+    --dark: oklch(0.24 0.06 265);
+    --muted: rgba(41, 53, 92, 0.55);
+    --border: oklch(0.888 0.019 84.5);
 }
 html { scroll-behavior: smooth; }
-body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--navy); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+body { font-family: 'Karla', sans-serif; background: var(--paper); color: var(--navy-soft); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 .shell { max-width: 1080px; margin: 0 auto; padding: 3rem 1.5rem 4rem; display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem; }
 @media (max-width: 880px) { .shell { grid-template-columns: 1fr; padding: 2rem 1rem 3rem; } }
-.main { background: #fff; border: 0.5px solid var(--border); border-radius: 10px; padding: 2.5rem; }
+.main { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2.5rem; }
 .side { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 2rem; align-self: start; }
 @media (max-width: 880px) { .side { position: static; } }
-.brand { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); text-decoration: none; color: inherit; cursor: pointer; transition: opacity 0.18s; }
+.brand { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); text-decoration: none; color: inherit; cursor: pointer; transition: opacity 0.18s; }
 .brand:hover { opacity: 0.7; }
-.brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; }
-.brand-club { font-size: 0.55rem; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(10,36,99,0.4); }
+.brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 600; }
+.brand-club { font-size: 0.55rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--muted); }
 .label { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.5rem; }
-.title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 500; line-height: 1.1; margin-bottom: 0.4rem; }
-.title em { font-style: italic; color: var(--terra); }
-.subtitle { color: rgba(10,36,99,0.6); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; }
+.title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 500; line-height: 1.1; margin-bottom: 0.4rem; }
+.title em { font-style: italic; font-weight: 600; color: var(--terra); }
+.subtitle { color: var(--muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
 @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
-.field label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(10,36,99,0.55); font-weight: 500; }
-.field input { border: 0.5px solid var(--border); border-radius: 6px; padding: 0.75rem 0.9rem; background: var(--paper); color: var(--navy); font-family: inherit; font-size: 0.95rem; transition: border-color 0.15s, background 0.15s; }
-.field input:focus { outline: none; border-color: var(--navy); background: #fff; }
-.payment-anchor { margin-top: 2rem; padding-top: 1.5rem; border-top: 0.5px solid var(--border); }
+.field label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.field input { border: 1px solid var(--border); border-radius: 0; padding: 0.75rem 0.9rem; background: var(--paper); color: var(--navy-soft); font-family: inherit; font-size: 0.95rem; transition: border-color 0.15s, background 0.15s; }
+.field input:focus { outline: none; border-color: var(--navy); background: var(--card); }
+.payment-anchor { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
 #paymentBrick_container { min-height: 320px; }
-.summary { background: var(--navy); color: var(--cream); border-radius: 10px; padding: 1.75rem; }
-.summary .tag { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(234,228,212,0.5); margin-bottom: 0.4rem; }
-.summary .name { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 600; line-height: 1.1; margin-bottom: 0.5rem; }
-.summary .desc { font-size: 0.85rem; color: rgba(234,228,212,0.7); line-height: 1.55; margin-bottom: 1.4rem; }
+.summary { background: var(--navy); color: var(--cream); border-radius: 1.5rem; padding: 1.75rem; }
+.summary .tag { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 0.4rem; }
+.summary .name { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 600; line-height: 1.1; margin-bottom: 0.5rem; }
+.summary .desc { font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.55; margin-bottom: 1.4rem; }
 .bullets { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
-.bullets li { list-style: none; display: flex; gap: 0.6rem; font-size: 0.82rem; color: rgba(234,228,212,0.85); }
+.bullets li { list-style: none; display: flex; gap: 0.6rem; font-size: 0.82rem; color: rgba(255,255,255,0.85); }
 .bullets li::before { content: "✓"; color: var(--terra); flex: 0 0 auto; }
-.total { display: flex; align-items: baseline; justify-content: space-between; padding-top: 1.2rem; border-top: 0.5px solid rgba(234,228,212,0.18); }
-.total span { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(234,228,212,0.6); }
-.total strong { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 600; color: var(--cream); }
-.help { font-size: 0.72rem; color: rgba(10,36,99,0.45); line-height: 1.6; padding: 0.9rem 1rem; border: 0.5px dashed var(--border); border-radius: 8px; }
-.banner { margin-top: 1.2rem; padding: 0.9rem 1rem; border-radius: 8px; font-size: 0.85rem; }
+.total { display: flex; align-items: baseline; justify-content: space-between; padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.18); }
+.total span { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.total strong { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 600; color: var(--cream); }
+.help { font-size: 0.72rem; color: var(--muted); line-height: 1.6; padding: 0.9rem 1rem; border: 1px dashed var(--border); border-radius: 0; }
+.banner { margin-top: 1.2rem; padding: 0.9rem 1rem; border-radius: 0; font-size: 0.85rem; }
 .banner[hidden] { display: none; }
-.banner.error { background: rgba(192,77,87,0.08); color: #8a3b43; border: 0.5px solid rgba(192,77,87,0.25); }
-.banner.info { background: rgba(10,36,99,0.06); color: var(--navy); border: 0.5px solid var(--border); }
-.pix-box { margin-top: 1rem; padding: 1rem; border: 0.5px solid var(--border); border-radius: 8px; background: var(--paper); display: grid; gap: 0.85rem; }
+.banner.error { background: rgba(192,77,87,0.08); color: #8a3b43; border: 1px solid rgba(192,77,87,0.25); }
+.banner.info { background: rgba(41,53,92,0.06); color: var(--navy-soft); border: 1px solid var(--border); }
+.pix-box { margin-top: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 0; background: var(--paper); display: grid; gap: 0.85rem; }
 .pix-box[hidden] { display: none; }
-.pix-box h2 { font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); }
-.pix-box p { color: rgba(10,36,99,0.62); font-size: 0.85rem; line-height: 1.5; }
-.pix-box img { width: min(260px, 100%); justify-self: center; border: 8px solid #fff; border-radius: 8px; }
-.pix-box textarea { width: 100%; min-height: 92px; resize: vertical; border: 0.5px solid var(--border); border-radius: 6px; padding: 0.75rem; color: var(--navy); background: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; line-height: 1.45; }
+.pix-box h2 { font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy-soft); }
+.pix-box p { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+.pix-box img { width: min(260px, 100%); justify-self: center; border: 8px solid var(--card); border-radius: 0; }
+.pix-box textarea { width: 100%; min-height: 92px; resize: vertical; border: 1px solid var(--border); border-radius: 0; padding: 0.75rem; color: var(--navy-soft); background: var(--card); font-family: 'Karla', sans-serif; font-size: 0.78rem; line-height: 1.45; }
 .pix-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
-.pix-copy, .pix-link { border: none; border-radius: 6px; padding: 0.8rem 1rem; font-family: inherit; font-size: 0.76rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
-.pix-copy { background: var(--navy); color: #fff; }
-.pix-link { background: rgba(10,36,99,0.08); color: var(--navy); }
+.pix-copy, .pix-link { border: none; border-radius: 0; padding: 0.8rem 1rem; font-family: inherit; font-size: 0.76rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
+.pix-copy { background: var(--navy); color: var(--cream); }
+.pix-link { background: rgba(41,53,92,0.08); color: var(--navy-soft); }
 .pix-link[hidden], .pix-copy[hidden], .pix-box img[hidden], .pix-box textarea[hidden] { display: none; }
-.cta { margin-top: 1.4rem; width: 100%; background: var(--terra); color: var(--dark); font-family: inherit; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; border: none; padding: 0.95rem; border-radius: 6px; cursor: pointer; transition: opacity 0.15s; }
+.cta { margin-top: 1.4rem; width: 100%; background: var(--terra); color: var(--dark); font-family: inherit; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; border: none; padding: 0.95rem; border-radius: 0; cursor: pointer; transition: opacity 0.15s, transform 0.15s; }
+.cta:hover:not(:disabled) { transform: translateY(-1px); }
 .cta:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
@@ -78,7 +83,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
         </a>
         <span class="label">Finalize seu pedido</span>
         <h1 class="title">Dash Creator <em>acesso imediato</em></h1>
-        <p class="subtitle">Centralize toda a visão do seu negócio em um único lugar. Faturamento, prospecções, contratos, jurídico e finanças — do caos ao posicionamento.</p>
+        <p class="subtitle">Centralize toda a visão do seu negócio em um único lugar: faturamento, prospecções, contratos, jurídico e finanças. Do caos ao posicionamento.</p>
 
         <form id="customerForm" autocomplete="on" novalidate>
             <div class="row">
