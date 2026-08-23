@@ -3439,10 +3439,10 @@ def average_project_days(projects: list[Project]) -> float:
 # ── CRM comercial de Infoprodutos (kanban, exclusivo Layfe) ─────────────────
 # Modelo copiado do funil de vendas do Quantum: etapas fixas, card arrastável.
 INFO_CRM_STAGES = [
-    {"id": "prospec", "name": "Prospecção", "color": "#4f7cff"},
-    {"id": "qualif", "name": "Qualificação", "color": "#fbbf24"},
-    {"id": "proposta", "name": "Proposta Enviada", "color": "#2dd4cf"},
-    {"id": "negoc", "name": "Negociação", "color": "#8b5cf6"},
+    {"id": "prospec", "name": "Interessadas", "color": "#4f7cff"},
+    {"id": "qualif", "name": "Qualificadas", "color": "#fbbf24"},
+    {"id": "proposta", "name": "Negociação", "color": "#2dd4cf"},
+    {"id": "negoc", "name": "Recuperação", "color": "#8b5cf6"},
     {"id": "fechado", "name": "Fechado", "color": "#34d399"},
     {"id": "perdido", "name": "Perdido", "color": "#f87171"},
 ]

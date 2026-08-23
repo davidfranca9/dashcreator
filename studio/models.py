@@ -479,10 +479,10 @@ class InfoLead(WorkspaceOwnedModel):
     STAGE_FECHADO = "fechado"
     STAGE_PERDIDO = "perdido"
     STAGE_CHOICES = [
-        (STAGE_PROSPEC, "Prospecção"),
-        (STAGE_QUALIF, "Qualificação"),
-        (STAGE_PROPOSTA, "Proposta Enviada"),
-        (STAGE_NEGOC, "Negociação"),
+        (STAGE_PROSPEC, "Interessadas"),
+        (STAGE_QUALIF, "Qualificadas"),
+        (STAGE_PROPOSTA, "Negociação"),
+        (STAGE_NEGOC, "Recuperação"),
         (STAGE_FECHADO, "Fechado"),
         (STAGE_PERDIDO, "Perdido"),
     ]
