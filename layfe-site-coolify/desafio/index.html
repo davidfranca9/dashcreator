@@ -4,222 +4,195 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Desafio da Semana · The Creators Club</title>
-<meta name="description" content="Desafio da Semana do The Creators Club: Vlog de rotina. Transforme uma rotina real em conteúdo com intenção.">
+<meta name="description" content="Desafio da Semana do The Creators Club: Vlog de rotina.">
 <meta property="og:title" content="Desafio da Semana · Vlog de rotina">
 <meta property="og:description" content="Transforme uma rotina real em conteúdo com intenção. Publique até 28/08.">
-<meta property="og:type" content="website">
 <link rel="icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{
-    --blue-deep:#12245e; --blue:#1b3a8f; --blue-mid:#1d4ed8; --blue-bright:#2f6bff;
-    --cream:#f3eee3; --cream2:#eae2d3; --navy:#16224c; --ink:#274a9b;
-    --line:rgba(22,34,76,.16);
+    --blue-deep:#0f1e50; --blue1:#243781; --blue2:#182a66;
+    --accent:#2f6bff; --accent-soft:#4d7dff;
+    --cream:#f4efe4; --navy:#16224c; --ink:#2b4fa0;
+    --line:rgba(22,34,76,.5);
   }
-  html{scroll-behavior:smooth}
-  body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(--navy);
-    -webkit-font-smoothing:antialiased;line-height:1.6}
-  .wrap{max-width:840px;margin:0 auto;padding:0 24px}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(--navy);-webkit-font-smoothing:antialiased}
+  .slide{width:100%;max-width:1180px;margin:0 auto;aspect-ratio:16/10;position:relative;overflow:hidden}
+  .disp{font-family:'Poppins',sans-serif}
 
-  /* ---- brackets utilitário ---- */
-  .brk{position:relative;display:inline-block;padding:6px 22px}
-  .brk::before,.brk::after{content:"";position:absolute;width:22px;height:22px;border:2.5px solid var(--blue-bright)}
-  .brk::before{top:0;left:0;border-right:0;border-bottom:0;border-radius:4px 0 0 0}
-  .brk::after{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 4px 0}
+  /* moldura de colchetes com play */
+  .frame{position:relative;display:inline-block;padding:14px 30px}
+  .frame::before,.frame::after{content:"";position:absolute;width:34px;height:34px;border:3px solid var(--accent);border-radius:6px}
+  .frame::before{top:0;left:0;border-right:0;border-bottom:0;border-radius:8px 0 0 0}
+  .frame::after{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 8px 0}
+  .frame .ply{position:absolute;top:50%;left:12px;transform:translateY(-50%);width:20px;height:20px;
+    background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center;z-index:2}
+  .frame .ply svg{width:11px;height:11px}
+  .frame h2, .frame h1{position:relative;z-index:1}
 
-  /* ---- HERO ---- */
-  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;padding:60px 24px;position:relative;overflow:hidden;
-    background:radial-gradient(120% 130% at 30% 15%,#24357e 0%,#182a66 45%,#0f1e50 100%);color:#fff}
-  .hero::before{content:"";position:absolute;top:-30%;left:-20%;width:70%;height:80%;border-radius:50%;
-    background:radial-gradient(closest-side,rgba(120,150,255,.18),transparent 70%)}
-  .hero-top{position:absolute;top:26px;left:0;right:0;font-size:11px;letter-spacing:.42em;
-    text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:600}
-  .hero-badge{position:relative;padding:18px 40px}
-  .hero-badge::before,.hero-badge::after{content:"";position:absolute;width:40px;height:40px;border:3px solid var(--blue-bright)}
-  .hero-badge::before{top:0;left:0;border-right:0;border-bottom:0;border-radius:8px 0 0 0}
-  .hero-badge::after{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 8px 0}
-  .hero h1{font-family:'Montserrat',sans-serif;font-weight:900;font-size:clamp(58px,15vw,140px);
-    line-height:.9;letter-spacing:-.03em;display:flex;align-items:center;justify-content:center;gap:.06em}
-  .hero h1 .play{display:inline-flex;align-items:center;justify-content:center;
-    width:.62em;height:.62em;background:var(--blue-bright);border-radius:.14em;transform:translateY(.02em)}
-  .hero h1 .play svg{width:.42em;height:.42em}
-  .hero .sub{font-family:'Montserrat',sans-serif;font-weight:500;font-size:clamp(20px,5vw,34px);
-    letter-spacing:.04em;margin-top:6px;color:rgba(255,255,255,.92)}
-  .scroll-cue{position:absolute;bottom:26px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
-    color:rgba(255,255,255,.5);animation:bob 2s ease-in-out infinite}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
-  .spark{position:absolute;color:rgba(150,175,255,.5)}
-  .spark.s1{top:14%;right:12%;font-size:26px}
-  .spark.s2{bottom:20%;left:10%;font-size:16px}
+  /* ---------- SLIDE 1 : CAPA ---------- */
+  .s-cover{background:radial-gradient(115% 130% at 28% 12%,#2a3d88 0%,#1a2c6a 45%,#0f1e50 100%);
+    display:flex;align-items:center;justify-content:center}
+  .s-cover .badge{position:relative;padding:26px 54px}
+  .s-cover .badge::before,.s-cover .badge::after{content:"";position:absolute;width:clamp(34px,4vw,52px);height:clamp(34px,4vw,52px);border:3.5px solid var(--accent);border-radius:8px}
+  .s-cover .badge::before{top:0;left:0;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+  .s-cover .badge::after{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 10px 0}
+  .s-cover h1{color:#fff;font-weight:900;letter-spacing:-.03em;line-height:.86;
+    font-size:clamp(56px,11vw,128px);display:flex;align-items:center;justify-content:center}
+  .s-cover h1 .pd{position:relative;display:inline-flex}
+  .s-cover h1 .pd .tri{position:absolute;left:.17em;top:.5em;transform:translateY(-50%);
+    width:.34em;height:.34em;background:var(--accent);border-radius:.06em;display:flex;align-items:center;justify-content:center}
+  .s-cover h1 .pd .tri svg{width:.2em;height:.2em}
+  .s-cover .sub{color:#fff;font-weight:500;text-align:center;letter-spacing:.03em;margin-top:2px;font-size:clamp(20px,4vw,32px)}
+  .deco{position:absolute;color:rgba(150,175,255,.4)}
+  .deco.sp{top:12%;right:14%;font-size:clamp(18px,2.4vw,30px)}
+  .deco.ring{bottom:16%;left:26%;width:34px;height:34px;border:2px solid rgba(150,175,255,.3);border-radius:50%}
+  .deco.brk{bottom:8%;right:8%;width:26px;height:26px;border:2px solid rgba(150,175,255,.25);border-left:0;border-top:0}
 
-  /* ---- seções ---- */
-  section{padding:72px 0}
-  .sec-head{text-align:center;margin-bottom:40px}
-  .sec-head h2{font-family:'Montserrat',sans-serif;font-weight:800;color:var(--navy);
-    font-size:clamp(28px,6vw,44px);letter-spacing:-.01em;line-height:1.05}
-  .eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;
-    color:var(--blue-mid);margin-bottom:14px}
+  /* ---------- slides claros ---------- */
+  .s-light{background:var(--cream);padding:clamp(28px,4.5vw,58px) clamp(30px,6vw,90px)}
+  .divider{display:flex;align-items:center;gap:0;margin-bottom:clamp(20px,3vw,40px)}
+  .divider .ln{flex:1;height:1px;background:var(--line)}
+  .divider .dia{width:16px;height:16px;background:var(--navy);transform:rotate(45deg);margin:0 4px;flex-shrink:0}
+  .center{text-align:center}
+  .center .frame{margin:0 auto clamp(20px,3vw,40px)}
+  h2.disp{font-weight:800;color:var(--navy);letter-spacing:-.01em;line-height:1;font-size:clamp(26px,5vw,52px)}
 
-  .lead p{font-size:clamp(16px,2.4vw,19px);color:var(--ink);margin-bottom:20px}
-  .lead p:last-child{margin-bottom:0}
-  .lead strong{color:var(--navy);font-weight:700}
-  .lead .up{color:var(--blue-mid);font-weight:800;letter-spacing:.02em}
+  /* slide 2 */
+  .s2-body{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:center;height:calc(100% - 90px)}
+  .s2-txt .frame{margin-bottom:clamp(16px,2.5vw,30px)}
+  .s2-txt p{color:var(--ink);font-size:clamp(13px,1.5vw,18px);line-height:1.55;margin-bottom:clamp(10px,1.6vw,18px)}
+  .s2-txt p strong{color:var(--navy);font-weight:700}
+  .s2-txt .up{color:var(--accent);font-weight:800}
+  .s2-photo{align-self:stretch;border-radius:10px;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#efe9dd,#e4dccb);opacity:.85}
+  .s2-photo::after{content:"💻";position:absolute;bottom:14%;right:12%;font-size:clamp(40px,7vw,90px);opacity:.35;filter:grayscale(.3)}
+  .tcc{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);text-align:center;color:var(--navy)}
+  .tcc .mono{font-family:'Poppins';font-weight:800;font-size:15px;letter-spacing:1px}
+  .tcc small{display:block;font-weight:700;letter-spacing:.14em;font-size:8px;color:var(--accent)}
 
-  /* critérios */
-  .crit{list-style:none;display:flex;flex-direction:column;gap:22px}
-  .crit li{background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue-bright);
-    border-radius:12px;padding:20px 22px}
-  .crit h3{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px}
-  .crit h3 .pts{color:var(--blue-mid);font-weight:800}
-  .crit p{font-size:14.5px;color:var(--ink);line-height:1.6}
-  .total{margin-top:26px;text-align:center}
-  .total span{display:inline-block;background:var(--navy);color:#fff;font-family:'Montserrat',sans-serif;
-    font-weight:800;font-size:15px;letter-spacing:.06em;padding:12px 28px;border-radius:99px}
+  /* slide 3 */
+  .crit{list-style:none;display:flex;flex-direction:column;gap:clamp(10px,1.6vw,18px);max-width:1000px;margin:0 auto}
+  .crit li{display:flex;gap:12px}
+  .crit .bul{width:8px;height:8px;border-radius:50%;background:var(--navy);margin-top:.55em;flex-shrink:0}
+  .crit b{color:var(--navy);font-weight:800}
+  .crit .pts{color:var(--accent);font-weight:800}
+  .crit span.d{color:var(--ink)}
+  .crit li p{font-size:clamp(12px,1.4vw,16.5px);line-height:1.5}
+  .total{margin-top:clamp(14px,2vw,26px)}
+  .total b{color:var(--navy);font-family:'Poppins';font-weight:800;font-size:clamp(15px,1.8vw,19px)}
 
-  /* requisitos */
-  .req-note{text-align:center;font-weight:700;color:var(--blue-mid);font-size:13px;letter-spacing:.06em;
-    text-transform:uppercase;margin-bottom:26px}
-  .req-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .req-card{border:2px solid var(--blue-bright);border-radius:16px;padding:26px 20px;text-align:center;
-    background:rgba(47,107,255,.04)}
-  .req-card .ico{font-size:26px;margin-bottom:12px}
-  .req-card p{font-family:'Montserrat',sans-serif;font-weight:700;color:var(--blue);font-size:15px;line-height:1.35}
-  .req-card .tag{color:var(--blue-bright)}
-  .req-closing{text-align:center;font-size:clamp(15px,2.4vw,18px);color:var(--ink);font-style:italic;
-    margin-top:34px;max-width:640px;margin-left:auto;margin-right:auto}
-  .req-closing b{font-style:normal;color:var(--navy)}
+  /* slide 4 */
+  .req-note{text-align:center;color:var(--accent);font-weight:700;font-size:clamp(12px,1.5vw,16px);margin-bottom:clamp(18px,2.6vw,34px)}
+  .req-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,26px);max-width:1000px;margin:0 auto}
+  .req-card{border:2.5px solid var(--accent);border-radius:20px;padding:clamp(22px,3vw,44px) 18px;display:flex;align-items:center;justify-content:center;text-align:center;min-height:clamp(120px,16vw,190px)}
+  .req-card p{color:var(--ink);font-weight:700;font-size:clamp(13px,1.5vw,18px);line-height:1.4}
+  .req-close{text-align:center;color:var(--ink);font-size:clamp(12px,1.5vw,16px);line-height:1.5;max-width:760px;margin:clamp(20px,3vw,40px) auto 0}
 
-  /* premiação */
-  .prize{background:radial-gradient(120% 130% at 80% 20%,#24357e,#132355 60%,#0f1e50);color:#fff}
-  .prize .sec-head h2{color:#fff}
-  .prize .eyebrow{color:#8ea6ff}
-  .prize-body{max-width:640px;margin:0 auto;text-align:center}
-  .prize-body .big{font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(20px,4vw,28px);
-    line-height:1.25;margin-bottom:16px}
-  .prize-body .big b{color:#7fa0ff}
-  .prize-body p{color:rgba(255,255,255,.8);font-size:16px}
+  /* slide 5 */
+  .s-prize{background:radial-gradient(120% 130% at 78% 22%,#243781,#152457 60%,#0f1e50);display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .prize-img{position:relative;background:linear-gradient(160deg,#0d1740,#101f52);display:flex;align-items:center;justify-content:center;padding:30px}
+  .roteiros{transform:rotate(-4deg)}
+  .roteiros .r-top{text-align:center;color:#cdd8ff;font-family:'Poppins';font-weight:600;line-height:1.15;margin-bottom:14px;font-size:clamp(13px,1.5vw,19px)}
+  .roteiros .r-top i{font-style:italic;color:#9fb4ff}
+  .roteiros .r-cards{display:flex;gap:8px}
+  .roteiros .rc{width:clamp(66px,8vw,104px);height:clamp(96px,12vw,150px);background:#f5f1e6;border-radius:6px;
+    box-shadow:0 12px 30px rgba(0,0,0,.4);padding:10px 8px}
+  .roteiros .rc:nth-child(2){background:#e9edf7;transform:translateY(-8px)}
+  .roteiros .rc:nth-child(3){background:#dfe6f4;transform:translateY(-16px)}
+  .roteiros .rc h4{font-family:'Poppins';font-size:9px;color:var(--navy);margin-bottom:6px}
+  .roteiros .rc .l{height:2px;background:rgba(22,34,76,.18);margin-bottom:5px;border-radius:2px}
+  .prize-txt{padding:clamp(24px,4vw,60px);display:flex;flex-direction:column;justify-content:center;color:#fff}
+  .prize-txt .frame{margin-bottom:clamp(16px,2.4vw,30px)}
+  .prize-txt h2{color:#fff}
+  .prize-txt p{color:rgba(255,255,255,.85);font-size:clamp(14px,1.6vw,18px);line-height:1.5;margin-bottom:12px}
+  .prize-txt p b{color:#fff;font-weight:700}
 
-  footer{background:#0f1e50;color:rgba(255,255,255,.55);text-align:center;padding:34px 24px;font-size:12px;letter-spacing:.06em}
-  footer strong{color:#fff;font-family:'Montserrat',sans-serif;font-weight:800;letter-spacing:.02em;display:block;font-size:15px;margin-bottom:6px}
-
-  @media(max-width:640px){
+  @media(max-width:720px){
+    .slide{aspect-ratio:auto;min-height:auto;padding-top:0;padding-bottom:0}
+    .s-light{padding:44px 22px}
+    .s-cover{min-height:88vh}
+    .s2-body{grid-template-columns:1fr;height:auto;gap:20px}
+    .s2-photo{min-height:150px}
+    .tcc{position:static;transform:none;margin-top:24px}
     .req-grid{grid-template-columns:1fr}
-    section{padding:56px 0}
+    .s-prize{grid-template-columns:1fr}
+    .prize-img{min-height:230px}
   }
 </style>
 </head>
 <body>
 
-<!-- HERO -->
-<header class="hero">
-  <div class="hero-top">The Creators Club</div>
-  <span class="spark s1">✦</span>
-  <span class="spark s2">✦</span>
-  <div class="hero-badge">
-    <h1>
-      <span>D</span><span class="play"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><span>esafio</span>
-    </h1>
-    <div class="sub">da semana</div>
+<!-- ===== SLIDE 1 : CAPA ===== -->
+<section class="slide s-cover">
+  <span class="deco sp">✦</span><span class="deco ring"></span><span class="deco brk"></span>
+  <div class="badge">
+    <h1 class="disp"><span class="pd">D<span class="tri"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span></span>esafio</h1>
+    <div class="sub disp">da semana</div>
   </div>
-  <div class="scroll-cue">role para começar ↓</div>
-</header>
+</section>
 
-<!-- VLOG DE ROTINA -->
-<section>
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">O desafio</span>
-      <h2 class="brk">Vlog de rotina</h2>
-    </div>
-    <div class="lead">
-      <p>O exercício dessa semana é aprender a perceber: <strong>o que da minha vida pode virar conteúdo?</strong></p>
-      <p>Quero que vocês gravem um dia da rotina de vocês e mostrem um pouco do processo, dos bastidores e das coisas que fazem parte da vida que vocês estão construindo. Mas sempre lembrando de <strong>voltar toda a comunicação para a narrativa de vocês!</strong></p>
+<!-- ===== SLIDE 2 : VLOG DE ROTINA ===== -->
+<section class="slide s-light">
+  <div class="divider"><span class="ln"></span><span class="dia"></span><span class="ln"></span></div>
+  <div class="s2-body">
+    <div class="s2-txt">
+      <div class="frame"><span class="ply"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><h2 class="disp">Vlog de rotina</h2></div>
+      <p>O exercício dessa semana é aprender a perceber: <strong>O que da minha vida pode virar conteúdo?</strong></p>
+      <p>Quero que vocês gravem um dia da rotina de vocês e mostrem um pouco do processo, dos bastidores e das coisas que fazem parte da vida que vocês estão construindo. Mas, sempre lembrando de <strong>voltar toda a comunicação para a narrativa de vocês!</strong></p>
       <p>O que faz uma marca se identificar com você é a parte da sua rotina que você acha desinteressante mostrar. Por isso, vamos nos <span class="up">DESAFIAR!</span></p>
     </div>
+    <div class="s2-photo"></div>
   </div>
+  <div class="tcc"><span class="mono">The Creators Club</span><small>Clube de Creators</small></div>
 </section>
 
-<!-- CRITÉRIOS -->
-<section style="background:var(--cream2)">
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">Como será avaliado</span>
-      <h2 class="brk">Critérios de avaliação</h2>
-    </div>
-    <ul class="crit">
-      <li>
-        <h3>Conexão com a narrativa <span class="pts">— 20 pts</span></h3>
-        <p>O vlog ajuda a entender quem é essa creator e o que ela quer construir no digital? As cenas escolhidas conversam com os territórios da narrativa dela ou parecem aleatórias?</p>
-      </li>
-      <li>
-        <h3>Intencionalidade das cenas <span class="pts">— 20 pts</span></h3>
-        <p>Ela conseguiu selecionar acontecimentos do dia que realmente contam alguma coisa? Aqui entra justamente o exercício de não fazer apenas "acordei → café → academia → trabalhei", mas transformar a rotina em conteúdo.</p>
-      </li>
-      <li>
-        <h3>Construção da história <span class="pts">— 20 pts</span></h3>
-        <p>Mesmo sendo um vlog simples, existe começo, desenvolvimento e alguma linha que conduz quem está assistindo? Dá vontade de continuar acompanhando o dia?</p>
-      </li>
-      <li>
-        <h3>Personalidade e autenticidade <span class="pts">— 20 pts</span></h3>
-        <p>O conteúdo tem características dela? Jeito de falar, opinião, humor, rotina, pensamentos, particularidades… Algo que faça o vlog não parecer um conteúdo que qualquer outra creator poderia ter publicado.</p>
-      </li>
-      <li>
-        <h3>Execução e experiência de quem assiste <span class="pts">— 20 pts</span></h3>
-        <p>O vídeo é compreensível, dinâmico e agradável de acompanhar? As imagens, textos, áudio e edição ajudam a contar a história? Não precisa ser uma edição perfeita ou profissional. Aqui a técnica entra a serviço da mensagem.</p>
-      </li>
-    </ul>
-    <div class="total"><span>Total: 100 pontos</span></div>
-  </div>
+<!-- ===== SLIDE 3 : CRITÉRIOS ===== -->
+<section class="slide s-light center">
+  <div class="frame"><span class="ply"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><h2 class="disp">Critérios de avaliação</h2></div>
+  <ul class="crit" style="text-align:left">
+    <li><span class="bul"></span><p><b>Conexão com a Narrativa <span class="pts">— 20 pts:</span></b> <span class="d">O vlog ajuda a entender quem é essa creator e o que ela quer construir no digital? As cenas escolhidas conversam com os territórios da narrativa dela ou parecem aleatórias?</span></p></li>
+    <li><span class="bul"></span><p><b>Intencionalidade das cenas <span class="pts">— 20 pts:</span></b> <span class="d">Ela conseguiu selecionar acontecimentos do dia que realmente contam alguma coisa? Aqui entra justamente o exercício de não fazer apenas "acordei → café → academia → trabalhei", mas transformar a rotina em conteúdo.</span></p></li>
+    <li><span class="bul"></span><p><b>Construção da história <span class="pts">— 20 pts:</span></b> <span class="d">Mesmo sendo um vlog simples, existe começo, desenvolvimento e alguma linha que conduz quem está assistindo? Dá vontade de continuar acompanhando o dia?</span></p></li>
+    <li><span class="bul"></span><p><b>Personalidade e autenticidade <span class="pts">— 20 pts:</span></b> <span class="d">O conteúdo tem características dela? Jeito de falar, opinião, humor, rotina, pensamentos, particularidades… Algo que faça o vlog não parecer um conteúdo que qualquer outra creator poderia ter publicado.</span></p></li>
+    <li><span class="bul"></span><p><b>Execução e experiência de quem assiste <span class="pts">— 20 pts:</span></b> <span class="d">O vídeo é compreensível, dinâmico e agradável de acompanhar? As imagens, textos, áudio e edição ajudam a contar a história? Não precisa ser uma edição perfeita ou profissional. Aqui a técnica entra a serviço da mensagem.</span></p></li>
+    <li><span class="bul"></span><p><b>Total: 100 pontos</b></p></li>
+  </ul>
 </section>
 
-<!-- REQUISITOS -->
-<section>
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">Pra valer</span>
-      <h2 class="brk">Requisitos obrigatórios</h2>
-    </div>
-    <p class="req-note">Obrigatórios, mas sem pontuação</p>
-    <div class="req-grid">
-      <div class="req-card">
-        <div class="ico">🗓️</div>
-        <p>Publicar dentro do prazo<br>(até dia <b>28/08</b>)</p>
-      </div>
-      <div class="req-card">
-        <div class="ico">🏷️</div>
-        <p>Marcar o perfil do TCC<br><span class="tag">@thecreatorssclubb</span></p>
-      </div>
-      <div class="req-card">
-        <div class="ico"># </div>
-        <p>Usar as hashtags<br><span class="tag">#TheCreatorsClub<br>#ClubedeCreators</span></p>
+<!-- ===== SLIDE 4 : REQUISITOS ===== -->
+<section class="slide s-light center">
+  <div class="frame"><span class="ply"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><h2 class="disp">Requisitos obrigatórios:</h2></div>
+  <p class="req-note disp">Requisitos obrigatórios, mas sem pontuação:</p>
+  <div class="req-grid">
+    <div class="req-card"><p>Publicar dentro do prazo (até dia 28/08);</p></div>
+    <div class="req-card"><p>Marcar o perfil do TCC (@thecreatorssclubb)</p></div>
+    <div class="req-card"><p>Usar a #TheCreatorsClub #ClubedeCreators</p></div>
+  </div>
+  <p class="req-close">Não vamos escolher o vlog mais bonito. Vamos escolher o vlog que melhor conseguiu transformar uma rotina real em conteúdo com intenção.</p>
+</section>
+
+<!-- ===== SLIDE 5 : PREMIAÇÃO ===== -->
+<section class="slide s-prize">
+  <div class="prize-img">
+    <div class="roteiros">
+      <div class="r-top">Seus roteiros.<br>Sua narrativa.<br><i>Seu impacto.</i></div>
+      <div class="r-cards">
+        <div class="rc"><h4>Roteiro 01</h4><div class="l" style="width:90%"></div><div class="l" style="width:70%"></div><div class="l" style="width:80%"></div><div class="l" style="width:60%"></div></div>
+        <div class="rc"><h4>Roteiro 02</h4><div class="l" style="width:80%"></div><div class="l" style="width:90%"></div><div class="l" style="width:65%"></div><div class="l" style="width:75%"></div></div>
+        <div class="rc"><h4>Estratégia</h4><div class="l" style="width:70%"></div><div class="l" style="width:85%"></div><div class="l" style="width:60%"></div><div class="l" style="width:80%"></div></div>
       </div>
     </div>
-    <p class="req-closing">Não vamos escolher o vlog mais bonito. Vamos escolher o vlog que melhor conseguiu <b>transformar uma rotina real em conteúdo com intenção.</b></p>
+  </div>
+  <div class="prize-txt">
+    <div class="frame"><span class="ply"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><h2 class="disp">Premiação</h2></div>
+    <p><b>01 Pack de roteiros</b> criados especialmente pra sua narrativa!</p>
+    <p>Com análise técnica de estratégia + descrição das estratégias utilizadas pra você analisar e replicar.</p>
   </div>
 </section>
-
-<!-- PREMIAÇÃO -->
-<section class="prize">
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">O que você ganha</span>
-      <h2 class="brk">Premiação</h2>
-    </div>
-    <div class="prize-body">
-      <p class="big"><b>01 Pack de roteiros</b> criados especialmente pra sua narrativa!</p>
-      <p>Com análise técnica de estratégia e a descrição das estratégias utilizadas, pra você analisar e replicar.</p>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <strong>The Creators Club</strong>
-  Clube de Creators · @thecreatorssclubb
-</footer>
 
 <script src="https://app.thecreatorsclub.com.br/static/studio/track.js" data-site="layfe" defer></script>
 </body>
