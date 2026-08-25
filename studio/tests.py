@@ -4465,24 +4465,22 @@ class ContractPersonalizationTest(TestCase):
         self.assertIn("solteira", line)
         self.assertIn("Criadora de Conteúdo UGC", line)
 
-    def test_masculine_married_with_cpf_and_cnpj(self):
-        self._set(legal_contract_gender="masculino", legal_contract_marital="casado",
-                  legal_contract_cpf="111.222.333-44")
-        self.ws.business_cnpj = "55.666/0001-77"; self.ws.save()
+    def test_masculine_married_with_cnpj(self):
+        self._set(legal_contract_gender="masculino", legal_contract_marital="casado")
+        self.ws.business_cnpj = "55.666.777/0001-88"; self.ws.save()  # 14 dígitos = CNPJ
         line = self._line()
         self.assertIn("brasileiro", line)
         self.assertIn("casado", line)
         self.assertIn("Criador de Conteúdo UGC", line)
-        self.assertIn("inscrito no CPF sob o nº 111.222.333-44", line)
-        self.assertIn("no CNPJ sob o nº 55.666/0001-77", line)
+        self.assertIn("inscrito no CNPJ sob o nº 55.666.777/0001-88", line)
         self.assertIn("domiciliado", line)
         self.assertNotIn("brasileira", line)
         self.assertNotIn("Criadora", line)
 
-    def test_cpf_only_omits_empty_cnpj_placeholder(self):
-        self._set(legal_contract_cpf="999.888.777-66")
+    def test_document_as_cpf_is_detected(self):
+        self.ws.business_cnpj = "123.456.789-09"; self.ws.save()  # 11 dígitos = CPF
         line = self._line()
-        self.assertIn("CPF sob o nº 999.888.777-66", line)
+        self.assertIn("no CPF sob o nº 123.456.789-09", line)
         self.assertNotIn("CNPJ", line)
 
     def test_uniao_estavel_label(self):
@@ -4492,5 +4490,6 @@ class ContractPersonalizationTest(TestCase):
     def test_settings_form_exposes_new_fields(self):
         from studio.forms import WorkspaceSettingsForm
         fields = WorkspaceSettingsForm(settings_values={}).fields
-        for key in ["legal_contract_gender", "legal_contract_marital", "legal_contract_cpf"]:
+        for key in ["legal_contract_gender", "legal_contract_marital"]:
             self.assertIn(key, fields)
+        self.assertNotIn("legal_contract_cpf", fields)

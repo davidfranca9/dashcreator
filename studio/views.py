@@ -182,13 +182,34 @@ def _compose_company_address(data: dict) -> str:
 
 @login_required
 @require_POST
+def _viacep_lookup(zip_code: str) -> dict | None:
+    """Consulta o ViaCEP (grátis, sem token). Retorna {street, zip_code} ou None."""
+    try:
+        req = Request(f"https://viacep.com.br/ws/{zip_code}/json/", headers={"Accept": "application/json"})
+        with urlopen(req, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict) or data.get("erro"):
+        return None
+    street = (data.get("logradouro") or "").strip()
+    if not street:
+        return None
+    cep = (data.get("cep") or "").strip() or f"{zip_code[:5]}-{zip_code[5:]}"
+    return {"street": street, "zip_code": cep}
+
+
 def business_zip_lookup(request: HttpRequest) -> JsonResponse:
     zip_code = re.sub(r"\D", "", request.POST.get("cep", ""))
     if len(zip_code) != 8:
         return JsonResponse({"ok": False, "error": "Informe um CEP válido com 8 dígitos."}, status=400)
 
+    # Sem a API paga (APIBrasil) configurada, usa o ViaCEP (grátis).
     if not django_settings.APIBRASIL_CEP_URL:
-        return JsonResponse({"ok": False, "error": "Busca de CEP não configurada no ambiente."}, status=503)
+        result = _viacep_lookup(zip_code)
+        if result is None:
+            return JsonResponse({"ok": False, "error": "CEP não encontrado."}, status=404)
+        return JsonResponse({"ok": True, "zip_code": result["zip_code"], "street": result["street"]})
 
     headers = {"Accept": "application/json"}
     if django_settings.APIBRASIL_CEP_TOKEN:
@@ -201,9 +222,10 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
     try:
         with urlopen(request_object, timeout=django_settings.APIBRASIL_CEP_TIMEOUT) as response:
             payload = json.loads(response.read().decode("utf-8"))
-    except HTTPError:
-        return JsonResponse({"ok": False, "error": "Não foi possível consultar esse CEP agora."}, status=502)
-    except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
+    except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        result = _viacep_lookup(zip_code)  # se a API paga falhar, cai pro ViaCEP
+        if result is not None:
+            return JsonResponse({"ok": True, "zip_code": result["zip_code"], "street": result["street"]})
         return JsonResponse({"ok": False, "error": "A busca de CEP falhou. Tente novamente."}, status=502)
 
     data = payload
@@ -427,9 +449,9 @@ _MARITAL_LABELS = {
 }
 
 
-def _build_creator_line(name, gender, marital_key, cpf, cnpj, address, email) -> str:
-    """Monta a cláusula da CONTRATADA com concordância de gênero e estado civil,
-    e mostra CPF e/ou CNPJ conforme preenchido. Cada UGC configura o seu."""
+def _build_creator_line(name, gender, marital_key, document, address, email) -> str:
+    """Monta a cláusula da CONTRATADA com concordância de gênero e estado civil.
+    O documento é um campo só (CPF ou CNPJ): detecta pelo nº de dígitos."""
     fem = (gender or "feminino") != "masculino"
 
     def g(masc, fem_word):
@@ -441,14 +463,13 @@ def _build_creator_line(name, gender, marital_key, cpf, cnpj, address, email) ->
     inscr = g("inscrito", "inscrita")
     domic = g("domiciliado", "domiciliada")
 
-    cpf = (cpf or "").strip()
-    cnpj_real = bool((cnpj or "").strip().strip("_"))  # False quando é só o placeholder "____"
-    docs = []
-    if cpf:
-        docs.append(f"CPF sob o nº {cpf}")
-    if cnpj_real or not docs:  # mantém o CNPJ (com placeholder) quando não há CPF
-        docs.append(f"CNPJ sob o nº {cnpj}")
-    doc_phrase = f"{inscr} no " + " e no ".join(docs)
+    digits = re.sub(r"\D", "", document or "")
+    if len(digits) == 11:
+        doc_phrase = f"{inscr} no CPF sob o nº {document}"
+    elif len(digits) == 14:
+        doc_phrase = f"{inscr} no CNPJ sob o nº {document}"
+    else:  # vazio/placeholder → deixa genérico "CPF/CNPJ"
+        doc_phrase = f"{inscr} no CPF/CNPJ sob o nº {document}"
 
     return (
         f"{name}, {nacionalidade}, {marital}, {profissao}, {doc_phrase}, "
@@ -465,12 +486,10 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
     creator_address = _contract_placeholder(workspace_business_address_summary(workspace))
     creator_cnpj = _contract_placeholder(workspace.business_cnpj)
     creator_pix_key = _contract_placeholder(workspace.business_pis)
-    creator_cpf = (settings_values.get("legal_contract_cpf") or "").strip()
     creator_line = _build_creator_line(
         creator_name,
         settings_values.get("legal_contract_gender", "feminino"),
         settings_values.get("legal_contract_marital", "solteiro"),
-        creator_cpf,
         creator_cnpj,
         creator_address,
         creator_email,
@@ -506,7 +525,6 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
         "creator_address": creator_address,
         "creator_cnpj": creator_cnpj,
         "creator_pix_key": creator_pix_key,
-        "creator_cpf": creator_cpf,
         "creator_line": creator_line,
         "company_name": company_name,
         "company_display_name": _contract_placeholder(project.company),

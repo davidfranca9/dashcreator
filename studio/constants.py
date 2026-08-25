@@ -316,13 +316,6 @@ SETTINGS_GROUPS = [
                 "type": "select",
                 "value": "solteiro",
             },
-            {
-                "id": "legal_contract_cpf",
-                "label": "CPF",
-                "detail": "CPF da contratada. Aparece no contrato junto do CNPJ (se preenchido).",
-                "type": "text",
-                "value": "",
-            },
         ],
     },
 ]

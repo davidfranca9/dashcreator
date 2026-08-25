@@ -1106,7 +1106,7 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "business_street": "Rua",
             "business_number": "Número",
             "business_complement": "Complemento",
-            "business_cnpj": "CNPJ",
+            "business_cnpj": "CPF ou CNPJ",
             "business_pis": "Chave PIX",
             "instagram_url": "Instagram",
             "tiktok_url": "TikTok",
@@ -1170,7 +1170,6 @@ class WorkspaceSettingsForm(forms.Form):
             ("uniao_estavel", "União estável"),
         ],
     )
-    legal_contract_cpf = forms.CharField(required=False, label="CPF", max_length=18)
 
     def __init__(self, *args, settings_values: dict[str, str] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
