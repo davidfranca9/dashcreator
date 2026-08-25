@@ -417,6 +417,45 @@ def _contract_clause_five_text(payload: dict) -> str:
     )
 
 
+# Estado civil por gênero: (masculino, feminino). "União estável" é invariável.
+_MARITAL_LABELS = {
+    "solteiro": ("solteiro", "solteira"),
+    "casado": ("casado", "casada"),
+    "divorciado": ("divorciado", "divorciada"),
+    "viuvo": ("viúvo", "viúva"),
+    "uniao_estavel": ("em união estável", "em união estável"),
+}
+
+
+def _build_creator_line(name, gender, marital_key, cpf, cnpj, address, email) -> str:
+    """Monta a cláusula da CONTRATADA com concordância de gênero e estado civil,
+    e mostra CPF e/ou CNPJ conforme preenchido. Cada UGC configura o seu."""
+    fem = (gender or "feminino") != "masculino"
+
+    def g(masc, fem_word):
+        return fem_word if fem else masc
+
+    nacionalidade = g("brasileiro", "brasileira")
+    marital = _MARITAL_LABELS.get(marital_key or "solteiro", _MARITAL_LABELS["solteiro"])[1 if fem else 0]
+    profissao = g("Criador de Conteúdo UGC", "Criadora de Conteúdo UGC")
+    inscr = g("inscrito", "inscrita")
+    domic = g("domiciliado", "domiciliada")
+
+    cpf = (cpf or "").strip()
+    cnpj_real = bool((cnpj or "").strip().strip("_"))  # False quando é só o placeholder "____"
+    docs = []
+    if cpf:
+        docs.append(f"CPF sob o nº {cpf}")
+    if cnpj_real or not docs:  # mantém o CNPJ (com placeholder) quando não há CPF
+        docs.append(f"CNPJ sob o nº {cnpj}")
+    doc_phrase = f"{inscr} no " + " e no ".join(docs)
+
+    return (
+        f"{name}, {nacionalidade}, {marital}, {profissao}, {doc_phrase}, "
+        f"residente e {domic} em {address}, e-mail {email}."
+    )
+
+
 def _project_contract_payload(workspace, user, project: Project) -> dict:
     settings_values = settings_map(workspace)
     creator_name = _contract_placeholder(
@@ -426,6 +465,16 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
     creator_address = _contract_placeholder(workspace_business_address_summary(workspace))
     creator_cnpj = _contract_placeholder(workspace.business_cnpj)
     creator_pix_key = _contract_placeholder(workspace.business_pis)
+    creator_cpf = (settings_values.get("legal_contract_cpf") or "").strip()
+    creator_line = _build_creator_line(
+        creator_name,
+        settings_values.get("legal_contract_gender", "feminino"),
+        settings_values.get("legal_contract_marital", "solteiro"),
+        creator_cpf,
+        creator_cnpj,
+        creator_address,
+        creator_email,
+    )
     company_name = _contract_placeholder(project.company_legal_name or project.company)
     is_ads = project.content_distribution == "Ads"
     distribution_label = "tráfego pago (ads)" if project.content_distribution == "Ads" else "uso orgânico"
@@ -457,6 +506,8 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
         "creator_address": creator_address,
         "creator_cnpj": creator_cnpj,
         "creator_pix_key": creator_pix_key,
+        "creator_cpf": creator_cpf,
+        "creator_line": creator_line,
         "company_name": company_name,
         "company_display_name": _contract_placeholder(project.company),
         "company_cnpj": _contract_placeholder(project.company_cnpj),
@@ -487,9 +538,7 @@ def _contract_intro_paragraphs(payload: dict) -> list[str]:
     return [
         (
             f"<b>CONTRATADA:</b><br/>"
-            f"{payload['creator_name']}, brasileira, solteira, Criadora de Conteúdo UGC, inscrita no CNPJ sob o nº "
-            f"{payload['creator_cnpj']}, residente e domiciliada em {payload['creator_address']}, e-mail "
-            f"{payload['creator_email']}.<br/><br/>"
+            f"{payload['creator_line']}<br/><br/>"
             f"<b>CONTRATANTE:</b><br/>"
             f"{payload['company_name']}, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº "
             f"{payload['company_cnpj']}, com sede em {payload['company_address']}, telefone {payload['company_phone']} "
@@ -861,9 +910,7 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
         Paragraph(
             (
                 f"<b>CONTRATADA:</b><br/>"
-                f"{payload['creator_name']}, brasileira, solteira, Criadora de Conteúdo UGC, inscrita no CNPJ sob o nº "
-                f"{payload['creator_cnpj']}, residente e domiciliada em {payload['creator_address']}, e-mail "
-                f"{payload['creator_email']}.<br/><br/>"
+                f"{payload['creator_line']}<br/><br/>"
                 f"<b>CONTRATANTE:</b><br/>"
                 f"{payload['company_name']}, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº "
                 f"{payload['company_cnpj']}, com sede em {payload['company_address']}, telefone {payload['company_phone']} "

@@ -1156,6 +1156,21 @@ class WorkspaceSettingsForm(forms.Form):
     )
     ops_follow_up_reminders = forms.BooleanField(required=False, label="Lembretes de follow-up")
     legal_contract_signer_name = forms.CharField(required=False, label="Nome no contrato", max_length=160)
+    legal_contract_gender = forms.ChoiceField(
+        required=False, label="Gênero (no contrato)",
+        choices=[("feminino", "Feminino"), ("masculino", "Masculino")],
+    )
+    legal_contract_marital = forms.ChoiceField(
+        required=False, label="Estado civil",
+        choices=[
+            ("solteiro", "Solteiro(a)"),
+            ("casado", "Casado(a)"),
+            ("divorciado", "Divorciado(a)"),
+            ("viuvo", "Viúvo(a)"),
+            ("uniao_estavel", "União estável"),
+        ],
+    )
+    legal_contract_cpf = forms.CharField(required=False, label="CPF", max_length=18)
 
     def __init__(self, *args, settings_values: dict[str, str] | None = None, **kwargs):
         super().__init__(*args, **kwargs)

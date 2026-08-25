@@ -293,12 +293,33 @@ SETTINGS_GROUPS = [
     },
     {
         "title": "Jurídico",
-        "description": "Dados usados na geração dos contratos do workspace.",
+        "description": "Dados usados na geração dos contratos do workspace. Cada creator preenche os seus.",
         "rows": [
             {
                 "id": "legal_contract_signer_name",
                 "label": "Nome no contrato",
                 "detail": "Usado como nome da contratada no contrato principal.",
+                "type": "text",
+                "value": "",
+            },
+            {
+                "id": "legal_contract_gender",
+                "label": "Gênero (no contrato)",
+                "detail": "Define a concordância do contrato: brasileiro/a, Criador/a, casado/a, inscrito/a…",
+                "type": "select",
+                "value": "feminino",
+            },
+            {
+                "id": "legal_contract_marital",
+                "label": "Estado civil",
+                "detail": "Estado civil da contratada usado no contrato.",
+                "type": "select",
+                "value": "solteiro",
+            },
+            {
+                "id": "legal_contract_cpf",
+                "label": "CPF",
+                "detail": "CPF da contratada. Aparece no contrato junto do CNPJ (se preenchido).",
                 "type": "text",
                 "value": "",
             },

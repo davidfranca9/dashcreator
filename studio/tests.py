@@ -4432,3 +4432,65 @@ class InfoproductsCrmTest(TestCase):
         alien = InfoLead.objects.create(workspace=other_ws, name="De outra conta")
         self.client.force_login(self.layfe)
         self.assertEqual(self.client.get(reverse("infoproducts_crm_lead", args=[alien.pk])).status_code, 404)
+
+
+class ContractPersonalizationTest(TestCase):
+    """Cláusula da CONTRATADA: gênero, estado civil e CPF vêm das Configurações
+    de cada UGC (antes era fixo 'brasileira, solteira, Criadora')."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("davidfranca9", password="x", email="d@e.com")
+        self.ws = get_or_create_workspace_for_user(self.user)
+        self.niche = Niche.objects.get(workspace=self.ws, name="Beleza e Maquiagem")
+        self.cat = ServiceCategory.objects.create(workspace=self.ws, name="UGC")
+        self.project = Project.objects.create(
+            workspace=self.ws, company="Marca X", niche=self.niche, service_category=self.cat,
+            stage="Fechado", status="Briefing", total_value=1000, deliverables_count=1,
+            close_date=date.today(), due_date=date.today(),
+        )
+
+    def _line(self):
+        from studio.views import _project_contract_payload
+        self.ws.refresh_from_db()
+        return _project_contract_payload(self.ws, self.user, self.project)["creator_line"]
+
+    def _set(self, **kv):
+        from studio.models import WorkspaceSetting
+        for k, v in kv.items():
+            WorkspaceSetting.objects.update_or_create(workspace=self.ws, key=k, defaults={"value": v})
+
+    def test_default_keeps_old_feminine_behavior(self):
+        line = self._line()
+        self.assertIn("brasileira", line)
+        self.assertIn("solteira", line)
+        self.assertIn("Criadora de Conteúdo UGC", line)
+
+    def test_masculine_married_with_cpf_and_cnpj(self):
+        self._set(legal_contract_gender="masculino", legal_contract_marital="casado",
+                  legal_contract_cpf="111.222.333-44")
+        self.ws.business_cnpj = "55.666/0001-77"; self.ws.save()
+        line = self._line()
+        self.assertIn("brasileiro", line)
+        self.assertIn("casado", line)
+        self.assertIn("Criador de Conteúdo UGC", line)
+        self.assertIn("inscrito no CPF sob o nº 111.222.333-44", line)
+        self.assertIn("no CNPJ sob o nº 55.666/0001-77", line)
+        self.assertIn("domiciliado", line)
+        self.assertNotIn("brasileira", line)
+        self.assertNotIn("Criadora", line)
+
+    def test_cpf_only_omits_empty_cnpj_placeholder(self):
+        self._set(legal_contract_cpf="999.888.777-66")
+        line = self._line()
+        self.assertIn("CPF sob o nº 999.888.777-66", line)
+        self.assertNotIn("CNPJ", line)
+
+    def test_uniao_estavel_label(self):
+        self._set(legal_contract_gender="masculino", legal_contract_marital="uniao_estavel")
+        self.assertIn("em união estável", self._line())
+
+    def test_settings_form_exposes_new_fields(self):
+        from studio.forms import WorkspaceSettingsForm
+        fields = WorkspaceSettingsForm(settings_values={}).fields
+        for key in ["legal_contract_gender", "legal_contract_marital", "legal_contract_cpf"]:
+            self.assertIn(key, fields)
