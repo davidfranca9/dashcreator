@@ -180,8 +180,6 @@ def _compose_company_address(data: dict) -> str:
     return address
 
 
-@login_required
-@require_POST
 def _viacep_lookup(zip_code: str) -> dict | None:
     """Consulta o ViaCEP (grátis, sem token). Retorna {street, zip_code} ou None."""
     try:
@@ -199,6 +197,8 @@ def _viacep_lookup(zip_code: str) -> dict | None:
     return {"street": street, "zip_code": cep}
 
 
+@login_required
+@require_POST
 def business_zip_lookup(request: HttpRequest) -> JsonResponse:
     zip_code = re.sub(r"\D", "", request.POST.get("cep", ""))
     if len(zip_code) != 8:
