@@ -2,19 +2,470 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Creator Day Experience: The Creators Club</title>
-    <meta name="description" content="Entre na lista de espera do Creator Day Experience: um dia imersivo para creators, marcas e skincare." />
+    <meta name="description" content="Entre na lista de espera do Creator Day Experience: um dia imersivo para creators que querem ir além." />
     <meta property="og:title" content="Creator Day Experience: The Creators Club" />
-    <meta property="og:description" content="Entre na lista de espera do Creator Day Experience: um dia imersivo para creators, marcas e skincare." />
+    <meta property="og:description" content="Entre na lista de espera do Creator Day Experience: um dia imersivo para creators que querem ir além." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://thecreatorsclub.com.br/creator-experience/" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://thecreatorsclub.com.br/creator-experience/" />
-    <script type="module" crossorigin src="/creator-experience/assets/index-Dx_gQfVm.js"></script>
-    <link rel="stylesheet" crossorigin href="/creator-experience/assets/index-B0HEWysm.css">
+    <style>
+      :root {
+        --navy: #020713;
+        --navy-soft: #07152d;
+        --blue: #1268f4;
+        --blue-light: #6da8ff;
+        --cream: #f6f8fc;
+        --ink: #06142b;
+        --muted: #68809f;
+        --line: #dfe8f5;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        color: var(--ink);
+        background: var(--cream);
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button, input { font: inherit; }
+
+      .header {
+        height: 112px;
+        display: grid;
+        place-items: center;
+        background: var(--cream);
+      }
+
+      .header img { width: 164px; display: block; }
+
+      .hero {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        min-height: 690px;
+        padding: 78px 28px 130px;
+        background:
+          radial-gradient(circle at 78% 44%, rgba(18, 104, 244, .18), transparent 28%),
+          linear-gradient(135deg, #01040c 0%, var(--navy) 54%, #031126 100%);
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        inset: 0;
+        opacity: .17;
+        background-image: linear-gradient(rgba(109,168,255,.14) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(109,168,255,.14) 1px, transparent 1px);
+        background-size: 72px 72px;
+        mask-image: linear-gradient(90deg, transparent, black 65%, transparent);
+      }
+
+      .hero-grid {
+        width: min(1120px, 100%);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(320px, .72fr);
+        align-items: center;
+        gap: clamp(56px, 8vw, 112px);
+      }
+
+      .copy { max-width: 620px; }
+
+      .eyebrow {
+        position: relative;
+        display: inline-block;
+        padding: 10px 19px;
+        color: var(--blue-light);
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: .25em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before, .eyebrow::after {
+        content: "";
+        position: absolute;
+        inset-block: 0;
+        width: 13px;
+        border-block: 2px solid var(--blue);
+      }
+
+      .eyebrow::before { left: 0; border-left: 2px solid var(--blue); }
+      .eyebrow::after { right: 0; border-right: 2px solid var(--blue); }
+
+      h1 {
+        margin: 34px 0 24px;
+        color: white;
+        font-size: clamp(58px, 6.1vw, 86px);
+        line-height: .93;
+        letter-spacing: -.065em;
+        font-weight: 650;
+      }
+
+      .lead {
+        max-width: 580px;
+        margin: 0;
+        color: #82b6ff;
+        font-size: 17px;
+        line-height: 1.75;
+      }
+
+      .date {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 27px;
+        color: rgba(130,182,255,.68);
+        font-size: 13px;
+      }
+
+      .date::before { content: ""; width: 32px; height: 1px; background: var(--blue); }
+
+      .video-wrap {
+        position: relative;
+        width: min(370px, 100%);
+        justify-self: end;
+      }
+
+      .video-wrap::before {
+        content: "";
+        position: absolute;
+        inset: 8% -18% -4%;
+        z-index: -1;
+        border-radius: 50%;
+        background: rgba(18,104,244,.26);
+        filter: blur(58px);
+      }
+
+      .video-kicker {
+        margin: 0 0 18px;
+        color: rgba(130,182,255,.8);
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: .24em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .video-frame {
+        position: relative;
+        padding: 7px;
+        border: 1px solid rgba(109,168,255,.34);
+        border-radius: 34px;
+        background: rgba(255,255,255,.055);
+        box-shadow: 0 42px 90px -28px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.035) inset;
+        backdrop-filter: blur(12px);
+      }
+
+      .video-frame::before, .video-frame::after {
+        content: "";
+        position: absolute;
+        z-index: 3;
+        width: 27px;
+        height: 27px;
+        pointer-events: none;
+      }
+
+      .video-frame::before {
+        left: -13px;
+        top: -13px;
+        border-left: 2px solid var(--blue);
+        border-top: 2px solid var(--blue);
+      }
+
+      .video-frame::after {
+        right: -13px;
+        bottom: -13px;
+        border-right: 2px solid var(--blue);
+        border-bottom: 2px solid var(--blue);
+      }
+
+      video {
+        width: 100%;
+        aspect-ratio: 9 / 16;
+        display: block;
+        border-radius: 27px;
+        object-fit: cover;
+        background: var(--navy-soft);
+      }
+
+      .video-shade {
+        position: absolute;
+        inset: 7px;
+        border-radius: 27px;
+        pointer-events: none;
+        background: linear-gradient(180deg, transparent 55%, rgba(1,6,16,.9) 100%);
+        transition: opacity .25s ease;
+      }
+
+      .play {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 72px;
+        height: 72px;
+        z-index: 4;
+        display: grid;
+        place-items: center;
+        transform: translate(-50%, -50%);
+        border: 1px solid rgba(255,255,255,.34);
+        border-radius: 50%;
+        color: white;
+        background: rgba(18,104,244,.92);
+        box-shadow: 0 14px 38px rgba(1,10,28,.52);
+        cursor: pointer;
+        transition: transform .2s ease, background .2s ease;
+      }
+
+      .play:hover { transform: translate(-50%, -50%) scale(1.07); background: #287cff; }
+      .play span { margin-left: 5px; width: 0; height: 0; border-block: 9px solid transparent; border-left: 15px solid white; }
+
+      .watch-label {
+        position: absolute;
+        z-index: 4;
+        left: 30px;
+        bottom: 30px;
+        color: white;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        pointer-events: none;
+      }
+
+      .watch-label small {
+        display: block;
+        margin-top: 5px;
+        color: rgba(255,255,255,.62);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+      }
+
+      .video-frame.playing .play,
+      .video-frame.playing .video-shade,
+      .video-frame.playing .watch-label { opacity: 0; pointer-events: none; }
+
+      .signup-zone { position: relative; z-index: 5; padding: 0 28px 82px; }
+
+      .signup {
+        width: min(920px, 100%);
+        margin: -62px auto 0;
+        display: grid;
+        grid-template-columns: 1fr 1.15fr;
+        align-items: center;
+        gap: 46px;
+        padding: 42px 48px;
+        border: 1px solid rgba(18,104,244,.11);
+        border-radius: 30px;
+        background: rgba(255,255,255,.97);
+        box-shadow: 0 30px 70px -36px rgba(4,23,53,.4);
+      }
+
+      .signup h2 { margin: 0; font-size: 31px; line-height: 1.08; letter-spacing: -.035em; }
+      .signup p { margin: 13px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+      .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+
+      label { grid-column: 1 / -1; margin: 4px 0 -6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+      .fields > label:first-child { margin-top: 0; }
+
+      input {
+        min-width: 0;
+        padding: 14px 15px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        outline: 0;
+        color: var(--ink);
+        background: #eef5ff;
+      }
+
+      input:focus { border-color: var(--blue); background: white; }
+
+      .form-error {
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: rgba(220,50,50,.08);
+        color: #b02a2a;
+        font-size: 13px;
+      }
+
+      .cta {
+        grid-column: 1 / -1;
+        padding: 15px 21px;
+        border: 0;
+        border-radius: 999px;
+        color: white;
+        background: var(--blue);
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      .cta:disabled { opacity: .6; cursor: not-allowed; }
+
+      .footer {
+        width: min(1120px, calc(100% - 56px));
+        margin: 0 auto;
+        padding: 28px 0 42px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+
+      @media (max-width: 800px) {
+        .header { height: 112px; }
+        .header img { width: 154px; }
+        .hero { min-height: 0; padding: 54px 20px 116px; }
+        .hero-grid { min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 58px; }
+        .copy { min-width: 0; width: 100%; text-align: center; }
+        h1 { margin-top: 32px; font-size: clamp(46px, 13.2vw, 58px); }
+        .lead { font-size: 15px; line-height: 1.7; }
+        .date { justify-content: center; }
+        .video-wrap { min-width: 0; width: min(330px, calc(100% - 12px)); justify-self: center; }
+        .video-kicker { font-size: 9px; letter-spacing: .2em; }
+        .signup-zone { padding-inline: 18px; }
+        .signup { min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 26px; margin-top: -54px; padding: 32px 24px; text-align: center; }
+        .signup h2 { font-size: 27px; }
+        .fields { min-width: 0; width: 100%; grid-template-columns: minmax(0, 1fr); }
+        .cta { grid-column: auto; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { scroll-behavior: auto !important; transition: none !important; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <header class="header">
+      <a href="./"><img src="logo.png" alt="The Creators Club" /></a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-grid">
+          <div class="copy">
+            <span class="eyebrow">Lista de espera</span>
+            <h1>Creator Day<br />Experience</h1>
+            <p class="lead">Um dia imersivo para creators que querem ir além. Uma experiência criada para gerar novas conexões, ampliar possibilidades e abrir espaço para oportunidades que podem transformar os próximos passos da sua jornada.</p>
+            <p class="date">Data e local serão anunciados em breve. Entre na lista de espera para receber as novidades em primeira mão.</p>
+          </div>
+
+          <div class="video-wrap">
+            <p class="video-kicker">Sinta um pouco dessa experiência</p>
+            <div class="video-frame" id="videoFrame">
+              <video id="experienceVideo" poster="creator-day-experience-poster.jpg" preload="metadata" playsinline>
+                <source src="creator-day-experience.mp4" type="video/mp4" />
+              </video>
+              <div class="video-shade"></div>
+              <button class="play" id="playButton" type="button" aria-label="Assistir aos bastidores"><span></span></button>
+              <div class="watch-label">Veja como foi o último encontro<small>Assista aos bastidores</small></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="signup-zone">
+        <div class="signup">
+          <div>
+            <h2>Garanta sua prioridade</h2>
+            <p>Vagas limitadas · prioridade por ordem de inscrição. Entre na lista para receber as novidades do Creator Day Experience em primeira mão.</p>
+          </div>
+          <form class="fields" id="waitlistForm" novalidate>
+            <input type="text" id="fieldName" aria-label="Nome" placeholder="Seu nome completo" autocomplete="name" />
+            <input type="email" id="fieldEmail" aria-label="E-mail" placeholder="voce@email.com" autocomplete="email" />
+            <input type="tel" id="fieldPhone" aria-label="WhatsApp" placeholder="WhatsApp: (00) 00000-0000" inputmode="numeric" autocomplete="tel" style="grid-column: 1 / -1" />
+            <p class="form-error" id="formError" hidden></p>
+            <button class="cta" type="submit">Quero prioridade no evento</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">© 2026 The Creators Club. Todos os direitos reservados.</footer>
+
+    <script>
+      const video = document.querySelector('#experienceVideo');
+      const frame = document.querySelector('#videoFrame');
+      const button = document.querySelector('#playButton');
+
+      button.addEventListener('click', async () => {
+        frame.classList.add('playing');
+        video.controls = true;
+        await video.play();
+      });
+
+      video.addEventListener('pause', () => {
+        if (video.currentTime === 0 || video.ended) {
+          frame.classList.remove('playing');
+          video.controls = false;
+        }
+      });
+    </script>
+
+    <script>
+      const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/ByTHxx6230SDaf5Ky5UoLA";
+
+      const form = document.querySelector('#waitlistForm');
+      const nameInput = document.querySelector('#fieldName');
+      const emailInput = document.querySelector('#fieldEmail');
+      const phoneInput = document.querySelector('#fieldPhone');
+      const errorEl = document.querySelector('#formError');
+      const submitBtn = form.querySelector('.cta');
+
+      function formatPhone(value) {
+        const digits = value.replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+      }
+
+      phoneInput.addEventListener('input', (e) => {
+        e.target.value = formatPhone(e.target.value);
+      });
+
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.hidden = false;
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        errorEl.hidden = true;
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const phone = phoneInput.value.trim();
+
+        if (!name || !email || !phone) {
+          showError('Preenche todos os campos pra gente conseguir te avisar.');
+          return;
+        }
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+          showError('Esse e-mail não parece válido.');
+          return;
+        }
+        if (phone.replace(/\D/g, '').length < 10) {
+          showError('Confere o número do WhatsApp.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Redirecionando...';
+        window.location.href = WHATSAPP_GROUP_URL;
+      });
+    </script>
   </body>
 </html>
