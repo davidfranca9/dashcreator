@@ -19,7 +19,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .checkout import CheckoutProduct, get_product
 from .emails import send_access_code_email
-from .models import AccessCode, Purchase, normalize_access_code
+from .models import AccessCode, Coupon, Purchase, normalize_access_code
 
 logger = logging.getLogger(__name__)
 
@@ -165,14 +165,26 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     if not settings.MERCADO_PAGO_ACCESS_TOKEN:
         return _json(request, {"error": "mp_not_configured"}, status=503)
 
+    coupon_code = (payload.get("coupon_code") or "").strip().upper()
+    amount = product.price
+    applied_coupon_code = ""
+    if coupon_code:
+        coupon = Coupon.objects.filter(code=coupon_code, product_key=product.key, active=True).first()
+        if coupon is None:
+            return _json(request, {"error": "invalid_coupon"}, status=400)
+        discount = (product.price * coupon.discount_percent / Decimal("100")).quantize(Decimal("0.01"))
+        amount = (product.price - discount).quantize(Decimal("0.01"))
+        applied_coupon_code = coupon.code
+
     purchase = Purchase.objects.create(
         product_key=product.key,
         product_name=product.name,
-        amount=product.price,
+        amount=amount,
         customer_name=customer_name,
         customer_email=customer_email,
         customer_cpf=customer_cpf_digits,
         customer_phone=customer_phone,
+        coupon_code=applied_coupon_code,
     )
 
     sdk = _mp_sdk()
@@ -186,7 +198,7 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
                 "description": product.short_description,
                 "quantity": 1,
                 "currency_id": "BRL",
-                "unit_price": float(product.price),
+                "unit_price": float(purchase.amount),
             }
         ],
         "payer": {

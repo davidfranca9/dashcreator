@@ -23,9 +23,9 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
         name="Dash Creator",
         short_description="Sistema completo para creators profissionais",
         long_description=(
-            "Centralize toda a visão do seu negócio em um único lugar. "
-            "Faturamento, prospecções, contratos, jurídico e finanças — "
-            "do caos ao posicionamento."
+            "Centralize toda a visão do seu negócio em um único lugar: "
+            "faturamento, prospecções, contratos, jurídico e finanças. "
+            "Do caos ao posicionamento."
         ),
         price=Decimal("134.90"),
         audience="paid",

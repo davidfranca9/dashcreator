@@ -18,7 +18,7 @@ from django.urls import reverse
 from .constants import DEFAULT_NICHE_NAMES
 from .checkout import get_product
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
-from .models import AccessCode, ActiveUserSession, CashBox, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
+from .models import AccessCode, ActiveUserSession, CashBox, Coupon, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
 from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 from .checkout_views import _approve_purchase
@@ -3659,6 +3659,69 @@ class CheckoutTest(TestCase):
         self.assertEqual(data["public_key"], "TEST-public-key")
         self.assertEqual(data["amount"], 134.90)
         self.assertTrue(Purchase.objects.filter(customer_email="maria@example.com").exists())
+
+    def test_checkout_preference_applies_valid_coupon_discount(self):
+        Coupon.objects.create(code="ORGANIZADASH", product_key="dashcreator", discount_percent=Decimal("10"))
+
+        class FakePreferenceApi:
+            def create(self, payload):
+                return {"status": 201, "response": {"id": "pref_123"}}
+
+        class FakeSdk:
+            def preference(self):
+                return FakePreferenceApi()
+
+        with patch("studio.checkout_views._mp_sdk", return_value=FakeSdk()):
+            response = self.client.post(
+                reverse("checkout_preference"),
+                data=json.dumps({
+                    "product_key": "dashcreator",
+                    "customer_name": "Maria",
+                    "customer_email": "maria@example.com",
+                    "customer_cpf": "123.456.789-09",
+                    "coupon_code": "organizadash",  # minuscula: precisa casar mesmo assim
+                }),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["amount"], 121.41)
+        purchase = Purchase.objects.get(customer_email="maria@example.com")
+        self.assertEqual(purchase.amount, Decimal("121.41"))
+        self.assertEqual(purchase.coupon_code, "ORGANIZADASH")
+
+    def test_checkout_preference_rejects_invalid_coupon(self):
+        response = self.client.post(
+            reverse("checkout_preference"),
+            data=json.dumps({
+                "product_key": "dashcreator",
+                "customer_name": "Maria",
+                "customer_email": "maria@example.com",
+                "customer_cpf": "123.456.789-09",
+                "coupon_code": "NAOEXISTE",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "invalid_coupon")
+        self.assertFalse(Purchase.objects.filter(customer_email="maria@example.com").exists())
+
+    def test_checkout_preference_ignores_coupon_scoped_to_other_product(self):
+        Coupon.objects.create(code="OUTROPRODUTO", product_key="outro-produto", discount_percent=Decimal("50"))
+
+        response = self.client.post(
+            reverse("checkout_preference"),
+            data=json.dumps({
+                "product_key": "dashcreator",
+                "customer_name": "Maria",
+                "customer_email": "maria@example.com",
+                "customer_cpf": "123.456.789-09",
+                "coupon_code": "OUTROPRODUTO",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "invalid_coupon")
 
     def test_checkout_status_reports_purchase_state(self):
         purchase = Purchase.objects.create(

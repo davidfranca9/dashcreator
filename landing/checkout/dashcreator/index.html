@@ -94,6 +94,7 @@ body { font-family: 'Karla', sans-serif; background: var(--paper); color: var(--
                 <div class="field"><label for="customer_cpf">CPF</label><input id="customer_cpf" name="customer_cpf" type="text" inputmode="numeric" autocomplete="off" required></div>
                 <div class="field"><label for="customer_phone">WhatsApp (opcional)</label><input id="customer_phone" name="customer_phone" type="tel" inputmode="tel" autocomplete="tel"></div>
             </div>
+            <div class="field"><label for="coupon_code">Cupom de desconto (opcional)</label><input id="coupon_code" name="coupon_code" type="text" autocomplete="off" placeholder="Ex: ORGANIZADASH" style="text-transform:uppercase"></div>
             <button type="submit" class="cta" id="continueBtn">Continuar para pagamento</button>
             <div id="customerError" class="banner error" hidden></div>
         </form>
@@ -314,6 +315,7 @@ body { font-family: 'Karla', sans-serif; background: var(--paper); color: var(--
             customer_email: (data.get("customer_email") || "").toString().trim(),
             customer_cpf: (data.get("customer_cpf") || "").toString().trim(),
             customer_phone: (data.get("customer_phone") || "").toString().trim(),
+            coupon_code: (data.get("coupon_code") || "").toString().trim().toUpperCase(),
         };
 
         const cpfDigits = payload.customer_cpf.replace(/\D/g, "");
@@ -332,7 +334,12 @@ body { font-family: 'Karla', sans-serif; background: var(--paper); color: var(--
                 body: JSON.stringify(payload),
             });
             if (!response.ok) {
-                showError("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
+                const errBody = await response.json().catch(() => ({}));
+                if (errBody.error === "invalid_coupon") {
+                    showError("Esse cupom não é válido. Confira o código ou continue sem cupom.");
+                } else {
+                    showError("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
+                }
                 continueBtn.disabled = false;
                 continueBtn.textContent = "Continuar para pagamento";
                 return;

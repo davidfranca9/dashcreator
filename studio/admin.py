@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessCode, ActiveUserSession, InfoProduct, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import AccessCode, ActiveUserSession, Coupon, InfoProduct, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -64,6 +64,14 @@ class NicheAdmin(admin.ModelAdmin):
     list_display = ("name", "workspace", "updated_at")
     list_filter = ("workspace",)
     search_fields = ("name",)
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ("code", "product_key", "discount_percent", "active", "updated_at")
+    list_filter = ("product_key", "active")
+    list_editable = ("discount_percent", "active")
+    search_fields = ("code", "product_key")
 
 
 @admin.register(WorkspaceSetting)

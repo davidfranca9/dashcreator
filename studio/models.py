@@ -789,12 +789,33 @@ class Purchase(TimestampedModel):
         related_name="purchase",
     )
     notified_at = models.DateTimeField(null=True, blank=True)
+    coupon_code = models.CharField(max_length=40, blank=True, default="")
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
         return f"{self.product_key} - {self.customer_email} ({self.get_status_display()})"
+
+
+class Coupon(TimestampedModel):
+    """Cupom de desconto do checkout. Escopado por produto (product_key bate
+    com CheckoutProduct.key em studio/checkout.py)."""
+
+    code = models.CharField(max_length=40, unique=True)
+    product_key = models.CharField(max_length=40)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["code"]
+
+    def save(self, *args, **kwargs) -> None:
+        self.code = (self.code or "").strip().upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.discount_percent}% em {self.product_key})"
 
 
 class WorkspaceSetting(TimestampedModel):
