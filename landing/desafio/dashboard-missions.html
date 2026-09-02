@@ -1,3 +1,324 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Missões: The Creators Club</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar">LA</span><strong>Layfe</strong><span class="chevron"></span></span><span class="divider"></span><a class="nav-link" href="dashboard-community.html">Comunidade</a><a class="nav-link" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a href="dashboard-missions.html">Missões</a></div></header>
-<main class="page"><a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a><header class="page-title"><span class="eyebrow">Jornada Creator</span><h1>Missões</h1><p>As missões da comunidade serão organizadas neste espaço.</p></header><section class="mission-empty card"><div><span class="spark">✦</span><h2>Jornada em preparação</h2><p>As missões oficiais estão sendo preparadas pela equipe do The Creators Club e serão disponibilizadas aqui.</p></div></section></main><footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer><script src="club-pages.js"></script></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Missões: The Creators Club</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css">
+<style>
+.missions-shell{width:min(760px,100%);margin:auto}
+.missions-summary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 24px;margin-bottom:22px}
+.missions-summary strong{display:block;font-size:22px}
+.missions-summary span{color:var(--muted);font-size:11px}
+.missions-list{display:grid;gap:12px}
+.mission-row{position:relative;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:16px;padding:16px 18px;cursor:pointer;transition:.15s ease}
+.mission-row:hover{border-color:var(--blue)}
+.mission-row.is-locked{cursor:not-allowed;opacity:.55}
+.mission-row.is-done{border-color:var(--green)}
+.mission-num{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;font-size:15px;font-weight:800;background:var(--soft);color:var(--blue)}
+.mission-row.is-locked .mission-num{background:#eef1f6;color:var(--muted)}
+.mission-row.is-done .mission-num{background:var(--green);color:#fff}
+.mission-info span{display:block;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.mission-info strong{display:block;margin-top:3px;font-size:14px}
+.mission-status{padding:7px 13px;border-radius:999px;font-size:10px;font-weight:750;white-space:nowrap}
+.mission-status.locked{color:var(--muted);background:#eef1f6}
+.mission-status.available{color:var(--blue);background:var(--soft)}
+.mission-status.done{color:#fff;background:var(--green)}
+.overlay{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:20px;background:rgba(4,12,28,.55)}
+.overlay.is-open{display:grid}
+.sheet{width:min(620px,100%);max-height:88vh;overflow-y:auto;padding:34px;border-radius:24px;background:#fff;box-shadow:var(--shadow)}
+.sheet-close{float:right;width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:#fff;font-size:16px;color:var(--muted)}
+.sheet .eyebrow{margin-bottom:4px}
+.sheet h2{margin:0 0 18px;font-size:24px;line-height:1.15}
+.sheet h3{margin:22px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--blue)}
+.sheet p{margin:0;font-size:13px;line-height:1.65;color:var(--ink)}
+.sheet ol{margin:8px 0 0;padding-left:18px;font-size:12.5px;line-height:1.65;color:var(--ink)}
+.sheet .sub-block{margin-top:14px}
+.sheet .sub-block strong{display:block;font-size:12.5px;margin-bottom:4px}
+.sheet .refs a{display:block;margin-top:6px;font-size:12px;color:var(--blue);word-break:break-all}
+.sheet .refs span{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+.sheet-actions{margin-top:26px;display:flex;gap:10px}
+.sheet-actions button{flex:1;padding:13px;border:0;border-radius:999px;font-size:12px;font-weight:750;cursor:pointer}
+.mark-done{color:#fff;background:var(--blue)}
+.mark-done.is-done{background:var(--green)}
+@media(max-width:680px){.mission-row{grid-template-columns:38px 1fr}.mission-status{grid-column:1/-1;justify-self:start}.sheet{padding:24px}.missions-summary{flex-direction:column;align-items:flex-start;gap:10px}}
+</style>
+</head><body>
+<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar">LA</span><strong>Layfe</strong><span class="chevron"></span></span><span class="divider"></span><a class="nav-link" href="dashboard-community.html">Comunidade</a><a class="nav-link" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a class="nav-link is-active" href="dashboard-missions.html">Missões</a></div></header>
+
+<main class="page"><div class="missions-shell">
+  <a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a>
+  <header class="page-title"><span class="eyebrow">Jornada Creator</span><h1>Missões</h1><p>Uma missão nova libera a cada dia do desafio. Complete no mesmo dia pra garantir os pontos extras de prazo.</p></header>
+
+  <section class="missions-summary card"><div><strong data-summary-count>0 de 7</strong><span>missões concluídas</span></div><span data-summary-hint style="color:var(--muted);font-size:11px;text-align:right">Marcações salvas só neste navegador (protótipo)</span></section>
+
+  <section class="missions-list" data-missions-list></section>
+</div></main>
+
+<footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer>
+
+<div class="overlay" data-overlay><div class="sheet" data-sheet></div></div>
+<div class="toast" data-toast></div>
+
+<script src="club-pages.js"></script>
+<script>
+const MISSIONS = [
+  {
+    id: 1, date: "2026-09-14", dateLabel: "14/09", title: "Arrumando a casa",
+    objetivo: "Preparar o seu perfil para receber novas pessoas e oportunidades. Antes de pensar em postar mais ou abordar mais marcas, precisamos garantir que quem chegar até você consiga entender rapidamente quem você é, o que faz e por que deveria continuar no seu perfil.",
+    aplicar: [
+      { titulo: "1º · Auditoria do Perfil", passos: [
+        "Olhe para o seu perfil como se você fosse uma marca chegando nele pela primeira vez.",
+        "Revise: foto, nome, bio, destaques, conteúdos fixados, link e canais de contato.",
+        "Responda: em até 5 segundos, alguém consegue entender o que você faz?",
+        "Faça os ajustes necessários para deixar o perfil mais claro e estratégico.",
+      ]},
+      { titulo: "2º · Arrume os Stories", passos: [
+        "Apareça nos Stories e reative sua audiência.",
+        "Mostre um pouco do seu dia, mas conecte sua rotina ao que você faz profissionalmente.",
+        "Inclua pelo menos um Story relacionado ao seu trabalho e uma interação com a audiência.",
+        "Não precisa vender. O objetivo é começar a movimentar a casa que acabamos de arrumar.",
+      ]},
+    ],
+    materiais: [{ label: "PDF com checklist de perfil" }],
+    suaMissao: "Sequência de Stories estratégicos apresentando rotina + trabalho + interação com a audiência. Você pode usar a Biblioteca de Stories para fazer essa sequência.",
+    comprovar: "Print do perfil antes X depois dos ajustes + prints da sequência de Stories publicada.",
+    criterio: "Perfil revisado e ajustado + sequência de Stories publicada.",
+  },
+  {
+    id: 2, date: "2026-09-15", dateLabel: "15/09", title: "Construção de Intenção",
+    objetivo: "Construir intenção dentro do seu perfil. Se você quer ser contratada, não pode depender de uma marca descobrir sozinha o que você oferece. Hoje vamos deixar seus serviços visíveis, compreensíveis e fáceis de encontrar.",
+    aplicar: [
+      { titulo: "1º · Clareza de Serviço", passos: [
+        "Liste os serviços que você presta hoje.",
+        "Escolha o principal serviço ou organize os que realmente deseja vender.",
+        "Defina: o que você entrega, para quem faz sentido e qual problema aquilo ajuda a resolver.",
+        "Evite transformar o conteúdo apenas em uma tabela de serviços.",
+      ]},
+      { titulo: "2º · Seu Fixado de Serviço", passos: [
+        "Transforme essas informações em uma publicação.",
+        "Apresente seus serviços de maneira clara e estratégica.",
+        "Mostre o que uma marca pode contratar de você.",
+        "Depois de publicar, fixe esse conteúdo no perfil.",
+      ]},
+    ],
+    materiais: [{ label: "Exemplo de referência", url: "https://www.instagram.com/p/DYkv9-iCQwK/" }],
+    suaMissao: "Reels ou carrossel apresentando seu principal serviço ou seus serviços. Esse será o seu fixado de serviços.",
+    comprovar: "Link do conteúdo publicado + print mostrando a publicação fixada no perfil.",
+    criterio: "Conteúdo publicado + fixado no perfil + serviços apresentados de maneira clara.",
+  },
+  {
+    id: 3, date: "2026-09-16", dateLabel: "16/09", title: "Construindo Conexão",
+    objetivo: "Construir conexão. Seu perfil não pode mostrar somente o que você vende, ele também precisa revelar quem existe por trás daquele trabalho. Hoje, você vai criar um conteúdo que ajude as pessoas a entenderem, lembrarem e se conectarem com você.",
+    aplicar: [
+      { titulo: "1º · Encontre os elementos que contam sua história", passos: [
+        "Liste acontecimentos importantes da sua trajetória.",
+        "Pense nas características da sua personalidade que aparecem no seu trabalho.",
+        "Inclua interesses, repertórios, experiências e referências que ajudam a construir sua identidade.",
+        "Pergunte: o que existe em mim que faz meu trabalho ter uma perspectiva diferente?",
+        "Escolha apenas os elementos que realmente ajudam alguém a compreender quem você é.",
+      ]},
+      { titulo: "2º · Construa o seu \"Sobre Mim\"", passos: [
+        "Crie uma publicação apresentando quem você é.",
+        "Mostre o que faz, como chegou até aqui e como começou a fazer o que faz.",
+        "Traga elementos pessoais que sejam relevantes para a sua marca.",
+        "Evite transformar o conteúdo em currículo.",
+        "Depois de publicar, fixe esse conteúdo no perfil.",
+      ]},
+    ],
+    materiais: [
+      { label: "Exemplo de referência 1", url: "https://www.instagram.com/reel/DPJv_04Dngo/" },
+      { label: "Exemplo de referência 2", url: "https://www.instagram.com/p/DZ3SczEif5L/" },
+    ],
+    suaMissao: "Criar um Reels ou carrossel de apresentação que funcione como seu \"Sobre mim\" e transformá-lo em um fixado estratégico.",
+    comprovar: "Link do conteúdo + print mostrando a publicação fixada no perfil.",
+    criterio: "Conteúdo publicado + apresentação clara de quem você é + conexão com o que você faz + publicação fixada.",
+  },
+  {
+    id: 4, date: "2026-09-17", dateLabel: "17/09", title: "Levantando Bandeiras",
+    objetivo: "Construir posicionamento. Pessoas lembram de quem tem opinião, visão e uma maneira própria de enxergar seu trabalho e seu mercado. Hoje, você vai mostrar no que realmente acredita e por que acredita nisso.",
+    aplicar: [
+      { titulo: "1º · Encontre uma crença que sustenta o seu trabalho", passos: [
+        "Pense no seu nicho, no mercado creator ou na sua forma de criar conteúdo.",
+        "Liste ideias com as quais você concorda fortemente.",
+        "Liste também coisas que você acredita que estão sendo feitas de forma errada.",
+        "Escolha uma crença que tenha relação direta com a forma como você trabalha.",
+        "Responda: por que eu acredito nisso? O que me fez chegar a essa conclusão?",
+      ]},
+      { titulo: "2º · Transforme sua crença em posicionamento", passos: [
+        "Comece o conteúdo com uma afirmação clara.",
+        "Explique seu ponto de vista.",
+        "Traga uma experiência, argumento ou exemplo.",
+        "Mostre como essa crença influencia sua forma de trabalhar.",
+        "Finalize reforçando sua visão, sem tentar agradar todo mundo.",
+      ]},
+    ],
+    materiais: [
+      { label: "Exemplo de referência 1", url: "https://www.instagram.com/reel/DcKCtTwpkBH/" },
+      { label: "Exemplo de referência 2", url: "https://www.instagram.com/reel/Db6Tt4PhXO7/" },
+    ],
+    suaMissao: "Criar um Reels, carrossel ou post defendendo uma crença verdadeira ligada ao seu trabalho, nicho ou mercado.",
+    comprovar: "Link da publicação.",
+    criterio: "Conteúdo publicado + crença apresentada de forma clara + justificativa + conexão com seu posicionamento profissional.",
+  },
+  {
+    id: 5, date: "2026-09-18", dateLabel: "18/09", title: "Condução dos seus processos",
+    objetivo: "Criar uma estrutura de condução. Não adianta despertar interesse se, depois disso, uma marca não sabe como avançar, onde falar com você ou como funciona seu trabalho. Hoje, vamos conectar expertise + processo + direcionamento.",
+    aplicar: [
+      { titulo: "1º · Organize o caminho até você", passos: [
+        "Revise seu link da bio.",
+        "Retire links que não tenham função estratégica.",
+        "Garanta que exista um canal comercial claro.",
+        "Organize os botões ou links por prioridade.",
+        "Teste todo o caminho como se você fosse uma marca tentando contratar você.",
+      ]},
+      { titulo: "2º · Mostre sua expertise em ação", passos: [
+        "Escolha um processo ou etapa do seu trabalho que você possa mostrar.",
+        "Explique o que você faz.",
+        "Mostre também como você pensa e como executa.",
+        "Use exemplos, bastidores ou etapas do seu processo.",
+        "Termine com uma CTA direcionando para o link da bio ou canal comercial.",
+      ]},
+    ],
+    materiais: [{ label: "Exemplo de referência", url: "https://www.instagram.com/reel/DaX9_ieBka8/" }],
+    suaMissao: "Organizar o seu canal de contato e criar um Reels ou carrossel mostrando o que você faz + como você faz + CTA para contratação. Esse conteúdo pode se tornar o terceiro fixado estratégico do seu perfil.",
+    comprovar: "Print do link da bio organizado + link da publicação + print do conteúdo fixado, caso escolha fixá-lo.",
+    criterio: "Canal de contato organizado + rota de conversão funcionando + conteúdo de expertise publicado + CTA comercial clara.",
+  },
+  {
+    id: 6, date: "2026-09-19", dateLabel: "19/09", title: "Atração Qualificada",
+    objetivo: "Criar conteúdo com intenção de atração. Até aqui, organizamos o que alguém encontra quando chega ao seu perfil. Agora precisamos trazer novas pessoas para dentro dele. Hoje, você vai criar pensando em quem ainda não sabe quem você é.",
+    aplicar: [
+      { titulo: "1º · Escolha sua porta de entrada", passos: [
+        "Defina quem você quer atrair com essa publicação.",
+        "Escolha uma dor, desejo, comportamento, curiosidade ou situação que essa pessoa reconheceria.",
+        "Pense em um assunto que faça sentido mesmo para alguém que nunca viu seu perfil.",
+        "Pergunte: esse conteúdo desperta interesse antes mesmo da pessoa saber quem eu sou?",
+        "Escolha um ângulo simples e de fácil compreensão.",
+      ]},
+      { titulo: "2º · Transforme em conteúdo de Topo de Funil", passos: [
+        "Comece com um gancho capaz de interromper o scroll.",
+        "Desenvolva uma única ideia principal.",
+        "Priorize identificação, entretenimento, utilidade ou curiosidade.",
+        "Evite colocar várias mensagens no mesmo conteúdo.",
+        "Não tente vender diretamente seu serviço.",
+      ]},
+    ],
+    materiais: [
+      { label: "Exemplo de referência 1", url: "https://www.instagram.com/reel/DayhZaapyJU/" },
+      { label: "Exemplo de referência 2", url: "https://www.instagram.com/reel/DakmEsGuMJo/" },
+    ],
+    suaMissao: "Criar e publicar um conteúdo de Topo de Funil pensado especificamente para atrair novas pessoas para o seu perfil.",
+    comprovar: "Link do conteúdo publicado.",
+    criterio: "Conteúdo publicado + público de atração definido + gancho claro + mensagem compreensível para quem ainda não conhece você.",
+  },
+  {
+    id: 7, date: "2026-09-20", dateLabel: "20/09", title: "A Grande Oferta",
+    objetivo: "Transformar toda a estrutura construída durante o desafio em uma oportunidade comercial real. Durante os últimos dias você organizou seu perfil, apresentou seus serviços, mostrou quem é, construiu posicionamento, demonstrou expertise e criou atração. Agora é hora de se colocar disponível para ser contratada.",
+    aplicar: [
+      { titulo: "1º · Encontre uma oportunidade real da Black Friday", passos: [
+        "Pense nas necessidades que as marcas terão antes e durante a Black Friday.",
+        "Liste problemas ou demandas que podem ser resolvidos através de conteúdo.",
+        "Escolha uma necessidade que se conecte diretamente ao serviço que você presta.",
+        "Defina qual seria a sua contribuição para aquela estratégia.",
+        "Comece pelo problema da marca, não pela sua agenda.",
+      ]},
+      { titulo: "2º · Construa sua grande oferta", passos: [
+        "Abra o conteúdo com um problema, oportunidade ou ponto de vista sobre a Black Friday.",
+        "Mostre por que aquilo deveria ser importante para uma marca.",
+        "Demonstre sua expertise sobre o assunto.",
+        "Conecte essa necessidade ao serviço que você oferece.",
+        "Finalize com uma CTA comercial clara e direcionada para contato.",
+      ]},
+    ],
+    materiais: [
+      { label: "Exemplo de referência 1", url: "https://www.instagram.com/reel/DctXhBnhseg/" },
+      { label: "Exemplo de referência 2", url: "https://www.instagram.com/p/Db38mIfiUJA/" },
+    ],
+    suaMissao: "Criar um Reels ou carrossel comercial voltado para a Black Friday, conectando: necessidade da marca + sua visão + sua expertise + seu serviço + CTA para contratação. Depois, publique no feed com CTA direcionando para o seu serviço.",
+    comprovar: "Link do conteúdo publicado.",
+    criterio: "Conteúdo publicado + conexão real com Black Friday + necessidade da marca identificada + expertise demonstrada + serviço apresentado + CTA comercial.",
+  },
+];
+
+const STORAGE_KEY = "tcc_desafio_missoes_concluidas";
+function getDone() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+}
+function setDone(ids) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)); } catch {}
+}
+function isUnlocked(mission) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return today >= new Date(mission.date + "T00:00:00");
+}
+
+const listEl = document.querySelector("[data-missions-list]");
+const overlay = document.querySelector("[data-overlay]");
+const sheet = document.querySelector("[data-sheet]");
+const summaryCount = document.querySelector("[data-summary-count]");
+
+function renderList() {
+  const done = getDone();
+  summaryCount.textContent = `${done.length} de ${MISSIONS.length}`;
+  listEl.innerHTML = MISSIONS.map(m => {
+    const unlocked = isUnlocked(m);
+    const finished = done.includes(m.id);
+    const stateClass = finished ? "is-done" : unlocked ? "" : "is-locked";
+    const statusClass = finished ? "done" : unlocked ? "available" : "locked";
+    const statusLabel = finished ? "Concluída" : unlocked ? "Disponível" : "Bloqueada";
+    return `<article class="mission-row card ${stateClass}" data-mission-row="${m.id}" role="button" tabindex="0">
+      <span class="mission-num">${finished ? "✓" : String(m.id).padStart(2, "0")}</span>
+      <span class="mission-info"><span>Dia ${String(m.id).padStart(2, "0")} · ${m.dateLabel}</span><strong>Missão ${m.title}</strong></span>
+      <span class="mission-status ${statusClass}">${statusLabel}</span>
+    </article>`;
+  }).join("");
+
+  listEl.querySelectorAll("[data-mission-row]").forEach(row => {
+    row.addEventListener("click", () => {
+      const id = Number(row.dataset.missionRow);
+      const mission = MISSIONS.find(m => m.id === id);
+      if (!isUnlocked(mission)) {
+        showToast("Essa missão ainda está bloqueada. Ela libera no dia " + mission.dateLabel + ".");
+        return;
+      }
+      openMission(mission);
+    });
+  });
+}
+
+function openMission(m) {
+  const done = getDone().includes(m.id);
+  sheet.innerHTML = `
+    <button class="sheet-close" data-sheet-close aria-label="Fechar">×</button>
+    <span class="eyebrow">Dia ${String(m.id).padStart(2, "0")} · ${m.dateLabel}</span>
+    <h2>Missão ${m.title}</h2>
+    <h3>Objetivo da missão</h3>
+    <p>${m.objetivo}</p>
+    <h3>Como aplicar</h3>
+    ${m.aplicar.map(bloco => `<div class="sub-block"><strong>${bloco.titulo}</strong><ol>${bloco.passos.map(p => `<li>${p}</li>`).join("")}</ol></div>`).join("")}
+    ${m.materiais.length ? `<h3>Material de referência</h3><div class="refs">${m.materiais.map(mat => mat.url ? `<a href="${mat.url}" target="_blank" rel="noopener">${mat.label}</a>` : `<span>${mat.label}</span>`).join("")}</div>` : ""}
+    <h3>Sua missão</h3>
+    <p>${m.suaMissao}</p>
+    <h3>Comprove que você concluiu</h3>
+    <p>${m.comprovar}</p>
+    <h3>Critério de conclusão</h3>
+    <p>${m.criterio}</p>
+    <div class="sheet-actions">
+      <button class="mark-done ${done ? "is-done" : ""}" data-mark-done>${done ? "Missão concluída ✓" : "Marcar como concluída"}</button>
+    </div>
+  `;
+  overlay.classList.add("is-open");
+  sheet.querySelector("[data-sheet-close]").addEventListener("click", closeSheet);
+  sheet.querySelector("[data-mark-done]").addEventListener("click", (e) => {
+    const ids = getDone();
+    const idx = ids.indexOf(m.id);
+    if (idx === -1) { ids.push(m.id); showToast("Missão marcada como concluída!"); }
+    else { ids.splice(idx, 1); showToast("Marcação removida."); }
+    setDone(ids);
+    renderList();
+    e.target.classList.toggle("is-done");
+    e.target.textContent = e.target.classList.contains("is-done") ? "Missão concluída ✓" : "Marcar como concluída";
+  });
+}
+
+function closeSheet() { overlay.classList.remove("is-open"); }
+overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSheet(); });
+
+renderList();
+</script>
+</body></html>

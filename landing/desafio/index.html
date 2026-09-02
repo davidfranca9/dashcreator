@@ -191,12 +191,12 @@
         <p class="intro">Seu avanço na jornada para transformar criatividade em influência, conexão e oportunidades.</p>
       </div>
       <div class="score">
-        <div class="score-row"><span class="score-value">0%</span><span class="score-goal">/ 100%</span></div>
-        <strong>0 de 9 missões concluídas</strong>
+        <div class="score-row"><span class="score-value" id="scorePercent">0%</span><span class="score-goal">/ 100%</span></div>
+        <strong id="scoreCount">0 de 7 missões concluídas</strong>
         <small>Sua posição: ·<br>(ranking atualizado hoje)</small>
       </div>
       <div class="progress-line">
-        <div class="bar"><div class="bar-fill"></div></div>
+        <div class="bar"><div class="bar-fill" id="progressBarFill"></div></div>
         <div class="bar-labels"><span>Início (0%)</span><span>Construindo sua jornada</span><span>Meta (100%)</span></div>
       </div>
     </section>
@@ -268,6 +268,17 @@
         profileButton.setAttribute('aria-expanded', 'false');
       }
     });
+
+    // Progresso das missões: mesmo localStorage usado em dashboard-missions.html
+    (function () {
+      const TOTAL = 7;
+      let done = [];
+      try { done = JSON.parse(localStorage.getItem('tcc_desafio_missoes_concluidas') || '[]'); } catch {}
+      const percent = Math.round((done.length / TOTAL) * 100);
+      document.querySelector('#scorePercent').textContent = percent + '%';
+      document.querySelector('#scoreCount').textContent = `${done.length} de ${TOTAL} missões concluídas`;
+      document.querySelector('#progressBarFill').style.width = percent + '%';
+    })();
   </script>
 </body>
 </html>
