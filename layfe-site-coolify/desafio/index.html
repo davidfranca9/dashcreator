@@ -4,17 +4,64 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Desafio da Semana · The Creators Club</title>
-<meta http-equiv="refresh" content="0; url=desafio-da-semana.pdf">
 <link rel="icon" href="/logo.png">
+<meta name="robots" content="noindex">
 <style>
-  html,body{height:100%;margin:0}
-  body{font-family:system-ui,-apple-system,sans-serif;background:#12245e;color:#fff;
-    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-  a{color:#8ea6ff;font-weight:600}
+  :root{ --navy:#12245e; --navy2:#0d1a45; --accent:#8ea6ff; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--navy2); color:#fff; -webkit-text-size-adjust:100%;
+  }
+  .bar{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; background:rgba(13,26,69,.92);
+    backdrop-filter:blur(8px); border-bottom:1px solid rgba(142,166,255,.18);
+  }
+  .bar h1{font-size:15px; margin:0; font-weight:700; letter-spacing:.2px}
+  .bar .sub{font-size:12px; opacity:.7; font-weight:400; display:block; margin-top:2px}
+  .btn{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+    background:var(--accent); color:#0d1a45; text-decoration:none;
+    font-weight:700; font-size:13px; padding:9px 14px; border-radius:999px;
+    white-space:nowrap;
+  }
+  .btn:active{transform:translateY(1px)}
+  .doc{max-width:1000px; margin:0 auto; padding:16px 12px 48px}
+  .doc img{
+    display:block; width:100%; height:auto; margin:0 auto 14px;
+    border-radius:10px; box-shadow:0 6px 24px rgba(0,0,0,.35);
+    background:#fff;
+  }
+  .foot{text-align:center; padding:8px 16px 40px; opacity:.65; font-size:12px}
+  .foot a{color:var(--accent)}
 </style>
 </head>
 <body>
-  <p>Abrindo o Desafio da Semana…<br><br><a href="desafio-da-semana.pdf">Clique aqui caso não abra.</a></p>
-  <script>location.replace("desafio-da-semana.pdf");</script>
+  <div class="bar">
+    <h1>Desafio da Semana
+      <span class="sub">The Creators Club · Jornada Creator</span>
+    </h1>
+    <a class="btn" href="desafio-da-semana.pdf" target="_blank" rel="noopener">⬇ Baixar PDF</a>
+  </div>
+
+  <div class="doc">
+    <img src="page-01.jpg" alt="Desafio da Semana - página 1" width="1796" height="1122">
+    <img src="page-02.jpg" alt="Desafio da Semana - página 2" width="1796" height="1122" loading="lazy">
+    <img src="page-03.jpg" alt="Desafio da Semana - página 3" width="1796" height="1122" loading="lazy">
+    <img src="page-04.jpg" alt="Desafio da Semana - página 4" width="1796" height="1122" loading="lazy">
+    <img src="page-05.jpg" alt="Desafio da Semana - página 5" width="1796" height="1122" loading="lazy">
+    <img src="page-06.jpg" alt="Desafio da Semana - página 6" width="1796" height="1122" loading="lazy">
+    <img src="page-07.jpg" alt="Desafio da Semana - página 7" width="1796" height="1122" loading="lazy">
+    <img src="page-08.jpg" alt="Desafio da Semana - página 8" width="1796" height="1122" loading="lazy">
+    <img src="page-09.jpg" alt="Desafio da Semana - página 9" width="1796" height="1122" loading="lazy">
+    <img src="page-10.jpg" alt="Desafio da Semana - página 10" width="1796" height="1122" loading="lazy">
+    <img src="page-11.jpg" alt="Desafio da Semana - página 11" width="1796" height="1122" loading="lazy">
+    <img src="page-12.jpg" alt="Desafio da Semana - página 12" width="1796" height="1122" loading="lazy">
+  </div>
+
+  <p class="foot">Não abriu certinho? <a href="desafio-da-semana.pdf" target="_blank" rel="noopener">Abrir o PDF completo</a></p>
 </body>
 </html>
