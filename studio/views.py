@@ -58,6 +58,7 @@ from .services import (
     campaign_detail_snapshot,
     campaign_stage_message,
     CAMPAIGN_TONES,
+    CANCELLED_STATUS,
     confirm_follow_up_companies,
     dashboard_snapshot,
     distribution_snapshot,
@@ -2200,6 +2201,12 @@ def installment_confirm(request: HttpRequest, pk: int) -> HttpResponse:
     from datetime import date as _date
     workspace = _workspace(request)
     installment = get_object_or_404(ProjectInstallment, pk=pk, workspace=workspace)
+    # Trava a confirmacao de trabalho cancelado: sem isso, uma aba aberta antes
+    # do cancelamento ainda conseguiria marcar a parcela como recebida e lancar
+    # faturamento que nunca entrou.
+    if installment.project.status == CANCELLED_STATUS:
+        messages.error(request, "Esse trabalho está cancelado. Reative ele antes de confirmar recebimento.")
+        return redirect(request.POST.get("next") or reverse("finance"))
     raw_date = (request.POST.get("paid_on") or "").strip()
     try:
         paid_on = _date.fromisoformat(raw_date) if raw_date else timezone.localdate()

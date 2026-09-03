@@ -91,7 +91,8 @@ SOURCE_MIX_ORDER = ["Inbound", "Prospec\u00e7\u00e3o", "Follow-up", "Indica\u00e
 FOLLOW_UP_CONFIRMED_COMPANIES_KEY = "ops_follow_up_confirmed_companies"
 FOLLOW_UP_DISMISSED_COMPANIES_KEY = "ops_follow_up_dismissed_companies"
 AWAITING_APPROVAL_STATUS = "Aguardando aprovação"
-OVERDUE_EXCLUDED_STATUSES = {AWAITING_APPROVAL_STATUS, "Concluído", "Entregue", "Cancelado"}
+CANCELLED_STATUS = "Cancelado"
+OVERDUE_EXCLUDED_STATUSES = {AWAITING_APPROVAL_STATUS, "Concluído", "Entregue", CANCELLED_STATUS}
 
 
 def currency(value: Decimal | int | float | None) -> str:
@@ -2650,6 +2651,12 @@ def ensure_computed_installments(project: Project) -> None:
 
 
 def _project_finance_events(project: Project) -> list[dict]:
+    # Trabalho cancelado nao gera mais cobranca: parcela em aberto some do
+    # financeiro (nada a confirmar, nada atrasado). O que ja tinha sido pago
+    # continua aparecendo, porque aquele dinheiro entrou de verdade e nao pode
+    # sumir do historico de faturamento.
+    cancelled = project.status == CANCELLED_STATUS
+
     installments = _project_installment_list(project)
     if installments:
         return [
@@ -2663,7 +2670,7 @@ def _project_finance_events(project: Project) -> list[dict]:
                 "installment_id": item.pk,
             }
             for item in installments
-            if Decimal(item.amount or 0) > ZERO
+            if Decimal(item.amount or 0) > ZERO and (item.paid or not cancelled)
         ]
 
     return [
@@ -2676,6 +2683,7 @@ def _project_finance_events(project: Project) -> list[dict]:
             "paid_on": event["paid_on"],
         }
         for event in _compute_project_schedule(project)
+        if event["paid"] or not cancelled
     ]
 
 

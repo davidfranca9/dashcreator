@@ -19,7 +19,7 @@ from .constants import DEFAULT_NICHE_NAMES
 from .checkout import get_product
 from .forms import ADD_SERVICE_CATEGORY_VALUE, ContractBrandForm, ProjectForm, ProspectForm
 from .models import AccessCode, ActiveUserSession, CashBox, Coupon, FinanceEntry, FixedCost, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory
-from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, revenue_context, shell_context
+from .services import dashboard_snapshot, finance_snapshot, get_or_create_workspace_for_user, jobs_snapshot, jobs_snapshot_filtered, reconcile_computed_installments, revenue_context, shell_context
 from .views import _contract_clause_five_text, _project_contract_payload
 from .checkout_views import _approve_purchase
 
@@ -2958,6 +2958,68 @@ class DashboardSmokeTest(TestCase):
         self.assertEqual(response.context["selected_month"]["value"], payment_due_date.strftime("%Y-%m"))
         reserva_entries = [item for item in response.context["schedule"] if item["company"] == "Reserva"]
         self.assertEqual(len(reserva_entries), 1)
+
+    def _cancelled_project(self):
+        """Trabalho cancelado no formato do caso real: R$600 em Entrada + Saldo."""
+        return Project.objects.create(
+            workspace=self.workspace,
+            company="Evento RH",
+            closing_source="Indicacao",
+            niche=self.niche,
+            service_category=self.category,
+            project_name="Cobertura Evento RH",
+            content_type="",
+            stage="Fechado",
+            status="Cancelado",
+            total_value=600,
+            entry_value=300,
+            received_value=0,
+            deliverables_count=1,
+            progress=0,
+            close_date=date.today(),
+            due_date=date.today() + timedelta(days=7),
+            payment_due_date=date.today() + timedelta(days=7),
+        )
+
+    def test_finance_hides_open_installments_of_cancelled_project(self):
+        project = self._cancelled_project()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("finance"), {"month": project.due_date.strftime("%Y-%m")})
+
+        self.assertEqual(response.status_code, 200)
+        for bucket in ("schedule", "overdue_list", "month_schedule"):
+            leaked = [item for item in response.context.get(bucket, []) if item.get("company") == "Evento RH"]
+            self.assertEqual(leaked, [], f"trabalho cancelado vazou em {bucket}")
+
+    def test_finance_keeps_paid_installment_of_cancelled_project(self):
+        """Dinheiro que entrou antes do cancelamento nao pode sumir do faturamento."""
+        month = date.today().strftime("%Y-%m")
+        project = self._cancelled_project()
+        reconcile_computed_installments(project)
+        before = finance_snapshot(self.workspace, month)["finance_desktop"]["revenue_total"]
+
+        installment = project.installments.order_by("due_date").first()
+        installment.paid = True
+        installment.paid_on = date.today()
+        installment.save(update_fields=["paid", "paid_on"])
+
+        after = finance_snapshot(self.workspace, month)["finance_desktop"]["revenue_total"]
+
+        self.assertNotEqual(before, after, "a parcela paga deveria entrar no faturamento")
+        self.assertIn("300", after)
+
+    def test_installment_confirm_blocked_for_cancelled_project(self):
+        project = self._cancelled_project()
+        reconcile_computed_installments(project)
+        installment = project.installments.order_by("due_date").first()
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse("installment_confirm", args=[installment.pk]), {})
+
+        self.assertEqual(response.status_code, 302)
+        installment.refresh_from_db()
+        self.assertFalse(installment.paid)
 
     def test_finance_page_uses_job_receipts_and_creates_outgoing_entries(self):
         self.client.force_login(self.user)
