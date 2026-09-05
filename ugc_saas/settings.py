@@ -43,6 +43,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tcc_portal.middleware.TccPortalCorsMiddleware",
+    "desafio.middleware.DesafioCorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -157,5 +158,13 @@ TCC_PORTAL_ALLOWED_ORIGINS = set(
     env_list(
         "TCC_PORTAL_ALLOWED_ORIGINS",
         "https://portal.thecreatorsclub.com.br,http://localhost:5500,http://127.0.0.1:5500,null",
+    )
+)
+
+# Origens do site estatico que consomem a API do Desafio Postaria Mais.
+DESAFIO_ALLOWED_ORIGINS = set(
+    env_list(
+        "DESAFIO_ALLOWED_ORIGINS",
+        "https://thecreatorsclub.com.br,https://www.thecreatorsclub.com.br,http://localhost:9010,http://localhost:5500,null",
     )
 )

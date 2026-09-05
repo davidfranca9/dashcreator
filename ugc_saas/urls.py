@@ -10,6 +10,7 @@ urlpatterns = [
     path("media/<path:path>", serve_media_file, name="serve_media_file"),
     path("logout/", logout_view, name="logout"),
     path("tcc/", include("tcc_portal.urls")),
+    path("desafio/", include("desafio.urls")),
     path("", include("studio.urls")),
 ]
 
