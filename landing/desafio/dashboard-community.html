@@ -139,14 +139,21 @@ botaoPublicar.addEventListener("click", async () => {
   }
 });
 
-async function carregar() {
-  const estado = await api("/estado/");
+function pintarComunidade(estado) {
   euId = estado.participante.id;
-  const nome = estado.participante.nome;
-  document.querySelector("[data-nome]").textContent = nome.split(" ")[0];
-  document.querySelectorAll("[data-avatar]").forEach((el) => { el.textContent = iniciais(nome); });
   document.querySelector("[data-pontos]").textContent = `${estado.participante.pontos} pts`;
   renderFeed(estado.feed);
+}
+
+async function carregar() {
+  // Identidade e ultimo mural conhecido pintam na hora; a rede confirma depois.
+  pintarIdentidade();
+  const guardado = Cache.estado;
+  if (guardado) pintarComunidade(guardado);
+
+  const estado = await api("/estado/");
+  pintarComunidade(estado);
+  Cache.salvarEstado(estado);
 }
 
 if (exigirLogin()) {

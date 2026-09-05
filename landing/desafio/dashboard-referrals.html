@@ -58,13 +58,8 @@ document.querySelector("[data-copiar-link]").addEventListener("click", async () 
   showToast("Link copiado!");
 });
 
-async function carregar() {
-  const estado = await api("/estado/");
-  const nome = estado.participante.nome;
+function pintarIndicacoes(estado) {
   const indicacoes = estado.indicacoes;
-
-  document.querySelector("[data-nome]").textContent = nome.split(" ")[0];
-  document.querySelector("[data-avatar]").textContent = iniciais(nome);
   document.querySelector("[data-codigo]").textContent = indicacoes.codigo;
 
   linkConvite = `${location.origin}${location.pathname.replace("dashboard-referrals.html", "login.html")}?ref=${indicacoes.codigo}`;
@@ -80,6 +75,17 @@ async function carregar() {
         <article class="indicada card"><span class="avatar">${iniciais(n)}</span><strong>${escapar(n)}</strong></article>
       `).join("")}</div>`
     : '<div class="empty card"><div><span class="empty-icon">○</span><strong>Nenhuma indicação ainda</strong><p>Compartilhe seu link para acompanhar aqui quem entrou pelo seu convite.</p></div></div>';
+}
+
+async function carregar() {
+  // Identidade e ultimo estado conhecido pintam na hora; a rede confirma depois.
+  pintarIdentidade();
+  const guardado = Cache.estado;
+  if (guardado && guardado.indicacoes) pintarIndicacoes(guardado);
+
+  const estado = await api("/estado/");
+  pintarIndicacoes(estado);
+  Cache.salvarEstado(estado);
 }
 
 if (exigirLogin()) {

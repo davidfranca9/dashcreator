@@ -135,8 +135,10 @@
 
           <button type="submit" class="submit">Acessar painel →</button>
 
+          {# O acesso e' pago: a conta nasce do codigo que chega por email
+             depois da compra, nao de um cadastro aberto aqui na entrada. #}
           <p class="signup">
-            Ainda não tem uma conta? <a href="{% url 'signup' %}">Cadastre-se</a>
+            Comprou e ainda não criou sua conta? Use o link do email com o seu código de acesso.
           </p>
         </form>
       </div>

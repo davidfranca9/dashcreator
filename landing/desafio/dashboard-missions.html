@@ -351,17 +351,21 @@ function openMission(missao) {
 function closeSheet() { overlay.classList.remove("is-open"); }
 overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSheet(); });
 
-async function carregarMissoes() {
-  const estado = await api("/estado/");
+function pintarMissoes(estado) {
   estadoMissoes = estado.missoes;
-
-  const nome = estado.participante.nome;
-  const partes = nome.trim().split(/\s+/);
-  document.querySelector("[data-nome]").textContent = partes[0];
-  document.querySelector("[data-avatar]").textContent =
-    ((partes[0]?.[0] || "") + (partes[1]?.[0] || "")).toUpperCase();
   summaryHint.textContent = `${estado.participante.pontos} pontos acumulados`;
   renderList();
+}
+
+async function carregarMissoes() {
+  // Identidade e ultimo estado saem do navegador, sem esperar a rede.
+  pintarIdentidade();
+  const guardado = Cache.estado;
+  if (guardado) pintarMissoes(guardado);
+
+  const estado = await api("/estado/");
+  pintarMissoes(estado);
+  Cache.salvarEstado(estado);
 }
 
 if (exigirLogin()) {

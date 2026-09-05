@@ -280,18 +280,9 @@
       return ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || '··';
     }
 
-    async function carregarDashboard() {
-      if (!exigirLogin()) return;
-
-      // Check-in do dia: entrar na plataforma ja vale ponto, entao registra
-      // antes de buscar o estado pra o total ja vir atualizado.
-      try { await api('/checkin/', { metodo: 'POST' }); } catch {}
-
-      const estado = await api('/estado/');
+    function pintarDashboard(estado) {
       const { participante, missoes, ranking, feed } = estado;
 
-      document.querySelector('[data-nome]').textContent = participante.nome.split(' ')[0];
-      document.querySelector('[data-avatar]').textContent = iniciais(participante.nome);
       document.querySelector('#welcome-title').textContent = `Olá, ${participante.nome.split(' ')[0]}.`;
       document.querySelector('[data-pontos]').textContent = participante.pontos;
 
@@ -331,6 +322,36 @@
       atividades.innerHTML = feed.length
         ? feed.slice(0, 6).map((post) => `<article class="activity"><span class="activity-icon">○</span><span><strong>${post.autor.split(' ')[0]}</strong> publicou na comunidade</span><time>${new Date(post.quando).toLocaleDateString('pt-BR')}</time></article>`).join('')
         : '<article class="activity"><span class="activity-icon">○</span><span>Nenhuma atividade registrada ainda.</span><time></time></article>';
+    }
+
+    async function carregarDashboard() {
+      if (!exigirLogin()) return;
+
+      // Nome e avatar ja estao no navegador desde o login: nao ha por que
+      // deixar a tela dizendo "Olá." enquanto a rede responde.
+      const eu = pintarIdentidade();
+      if (eu) document.querySelector('#welcome-title').textContent = `Olá, ${eu.nome.split(' ')[0]}.`;
+
+      // O que se sabia da ultima visita pinta agora; a rede confirma depois.
+      const guardado = Cache.estado;
+      if (guardado) pintarDashboard(guardado);
+
+      // Check-in do dia vale ponto, mas nao precisa segurar a tela: vai
+      // junto com o estado, nao antes dele.
+      const checkin = api('/checkin/', { metodo: 'POST' }).catch(() => null);
+
+      const estado = await api('/estado/');
+      pintarDashboard(estado);
+      Cache.salvarEstado(estado);
+
+      // So quando o check-in de hoje entrou agora e' que os pontos mudaram
+      // depois da leitura: nesse caso vale reler.
+      const resultado = await checkin;
+      if (resultado && !resultado.ja_registrado) {
+        const atualizado = await api('/estado/');
+        pintarDashboard(atualizado);
+        Cache.salvarEstado(atualizado);
+      }
     }
 
     carregarDashboard().catch((erro) => {
