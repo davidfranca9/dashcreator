@@ -37,6 +37,12 @@ class Participante(TimestampedModel):
     instagram = models.CharField(max_length=80, blank=True, default="")
     codigo_acesso = models.CharField(max_length=20, unique=True, default=gerar_codigo_acesso)
     ativa = models.BooleanField(default=True)
+    # Quem indicou essa participante (chegou pelo link ?ref=CODIGO de alguem).
+    # O briefing nao definiu pontuacao por indicacao, entao aqui so registra a
+    # rede; se virar regra de ponto depois, o dado ja esta guardado.
+    indicada_por = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="indicadas"
+    )
 
     class Meta:
         ordering = ["nome"]

@@ -122,6 +122,7 @@ document.querySelector('[data-form-cadastro]').addEventListener('submit', (event
         email: document.querySelector('#email').value.trim(),
         whatsapp: document.querySelector('#whatsapp').value.trim(),
         instagram: document.querySelector('#instagram').value.trim(),
+        ref: new URLSearchParams(location.search).get("ref") || "",
       },
     });
 

@@ -1,5 +1,158 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Comunidade: The Creators Club</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar">LA</span><strong>Layfe</strong><span class="chevron"></span></span><span class="divider"></span><a class="nav-link is-active" href="dashboard-community.html">Comunidade</a><a class="nav-link" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a href="dashboard-missions.html">Missões</a></div></header>
-<main class="page"><div class="community-shell"><a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a><header class="page-title"><span class="eyebrow">Creator connects creator</span><h1>Comunidade</h1><p>Compartilhe processos, descobertas e conquistas com creators que entendem a sua jornada.</p></header>
-<section class="composer card"><div class="composer-top"><span class="avatar">LA</span><textarea data-composer placeholder="O que está acontecendo na sua jornada?"></textarea></div><div class="composer-bottom"><div class="attach"><button class="icon-button" aria-label="Adicionar imagem">▧</button><button class="icon-button" aria-label="Adicionar link">↗</button></div><button class="publish" data-publish disabled>Publicar</button></div></section>
-<section class="feed-empty card"><div><span class="empty-icon">○</span><strong>Nenhuma publicação ainda</strong><p>As publicações da comunidade aparecerão aqui.</p></div></section></div></main><footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer><div class="toast" data-toast></div><script src="club-pages.js"></script></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Comunidade: The Creators Club</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css">
+<style>
+.comentarios{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:9px}
+.comentario{display:grid;grid-template-columns:26px 1fr;gap:9px;align-items:start}
+.comentario .avatar{width:26px;height:26px;font-size:9px}
+.comentario strong{display:block;font-size:11px}
+.comentario p{margin:2px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink)}
+.form-comentario{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:11px}
+.form-comentario input{min-width:0;padding:10px 13px;border:1px solid var(--line);border-radius:999px;outline:none;font-size:11.5px;background:var(--bg)}
+.form-comentario input:focus{border-color:var(--blue);background:#fff}
+.form-comentario button{padding:0 16px;border:0;border-radius:999px;color:#fff;background:var(--blue);font-size:11px;font-weight:750}
+.form-comentario button:disabled{opacity:.45;cursor:not-allowed}
+.ja-comentou{margin-top:11px;font-size:11px;color:var(--muted)}
+.pontos-chip{padding:7px 13px;border-radius:999px;background:var(--soft);color:var(--blue);font-size:11px;font-weight:750;white-space:nowrap}
+</style>
+</head><body>
+<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar" data-avatar>··</span><strong data-nome>...</strong></span><span class="divider"></span><a class="nav-link is-active" href="dashboard-community.html">Comunidade</a><a class="nav-link" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a href="dashboard-missions.html">Missões</a></div></header>
+
+<main class="page"><div class="community-shell">
+  <a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a>
+  <header class="page-title" style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px">
+    <div><span class="eyebrow">Creator connects creator</span><h1>Comunidade</h1><p>Compartilhe processos, descobertas e conquistas com creators que entendem a sua jornada.</p></div>
+    <span class="pontos-chip" data-pontos>0 pts</span>
+  </header>
+
+  <section class="composer card">
+    <div class="composer-top"><span class="avatar" data-avatar>··</span><textarea data-novo-post placeholder="O que está acontecendo na sua jornada?"></textarea></div>
+    <div class="composer-bottom">
+      <small style="color:var(--muted);font-size:10.5px">Cada publicação relevante vale 5 pontos.</small>
+      <button class="publish" data-btn-publicar disabled>Publicar</button>
+    </div>
+  </section>
+
+  <section class="feed" data-feed></section>
+</div></main>
+
+<footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer>
+<div class="toast" data-toast></div>
+<script src="club-pages.js"></script>
+<script src="desafio-api.js"></script>
+<script>
+const feedEl = document.querySelector("[data-feed]");
+const campoPost = document.querySelector("[data-novo-post]");
+const botaoPublicar = document.querySelector("[data-btn-publicar]");
+let euId = null;
+
+function iniciais(nome) {
+  const p = (nome || "").trim().split(/\s+/);
+  return ((p[0]?.[0] || "") + (p[1]?.[0] || "")).toUpperCase() || "··";
+}
+
+function escapar(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
+function quando(iso) {
+  const data = new Date(iso);
+  const minutos = Math.round((Date.now() - data) / 60000);
+  if (minutos < 1) return "agora";
+  if (minutos < 60) return `${minutos} min`;
+  if (minutos < 1440) return `${Math.round(minutos / 60)} h`;
+  return data.toLocaleDateString("pt-BR");
+}
+
+function renderFeed(posts) {
+  if (!posts.length) {
+    feedEl.innerHTML = '<section class="feed-empty card"><div><span class="empty-icon">○</span><strong>Nenhuma publicação ainda</strong><p>Seja a primeira a compartilhar sua jornada.</p></div></section>';
+    return;
+  }
+
+  feedEl.innerHTML = posts.map((post) => {
+    const meuPost = post.autor_id === euId;
+    const jaComentei = post.comentarios.some((c) => c.autor_id === euId);
+    return `<article class="post card">
+      <div class="post-head">
+        <span class="avatar">${iniciais(post.autor)}</span>
+        <span class="post-author"><strong>${escapar(post.autor)}</strong><span>${meuPost ? "você" : "participante"}</span></span>
+        <span class="post-time">${quando(post.quando)}</span>
+      </div>
+      <p class="post-copy">${escapar(post.texto)}</p>
+      ${post.comentarios.length ? `<div class="comentarios">${post.comentarios.map((c) => `
+        <div class="comentario"><span class="avatar">${iniciais(c.autor)}</span><div><strong>${escapar(c.autor)}</strong><p>${escapar(c.texto)}</p></div></div>
+      `).join("")}</div>` : ""}
+      ${meuPost
+        ? ""
+        : jaComentei
+          ? '<p class="ja-comentou">Você já comentou aqui.</p>'
+          : `<form class="form-comentario" data-form-comentario="${post.id}">
+               <input type="text" placeholder="Escreva um comentário (vale 2 pontos)" required>
+               <button type="submit">Enviar</button>
+             </form>`}
+    </article>`;
+  }).join("");
+
+  feedEl.querySelectorAll("[data-form-comentario]").forEach((form) => {
+    form.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      const input = form.querySelector("input");
+      const botao = form.querySelector("button");
+      const texto = input.value.trim();
+      if (!texto) return;
+      botao.disabled = true;
+      try {
+        const resposta = await api(`/posts/${form.dataset.formComentario}/comentar/`, {
+          metodo: "POST",
+          corpo: { texto },
+        });
+        showToast(resposta.ja_comentado ? "Você já tinha comentado nesse post." : "Comentário enviado! +2 pontos.");
+        await carregar();
+      } catch (erro) {
+        showToast(erro.message);
+        botao.disabled = false;
+      }
+    });
+  });
+}
+
+campoPost.addEventListener("input", () => {
+  botaoPublicar.disabled = campoPost.value.trim().length < 3;
+});
+
+botaoPublicar.addEventListener("click", async () => {
+  const texto = campoPost.value.trim();
+  if (texto.length < 3) return;
+  botaoPublicar.disabled = true;
+  botaoPublicar.textContent = "Publicando...";
+  try {
+    await api("/posts/", { metodo: "POST", corpo: { texto } });
+    campoPost.value = "";
+    showToast("Publicado! +5 pontos.");
+    await carregar();
+  } catch (erro) {
+    showToast(erro.message);
+  } finally {
+    botaoPublicar.textContent = "Publicar";
+    botaoPublicar.disabled = campoPost.value.trim().length < 3;
+  }
+});
+
+async function carregar() {
+  const estado = await api("/estado/");
+  euId = estado.participante.id;
+  const nome = estado.participante.nome;
+  document.querySelector("[data-nome]").textContent = nome.split(" ")[0];
+  document.querySelectorAll("[data-avatar]").forEach((el) => { el.textContent = iniciais(nome); });
+  document.querySelector("[data-pontos]").textContent = `${estado.participante.pontos} pts`;
+  renderFeed(estado.feed);
+}
+
+if (exigirLogin()) {
+  carregar().catch((erro) => {
+    feedEl.innerHTML = `<section class="feed-empty card"><div><strong>${erro.message}</strong></div></section>`;
+  });
+}
+</script>
+</body></html>

@@ -1,5 +1,89 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Indicações: The Creators Club</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar">LA</span><strong>Layfe</strong><span class="chevron"></span></span><span class="divider"></span><a class="nav-link" href="dashboard-community.html">Comunidade</a><a class="nav-link is-active" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a href="dashboard-missions.html">Missões</a></div></header>
-<main class="page"><a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a><header class="page-title"><span class="eyebrow">Sua rede</span><h1>Indicações</h1><p>Convide creators do seu ciclo para viverem a experiência do The Creators Club.</p></header>
-<section class="referral-hero"><div class="referral-head"><div><span class="eyebrow">Seu código pessoal</span><h2>Código de Indicação</h2><p>Compartilhe seu código com creators parceiras. Ao usá-lo no cadastro, elas serão vinculadas à sua rede.</p></div><span class="counter">0 indicações</span></div><div class="code-box"><div><small>Código exclusivo</small><strong class="code" data-code>·</strong></div><button class="copy-button" data-copy disabled>▣ Copiar Código</button></div></section>
-<div class="connections-head"><h2>Creators Conectadas</h2><span>Total: 0</span></div><section class="empty card"><div><span class="empty-icon">♧</span><strong>Nenhuma indicação registrada ainda</strong><p>Compartilhe seu código com outras creators para acompanhar suas novas conexões aqui.</p></div></section></main><footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer><div class="toast" data-toast></div><script src="club-pages.js"></script></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Indicações: The Creators Club</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css">
+<style>
+.link-box{position:relative;z-index:1;margin-top:14px;padding:14px 18px;border:1px solid rgba(255,255,255,.18);border-radius:15px;background:rgba(0,0,0,.15);word-break:break-all;font-size:12px;color:#cfe2ff}
+.indicadas{display:grid;gap:10px;margin-top:16px}
+.indicada{display:grid;grid-template-columns:34px 1fr;gap:11px;align-items:center;padding:14px 16px}
+.indicada .avatar{width:34px;height:34px;font-size:11px}
+.indicada strong{font-size:12.5px}
+</style>
+</head><body>
+<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar" data-avatar>··</span><strong data-nome>...</strong></span><span class="divider"></span><a class="nav-link" href="dashboard-community.html">Comunidade</a><a class="nav-link is-active" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a href="dashboard-missions.html">Missões</a></div></header>
+
+<main class="page">
+  <a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a>
+  <header class="page-title"><span class="eyebrow">Sua rede</span><h1>Indicações</h1><p>Convide creators do seu ciclo para viverem a experiência do desafio junto com você.</p></header>
+
+  <section class="referral-hero">
+    <div class="referral-head">
+      <div>
+        <span class="eyebrow">Seu link de convite</span>
+        <h2>Chame quem também quer postar mais</h2>
+        <p>Quem entrar pelo seu link fica registrada como sua indicação.</p>
+      </div>
+      <span class="counter" data-total>0 indicações</span>
+    </div>
+    <div class="code-box">
+      <div><small>Seu código</small><strong class="code" data-codigo>·</strong></div>
+      <button class="copy-button" data-copiar-link>▣ Copiar link</button>
+    </div>
+    <p class="link-box" data-link>...</p>
+  </section>
+
+  <div class="connections-head"><h2>Quem já entrou pelo seu convite</h2><span data-contagem></span></div>
+  <section data-lista>
+    <div class="empty card"><div><span class="empty-icon">○</span><strong>Nenhuma indicação ainda</strong><p>Compartilhe seu link para acompanhar aqui quem entrou pelo seu convite.</p></div></div>
+  </section>
+</main>
+
+<footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer>
+<div class="toast" data-toast></div>
+<script src="club-pages.js"></script>
+<script src="desafio-api.js"></script>
+<script>
+function iniciais(nome) {
+  const p = (nome || "").trim().split(/\s+/);
+  return ((p[0]?.[0] || "") + (p[1]?.[0] || "")).toUpperCase() || "··";
+}
+function escapar(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
+let linkConvite = "";
+
+document.querySelector("[data-copiar-link]").addEventListener("click", async () => {
+  if (!linkConvite) return;
+  try { await navigator.clipboard.writeText(linkConvite); } catch {}
+  showToast("Link copiado!");
+});
+
+async function carregar() {
+  const estado = await api("/estado/");
+  const nome = estado.participante.nome;
+  const indicacoes = estado.indicacoes;
+
+  document.querySelector("[data-nome]").textContent = nome.split(" ")[0];
+  document.querySelector("[data-avatar]").textContent = iniciais(nome);
+  document.querySelector("[data-codigo]").textContent = indicacoes.codigo;
+
+  linkConvite = `${location.origin}${location.pathname.replace("dashboard-referrals.html", "login.html")}?ref=${indicacoes.codigo}`;
+  document.querySelector("[data-link]").textContent = linkConvite;
+
+  const total = indicacoes.total;
+  document.querySelector("[data-total]").textContent = `${total} ${total === 1 ? "indicação" : "indicações"}`;
+  document.querySelector("[data-contagem]").textContent = total ? `${total} no total` : "";
+
+  const lista = document.querySelector("[data-lista]");
+  lista.innerHTML = indicacoes.nomes.length
+    ? `<div class="indicadas">${indicacoes.nomes.map((n) => `
+        <article class="indicada card"><span class="avatar">${iniciais(n)}</span><strong>${escapar(n)}</strong></article>
+      `).join("")}</div>`
+    : '<div class="empty card"><div><span class="empty-icon">○</span><strong>Nenhuma indicação ainda</strong><p>Compartilhe seu link para acompanhar aqui quem entrou pelo seu convite.</p></div></div>';
+}
+
+if (exigirLogin()) {
+  carregar().catch((erro) => showToast(erro.message));
+}
+</script>
+</body></html>

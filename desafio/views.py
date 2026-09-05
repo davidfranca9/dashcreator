@@ -133,8 +133,13 @@ def cadastro(request: HttpRequest) -> JsonResponse:
             }
         )
 
+    indicada_por = None
+    codigo_indicacao = (dados.get("ref") or "").strip().upper()
+    if codigo_indicacao:
+        indicada_por = Participante.objects.filter(codigo_acesso=codigo_indicacao).first()
+
     participante = Participante.objects.create(
-        nome=nome, email=email, whatsapp=whatsapp, instagram=instagram
+        nome=nome, email=email, whatsapp=whatsapp, instagram=instagram, indicada_por=indicada_por
     )
     _enviar_codigo(participante)
     return _json(
@@ -202,6 +207,11 @@ def estado(request: HttpRequest) -> JsonResponse:
             "extrato": scoring.extrato(participante),
             "feed": _feed(),
             "checkin_feito_hoje": participante.checkins.filter(data=hoje).exists(),
+            "indicacoes": {
+                "codigo": participante.codigo_acesso,
+                "total": participante.indicadas.count(),
+                "nomes": list(participante.indicadas.values_list("nome", flat=True)[:20]),
+            },
         }
     )
 
@@ -220,7 +230,12 @@ def _feed() -> list[dict]:
             "texto": post.texto,
             "quando": post.created_at.isoformat(),
             "comentarios": [
-                {"autor": c.participante.nome, "texto": c.texto, "quando": c.created_at.isoformat()}
+                {
+                    "autor": c.participante.nome,
+                    "autor_id": c.participante_id,
+                    "texto": c.texto,
+                    "quando": c.created_at.isoformat(),
+                }
                 for c in post.comentarios.all()
             ],
         }
