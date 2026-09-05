@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "studio",
     "tcc_portal",
+    "desafio",
 ]
 
 
