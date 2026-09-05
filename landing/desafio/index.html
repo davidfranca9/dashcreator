@@ -168,8 +168,8 @@
       <a href="index.html" aria-label="The Creators Club"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a>
       <nav class="nav" aria-label="Navegação principal">
         <button class="profile" id="profileButton" type="button" aria-expanded="false">
-          <span class="avatar">LA</span><strong>Layfe</strong><span class="chevron"></span>
-          <span class="profile-menu" id="profileMenu"><a href="#">Meu perfil</a><a href="#">Configurações</a><a href="#">Sair</a></span>
+          <span class="avatar" data-avatar>··</span><strong data-nome>...</strong><span class="chevron"></span>
+          <span class="profile-menu" id="profileMenu"><a href="dashboard-missions.html">Minhas missões</a><a href="#" data-sair>Sair</a></span>
         </button>
         <span class="divider"></span>
         <a class="nav-link" href="dashboard-community.html">Comunidade</a>
@@ -187,13 +187,13 @@
       <span class="corner corner--tl"></span><span class="corner corner--br"></span>
       <div>
         <span class="eyebrow">Jornada Creator</span>
-        <h1 id="welcome-title">Olá, Layfe.</h1>
+        <h1 id="welcome-title">Olá.</h1>
         <p class="intro">Seu avanço na jornada para transformar criatividade em influência, conexão e oportunidades.</p>
       </div>
       <div class="score">
         <div class="score-row"><span class="score-value" id="scorePercent">0%</span><span class="score-goal">/ 100%</span></div>
         <strong id="scoreCount">0 de 7 missões concluídas</strong>
-        <small>Sua posição: ·<br>(ranking atualizado hoje)</small>
+        <small><span data-pontos>0</span> pontos<br><span data-posicao>sem posição ainda</span></small>
       </div>
       <div class="progress-line">
         <div class="bar"><div class="bar-fill" id="progressBarFill"></div></div>
@@ -215,14 +215,14 @@
 
       <div class="podium-wrap">
         <div class="podium">
-          <div class="place place--2"><div class="winner"><strong>2º Lugar</strong><span class="winner-avatar">·</span></div><span class="rank">2</span></div>
-          <div class="place place--1"><div class="winner"><strong>1º Lugar</strong><span class="winner-avatar">·</span></div><span class="rank">1</span></div>
-          <div class="place place--3"><div class="winner"><strong>3º Lugar</strong><span class="winner-avatar">·</span></div><span class="rank">3</span></div>
+          <div class="place place--2"><div class="winner"><strong data-podio-nome="2">2º Lugar</strong><span class="winner-avatar" data-podio-avatar="2">·</span></div><span class="rank">2</span></div>
+          <div class="place place--1"><div class="winner"><strong data-podio-nome="1">1º Lugar</strong><span class="winner-avatar" data-podio-avatar="1">·</span></div><span class="rank">1</span></div>
+          <div class="place place--3"><div class="winner"><strong data-podio-nome="3">3º Lugar</strong><span class="winner-avatar" data-podio-avatar="3">·</span></div><span class="rank">3</span></div>
         </div>
       </div>
       <button class="ranking-button" id="rankingButton" type="button" aria-expanded="false">Top 10 da comunidade <span class="chevron"></span></button>
-      <div class="ranking-list" id="rankingList">
-        <div class="ranking-row"><span></span><span>Nenhuma creator no ranking ainda.</span><span></span></div>
+      <div class="ranking-list" id="rankingList" data-ranking-list>
+        <div class="ranking-row"><span></span><span>Carregando ranking...</span><span></span></div>
       </div>
     </section>
 
@@ -232,14 +232,15 @@
         <h2 id="activities-title" class="activity-head">Atividades</h2>
         <p>Movimentações das participantes do The Creators Club em tempo real.</p>
       </header>
-      <div class="activity-list">
-        <article class="activity"><span class="activity-icon">○</span><span>Nenhuma atividade registrada ainda.</span><time></time></article>
+      <div class="activity-list" data-atividades>
+        <article class="activity"><span class="activity-icon">○</span><span>Carregando atividades...</span><time></time></article>
       </div>
     </section>
   </main>
 
   <footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Creator connects creator.</span></div></footer>
 
+  <script src="desafio-api.js"></script>
   <script>
     const profileButton = document.querySelector('#profileButton');
     const profileMenu = document.querySelector('#profileMenu');
@@ -269,16 +270,73 @@
       }
     });
 
-    // Progresso das missões: mesmo localStorage usado em dashboard-missions.html
-    (function () {
-      const TOTAL = 7;
-      let done = [];
-      try { done = JSON.parse(localStorage.getItem('tcc_desafio_missoes_concluidas') || '[]'); } catch {}
-      const percent = Math.round((done.length / TOTAL) * 100);
-      document.querySelector('#scorePercent').textContent = percent + '%';
-      document.querySelector('#scoreCount').textContent = `${done.length} de ${TOTAL} missões concluídas`;
-      document.querySelector('#progressBarFill').style.width = percent + '%';
-    })();
+    document.querySelector('[data-sair]').addEventListener('click', (evento) => {
+      evento.preventDefault();
+      Auth.sair();
+    });
+
+    function iniciais(nome) {
+      const partes = (nome || '').trim().split(/\s+/);
+      return ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || '··';
+    }
+
+    async function carregarDashboard() {
+      if (!exigirLogin()) return;
+
+      // Check-in do dia: entrar na plataforma ja vale ponto, entao registra
+      // antes de buscar o estado pra o total ja vir atualizado.
+      try { await api('/checkin/', { metodo: 'POST' }); } catch {}
+
+      const estado = await api('/estado/');
+      const { participante, missoes, ranking, feed } = estado;
+
+      document.querySelector('[data-nome]').textContent = participante.nome.split(' ')[0];
+      document.querySelector('[data-avatar]').textContent = iniciais(participante.nome);
+      document.querySelector('#welcome-title').textContent = `Olá, ${participante.nome.split(' ')[0]}.`;
+      document.querySelector('[data-pontos]').textContent = participante.pontos;
+
+      const concluidas = missoes.filter((m) => m.concluida).length;
+      const percentual = Math.round((concluidas / missoes.length) * 100);
+      document.querySelector('#scorePercent').textContent = percentual + '%';
+      document.querySelector('#scoreCount').textContent = `${concluidas} de ${missoes.length} missões concluídas`;
+      document.querySelector('#progressBarFill').style.width = percentual + '%';
+
+      const minhaPosicao = ranking.find((linha) => linha.participante_id === participante.id);
+      document.querySelector('[data-posicao]').textContent = minhaPosicao
+        ? `${minhaPosicao.posicao}º lugar no ranking`
+        : 'sem posição ainda';
+
+      // Pódio
+      [1, 2, 3].forEach((posicao) => {
+        const linha = ranking[posicao - 1];
+        const nomeEl = document.querySelector(`[data-podio-nome="${posicao}"]`);
+        const avatarEl = document.querySelector(`[data-podio-avatar="${posicao}"]`);
+        if (linha) {
+          nomeEl.textContent = linha.nome.split(' ')[0];
+          avatarEl.textContent = iniciais(linha.nome);
+        } else {
+          nomeEl.textContent = `${posicao}º Lugar`;
+          avatarEl.textContent = '·';
+        }
+      });
+
+      // Top 10
+      const lista = document.querySelector('[data-ranking-list]');
+      lista.innerHTML = ranking.length
+        ? ranking.map((linha) => `<div class="ranking-row"><span>${linha.posicao}º</span><span>${linha.nome}</span><span>${linha.total} pts</span></div>`).join('')
+        : '<div class="ranking-row"><span></span><span>Nenhuma creator no ranking ainda.</span><span></span></div>';
+
+      // Atividades recentes da comunidade
+      const atividades = document.querySelector('[data-atividades]');
+      atividades.innerHTML = feed.length
+        ? feed.slice(0, 6).map((post) => `<article class="activity"><span class="activity-icon">○</span><span><strong>${post.autor.split(' ')[0]}</strong> publicou na comunidade</span><time>${new Date(post.quando).toLocaleDateString('pt-BR')}</time></article>`).join('')
+        : '<article class="activity"><span class="activity-icon">○</span><span>Nenhuma atividade registrada ainda.</span><time></time></article>';
+    }
+
+    carregarDashboard().catch((erro) => {
+      document.querySelector('[data-ranking-list]').innerHTML =
+        `<div class="ranking-row"><span></span><span>${erro.message}</span><span></span></div>`;
+    });
   </script>
 </body>
 </html>

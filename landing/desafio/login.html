@@ -1,0 +1,181 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Entrar: Desafio Postaria Mais</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css">
+<style>
+.acesso{min-height:calc(100vh - 72px);display:grid;place-items:center;padding:40px 20px}
+.acesso-card{width:min(440px,100%);padding:38px;position:relative}
+.acesso-card .eyebrow{justify-content:center}
+.acesso-card h1{margin:0 0 6px;font-size:27px;letter-spacing:-.04em;text-align:center}
+.acesso-card .sub{margin:0 0 26px;color:var(--muted);font-size:12.5px;line-height:1.6;text-align:center}
+.campo{margin-bottom:13px}
+.campo label{display:block;margin-bottom:6px;font-size:11px;font-weight:700;color:var(--muted)}
+.campo input{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:13px;outline:none;background:var(--bg);color:var(--ink);font-size:13px}
+.campo input:focus{border-color:var(--blue);background:#fff}
+.acesso button.principal{width:100%;margin-top:8px;padding:14px;border:0;border-radius:999px;color:#fff;background:var(--blue);font-size:13px;font-weight:750}
+.acesso button.principal:disabled{opacity:.5;cursor:not-allowed}
+.alternar{margin-top:20px;text-align:center;font-size:12px;color:var(--muted)}
+.alternar button{border:0;background:none;color:var(--blue);font-size:12px;font-weight:700;padding:0}
+.aviso{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:12px;line-height:1.5}
+.aviso.erro{background:rgba(200,50,50,.08);color:#a92c2c}
+.aviso.ok{background:rgba(19,142,105,.1);color:var(--green)}
+.aviso[hidden]{display:none}
+.codigo-destaque{margin-top:16px;padding:16px;border:1px dashed var(--blue);border-radius:14px;text-align:center;background:var(--soft)}
+.codigo-destaque small{display:block;margin-bottom:6px;font-size:10px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.codigo-destaque strong{font-size:22px;letter-spacing:.14em}
+@media(max-width:680px){.acesso-card{padding:26px 22px}}
+</style>
+</head><body>
+<header class="topbar"><div class="topbar-inner"><img class="brand" src="assets/logo.png" alt="The Creators Club"></div></header>
+
+<main class="acesso">
+  <section class="acesso-card card">
+    <span class="corner corner--tl" style="position:absolute;width:22px;height:22px;left:17px;top:17px;border-left:2px solid var(--blue);border-top:2px solid var(--blue)"></span>
+    <span class="eyebrow">Desafio Postaria Mais</span>
+
+    <div data-modo="cadastro">
+      <h1>Garanta sua vaga</h1>
+      <p class="sub">Preencha para entrar no desafio. Você recebe um código de acesso por email para voltar quando quiser.</p>
+      <form data-form-cadastro>
+        <div class="campo"><label for="nome">Nome completo</label><input id="nome" type="text" autocomplete="name" required></div>
+        <div class="campo"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required></div>
+        <div class="campo"><label for="whatsapp">WhatsApp</label><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(00) 00000-0000"></div>
+        <div class="campo"><label for="instagram">Instagram (opcional)</label><input id="instagram" type="text" placeholder="@seuperfil"></div>
+        <button class="principal" type="submit">Entrar no desafio</button>
+      </form>
+      <p class="alternar">Já se inscreveu? <button type="button" data-ir-login>Entrar com meu código</button></p>
+    </div>
+
+    <div data-modo="login" hidden>
+      <h1>Entrar</h1>
+      <p class="sub">Use o email da inscrição e o código que enviamos para você.</p>
+      <form data-form-login>
+        <div class="campo"><label for="login-email">Email</label><input id="login-email" type="email" autocomplete="email" required></div>
+        <div class="campo"><label for="login-codigo">Código de acesso</label><input id="login-codigo" type="text" placeholder="DES-XXXXX" style="text-transform:uppercase" required></div>
+        <button class="principal" type="submit">Entrar</button>
+      </form>
+      <p class="alternar"><button type="button" data-reenviar>Perdi meu código</button> · <button type="button" data-ir-cadastro>Ainda não me inscrevi</button></p>
+    </div>
+
+    <div class="aviso" data-aviso hidden></div>
+    <div class="codigo-destaque" data-codigo hidden><small>Seu código de acesso</small><strong data-codigo-valor></strong></div>
+  </section>
+</main>
+
+<script src="desafio-api.js"></script>
+<script>
+const painelCadastro = document.querySelector('[data-modo="cadastro"]');
+const painelLogin = document.querySelector('[data-modo="login"]');
+const aviso = document.querySelector('[data-aviso]');
+const blocoCodigo = document.querySelector('[data-codigo]');
+
+function mostrarAviso(texto, tipo = "erro") {
+  aviso.textContent = texto;
+  aviso.className = `aviso ${tipo}`;
+  aviso.hidden = false;
+}
+function limparAviso() { aviso.hidden = true; blocoCodigo.hidden = true; }
+
+function trocarModo(modo) {
+  limparAviso();
+  painelCadastro.hidden = modo !== "cadastro";
+  painelLogin.hidden = modo !== "login";
+}
+document.querySelector('[data-ir-login]').addEventListener('click', () => trocarModo("login"));
+document.querySelector('[data-ir-cadastro]').addEventListener('click', () => trocarModo("cadastro"));
+
+// Quem ja tem sessao nao precisa passar por aqui.
+if (Auth.token) location.href = "index.html";
+
+function formatarWhatsapp(valor) {
+  const d = valor.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2) return d;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+document.querySelector('#whatsapp').addEventListener('input', (e) => {
+  e.target.value = formatarWhatsapp(e.target.value);
+});
+
+async function comBotao(form, acao) {
+  const botao = form.querySelector('button[type="submit"]');
+  const textoOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = "Aguarde...";
+  try {
+    await acao();
+  } catch (erro) {
+    mostrarAviso(erro.message);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
+document.querySelector('[data-form-cadastro]').addEventListener('submit', (evento) => {
+  evento.preventDefault();
+  limparAviso();
+  const form = evento.target;
+  comBotao(form, async () => {
+    const dados = await api("/cadastro/", {
+      metodo: "POST",
+      publico: true,
+      corpo: {
+        nome: document.querySelector('#nome').value.trim(),
+        email: document.querySelector('#email').value.trim(),
+        whatsapp: document.querySelector('#whatsapp').value.trim(),
+        instagram: document.querySelector('#instagram').value.trim(),
+      },
+    });
+
+    if (dados.ja_inscrita) {
+      mostrarAviso(dados.mensagem, "ok");
+      trocarModoDepois();
+      return;
+    }
+
+    Auth.salvar(dados.token, dados.participante);
+    // Mostra o codigo antes de seguir: e' com ele que ela volta depois.
+    document.querySelector('[data-codigo-valor]').textContent = dados.participante.codigo_acesso;
+    blocoCodigo.hidden = false;
+    mostrarAviso("Inscrição confirmada! Anote seu código, ele também foi para o seu email.", "ok");
+    setTimeout(() => { location.href = "index.html"; }, 2600);
+  });
+});
+
+function trocarModoDepois() {
+  setTimeout(() => {
+    const email = document.querySelector('#email').value.trim();
+    trocarModo("login");
+    document.querySelector('#login-email').value = email;
+  }, 1800);
+}
+
+document.querySelector('[data-form-login]').addEventListener('submit', (evento) => {
+  evento.preventDefault();
+  limparAviso();
+  const form = evento.target;
+  comBotao(form, async () => {
+    const dados = await api("/login/", {
+      metodo: "POST",
+      publico: true,
+      corpo: {
+        email: document.querySelector('#login-email').value.trim(),
+        codigo: document.querySelector('#login-codigo').value.trim(),
+      },
+    });
+    Auth.salvar(dados.token, dados.participante);
+    location.href = "index.html";
+  });
+});
+
+document.querySelector('[data-reenviar]').addEventListener('click', async () => {
+  limparAviso();
+  const email = document.querySelector('#login-email').value.trim();
+  if (!email) { mostrarAviso("Escreva seu email primeiro."); return; }
+  try {
+    const dados = await api("/reenviar-codigo/", { metodo: "POST", publico: true, corpo: { email } });
+    mostrarAviso(dados.mensagem, "ok");
+  } catch (erro) {
+    mostrarAviso(erro.message);
+  }
+});
+</script>
+</body></html>

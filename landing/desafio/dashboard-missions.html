@@ -31,6 +31,11 @@
 .sheet .sub-block strong{display:block;font-size:12.5px;margin-bottom:4px}
 .sheet .refs a{display:block;margin-top:6px;font-size:12px;color:var(--blue);word-break:break-all}
 .sheet .refs span{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+.campo-comprovacao{margin-top:18px}
+.campo-comprovacao label{display:block;margin-bottom:6px;font-size:11px;font-weight:700;color:var(--muted)}
+.campo-comprovacao textarea{width:100%;min-height:74px;resize:vertical;padding:12px 14px;border:1px solid var(--line);border-radius:12px;outline:none;background:var(--bg);color:var(--ink);font-size:12.5px;font-family:inherit}
+.campo-comprovacao textarea:focus{border-color:var(--blue);background:#fff}
+.campo-comprovacao small{display:block;margin-top:6px;color:var(--muted);font-size:10.5px}
 .sheet-actions{margin-top:26px;display:flex;gap:10px}
 .sheet-actions button{flex:1;padding:13px;border:0;border-radius:999px;font-size:12px;font-weight:750;cursor:pointer}
 .mark-done{color:#fff;background:var(--blue)}
@@ -38,13 +43,13 @@
 @media(max-width:680px){.mission-row{grid-template-columns:38px 1fr}.mission-status{grid-column:1/-1;justify-self:start}.sheet{padding:24px}.missions-summary{flex-direction:column;align-items:flex-start;gap:10px}}
 </style>
 </head><body>
-<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar">LA</span><strong>Layfe</strong><span class="chevron"></span></span><span class="divider"></span><a class="nav-link" href="dashboard-community.html">Comunidade</a><a class="nav-link" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a class="nav-link is-active" href="dashboard-missions.html">Missões</a></div></header>
+<header class="topbar"><div class="topbar-inner"><a href="index.html"><img class="brand" src="assets/logo.png" alt="The Creators Club"></a><nav class="nav"><span class="profile"><span class="avatar" data-avatar>··</span><strong data-nome>...</strong><span class="chevron"></span></span><span class="divider"></span><a class="nav-link" href="dashboard-community.html">Comunidade</a><a class="nav-link" href="dashboard-referrals.html">Indicações</a><button class="mobile-menu" data-mobile-menu aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></nav></div><div class="mobile-panel" data-mobile-panel><a href="index.html">Dashboard</a><a href="dashboard-community.html">Comunidade</a><a href="dashboard-referrals.html">Indicações</a><a class="nav-link is-active" href="dashboard-missions.html">Missões</a></div></header>
 
 <main class="page"><div class="missions-shell">
   <a class="back" href="index.html"><span>←</span> Voltar ao Dashboard</a>
   <header class="page-title"><span class="eyebrow">Jornada Creator</span><h1>Missões</h1><p>Uma missão nova libera a cada dia do desafio. Complete no mesmo dia pra garantir os pontos extras de prazo.</p></header>
 
-  <section class="missions-summary card"><div><strong data-summary-count>0 de 7</strong><span>missões concluídas</span></div><span data-summary-hint style="color:var(--muted);font-size:11px;text-align:right">Marcações salvas só neste navegador (protótipo)</span></section>
+  <section class="missions-summary card"><div><strong data-summary-count>0 de 7</strong><span>missões concluídas</span></div><span data-summary-hint style="color:var(--muted);font-size:11px;text-align:right">carregando...</span></section>
 
   <section class="missions-list" data-missions-list></section>
 </div></main>
@@ -55,6 +60,7 @@
 <div class="toast" data-toast></div>
 
 <script src="club-pages.js"></script>
+<script src="desafio-api.js"></script>
 <script>
 const MISSIONS = [
   {
@@ -235,54 +241,56 @@ const MISSIONS = [
   },
 ];
 
-const STORAGE_KEY = "tcc_desafio_missoes_concluidas";
-function getDone() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-}
-function setDone(ids) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)); } catch {}
-}
-function isUnlocked(mission) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return today >= new Date(mission.date + "T00:00:00");
-}
+/* O conteudo de cada missao (objetivo, passos, referencias) vive aqui no
+   frontend; o backend guarda so o progresso e a data de liberacao. Os dois
+   sao casados pelo numero do dia. */
 
 const listEl = document.querySelector("[data-missions-list]");
 const overlay = document.querySelector("[data-overlay]");
 const sheet = document.querySelector("[data-sheet]");
 const summaryCount = document.querySelector("[data-summary-count]");
+const summaryHint = document.querySelector("[data-summary-hint]");
+
+let estadoMissoes = [];  // vem do servidor: liberada, concluida, comprovacao
+
+function conteudoDoDia(dia) {
+  return MISSIONS.find((m) => m.id === dia);
+}
 
 function renderList() {
-  const done = getDone();
-  summaryCount.textContent = `${done.length} de ${MISSIONS.length}`;
-  listEl.innerHTML = MISSIONS.map(m => {
-    const unlocked = isUnlocked(m);
-    const finished = done.includes(m.id);
-    const stateClass = finished ? "is-done" : unlocked ? "" : "is-locked";
-    const statusClass = finished ? "done" : unlocked ? "available" : "locked";
-    const statusLabel = finished ? "Concluída" : unlocked ? "Disponível" : "Bloqueada";
-    return `<article class="mission-row card ${stateClass}" data-mission-row="${m.id}" role="button" tabindex="0">
-      <span class="mission-num">${finished ? "✓" : String(m.id).padStart(2, "0")}</span>
-      <span class="mission-info"><span>Dia ${String(m.id).padStart(2, "0")} · ${m.dateLabel}</span><strong>Missão ${m.title}</strong></span>
+  const concluidas = estadoMissoes.filter((m) => m.concluida).length;
+  summaryCount.textContent = `${concluidas} de ${estadoMissoes.length}`;
+
+  listEl.innerHTML = estadoMissoes.map((m) => {
+    const conteudo = conteudoDoDia(m.dia) || {};
+    const stateClass = m.concluida ? "is-done" : m.liberada ? "" : "is-locked";
+    const statusClass = m.concluida ? "done" : m.liberada ? "available" : "locked";
+    const statusLabel = m.concluida ? "Concluída" : m.liberada ? "Disponível" : "Bloqueada";
+    return `<article class="mission-row card ${stateClass}" data-mission-row="${m.dia}" role="button" tabindex="0">
+      <span class="mission-num">${m.concluida ? "✓" : String(m.dia).padStart(2, "0")}</span>
+      <span class="mission-info"><span>Dia ${String(m.dia).padStart(2, "0")} · ${conteudo.dateLabel || ""}</span><strong>Missão ${m.titulo}</strong></span>
       <span class="mission-status ${statusClass}">${statusLabel}</span>
     </article>`;
   }).join("");
 
-  listEl.querySelectorAll("[data-mission-row]").forEach(row => {
+  listEl.querySelectorAll("[data-mission-row]").forEach((row) => {
     row.addEventListener("click", () => {
-      const id = Number(row.dataset.missionRow);
-      const mission = MISSIONS.find(m => m.id === id);
-      if (!isUnlocked(mission)) {
-        showToast("Essa missão ainda está bloqueada. Ela libera no dia " + mission.dateLabel + ".");
+      const dia = Number(row.dataset.missionRow);
+      const missao = estadoMissoes.find((m) => m.dia === dia);
+      if (!missao.liberada) {
+        const conteudo = conteudoDoDia(dia) || {};
+        showToast(`Essa missão libera no dia ${conteudo.dateLabel || ""}.`);
         return;
       }
-      openMission(mission);
+      openMission(missao);
     });
   });
 }
 
-function openMission(m) {
-  const done = getDone().includes(m.id);
+function openMission(missao) {
+  const m = conteudoDoDia(missao.dia);
+  if (!m) return;
+
   sheet.innerHTML = `
     <button class="sheet-close" data-sheet-close aria-label="Fechar">×</button>
     <span class="eyebrow">Dia ${String(m.id).padStart(2, "0")} · ${m.dateLabel}</span>
@@ -296,29 +304,70 @@ function openMission(m) {
     <p>${m.suaMissao}</p>
     <h3>Comprove que você concluiu</h3>
     <p>${m.comprovar}</p>
+    <div class="campo-comprovacao">
+      <label for="comprovacao">Cole aqui o link ou a descrição da sua comprovação</label>
+      <textarea id="comprovacao" data-comprovacao placeholder="Ex: https://instagram.com/p/...">${missao.comprovacao || ""}</textarea>
+      <small>Enviar a comprovação vale 5 pontos extras.</small>
+    </div>
     <h3>Critério de conclusão</h3>
     <p>${m.criterio}</p>
     <div class="sheet-actions">
-      <button class="mark-done ${done ? "is-done" : ""}" data-mark-done>${done ? "Missão concluída ✓" : "Marcar como concluída"}</button>
+      <button class="mark-done ${missao.concluida ? "is-done" : ""}" data-mark-done>
+        ${missao.concluida ? "Atualizar comprovação" : "Concluir missão"}
+      </button>
     </div>
   `;
   overlay.classList.add("is-open");
   sheet.querySelector("[data-sheet-close]").addEventListener("click", closeSheet);
-  sheet.querySelector("[data-mark-done]").addEventListener("click", (e) => {
-    const ids = getDone();
-    const idx = ids.indexOf(m.id);
-    if (idx === -1) { ids.push(m.id); showToast("Missão marcada como concluída!"); }
-    else { ids.splice(idx, 1); showToast("Marcação removida."); }
-    setDone(ids);
-    renderList();
-    e.target.classList.toggle("is-done");
-    e.target.textContent = e.target.classList.contains("is-done") ? "Missão concluída ✓" : "Marcar como concluída";
+
+  sheet.querySelector("[data-mark-done]").addEventListener("click", async (evento) => {
+    const botao = evento.target;
+    const comprovacao = sheet.querySelector("[data-comprovacao]").value.trim();
+    botao.disabled = true;
+    const textoOriginal = botao.textContent;
+    botao.textContent = "Enviando...";
+    try {
+      const resposta = await api(`/missoes/${missao.dia}/concluir/`, {
+        metodo: "POST",
+        corpo: { comprovacao },
+      });
+      showToast(
+        resposta.ja_concluida
+          ? "Comprovação atualizada!"
+          : resposta.no_prazo
+            ? "Missão concluída no prazo! Pontos extras garantidos."
+            : "Missão concluída!"
+      );
+      await carregarMissoes();
+      closeSheet();
+    } catch (erro) {
+      showToast(erro.message);
+      botao.disabled = false;
+      botao.textContent = textoOriginal;
+    }
   });
 }
 
 function closeSheet() { overlay.classList.remove("is-open"); }
 overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSheet(); });
 
-renderList();
+async function carregarMissoes() {
+  const estado = await api("/estado/");
+  estadoMissoes = estado.missoes;
+
+  const nome = estado.participante.nome;
+  const partes = nome.trim().split(/\s+/);
+  document.querySelector("[data-nome]").textContent = partes[0];
+  document.querySelector("[data-avatar]").textContent =
+    ((partes[0]?.[0] || "") + (partes[1]?.[0] || "")).toUpperCase();
+  summaryHint.textContent = `${estado.participante.pontos} pontos acumulados`;
+  renderList();
+}
+
+if (exigirLogin()) {
+  carregarMissoes().catch((erro) => {
+    listEl.innerHTML = `<article class="mission-row card"><span class="mission-info"><strong>${erro.message}</strong></span></article>`;
+  });
+}
 </script>
 </body></html>
