@@ -11,7 +11,8 @@ Atualizado em 05/09/2026.
 
 | O quê | Endereço | Pra quê |
 |---|---|---|
-| **Admin** | `app.thecreatorsclub.com.br/admin/` | Seu painel: alunas, códigos, cupons, inscritas do Desafio, pontos |
+| **Painel do Desafio** | `thecreatorsclub.com.br/desafio/admin.html` | Acompanhar o desafio rodando: ranking, missões, comprovações, mural |
+| **Admin** | `app.thecreatorsclub.com.br/admin/` | Painel técnico: alunas, códigos, cupons, e qualquer registro do sistema |
 | **Cadastro do Dash** | `app.thecreatorsclub.com.br/signup/` | Onde a aluna cria a conta. Precisa de um código que você gera |
 | **Entrada do Desafio** | `thecreatorsclub.com.br/desafio/login.html` | Link público pra divulgar. A participante se inscreve sozinha |
 | **Vendas do Dash** | `thecreatorsclub.com.br/dashcreator/` | Landing e checkout, com o campo de cupom |
@@ -25,14 +26,16 @@ Atualizado em 05/09/2026.
 
 ## 2. Como você entra
 
-1. Abra `app.thecreatorsclub.com.br/admin/`
-2. Usuário `admin`, senha a que você definiu
-3. Dentro tem dois blocos: **STUDIO** (Dash, alunas, códigos, cupons,
-   financeiro) e **DESAFIO** (participantes, missões, pontos, comunidade)
+O mesmo usuário e senha servem nos dois lugares: no painel do Desafio e no
+admin. Usuário `admin`, senha a que você definiu.
+
+- Durante a semana do desafio, use o **painel**: ele foi feito pra acompanhar
+  a competição.
+- Pro resto (alunas, códigos, cupons), use o **admin**.
 
 ### Esqueceu a senha
 
-Não tem "esqueci minha senha" no admin, precisa trocar pelo servidor:
+Não tem "esqueci minha senha", precisa trocar pelo servidor:
 
 ```bash
 ssh dashcreator-coolify
@@ -49,7 +52,47 @@ ID do container: ele muda toda vez que o site publica.
 
 ---
 
-## 3. Cadastrar uma aluna no Dash
+## 3. Painel do Desafio
+
+`thecreatorsclub.com.br/desafio/admin.html`
+
+É a tela pra acompanhar o desafio enquanto ele acontece. Atualiza sozinha a
+cada minuto, e tem um botão **Atualizar** se você não quiser esperar.
+
+Em cima, seis números: inscritas, check-ins de hoje, missões entregues,
+publicações, indicações e desativadas. Embaixo, cinco abas:
+
+**Visão geral.** O ranking completo e um gráfico de movimento por dia, com
+check-ins em azul e missões entregues em preto. É onde você vê se o
+engajamento está subindo ou caindo.
+
+**Participantes.** A lista toda, com busca por nome, email, Instagram ou
+código. Cada linha mostra pontos, missões entregues, check-ins e por quem ela
+foi indicada. Tem o botão **Copiar todos os emails**, pra disparo em massa.
+
+**Missões.** As 7, com barra de progresso (quantas entregaram, quantas no
+prazo, quantas comprovaram) e o campo de data. Mudou a data ali, vale na hora.
+
+**Comprovações.** Tudo que as participantes enviaram, com o link já clicável,
+e a marca de dentro ou fora do prazo. É a aba de conferir entrega.
+
+**Mural.** Os posts e comentários da comunidade, com botão de remover em cada
+um. Só use se precisar moderar.
+
+### Lançar ou tirar pontos
+
+Na aba Participantes, botão **Pontos** na linha da pessoa. Digite o número
+(negativo pra tirar, tipo `-10`) e o motivo. O motivo fica registrado no
+extrato dela junto com a data e a hora.
+
+### Desativar alguém
+
+Botão **Desativar** na mesma linha. Ela sai do ranking e não entra mais no
+portal, mas os pontos e o histórico ficam guardados. Dá pra reativar depois.
+
+---
+
+## 4. Cadastrar uma aluna no Dash
 
 A aluna cria a própria conta, mas só consegue com um código na mão.
 
@@ -83,7 +126,7 @@ de vez, vá em **Usuários** e remova o usuário.
 
 ---
 
-## 4. Inscrições do Desafio Postaria Mais
+## 5. Inscrições do Desafio Postaria Mais
 
 Aqui você não gera nada. A participante entra pelo link, preenche nome, email
 e WhatsApp, e o sistema devolve o código de acesso dela na tela e por email.
@@ -93,23 +136,24 @@ e WhatsApp, e o sistema devolve o código de acesso dela na tela e por email.
 É esse link que vai no story, no direct, na bio. Sem senha, sem código, sem
 depender de você.
 
-### Acompanhar quem se inscreveu
-
-Admin > **DESAFIO > Participantes**. Mostra nome, email, WhatsApp, Instagram,
-o código dela, o total de pontos e a data de inscrição. Clicando no cabeçalho
-da coluna **Pontos** você ordena por pontuação: esse é o seu ranking.
-
 ### Se uma participante perder o código
 
 Ela mesma resolve: na tela de entrada clica em **Entrar com meu código** e
 depois em **Perdi meu código**, digita o email e o sistema reenvia. Se ela
-insistir que não chegou, o código também está visível em **Participantes**.
+insistir que não chegou, o código também está no painel, na aba
+Participantes.
+
+### Adicionar alguém na mão
+
+Admin > **DESAFIO > Participantes > Adicionar**. Preencha nome e email, o
+código é gerado sozinho ao salvar. Atenção: **por esse caminho o email não
+sai**, então copie o código e mande pra pessoa junto com o link de entrada.
 
 ### Link de convite (indicações)
 
 Cada participante tem um link próprio na aba **Indicações** do portal dela, no
 formato `.../desafio/login.html?ref=DES-XXXXX`. Quem entra por ele fica
-registrado como indicação dela.
+registrado como indicação dela, e aparece na coluna **Veio de** do painel.
 
 > **Indicação ainda não vale ponto.** O briefing não definiu quantos, então
 > por enquanto o sistema só registra a rede. Quando você decidir o valor, me
@@ -117,7 +161,7 @@ registrado como indicação dela.
 
 ---
 
-## 5. Pontuação e ranking
+## 6. Pontuação e ranking
 
 O sistema pontua sozinho, você não precisa aprovar nada.
 
@@ -136,30 +180,20 @@ O sistema pontua sozinho, você não precisa aprovar nada.
 Fazendo tudo, os 7 dias no prazo e com comprovação, uma participante chega
 perto de **320 pontos**. Serve de régua pra calibrar prêmio.
 
-### Conferir de onde veio cada ponto
+### Ajustar pontos
 
-Admin > **DESAFIO > Ponto eventos**. Cada linha é um crédito: quem ganhou, por
-qual motivo, quantos pontos e quando. É aqui que você responde quando alguém
-reclamar que o ponto não entrou.
-
-### Dar ou tirar ponto na mão
-
-- **Dar:** em **Ponto eventos** clique em **Adicionar**, escolha a
-  participante, o tipo, os pontos, e escreva qualquer coisa em `referencia`
-  (por exemplo `ajuste-manual-05-09`).
-- **Tirar:** apague a linha, ou crie uma nova com pontos negativos se quiser
-  deixar o rastro do ajuste.
-
-O total e o ranking são a soma dessas linhas, então o ajuste reflete na hora
-no portal da participante.
+O caminho fácil é o painel (seção 3). Se precisar do detalhe, o admin tem o
+extrato completo em **DESAFIO > Ponto eventos**: cada linha é um crédito, com
+quem ganhou, por qual motivo, quantos pontos e quando. É aqui que você
+responde quando alguém reclamar que o ponto não entrou.
 
 > **Por que existe o campo `referencia`.** É ele que impede o sistema de pagar
-> o mesmo ponto duas vezes. Num ajuste manual, use um texto que você não vá
-> repetir, senão o segundo ajuste igual não entra.
+> o mesmo ponto duas vezes. Os ajustes que você faz pelo painel já vêm com uma
+> referência única, então dois lançamentos iguais entram os dois.
 
 ---
 
-## 6. As 7 missões
+## 7. As 7 missões
 
 Uma missão libera por dia. Antes da data ela aparece bloqueada e ninguém
 consegue concluir adiantado.
@@ -176,8 +210,8 @@ consegue concluir adiantado.
 
 ### Adiar ou antecipar o desafio
 
-Admin > **DESAFIO > Missões**. Abra a missão e mude `data liberacao`. Vale na
-hora, sem publicar nada.
+No painel, aba **Missões**, mude o campo de data. Vale na hora, sem publicar
+nada. (Pelo admin também dá: **DESAFIO > Missões**.)
 
 > **Cuidado com o bônus de prazo.** Os 10 pontos de "no prazo" saem de quem
 > concluiu no mesmo dia em que a missão liberou. Se mudar a data depois que o
@@ -187,11 +221,11 @@ hora, sem publicar nada.
 ### Mudar o texto de uma missão
 
 O título fica no admin, mas o texto longo (o passo a passo que a participante
-lê) mora na página. Isso é publicação de site, veja a seção 8.
+lê) mora na página. Isso é publicação de site, veja a seção 9.
 
 ---
 
-## 7. Cupom do checkout
+## 8. Cupom do checkout
 
 O cupom **ORGANIZADASH** já existe e já aparece no checkout do Dash, com **0%
 de desconto**, esperando você decidir o valor.
@@ -217,7 +251,7 @@ funciona: se errar, o cupom existe mas nunca é aceito.
 
 ---
 
-## 8. Publicar alterações
+## 9. Publicar alterações
 
 Dois caminhos, e eles não se misturam. O que muda é onde o arquivo mora.
 
@@ -234,8 +268,9 @@ minutos.
 
 ### Caminho B: mudou uma página do site
 
-Landing do Dash, portal do Desafio, textos das missões. São arquivos estáticos
-e **o push sozinho não sobe**, precisa copiar na mão:
+Landing do Dash, portal do Desafio, painel da organizadora, textos das
+missões. São arquivos estáticos e **o push sozinho não sobe**, precisa copiar
+na mão:
 
 ```bash
 # exemplo com o portal do Desafio
@@ -255,7 +290,7 @@ docker cp /tmp/desafio-front/. $SITE:/usr/share/nginx/html/desafio/
 
 ---
 
-## 9. Quando dá problema
+## 10. Quando dá problema
 
 ### "Publiquei e nada mudou no ar"
 
@@ -274,24 +309,25 @@ journalctl --vacuum-size=200M
 
 Depois de limpar, faça o push de novo.
 
-### "O site abre mas o portal do Desafio dá erro"
+### "O painel abre mas não entra, ou dá erro ao carregar"
 
-O portal é página estática falando com o app Django. Abra
+O painel é página estática falando com o app Django. Abra
 `app.thecreatorsclub.com.br/desafio/api/ranking/` no navegador: se responder um
 JSON, o problema é na página; se não abrir, o problema é o app.
 
 ### "Uma participante diz que fez e não pontuou"
 
 Admin > **Ponto eventos**, filtre pelo nome dela. Você vê exatamente o que o
-sistema registrou. Se o crédito não estiver lá e ela tiver razão, lance na mão
-(seção 5).
+sistema registrou. Se o crédito não estiver lá e ela tiver razão, lance pelo
+painel (seção 3).
 
 ### Coisas que nunca precisam de publicação
 
 - Mudar o desconto ou desligar um cupom
 - Mudar a data de liberação de uma missão
 - Dar, tirar ou conferir pontos
+- Desativar ou reativar uma participante
 - Gerar código de acesso, desativar aluna
 
-Tudo isso é admin e vale na hora. Publicação só entra quando muda texto de
-página ou código.
+Tudo isso é painel ou admin e vale na hora. Publicação só entra quando muda
+texto de página ou código.
