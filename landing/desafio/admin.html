@@ -1,0 +1,716 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Painel da Organizadora: Desafio Postaria Mais</title><meta name="robots" content="noindex,nofollow"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="club-pages.css">
+<style>
+:root{--red:#c22f3d;--red-soft:#fdeced;--amber:#a76400;--amber-soft:#fdf3e2;--green-soft:#e6f5f0}
+/* Precisa do !important: varios blocos aqui definem display proprio, que
+   sozinho vence o display:none padrao do atributo hidden. */
+[hidden]{display:none!important}
+.page{width:min(1180px,calc(100% - 40px))}
+.topbar .selo{padding:7px 14px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-weight:700}
+.topbar .sair{padding:9px 16px;border:1px solid rgba(255,255,255,.23);border-radius:999px;color:#fff;background:transparent;font-size:11px;font-weight:650}
+.topbar .sair:hover{background:rgba(255,255,255,.12)}
+
+/* Entrada */
+.gate{min-height:calc(100vh - 72px);display:grid;place-items:center;padding:40px 20px}
+.gate-card{width:min(400px,100%);padding:36px}
+.gate-card h1{margin:0 0 6px;font-size:24px;letter-spacing:-.04em}
+.gate-card p.sub{margin:0 0 24px;color:var(--muted);font-size:12.5px;line-height:1.6}
+.campo{margin-bottom:13px}
+.campo label{display:block;margin-bottom:6px;font-size:11px;font-weight:700;color:var(--muted)}
+.campo input{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:13px;outline:none;background:var(--bg);color:var(--ink);font-size:13px}
+.campo input:focus{border-color:var(--blue);background:#fff}
+.gate button{width:100%;margin-top:8px;padding:14px;border:0;border-radius:999px;color:#fff;background:var(--blue);font-size:13px;font-weight:750}
+.gate button:disabled{opacity:.5;cursor:not-allowed}
+.erro-caixa{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--red-soft);color:var(--red);font-size:12px;line-height:1.5}
+.erro-caixa[hidden]{display:none}
+
+/* Cabecalho do painel */
+.painel-topo{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}
+.painel-topo h1{margin:0;font-size:29px;letter-spacing:-.045em}
+.painel-topo p{margin:7px 0 0;color:var(--muted);font-size:12.5px}
+.atualizar{display:flex;align-items:center;gap:11px;color:var(--muted);font-size:11px;white-space:nowrap}
+.atualizar button{padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:11px;font-weight:700}
+.atualizar button:hover{border-color:var(--blue);color:var(--blue)}
+
+/* Metricas */
+.metricas{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:26px}
+.metrica{padding:16px 17px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.metrica.destaque{border-color:rgba(18,104,244,.35);background:linear-gradient(160deg,#fff,var(--soft))}
+.metrica small{display:block;color:var(--muted);font-size:9.5px;font-weight:750;letter-spacing:.09em;text-transform:uppercase}
+.metrica strong{display:block;margin-top:9px;font-size:27px;line-height:1;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.metrica.destaque strong{color:var(--blue)}
+.metrica span.nota{display:block;margin-top:6px;color:var(--muted);font-size:10.5px}
+
+/* Abas */
+.abas{display:flex;gap:7px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px}
+.abas button{padding:10px 17px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap}
+.abas button.is-active{border-color:var(--navy);background:var(--navy);color:#fff}
+.abas button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+[data-painel][hidden]{display:none}
+
+/* Blocos */
+.bloco{margin-bottom:22px}
+.bloco-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:13px}
+.bloco-head h2{margin:0;font-size:17px;letter-spacing:-.03em}
+.bloco-head span{color:var(--muted);font-size:11px}
+.duas{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start}
+
+/* Tabelas */
+.tabela-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:18px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:11px 15px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th{color:var(--muted);font-size:9.5px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;background:var(--bg)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--bg)}
+td.num{font-variant-numeric:tabular-nums;font-weight:700}
+td.pos{width:44px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:800}
+tr.podio td.pos{color:var(--blue)}
+td.nome{white-space:normal;min-width:170px}
+td.nome small{display:block;margin-top:2px;color:var(--muted);font-size:10.5px;font-weight:500}
+.vazio{padding:36px 20px;text-align:center;color:var(--muted);font-size:12px}
+
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:750;white-space:nowrap}
+.pill.ok{background:var(--green-soft);color:var(--green)}
+.pill.off{background:var(--red-soft);color:var(--red)}
+.pill.espera{background:var(--bg);color:var(--muted)}
+.pill.aberta{background:var(--soft);color:var(--blue)}
+
+.acao{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:10.5px;font-weight:700}
+.acao:hover{border-color:var(--blue);color:var(--blue)}
+.acao.perigo:hover{border-color:var(--red);color:var(--red)}
+
+/* Grafico de atividade */
+.grafico{padding:20px 20px 16px}
+.barras{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:12px;height:170px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.coluna{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%}
+.par{display:flex;align-items:flex-end;justify-content:center;gap:3px;width:100%;flex:1 1 auto;min-height:0}
+.barra{width:14px;border-radius:5px 5px 0 0;min-height:3px}
+.barra.checkin{background:var(--blue)}
+.barra.conclusao{background:var(--navy)}
+.coluna b{display:flex;gap:6px;font-size:10px;font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto}
+.coluna b .v-checkin{color:var(--blue)}
+.coluna b .v-conclusao{color:var(--navy)}
+.eixo{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:12px;margin-top:9px}
+.eixo span{text-align:center;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+.legenda{display:flex;gap:16px;margin-top:14px;color:var(--muted);font-size:11px}
+.legenda i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+
+/* Missoes */
+.missoes{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.missao{padding:18px}
+.missao-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.missao-head strong{display:block;font-size:14px;letter-spacing:-.02em}
+.missao-head small{display:block;margin-top:3px;color:var(--muted);font-size:10.5px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+.progresso{margin-top:15px;height:7px;border-radius:999px;background:var(--bg);overflow:hidden}
+.progresso i{display:block;height:100%;border-radius:999px;background:var(--blue)}
+.missao-nums{display:flex;gap:16px;margin-top:11px;color:var(--muted);font-size:11px}
+.missao-nums b{color:var(--ink);font-variant-numeric:tabular-nums}
+.missao-data{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.missao-data label{color:var(--muted);font-size:10.5px;font-weight:700}
+.missao-data input{padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:11.5px;color:var(--ink)}
+.missao-data input:focus{border-color:var(--blue);background:#fff;outline:none}
+
+/* Comprovacoes */
+.comprovacoes{display:grid;gap:11px}
+.comprovacao{padding:16px 18px}
+.comprovacao-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.comprovacao-head strong{font-size:13px}
+.comprovacao-head small{color:var(--muted);font-size:10.5px}
+.comprovacao p{margin:11px 0 0;padding:11px 13px;border-radius:11px;background:var(--bg);font-size:12px;line-height:1.6;word-break:break-word}
+.comprovacao p a{color:var(--blue);font-weight:600;text-decoration:underline}
+
+/* Mural */
+.mural{display:grid;gap:12px}
+.mural-post{padding:17px 19px}
+.mural-post-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.mural-post-head strong{font-size:12.5px}
+.mural-post-head small{color:var(--muted);font-size:10.5px;margin-left:9px;font-weight:500}
+.mural-post > p{margin:11px 0 0;font-size:12.5px;line-height:1.6;word-break:break-word}
+.mural-coments{margin-top:13px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:9px}
+.mural-coment{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;font-size:11.5px;line-height:1.55}
+.mural-coment b{font-weight:700}
+.mural-coment span{color:var(--muted);word-break:break-word}
+
+/* Busca e ferramentas */
+.ferramentas{display:flex;gap:9px;margin-bottom:13px;flex-wrap:wrap}
+.ferramentas input{flex:1;min-width:200px;padding:11px 15px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12.5px;color:var(--ink)}
+.ferramentas input:focus{border-color:var(--blue);outline:none}
+.ferramentas button{padding:11px 18px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:11.5px;font-weight:700}
+.ferramentas button:hover{border-color:var(--blue);color:var(--blue)}
+
+/* Dialogo de pontos */
+dialog{width:min(400px,calc(100% - 32px));padding:0;border:0;border-radius:20px;background:#fff;box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(2,8,23,.55)}
+.dialogo{padding:26px}
+.dialogo h3{margin:0 0 4px;font-size:17px;letter-spacing:-.03em}
+.dialogo p.quem{margin:0 0 18px;color:var(--muted);font-size:12px}
+.dialogo-botoes{display:flex;gap:9px;margin-top:18px}
+.dialogo-botoes button{flex:1;padding:12px;border-radius:999px;border:0;font-size:12px;font-weight:750}
+.dialogo-botoes .cancelar{border:1px solid var(--line);background:#fff;color:var(--ink)}
+.dialogo-botoes .confirmar{background:var(--blue);color:#fff}
+.dica{margin-top:9px;color:var(--muted);font-size:10.5px;line-height:1.5}
+
+@media(max-width:980px){
+  .metricas{grid-template-columns:repeat(3,1fr)}
+  .duas{grid-template-columns:1fr}
+  .missoes{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .page{width:calc(100% - 32px)}
+  .metricas{grid-template-columns:repeat(2,1fr)}
+  .painel-topo{display:block}
+  .painel-topo h1{font-size:24px}
+  .atualizar{margin-top:14px}
+  .barra{width:9px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head><body>
+
+<header class="topbar"><div class="topbar-inner">
+  <img class="brand" src="assets/logo.png" alt="The Creators Club">
+  <nav class="nav" data-nav-admin hidden>
+    <span class="selo" data-quem>Organizadora</span>
+    <button class="sair" data-sair type="button">Sair</button>
+  </nav>
+</div></header>
+
+<!-- Entrada -->
+<main class="gate" data-gate>
+  <section class="gate-card card">
+    <span class="eyebrow">Desafio Postaria Mais</span>
+    <h1>Painel da organizadora</h1>
+    <p class="sub">Entre com o mesmo usuário e senha que você usa no admin.</p>
+    <form data-form-entrar>
+      <div class="campo"><label for="usuario">Usuário</label><input id="usuario" type="text" autocomplete="username" required></div>
+      <div class="campo"><label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required></div>
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="erro-caixa" data-erro-entrar hidden></div>
+  </section>
+</main>
+
+<!-- Painel -->
+<main class="page" data-painel-geral hidden>
+  <div class="painel-topo">
+    <div>
+      <span class="eyebrow">Desafio Postaria Mais</span>
+      <h1>Painel da organizadora</h1>
+      <p data-resumo-linha>Carregando...</p>
+    </div>
+    <div class="atualizar">
+      <span data-carimbo></span>
+      <button type="button" data-recarregar>Atualizar</button>
+    </div>
+  </div>
+
+  <div class="metricas" data-metricas></div>
+
+  <div class="abas">
+    <button type="button" class="is-active" data-aba="visao">Visão geral</button>
+    <button type="button" data-aba="participantes">Participantes</button>
+    <button type="button" data-aba="missoes">Missões</button>
+    <button type="button" data-aba="comprovacoes">Comprovações</button>
+    <button type="button" data-aba="mural">Mural</button>
+  </div>
+
+  <section data-painel="visao">
+    <div class="duas">
+      <div class="bloco">
+        <div class="bloco-head"><h2>Ranking</h2><span data-ranking-nota></span></div>
+        <div class="tabela-wrap" data-ranking></div>
+      </div>
+      <div class="bloco">
+        <div class="bloco-head"><h2>Movimento por dia</h2><span>check-ins e entregas</span></div>
+        <div class="card grafico" data-grafico></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-painel="participantes" hidden>
+    <div class="ferramentas">
+      <input type="search" data-busca placeholder="Buscar por nome, email, Instagram ou código">
+      <button type="button" data-copiar-emails>Copiar todos os emails</button>
+    </div>
+    <div class="tabela-wrap" data-participantes></div>
+  </section>
+
+  <section data-painel="missoes" hidden>
+    <div class="bloco-head"><h2>As 7 missões</h2><span>mude a data e vale na hora, sem publicar nada</span></div>
+    <div class="missoes" data-missoes></div>
+  </section>
+
+  <section data-painel="comprovacoes" hidden>
+    <div class="bloco-head"><h2>Comprovações enviadas</h2><span data-comprovacoes-nota></span></div>
+    <div class="comprovacoes" data-comprovacoes></div>
+  </section>
+
+  <section data-painel="mural" hidden>
+    <div class="bloco-head"><h2>Mural da comunidade</h2><span data-mural-nota></span></div>
+    <div class="mural" data-mural></div>
+  </section>
+</main>
+
+<footer><div class="footer-inner"><span>The Creators Club © 2026</span><span class="footer-mark">Painel interno.</span></div></footer>
+<div class="toast" data-toast></div>
+
+<dialog data-dialogo-pontos>
+  <form class="dialogo" method="dialog">
+    <h3>Lançar pontos</h3>
+    <p class="quem" data-dialogo-quem></p>
+    <div class="campo"><label for="dialogo-pontos">Pontos</label><input id="dialogo-pontos" type="number" step="1" placeholder="Ex: 10, ou -10 para tirar" required></div>
+    <div class="campo"><label for="dialogo-motivo">Motivo</label><input id="dialogo-motivo" type="text" placeholder="Ex: entregou por WhatsApp" maxlength="60"></div>
+    <p class="dica">O motivo fica registrado no extrato da participante, junto com a data e a hora.</p>
+    <div class="dialogo-botoes">
+      <button type="button" class="cancelar" data-dialogo-cancelar>Cancelar</button>
+      <button type="button" class="confirmar" data-dialogo-confirmar>Lançar</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const API_BASE = location.hostname === "localhost" || location.hostname === "127.0.0.1"
+  ? "http://127.0.0.1:8077/desafio/api"
+  : "https://app.thecreatorsclub.com.br/desafio/api";
+const CHAVE_TOKEN = "desafio_admin_token";
+const CHAVE_NOME = "desafio_admin_nome";
+
+const guardado = {
+  get token() { try { return sessionStorage.getItem(CHAVE_TOKEN) || ""; } catch { return ""; } },
+  get nome() { try { return sessionStorage.getItem(CHAVE_NOME) || ""; } catch { return ""; } },
+  salvar(token, nome) {
+    try { sessionStorage.setItem(CHAVE_TOKEN, token); sessionStorage.setItem(CHAVE_NOME, nome); } catch {}
+  },
+  limpar() {
+    try { sessionStorage.removeItem(CHAVE_TOKEN); sessionStorage.removeItem(CHAVE_NOME); } catch {}
+  },
+};
+
+async function api(caminho, { metodo = "GET", corpo = null, publico = false } = {}) {
+  const cabecalhos = {};
+  if (corpo) cabecalhos["Content-Type"] = "application/json";
+  if (!publico) cabecalhos["Authorization"] = `Bearer ${guardado.token}`;
+
+  const resposta = await fetch(API_BASE + caminho, {
+    method: metodo,
+    headers: cabecalhos,
+    body: corpo ? JSON.stringify(corpo) : undefined,
+  });
+
+  let dados = {};
+  try { dados = await resposta.json(); } catch {}
+
+  if (resposta.status === 401 || resposta.status === 403) {
+    if (!publico) { guardado.limpar(); mostrarEntrada(); }
+    throw new Error(dados.erro || "Sessão expirada. Entre novamente.");
+  }
+  if (!resposta.ok) throw new Error(dados.erro || "Não consegui completar essa ação.");
+  return dados;
+}
+
+function escapar(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto == null ? "" : String(texto);
+  return div.innerHTML;
+}
+
+function avisar(mensagem) {
+  const toast = document.querySelector("[data-toast]");
+  toast.textContent = mensagem;
+  toast.classList.add("is-visible");
+  clearTimeout(avisar.timer);
+  avisar.timer = setTimeout(() => toast.classList.remove("is-visible"), 3200);
+}
+
+function dataCurta(iso) {
+  const [ano, mes, dia] = iso.slice(0, 10).split("-");
+  return `${dia}/${mes}`;
+}
+function horaCurta(iso) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} às ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// Transforma link em link clicavel, mantendo o resto escapado.
+function comLinks(texto) {
+  return escapar(texto).replace(/https?:\/\/[^\s<]+/g, (url) => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
+}
+
+/* ---------- Entrada ---------- */
+
+const gate = document.querySelector("[data-gate]");
+const painelGeral = document.querySelector("[data-painel-geral]");
+const navAdmin = document.querySelector("[data-nav-admin]");
+const erroEntrar = document.querySelector("[data-erro-entrar]");
+
+function mostrarEntrada() {
+  gate.hidden = false;
+  painelGeral.hidden = true;
+  navAdmin.hidden = true;
+  clearInterval(mostrarPainel.timer);
+}
+
+function mostrarPainel() {
+  gate.hidden = true;
+  painelGeral.hidden = false;
+  navAdmin.hidden = false;
+  document.querySelector("[data-quem]").textContent = guardado.nome || "Organizadora";
+  carregar();
+  clearInterval(mostrarPainel.timer);
+  mostrarPainel.timer = setInterval(() => carregar({ silencioso: true }), 60000);
+}
+
+document.querySelector("[data-form-entrar]").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  erroEntrar.hidden = true;
+  const botao = evento.target.querySelector("button");
+  botao.disabled = true;
+  botao.textContent = "Entrando...";
+  try {
+    const dados = await api("/admin/login/", {
+      metodo: "POST",
+      publico: true,
+      corpo: {
+        usuario: document.querySelector("#usuario").value.trim(),
+        senha: document.querySelector("#senha").value,
+      },
+    });
+    guardado.salvar(dados.token, dados.nome);
+    document.querySelector("#senha").value = "";
+    mostrarPainel();
+  } catch (erro) {
+    erroEntrar.textContent = erro.message;
+    erroEntrar.hidden = false;
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Entrar";
+  }
+});
+
+document.querySelector("[data-sair]").addEventListener("click", () => {
+  guardado.limpar();
+  mostrarEntrada();
+});
+
+/* ---------- Abas ---------- */
+
+document.querySelectorAll("[data-aba]").forEach((botao) => {
+  botao.addEventListener("click", () => {
+    document.querySelectorAll("[data-aba]").forEach((b) => b.classList.toggle("is-active", b === botao));
+    document.querySelectorAll("[data-painel]").forEach((secao) => {
+      secao.hidden = secao.dataset.painel !== botao.dataset.aba;
+    });
+  });
+});
+
+/* ---------- Carregar e desenhar ---------- */
+
+let dadosPainel = null;
+
+document.querySelector("[data-recarregar]").addEventListener("click", () => carregar());
+
+async function carregar({ silencioso = false } = {}) {
+  try {
+    dadosPainel = await api("/admin/painel/");
+    desenhar(dadosPainel);
+    document.querySelector("[data-carimbo]").textContent = `atualizado ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+  } catch (erro) {
+    if (!silencioso) avisar(erro.message);
+  }
+}
+
+function desenhar(dados) {
+  desenharResumo(dados);
+  desenharMetricas(dados.metricas);
+  desenharRanking(dados.ranking);
+  desenharGrafico(dados.atividade);
+  desenharParticipantes(dados.participantes);
+  desenharMissoes(dados.missoes);
+  desenharComprovacoes(dados.comprovacoes);
+  desenharMural(dados.mural);
+}
+
+function desenharResumo({ metricas, missoes, hoje }) {
+  const liberadas = missoes.filter((m) => m.liberada).length;
+  const proxima = missoes.find((m) => !m.liberada);
+  const situacao = liberadas === 0
+    ? (proxima ? `o desafio começa em ${dataCurta(proxima.data_liberacao)}` : "nenhuma missão cadastrada")
+    : liberadas === missoes.length
+      ? "todas as missões já liberaram"
+      : `missão ${liberadas} de ${missoes.length} liberada, a próxima em ${dataCurta(proxima.data_liberacao)}`;
+  document.querySelector("[data-resumo-linha]").textContent =
+    `${metricas.inscritas} inscritas, ${situacao}. Hoje é ${dataCurta(hoje)}.`;
+}
+
+function desenharMetricas(m) {
+  const tiles = [
+    { rotulo: "Inscritas", valor: m.inscritas, nota: m.inscritas_hoje ? `${m.inscritas_hoje} hoje` : "nenhuma hoje", destaque: true },
+    { rotulo: "Check-ins hoje", valor: m.checkins_hoje, nota: m.inscritas ? `de ${m.ativas} ativas` : "" },
+    { rotulo: "Missões entregues", valor: m.missoes_concluidas, nota: `${m.comprovacoes} com comprovação` },
+    { rotulo: "Publicações", valor: m.posts, nota: `${m.comentarios} comentários` },
+    { rotulo: "Indicações", valor: m.indicacoes, nota: "entraram por convite" },
+    { rotulo: "Desativadas", valor: m.inscritas - m.ativas, nota: "fora do ranking" },
+  ];
+  document.querySelector("[data-metricas]").innerHTML = tiles.map((t) => `
+    <div class="metrica${t.destaque ? " destaque" : ""}">
+      <small>${escapar(t.rotulo)}</small>
+      <strong>${t.valor}</strong>
+      ${t.nota ? `<span class="nota">${escapar(t.nota)}</span>` : ""}
+    </div>`).join("");
+}
+
+function desenharRanking(ranking) {
+  document.querySelector("[data-ranking-nota]").textContent = ranking.length ? `${ranking.length} no placar` : "";
+  const alvo = document.querySelector("[data-ranking]");
+  if (!ranking.length) {
+    alvo.innerHTML = '<p class="vazio">Ninguém pontuou ainda. Assim que as inscritas fizerem o primeiro check-in, o placar aparece aqui.</p>';
+    return;
+  }
+  alvo.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Participante</th><th>Pontos</th></tr></thead>
+    <tbody>${ranking.map((linha) => `
+      <tr class="${linha.posicao <= 3 ? "podio" : ""}">
+        <td class="pos">${linha.posicao}</td>
+        <td class="nome">${escapar(linha.nome)}${linha.instagram ? `<small>@${escapar(linha.instagram)}</small>` : ""}</td>
+        <td class="num">${linha.total}</td>
+      </tr>`).join("")}</tbody></table>`;
+}
+
+function desenharGrafico(atividade) {
+  const alvo = document.querySelector("[data-grafico]");
+  if (!atividade.length) {
+    alvo.innerHTML = '<p class="vazio">Sem missões cadastradas.</p>';
+    return;
+  }
+  const teto = Math.max(1, ...atividade.map((d) => Math.max(d.checkins, d.conclusoes)));
+  alvo.innerHTML = `
+    <div class="barras">${atividade.map((d) => `
+      <div class="coluna">
+        <b>${d.checkins || d.conclusoes
+            ? `<span class="v-checkin">${d.checkins}</span><span class="v-conclusao">${d.conclusoes}</span>`
+            : ""}</b>
+        <div class="par">
+          <span class="barra checkin" style="height:${(d.checkins / teto) * 100}%" title="${d.checkins} check-ins"></span>
+          <span class="barra conclusao" style="height:${(d.conclusoes / teto) * 100}%" title="${d.conclusoes} entregas"></span>
+        </div>
+      </div>`).join("")}</div>
+    <div class="eixo">${atividade.map((d) => `<span>${dataCurta(d.data)}</span>`).join("")}</div>
+    <div class="legenda">
+      <span><i style="background:var(--blue)"></i>Check-ins</span>
+      <span><i style="background:var(--navy)"></i>Missões entregues</span>
+    </div>`;
+}
+
+let buscaAtual = "";
+document.querySelector("[data-busca]").addEventListener("input", (evento) => {
+  buscaAtual = evento.target.value.trim().toLowerCase();
+  if (dadosPainel) desenharParticipantes(dadosPainel.participantes);
+});
+
+function desenharParticipantes(participantes) {
+  const filtradas = buscaAtual
+    ? participantes.filter((p) => [p.nome, p.email, p.instagram, p.codigo_acesso, p.whatsapp]
+        .join(" ").toLowerCase().includes(buscaAtual))
+    : participantes;
+
+  const alvo = document.querySelector("[data-participantes]");
+  if (!filtradas.length) {
+    alvo.innerHTML = `<p class="vazio">${participantes.length ? "Nenhuma participante bate com essa busca." : "Ninguém se inscreveu ainda. Divulgue o link de entrada do desafio."}</p>`;
+    return;
+  }
+
+  alvo.innerHTML = `<table>
+    <thead><tr>
+      <th>Participante</th><th>Contato</th><th>Código</th>
+      <th>Pontos</th><th>Missões</th><th>Check-ins</th><th>Veio de</th><th>Situação</th><th></th>
+    </tr></thead>
+    <tbody>${filtradas.map((p) => `
+      <tr>
+        <td class="nome"><b>${escapar(p.nome)}</b>${p.instagram ? `<small>@${escapar(p.instagram)}</small>` : ""}</td>
+        <td class="nome"><small style="margin:0">${escapar(p.email)}</small>${p.whatsapp ? `<small>${escapar(p.whatsapp)}</small>` : ""}</td>
+        <td>${escapar(p.codigo_acesso)}</td>
+        <td class="num">${p.pontos}</td>
+        <td class="num">${p.missoes}</td>
+        <td class="num">${p.checkins}</td>
+        <td>${p.indicada_por ? escapar(p.indicada_por) : '<span style="color:var(--muted)">inscrição direta</span>'}</td>
+        <td><span class="pill ${p.ativa ? "ok" : "off"}">${p.ativa ? "Ativa" : "Desativada"}</span></td>
+        <td style="text-align:right">
+          <button class="acao" data-pontos-de="${p.id}" data-nome="${escapar(p.nome)}">Pontos</button>
+          <button class="acao ${p.ativa ? "perigo" : ""}" data-alternar="${p.id}">${p.ativa ? "Desativar" : "Reativar"}</button>
+        </td>
+      </tr>`).join("")}</tbody></table>`;
+
+  alvo.querySelectorAll("[data-pontos-de]").forEach((botao) => {
+    botao.addEventListener("click", () => abrirDialogoPontos(botao.dataset.pontosDe, botao.dataset.nome));
+  });
+  alvo.querySelectorAll("[data-alternar]").forEach((botao) => {
+    botao.addEventListener("click", async () => {
+      botao.disabled = true;
+      try {
+        const r = await api(`/admin/participantes/${botao.dataset.alternar}/alternar/`, { metodo: "POST", corpo: {} });
+        avisar(r.ativa ? "Participante reativada." : "Participante desativada, saiu do ranking.");
+        await carregar();
+      } catch (erro) {
+        avisar(erro.message);
+        botao.disabled = false;
+      }
+    });
+  });
+}
+
+document.querySelector("[data-copiar-emails]").addEventListener("click", async () => {
+  if (!dadosPainel || !dadosPainel.participantes.length) { avisar("Não há emails para copiar ainda."); return; }
+  const emails = dadosPainel.participantes.map((p) => p.email).join(", ");
+  try {
+    await navigator.clipboard.writeText(emails);
+    avisar(`${dadosPainel.participantes.length} emails copiados.`);
+  } catch {
+    avisar("Seu navegador bloqueou a cópia. Selecione na tabela e copie na mão.");
+  }
+});
+
+function desenharMissoes(missoes) {
+  const alvo = document.querySelector("[data-missoes]");
+  if (!missoes.length) {
+    alvo.innerHTML = '<p class="vazio">Nenhuma missão cadastrada.</p>';
+    return;
+  }
+  alvo.innerHTML = missoes.map((m) => {
+    const base = m.total_ativas || 0;
+    const proporcao = base ? Math.min(100, (m.concluidas / base) * 100) : 0;
+    return `<article class="missao card">
+      <div class="missao-head">
+        <div><small>Dia ${String(m.dia).padStart(2, "0")}</small><strong>${escapar(m.titulo)}</strong></div>
+        <span class="pill ${m.liberada ? "aberta" : "espera"}">${m.liberada ? "Liberada" : "Libera " + dataCurta(m.data_liberacao)}</span>
+      </div>
+      <div class="progresso"><i style="width:${proporcao}%"></i></div>
+      <div class="missao-nums">
+        <span><b>${m.concluidas}</b> de ${base} entregaram</span>
+        <span><b>${m.no_prazo}</b> no prazo</span>
+        <span><b>${m.com_comprovacao}</b> comprovaram</span>
+      </div>
+      <div class="missao-data">
+        <label for="data-${m.dia}">Libera em</label>
+        <input id="data-${m.dia}" type="date" value="${m.data_liberacao}" data-data-missao="${m.dia}">
+      </div>
+    </article>`;
+  }).join("");
+
+  alvo.querySelectorAll("[data-data-missao]").forEach((campo) => {
+    campo.addEventListener("change", async () => {
+      try {
+        await api(`/admin/missoes/${campo.dataset.dataMissao}/data/`, {
+          metodo: "POST",
+          corpo: { data_liberacao: campo.value },
+        });
+        avisar(`Missão do dia ${campo.dataset.dataMissao} agora libera em ${dataCurta(campo.value)}.`);
+        await carregar();
+      } catch (erro) {
+        avisar(erro.message);
+        await carregar();
+      }
+    });
+  });
+}
+
+function desenharComprovacoes(comprovacoes) {
+  document.querySelector("[data-comprovacoes-nota]").textContent = comprovacoes.length ? `${comprovacoes.length} enviadas` : "";
+  const alvo = document.querySelector("[data-comprovacoes]");
+  if (!comprovacoes.length) {
+    alvo.innerHTML = '<div class="card"><p class="vazio">Nenhuma comprovação ainda. Elas aparecem aqui assim que as participantes anexarem o link ou o print da missão.</p></div>';
+    return;
+  }
+  alvo.innerHTML = comprovacoes.map((c) => `
+    <article class="comprovacao card">
+      <div class="comprovacao-head">
+        <div><strong>${escapar(c.participante)}</strong> <small>dia ${String(c.dia).padStart(2, "0")}, ${escapar(c.missao)}</small></div>
+        <div>
+          <span class="pill ${c.no_prazo ? "ok" : "espera"}">${c.no_prazo ? "No prazo" : "Fora do prazo"}</span>
+          <span class="pill espera">${dataCurta(c.quando)}</span>
+        </div>
+      </div>
+      <p>${comLinks(c.comprovacao)}</p>
+    </article>`).join("");
+}
+
+function desenharMural(mural) {
+  document.querySelector("[data-mural-nota]").textContent = mural.length ? `${mural.length} publicações` : "";
+  const alvo = document.querySelector("[data-mural]");
+  if (!mural.length) {
+    alvo.innerHTML = '<div class="card"><p class="vazio">O mural está vazio. As publicações da comunidade aparecem aqui.</p></div>';
+    return;
+  }
+  alvo.innerHTML = mural.map((post) => `
+    <article class="mural-post card">
+      <div class="mural-post-head">
+        <div><strong>${escapar(post.autor)}</strong><small>${horaCurta(post.quando)}</small></div>
+        <button class="acao perigo" data-remover-post="${post.id}">Remover</button>
+      </div>
+      <p>${comLinks(post.texto)}</p>
+      ${post.comentarios.length ? `<div class="mural-coments">${post.comentarios.map((c) => `
+        <div class="mural-coment">
+          <span><b>${escapar(c.autor)}</b> ${escapar(c.texto)}</span>
+          <button class="acao perigo" data-remover-comentario="${c.id}">Remover</button>
+        </div>`).join("")}</div>` : ""}
+    </article>`).join("");
+
+  alvo.querySelectorAll("[data-remover-post]").forEach((botao) => {
+    botao.addEventListener("click", () => remover(botao, `/admin/posts/${botao.dataset.removerPost}/remover/`, "Publicação removida."));
+  });
+  alvo.querySelectorAll("[data-remover-comentario]").forEach((botao) => {
+    botao.addEventListener("click", () => remover(botao, `/admin/comentarios/${botao.dataset.removerComentario}/remover/`, "Comentário removido."));
+  });
+}
+
+async function remover(botao, caminho, mensagem) {
+  botao.disabled = true;
+  try {
+    await api(caminho, { metodo: "POST", corpo: {} });
+    avisar(mensagem);
+    await carregar();
+  } catch (erro) {
+    avisar(erro.message);
+    botao.disabled = false;
+  }
+}
+
+/* ---------- Dialogo de pontos ---------- */
+
+const dialogo = document.querySelector("[data-dialogo-pontos]");
+let alvoPontos = null;
+
+function abrirDialogoPontos(id, nome) {
+  alvoPontos = id;
+  document.querySelector("[data-dialogo-quem]").textContent = nome;
+  document.querySelector("#dialogo-pontos").value = "";
+  document.querySelector("#dialogo-motivo").value = "";
+  dialogo.showModal();
+}
+
+document.querySelector("[data-dialogo-cancelar]").addEventListener("click", () => dialogo.close());
+
+document.querySelector("[data-dialogo-confirmar]").addEventListener("click", async () => {
+  const pontos = document.querySelector("#dialogo-pontos").value.trim();
+  if (!pontos || Number(pontos) === 0) { avisar("Informe quantos pontos lançar."); return; }
+  try {
+    await api("/admin/pontos/", {
+      metodo: "POST",
+      corpo: {
+        participante_id: Number(alvoPontos),
+        pontos: Number(pontos),
+        motivo: document.querySelector("#dialogo-motivo").value.trim(),
+      },
+    });
+    dialogo.close();
+    avisar(`${Number(pontos) > 0 ? "+" : ""}${pontos} pontos lançados.`);
+    await carregar();
+  } catch (erro) {
+    avisar(erro.message);
+  }
+});
+
+/* ---------- Começo ---------- */
+
+if (guardado.token) mostrarPainel();
+else mostrarEntrada();
+</script>
+</body></html>

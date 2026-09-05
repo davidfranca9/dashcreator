@@ -158,6 +158,7 @@ class PontoEvento(TimestampedModel):
     TIPO_STREAK = "streak"
     TIPO_COMENTARIO = "comentario"
     TIPO_CHECKIN = "checkin"
+    TIPO_AJUSTE = "ajuste"
     TIPO_CHOICES = [
         (TIPO_PUBLICACAO, "Publicação na comunidade"),
         (TIPO_MISSAO, "Missão concluída"),
@@ -166,6 +167,7 @@ class PontoEvento(TimestampedModel):
         (TIPO_STREAK, "Sequência de dias"),
         (TIPO_COMENTARIO, "Comentário em post de colega"),
         (TIPO_CHECKIN, "Check-in diário"),
+        (TIPO_AJUSTE, "Ajuste da organizadora"),
     ]
 
     participante = models.ForeignKey(Participante, on_delete=models.CASCADE, related_name="pontos")
