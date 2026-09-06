@@ -259,6 +259,15 @@
                 </article>
             {% endfor %}
         </section>
+
+        {% if dashboard.total_arquivadas_sem_retorno %}
+            <p class="prosp-arquivadas muted">
+                Você tem <strong>{{ dashboard.total_arquivadas_sem_retorno }} marca{{ dashboard.total_arquivadas_sem_retorno|pluralize:",s" }}</strong>
+                arquivada{{ dashboard.total_arquivadas_sem_retorno|pluralize:",s" }} por falta de retorno, de quando o sistema arquivava sozinho.
+                Elas não voltam ao painel automaticamente:
+                <a href="?tab=banco&amp;banco_status=sem_retorno">abra em Contatos</a> e reative as que ainda valem uma tentativa.
+            </p>
+        {% endif %}
     </section>
 
     {# ===================== BANCO DE MARCAS ===================== #}
@@ -328,9 +337,9 @@
                     {% for row in archived_rows %}
                         <tr class="banco-row" data-banco-row data-href="{% url 'prospect_edit' row.id %}">
                             <td><strong>{{ row.company }}</strong>{% if row.instagram_handle %}<br><a class="banco-instagram" href="{{ row.instagram_url }}" target="_blank" rel="noopener" data-no-row-click>@{{ row.instagram_handle }}</a>{% endif %}</td>
-                            <td>{{ row.niche|default:"—" }}</td>
-                            <td>{{ row.channel|default:"—" }}</td>
-                            <td>{{ row.last_contact|default:"—" }}</td>
+                            <td>{{ row.niche|default:"·" }}</td>
+                            <td>{{ row.channel|default:"·" }}</td>
+                            <td>{{ row.last_contact|default:"·" }}</td>
                             <td>
                                 <span class="banco-status banco-status--{{ row.status_class }}">{{ row.status_label }}</span>
                                 {% if row.is_archived and row.status_key != "fechado" %}
@@ -646,7 +655,7 @@ document.querySelector("[data-outcome-cancel]").addEventListener("click", () => 
                 else col.appendChild(card);
                 card.dataset.currentStage = targetStage;
                 // Substitui as ações específicas da coluna antiga por um
-                // botão Editar genérico — assim não sobra chip "Fechado ✓"
+                // botão Editar genérico, assim não sobra chip "Fechado ✓"
                 // de cartão arquivado nem fica sem nenhuma ação visível.
                 const id = card.dataset.prospectId;
                 const actionsBox = card.querySelector(".pipeline-card-actions");

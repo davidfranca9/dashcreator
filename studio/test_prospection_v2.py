@@ -391,3 +391,41 @@ class ProspeccaoNumerosCoerentesTests(TestCase):
         resposta = self.client.get(reverse("prospection"))
         coluna = next(c for c in resposta.context["pipeline_columns"] if c["key"] == "Fechado")
         self.assertEqual(resposta.context["total_closed"], coluna["count"])
+
+
+class ProspeccaoArquivadasTests(TestCase):
+    """As marcas que a antiga regra automatica enterrou nao voltam sozinhas,
+    mas precisam estar visiveis: sao a fila natural de recuperacao."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="creator8", password="segura123")
+        self.workspace = get_or_create_workspace_for_user(self.user)
+        self.client.force_login(self.user)
+        for nome in ("Shein", "Amaro", "Renner"):
+            Prospect.objects.create(
+                workspace=self.workspace,
+                company=nome,
+                contact="Marketing",
+                stage="Recuperacao",
+                archive_reason="sem_retorno",
+                archived_at=timezone.now(),
+            )
+
+    def test_dashboard_conta_as_arquivadas_por_falta_de_retorno(self):
+        dados = prospection_dashboard(self.workspace)
+        self.assertEqual(dados["total_arquivadas_sem_retorno"], 3)
+
+    def test_arquivadas_nao_voltam_sozinhas_pro_painel(self):
+        resposta = self.client.get(reverse("prospection"))
+        coluna = next(c for c in resposta.context["pipeline_columns"] if c["key"] == "Recuperacao")
+        self.assertEqual(coluna["count"], 0)
+
+    def test_dashboard_aponta_onde_encontrar_as_arquivadas(self):
+        resposta = self.client.get(reverse("prospection"), {"tab": "dashboard"})
+        self.assertContains(resposta, "?tab=banco&amp;banco_status=sem_retorno")
+
+    def test_contatos_lista_as_arquivadas_pelo_filtro(self):
+        resposta = self.client.get(
+            reverse("prospection"), {"tab": "banco", "banco_status": "sem_retorno"}
+        )
+        self.assertEqual(len(resposta.context["archived_rows"]), 3)

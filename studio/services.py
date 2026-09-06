@@ -2082,6 +2082,12 @@ def prospection_dashboard(workspace: Workspace, search: str = "") -> dict:
         "total_negociando": len(negociando),
         "total_recuperacao": len(recuperacao),
         "total_fechadas": len(fechadas),
+        # Marcas que a antiga regra automatica enterrou no arquivo. Nao voltam
+        # sozinhas pro painel (seriam dezenas de uma vez), mas a creator
+        # precisa saber que existem e onde encontrar.
+        "total_arquivadas_sem_retorno": len(
+            [p for p in todas if p.archive_reason == "sem_retorno"]
+        ),
         "taxa_resposta": taxa(len(responderam), len(prospectadas)),
         "taxa_conversao": taxa(len(fechadas), len(prospectadas)),
         "taxa_proposta_fechamento": taxa(len(fechadas), len(propostas)),

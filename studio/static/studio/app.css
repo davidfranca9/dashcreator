@@ -7565,3 +7565,8 @@ body.page-legal .legal-dismiss-btn:hover {
     flex: 1 1 auto; min-width: 0; text-align: center; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; padding-left: 0.5rem; padding-right: 0.5rem;
 }
+.prosp-arquivadas {
+    margin: 1.1rem 0 0; padding: 0.85rem 1rem; font-size: 0.8rem; line-height: 1.55;
+    background: #fafaf7; border: 0.5px solid rgba(0,0,0,0.07); border-radius: 10px;
+}
+.prosp-arquivadas a { text-decoration: underline; }
