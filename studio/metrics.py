@@ -434,7 +434,7 @@ def metrics_dashboard(request: HttpRequest) -> HttpResponse:
 
 # ── Lead do portfólio da Layfe → cai na Prospecção dela ─────────────────────
 # Endpoint público chamado pelo popup do portfólio (layfeamorim.com/portfolio).
-# Cria um Prospect na conta da Layfe, etapa "Prospeccao", canal "Portfólio".
+# Cria um Prospect na conta da Layfe, etapa "Qualificacao", canal "Portfólio".
 _LEAD_WORKSPACE_CACHE = {}
 
 
@@ -498,9 +498,14 @@ def portfolio_lead(request: HttpRequest) -> HttpResponse:
             company=company,
             contact=name,
             contact_type="Marca",
-            stage="Prospeccao",
+            # A marca veio ate a creator pelo portfolio, entao ja nasce com a
+            # conversa aberta e um canal real: isso e' Qualificacao, nao
+            # abordagem fria.
+            stage="Qualificacao",
+            contact_outcome="respondeu",
             contact_date=today,
             last_activity_at=timezone.now(),
+            stage_changed_at=timezone.now(),
             whatsapp=whatsapp,
             instagram=instagram,
             channel="Portfólio",

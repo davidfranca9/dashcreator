@@ -52,7 +52,7 @@ from .forms import (
     WorkspaceSettingsForm,
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
-from .models import CashBox, FinanceEntry, FixedCost, InfoLead, InfoLeadEvent, InfoLeadTask, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ServiceCategory
+from .models import CashBox, FinanceEntry, FixedCost, InfoLead, InfoLeadEvent, InfoLeadTask, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ProspectEvent, ServiceCategory
 from .services import (
     advance_campaign_stage,
     campaign_detail_snapshot,
@@ -1403,13 +1403,15 @@ def prospection(request: HttpRequest) -> HttpResponse:
     month_filter = request.GET.get("month")
     search = request.GET.get("search")
     tab = request.GET.get("tab") or "pipeline"
-    if tab not in {"pipeline", "banco", "logica"}:
+    # "banco" continua aceito porque links antigos apontam pra ele; a aba
+    # agora se chama Contatos.
+    if tab not in {"pipeline", "dashboard", "banco", "logica"}:
         tab = "pipeline"
     context = shell_context(
         "prospection",
         workspace,
         "Prospecção",
-        "Leads, follow-ups e negociações em aberto.",
+        "Marcas que você foi atrás, do primeiro contato ao fechamento.",
         user=request.user,
         action_label="Novo lead",
         action_url="prospect_create",
@@ -1427,6 +1429,43 @@ def prospection(request: HttpRequest) -> HttpResponse:
         banco_status=banco_status,
     ))
     context["active_tab"] = tab
+    from .constants import (
+        PROSPECT_CONTACT_OUTCOME_CHOICES,
+        PROSPECT_RECOVERY_REASON_CHOICES,
+        PROSPECT_STAGE_CHOICES,
+    )
+    context["contact_outcome_choices"] = PROSPECT_CONTACT_OUTCOME_CHOICES
+    context["recovery_reason_choices"] = PROSPECT_RECOVERY_REASON_CHOICES
+    context["stage_choices"] = PROSPECT_STAGE_CHOICES
+
+    # Os grupos de atenção do Dashboard, já com o texto que explica cada um.
+    atencao = context.get("attention", {})
+    context["attention_groups"] = [
+        {
+            "key": "sem_resposta",
+            "title": "Sem resposta",
+            "hint": "Primeiro contato feito há 7 dias ou mais, sem retorno.",
+            "items": atencao.get("sem_resposta", []),
+        },
+        {
+            "key": "proposta_parada",
+            "title": "Proposta aguardando follow-up",
+            "hint": "Proposta enviada há 5 dias ou mais, sem movimentação.",
+            "items": atencao.get("proposta_parada", []),
+        },
+        {
+            "key": "negociacao_parada",
+            "title": "Negociação parada",
+            "hint": "Conversa de valor esfriando há uma semana ou mais.",
+            "items": atencao.get("negociacao_parada", []),
+        },
+        {
+            "key": "para_reativar",
+            "title": "Prontas para reativar",
+            "hint": "Em Recuperação há 30 dias ou mais. Hora de uma nova tentativa.",
+            "items": atencao.get("para_reativar", []),
+        },
+    ]
 
     # Paginação do Banco de Marcas (estilo Gmail: 20 por página, com ‹ ›)
     banco_paginator = Paginator(context.get("archived_rows", []), 20)
@@ -2140,7 +2179,9 @@ def prospect_convert(request: HttpRequest, pk: int) -> HttpResponse:
         "service_category": None,
         "stage": "Fechado",
         "status": "Briefing",
-        "received_value": 0,
+        # Leva o valor fechado na negociação em vez de começar do zero, que
+        # era justamente o retrabalho de redigitar tudo na hora de converter.
+        "received_value": prospect.final_value or prospect.proposal_value or 0,
         "deliverables_count": 3,
         "progress": 15,
         "meeting_scheduled": prospect.meeting_scheduled,
@@ -2241,41 +2282,156 @@ def prospect_archive(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect(request.POST.get("next") or "prospection")
 
 
+def _registrar_evento(prospect: Prospect, texto: str, kind: str = ProspectEvent.KIND_NOTE) -> None:
+    """Escreve uma linha no histórico da marca."""
+    ProspectEvent.objects.create(
+        workspace=prospect.workspace,
+        prospect=prospect,
+        kind=kind,
+        text=texto[:240],
+    )
+
+
 @login_required
 @require_POST
 def prospect_reactivate(request: HttpRequest, pk: int) -> HttpResponse:
-    """Tira o lead do Banco de Marcas e devolve pro pipeline em Prospecção."""
+    """Tira a marca do arquivo e devolve pro pipeline em Recuperação, que é
+    justamente a fila de quem merece uma nova tentativa antes do descarte."""
     from django.utils import timezone as _tz
     workspace = _workspace(request)
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
+    agora = _tz.now()
     prospect.archive_reason = ""
     prospect.archived_at = None
-    prospect.stage = "Prospeccao"
-    prospect.last_activity_at = _tz.now()
-    prospect.save(update_fields=["stage", "archive_reason", "archived_at", "last_activity_at", "updated_at"])
-    messages.success(request, "Marca reativada no pipeline.")
+    prospect.stage = "Recuperacao"
+    prospect.stage_changed_at = agora
+    prospect.recovery_at = agora
+    prospect.last_activity_at = agora
+    prospect.save(update_fields=[
+        "stage", "stage_changed_at", "recovery_at", "archive_reason",
+        "archived_at", "last_activity_at", "updated_at",
+    ])
+    _registrar_evento(prospect, "Marca reativada e trazida para Recuperação.", ProspectEvent.KIND_STAGE)
+    messages.success(request, "Marca reativada em Recuperação.")
     return redirect(f"{reverse('prospection')}?tab=banco")
 
 
 @login_required
 @require_POST
 def prospect_set_stage(request: HttpRequest, pk: int) -> HttpResponse:
-    """Move um lead pra outra etapa do pipeline (ex.: Rascunho → Prospecção).
-    Se vinha do Banco de Marcas (archive_reason setado), reativa também."""
+    """Move a marca de etapa no pipeline, registrando a mudança no histórico.
+
+    Ir para Recuperação exige motivo: é o que permite depois montar o fluxo de
+    retomada e saber por que cada oportunidade esfriou.
+    """
+    from django.utils import timezone as _tz
+    from .constants import (
+        PROSPECT_RECOVERY_REASON_LABELS,
+        PROSPECT_STAGE_CHOICES,
+    )
+
+    workspace = _workspace(request)
+    prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
+    destino = (request.POST.get("stage") or "").strip()
+    etapas = dict(PROSPECT_STAGE_CHOICES)
+    if destino not in etapas:
+        messages.error(request, "Etapa inválida.")
+        return redirect("prospection")
+
+    motivo = (request.POST.get("recovery_reason") or "").strip()
+    if destino == "Recuperacao" and motivo not in PROSPECT_RECOVERY_REASON_LABELS:
+        messages.error(request, "Escolha o motivo antes de mover a marca para Recuperação.")
+        return redirect("prospection")
+
+    origem = etapas.get(prospect.stage, prospect.stage)
+    agora = _tz.now()
+    campos = ["stage", "archive_reason", "archived_at", "last_activity_at", "updated_at"]
+
+    if destino != prospect.stage:
+        prospect.stage_changed_at = agora
+        campos.append("stage_changed_at")
+
+    prospect.stage = destino
+    prospect.last_activity_at = agora
+    prospect.archive_reason = ""
+    prospect.archived_at = None
+
+    # Carimba o envio da proposta uma vez só: se a marca voltar pra cá depois,
+    # continua sendo a mesma proposta, não uma nova.
+    if destino == "Proposta" and not prospect.proposal_sent_at:
+        prospect.proposal_sent_at = agora
+        campos.append("proposal_sent_at")
+
+    if destino == "Recuperacao":
+        prospect.recovery_reason = motivo
+        prospect.recovery_at = agora
+        campos += ["recovery_reason", "recovery_at"]
+    elif prospect.recovery_reason:
+        # Saiu da Recuperação: o motivo antigo não vale mais.
+        prospect.recovery_reason = ""
+        prospect.recovery_at = None
+        campos += ["recovery_reason", "recovery_at"]
+
+    prospect.save(update_fields=list(dict.fromkeys(campos)))
+
+    if destino == "Recuperacao":
+        texto = f"Movida para Recuperação: {PROSPECT_RECOVERY_REASON_LABELS[motivo]}."
+    else:
+        texto = f"{origem} → {etapas[destino]}."
+    _registrar_evento(prospect, texto, ProspectEvent.KIND_STAGE)
+    return redirect(request.POST.get("next") or "prospection")
+
+
+@login_required
+@require_POST
+def prospect_follow_up(request: HttpRequest, pk: int) -> HttpResponse:
+    """Registra um follow-up sem mover a marca de etapa.
+
+    Follow-up é ação, não lugar: cobrar uma proposta não muda o estágio da
+    oportunidade, só renova a data da última movimentação e entra no histórico.
+    """
     from django.utils import timezone as _tz
     workspace = _workspace(request)
     prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
-    stage = (request.POST.get("stage") or "").strip()
-    valid_stages = {"Rascunho", "Prospeccao", "Aguardando retorno", "Follow-up", "Negociacao"}
-    if stage not in valid_stages:
-        messages.error(request, "Etapa inválida.")
+    canal = (request.POST.get("channel") or "").strip()
+    nota = (request.POST.get("note") or "").strip()
+
+    agora = _tz.now()
+    prospect.last_activity_at = agora
+    # A etapa não muda, mas o contador de "parada há X dias" precisa zerar:
+    # a marca acabou de receber contato.
+    prospect.stage_changed_at = agora
+    prospect.save(update_fields=["last_activity_at", "stage_changed_at", "updated_at"])
+
+    texto = "Follow-up realizado"
+    if canal:
+        texto += f" por {canal}"
+    if nota:
+        texto += f": {nota}"
+    _registrar_evento(prospect, f"{texto}.", ProspectEvent.KIND_FOLLOW_UP)
+    messages.success(request, f"Follow-up registrado em {prospect.company}.")
+    return redirect(request.POST.get("next") or "prospection")
+
+
+@login_required
+@require_POST
+def prospect_outcome(request: HttpRequest, pk: int) -> HttpResponse:
+    """Guarda o que saiu do primeiro contato (respondeu, mandou pro e-mail,
+    recusou etc.) sem criar coluna nova no pipeline."""
+    from .constants import PROSPECT_CONTACT_OUTCOME_LABELS
+
+    workspace = _workspace(request)
+    prospect = get_object_or_404(Prospect, pk=pk, workspace=workspace)
+    resultado = (request.POST.get("contact_outcome") or "").strip()
+    if resultado not in PROSPECT_CONTACT_OUTCOME_LABELS:
+        messages.error(request, "Situação inválida.")
         return redirect("prospection")
-    prospect.stage = stage
-    prospect.last_activity_at = _tz.now()
-    prospect.archive_reason = ""
-    prospect.archived_at = None
-    prospect.save(update_fields=["stage", "archive_reason", "archived_at", "last_activity_at", "updated_at"])
-    return redirect("prospection")
+
+    prospect.contact_outcome = resultado
+    prospect.save(update_fields=["contact_outcome", "updated_at"])
+    if resultado:
+        _registrar_evento(prospect, f"Retorno do contato: {PROSPECT_CONTACT_OUTCOME_LABELS[resultado]}.")
+    return redirect(request.POST.get("next") or "prospection")
 
 
 def _save_installments_formset(formset, project, workspace) -> None:

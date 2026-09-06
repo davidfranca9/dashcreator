@@ -61,18 +61,63 @@ LEGACY_PROJECT_STATUS_MAP = {
     "Entregue": "Concluído",
 }
 
+# Pipeline da prospeccao ativa: a creator vai atras da marca, em volume.
+# "Follow-up" segue como etapa por ora (a intencao e' que vire so uma acao
+# registrada no card, mas tirar a coluna agora mexeria em dado existente).
 PROSPECT_STAGE_CHOICES = [
     ("Rascunho", "Rascunho"),
-    ("Prospeccao", "Prospecção"),
+    ("Primeiro Contato", "Primeiro contato"),
+    ("Qualificacao", "Qualificação"),
+    ("Proposta", "Proposta enviada"),
     ("Follow-up", "Follow-up"),
     ("Negociacao", "Negociação"),
     ("Fechado", "Fechado"),
-    ("Sem Retorno", "Sem Retorno"),
+    ("Recuperacao", "Recuperação"),
 ]
 
-# Regras auto: 7 dias em "Prospeccao" sem atividade -> move para "Sem Retorno".
-# "Sem Retorno" que ultrapassar a virada do mes -> arquiva no Banco (sem_retorno).
-PROSPECT_TO_SEM_RETORNO_DAYS = 7
+# Prazos que disparam SUGESTAO na tela. Nada se move sozinho: quem decide
+# mover a marca e' a creator. Antes existiam duas regras automaticas (7 dias
+# parado caia pra "Sem Retorno", e virada de mes arquivava) que enterravam
+# marca sem ninguem mandar, o oposto da ideia de Recuperacao.
+PROSPECT_SEM_RESPOSTA_DIAS = 7
+PROSPECT_PROPOSTA_PARADA_DIAS = 5
+PROSPECT_NEGOCIACAO_PARADA_DIAS = 7
+PROSPECT_REATIVACAO_DIAS = 30
+
+# Situacao do primeiro contato. Nao vira coluna: o briefing pede que essas
+# variacoes fiquem como informacao interna do card.
+PROSPECT_CONTACT_OUTCOME_CHOICES = [
+    ("", "Aguardando resposta"),
+    ("respondeu", "Respondeu"),
+    ("email", "Direcionou para e-mail"),
+    ("whatsapp", "Direcionou para WhatsApp"),
+    ("formulario", "Enviou formulário"),
+    ("agencia", "Direcionou para agência"),
+    ("responsavel", "Falei com responsável"),
+    ("recusou", "Não faz parcerias agora"),
+]
+
+PROSPECT_CONTACT_OUTCOME_LABELS = dict(PROSPECT_CONTACT_OUTCOME_CHOICES)
+
+# Canais comerciais que caracterizam uma marca qualificada: achei uma pessoa
+# ou um caminho real pra continuar, nao so uma resposta qualquer.
+PROSPECT_QUALIFYING_OUTCOMES = {"email", "whatsapp", "formulario", "agencia", "responsavel"}
+
+# Motivo de ida pra Recuperacao. Recuperacao NAO e' perdido: e' a fila de
+# quem ainda vale uma nova tentativa antes de descartar.
+PROSPECT_RECOVERY_REASON_CHOICES = [
+    ("nao_respondeu_contato", "Não respondeu o primeiro contato"),
+    ("nao_respondeu_proposta", "Não respondeu a proposta"),
+    ("sem_parcerias", "Não está fazendo parcerias agora"),
+    ("orcamento", "Orçamento incompatível"),
+    ("permuta", "Ofereceu apenas permuta"),
+    ("campanha_pausada", "Campanha pausada"),
+    ("sem_budget", "Sem budget no momento"),
+    ("nao_avancou", "Oportunidade não avançou"),
+    ("outro", "Outro"),
+]
+
+PROSPECT_RECOVERY_REASON_LABELS = dict(PROSPECT_RECOVERY_REASON_CHOICES)
 
 PROSPECT_ARCHIVE_REASON_CHOICES = [
     ("", "Ativo"),

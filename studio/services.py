@@ -23,6 +23,8 @@ from .constants import (
     NAV_GROUPS,
     NAV_ITEMS,
     PROSPECT_ARCHIVE_LABELS,
+    PROSPECT_CONTACT_OUTCOME_LABELS,
+    PROSPECT_RECOVERY_REASON_LABELS,
     PROSPECT_STAGE_CHOICES,
     SERVICE_TYPE_CHOICES,
     SETTINGS_GROUPS,
@@ -1872,11 +1874,13 @@ def dashboard_snapshot(workspace: Workspace, month_filter: str | None = None) ->
 
 PIPELINE_STAGES = [
     ("Rascunho", "Rascunho", "draft"),
-    ("Prospeccao", "Prospecção", "prospect"),
+    ("Primeiro Contato", "Primeiro contato", "prospect"),
+    ("Qualificacao", "Qualificação", "qualified"),
+    ("Proposta", "Proposta enviada", "proposal"),
     ("Follow-up", "Follow-up", "follow-up"),
     ("Negociacao", "Negociação", "negotiation"),
     ("Fechado", "Fechados ✓", "closed"),
-    ("Sem Retorno", "Sem Retorno", "waiting"),
+    ("Recuperacao", "Recuperação", "waiting"),
 ]
 
 
@@ -1897,50 +1901,57 @@ def _prospect_last_activity(item: Prospect) -> date:
     return item.contact_date or item.updated_at.date() if item.updated_at else item.created_at.date()
 
 
-def auto_archive_stale_prospects(workspace: Workspace, today: date | None = None) -> int:
-    """Aplica DUAS regras automáticas sequenciais toda vez que a pagina de
-    Prospecção é aberta:
-
-    1) Prospects em 'Prospeccao' sem atividade nos últimos N dias (default 7)
-       viram 'Sem Retorno'. Não arquiva; só muda de coluna.
-
-    2) Prospects em 'Sem Retorno' cuja última atividade foi em MES ANTERIOR
-       ao atual são arquivados no Banco de Marcas com motivo 'sem_retorno'.
-
-    Retorna o total de operações realizadas (para o caller opcionalmente
-    exibir mensagem)."""
-    from django.utils import timezone as _tz
-    from .constants import PROSPECT_TO_SEM_RETORNO_DAYS
+def _prospect_days_in_stage(item: Prospect, today: date | None = None) -> int:
+    """Dias parados na etapa atual. Cai pra ultima atividade quando o card e'
+    anterior ao campo stage_changed_at."""
     today = today or _today()
-    cutoff = today - timedelta(days=PROSPECT_TO_SEM_RETORNO_DAYS)
-    moved = 0
+    entrada = item.stage_changed_at.date() if item.stage_changed_at else _prospect_last_activity(item)
+    return max((today - entrada).days, 0)
 
-    # Regra 1: Prospeccao parado 7+ dias -> Sem Retorno
-    stuck = Prospect.objects.filter(
-        workspace=workspace,
-        archive_reason="",
-        stage="Prospeccao",
-    )
-    for item in stuck:
-        if _prospect_last_activity(item) <= cutoff:
-            item.stage = "Sem Retorno"
-            item.save(update_fields=["stage", "updated_at"])
-            moved += 1
 
-    # Regra 2: Sem Retorno de mes(es) anterior(es) -> Banco (sem_retorno)
-    stale_sem_retorno = Prospect.objects.filter(
-        workspace=workspace,
-        archive_reason="",
-        stage="Sem Retorno",
+def prospection_attention(workspace: Workspace, today: date | None = None) -> dict:
+    """Oportunidades que pedem acao, agrupadas por tipo.
+
+    Isso aqui e' SUGESTAO, nao automacao: nada muda de etapa sozinho. Antes
+    existiam duas regras que moviam e arquivavam marca sem ninguem mandar, o
+    que enterrava oportunidade que ainda valia uma tentativa. Agora a tela
+    aponta e a creator decide.
+    """
+    from .constants import (
+        PROSPECT_NEGOCIACAO_PARADA_DIAS,
+        PROSPECT_PROPOSTA_PARADA_DIAS,
+        PROSPECT_REATIVACAO_DIAS,
+        PROSPECT_SEM_RESPOSTA_DIAS,
     )
-    for item in stale_sem_retorno:
-        last = _prospect_last_activity(item)
-        if last.year < today.year or (last.year == today.year and last.month < today.month):
-            item.archive_reason = "sem_retorno"
-            item.archived_at = _tz.now()
-            item.save(update_fields=["archive_reason", "archived_at", "updated_at"])
-            moved += 1
-    return moved
+
+    today = today or _today()
+    ativos = Prospect.objects.filter(workspace=workspace, archive_reason="").select_related("niche")
+
+    grupos = {
+        "sem_resposta": [],
+        "proposta_parada": [],
+        "negociacao_parada": [],
+        "para_reativar": [],
+    }
+    limites = {
+        "sem_resposta": ("Primeiro Contato", PROSPECT_SEM_RESPOSTA_DIAS),
+        "proposta_parada": ("Proposta", PROSPECT_PROPOSTA_PARADA_DIAS),
+        "negociacao_parada": ("Negociacao", PROSPECT_NEGOCIACAO_PARADA_DIAS),
+        "para_reativar": ("Recuperacao", PROSPECT_REATIVACAO_DIAS),
+    }
+
+    for item in ativos:
+        for chave, (etapa, dias) in limites.items():
+            if item.stage == etapa and _prospect_days_in_stage(item, today) >= dias:
+                dados = _serialize_pipeline_prospect(item)
+                dados["days_in_stage"] = _prospect_days_in_stage(item, today)
+                grupos[chave].append(dados)
+
+    for lista in grupos.values():
+        lista.sort(key=lambda d: d["days_in_stage"], reverse=True)
+
+    grupos["total"] = sum(len(v) for k, v in grupos.items() if k != "total")
+    return grupos
 
 
 def _instagram_link(value: str) -> tuple[str, str]:
@@ -1991,8 +2002,15 @@ def _serialize_pipeline_prospect(item: Prospect) -> dict:
         "note": item.note,
         "stage": item.stage,
         "days_since_last": days_since,
-        "is_stale": days_since >= 5 and item.stage == "Prospeccao",
+        "days_in_stage": _prospect_days_in_stage(item, today),
+        "is_stale": days_since >= 5 and item.stage == "Primeiro Contato",
         "proposal_value": item.proposal_value,
+        "brand_offer_value": item.brand_offer_value,
+        "final_value": item.final_value,
+        "contact_outcome": item.contact_outcome,
+        "contact_outcome_label": PROSPECT_CONTACT_OUTCOME_LABELS.get(item.contact_outcome, ""),
+        "recovery_reason": item.recovery_reason,
+        "recovery_reason_label": PROSPECT_RECOVERY_REASON_LABELS.get(item.recovery_reason, ""),
         "accent": accent,
     }
 
@@ -2023,6 +2041,55 @@ def _serialize_banco_prospect(item: Prospect) -> dict:
     }
 
 
+def prospection_dashboard(workspace: Workspace, search: str = "") -> dict:
+    """Números da prospecção ativa.
+
+    Conta em cima de TODAS as marcas, ativas e arquivadas: uma marca fechada
+    ou descartada continua sendo uma prospecção que aconteceu, e tirar ela da
+    conta inflaria a taxa de conversão.
+    """
+    normalizado = (search or "").strip().casefold()
+    todas = [
+        p
+        for p in Prospect.objects.filter(workspace=workspace)
+        if not normalizado or normalizado in (p.company or "").casefold()
+    ]
+
+    # Rascunho e' lista de desejo: ainda nao houve abordagem nenhuma.
+    prospectadas = [p for p in todas if p.stage != "Rascunho"]
+    responderam = [p for p in prospectadas if p.contact_outcome]
+    propostas = [p for p in todas if p.proposal_sent_at]
+    negociando = [p for p in todas if not p.archive_reason and p.stage == "Negociacao"]
+    recuperacao = [p for p in todas if not p.archive_reason and p.stage == "Recuperacao"]
+    fechadas = [p for p in todas if p.stage == "Fechado" or p.archive_reason == "fechado"]
+
+    # Fechamento antigo nao tem final_value preenchido: cai pro valor pedido,
+    # que e' a melhor informacao disponivel pra aquele registro.
+    def valor_de(item: Prospect) -> Decimal:
+        return Decimal(item.final_value or 0) or Decimal(item.proposal_value or 0)
+
+    valor_gerado = sum((valor_de(p) for p in fechadas), Decimal("0"))
+    ticket_medio = (valor_gerado / len(fechadas)) if fechadas else Decimal("0")
+
+    def taxa(parte: int, total: int) -> int:
+        return round((parte / total) * 100) if total else 0
+
+    return {
+        "total_prospectadas": len(prospectadas),
+        "total_rascunho": len([p for p in todas if not p.archive_reason and p.stage == "Rascunho"]),
+        "total_responderam": len(responderam),
+        "total_propostas": len(propostas),
+        "total_negociando": len(negociando),
+        "total_recuperacao": len(recuperacao),
+        "total_fechadas": len(fechadas),
+        "taxa_resposta": taxa(len(responderam), len(prospectadas)),
+        "taxa_conversao": taxa(len(fechadas), len(prospectadas)),
+        "taxa_proposta_fechamento": taxa(len(fechadas), len(propostas)),
+        "valor_gerado": valor_gerado,
+        "ticket_medio": ticket_medio,
+    }
+
+
 def prospection_snapshot(
     workspace: Workspace,
     month_filter: str | None = None,
@@ -2031,8 +2098,6 @@ def prospection_snapshot(
     banco_channel: str | None = None,
     banco_status: str | None = None,
 ) -> dict:
-    auto_archive_stale_prospects(workspace)
-
     month_options = month_options_for_workspace(workspace)
     selected_month = resolve_selected_month(month_filter, month_options)
     search_term = (search or "").strip()
@@ -2040,29 +2105,40 @@ def prospection_snapshot(
 
     all_prospects = list(Prospect.objects.filter(workspace=workspace).select_related("niche"))
 
-    def matches_month(item: Prospect) -> bool:
-        if selected_month is None:
-            return True
-        target = _prospect_last_activity(item)
-        return target.year == selected_month.year and target.month == selected_month.month
-
     def matches_search(company: str) -> bool:
         return (not normalized_search) or (normalized_search in (company or "").casefold())
 
-    active = [p for p in all_prospects if not p.archive_reason and matches_month(p) and matches_search(p.company)]
+    # O painel ativo mostra TODA prospeccao em andamento, sem recorte de mes.
+    # Antes ele so mostrava quem teve atividade no mes selecionado, e isso
+    # esvaziava justamente a Recuperacao, que por definicao guarda marca
+    # parada ha tempo. Tambem deixava a tela incoerente com o Dashboard, que
+    # aponta "sem resposta ha 7 dias" para cards que o painel escondia.
+    # O seletor de mes continua valendo para a aba Contatos.
+    active = [p for p in all_prospects if not p.archive_reason and matches_search(p.company)]
     banco_prospects = [p for p in all_prospects if matches_search(p.company)]
 
-    # KPIs do pipeline (todos abordados = ativos + arquivados; fechados = arquivo "fechado")
-    total_addressed = len([p for p in all_prospects if matches_search(p.company)])
-    total_closed = len([p for p in all_prospects if p.archive_reason == "fechado" and matches_search(p.company)])
+    # Os numeros do topo saem do MESMO calculo do Dashboard. Antes havia duas
+    # definicoes de "abordagem" na mesma tela (uma contando Rascunho, outra
+    # nao), e a barra dizia "0 fechados de 14" ao lado de um KPI marcando 1.
+    dashboard = prospection_dashboard(workspace, search_term)
+    total_addressed = dashboard["total_prospectadas"]
+    total_closed = dashboard["total_fechadas"]
     total_no_response = len([p for p in all_prospects if p.archive_reason == "sem_retorno" and matches_search(p.company)])
-    conversion_rate = round((total_closed / total_addressed) * 100) if total_addressed else 0
+    conversion_rate = dashboard["taxa_conversao"]
 
     pipeline_columns = []
     visible_per_column = 2
     for stage_key, stage_label, stage_tone in PIPELINE_STAGES:
         if stage_key == "Fechado":
-            items_raw = [p for p in all_prospects if p.archive_reason == "fechado" and matches_search(p.company)]
+            # Fechar por arrastar arquiva com motivo "fechado"; fechar pelo
+            # botao so muda a etapa. Os dois contam como fechamento, senao o
+            # card some da coluna dependendo do caminho que a creator usou.
+            items_raw = [
+                p
+                for p in all_prospects
+                if (p.archive_reason == "fechado" or (not p.archive_reason and p.stage == "Fechado"))
+                and matches_search(p.company)
+            ]
         else:
             items_raw = [p for p in active if p.stage == stage_key]
         items_raw.sort(key=lambda p: _prospect_last_activity(p), reverse=True)
@@ -2082,7 +2158,11 @@ def prospection_snapshot(
             "overflow": overflow,
         })
 
-    stale_alert = [_serialize_pipeline_prospect(p) for p in active if (_today() - _prospect_last_activity(p)).days >= 5 and p.stage == "Prospeccao"]
+    stale_alert = [
+        _serialize_pipeline_prospect(p)
+        for p in active
+        if (_today() - _prospect_last_activity(p)).days >= 5 and p.stage == "Primeiro Contato"
+    ]
 
     banco_sorted = sorted(
         banco_prospects,
@@ -2134,6 +2214,8 @@ def prospection_snapshot(
         "total_closed": total_closed,
         "total_no_response": total_no_response,
         "stale_alert": stale_alert,
+        "attention": prospection_attention(workspace),
+        "dashboard": dashboard,
         "archived_rows": archived_rows,
         "filters": {
             "search": search_term,
@@ -2149,8 +2231,8 @@ def prospection_snapshot(
         # legados pra não quebrar templates antigos / testes
         "stats": [
             {"title": "Rascunho", "value": str(sum(1 for p in active if p.stage == "Rascunho")), "icon_label": "R"},
-            {"title": "Prospecção", "value": str(sum(1 for p in active if p.stage == "Prospeccao")), "icon_label": "P"},
-            {"title": "Sem Retorno", "value": str(sum(1 for p in active if p.stage == "Sem Retorno")), "icon_label": "A"},
+            {"title": "Primeiro contato", "value": str(sum(1 for p in active if p.stage == "Primeiro Contato")), "icon_label": "P"},
+            {"title": "Recuperação", "value": str(sum(1 for p in active if p.stage == "Recuperacao")), "icon_label": "A"},
             {"title": "Negociação", "value": str(sum(1 for p in active if p.stage == "Negociacao")), "icon_label": "N"},
         ],
         "columns": [],  # legado

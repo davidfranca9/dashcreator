@@ -1,12 +1,14 @@
 {% extends "studio/base.html" %}
+{% load studio_extras %}
 
 {% block content %}
 <div class="prospection-page" data-prospection-page data-active-tab="{{ active_tab|default:'pipeline' }}">
 
     <nav class="prospection-tabs" role="tablist">
-        <a class="prospection-tab{% if active_tab == 'pipeline' %} is-active{% endif %}" href="?tab=pipeline" role="tab" data-tab-link="pipeline">Pipeline ativo</a>
-        <a class="prospection-tab{% if active_tab == 'banco' %} is-active{% endif %}" href="?tab=banco" role="tab" data-tab-link="banco">Banco de marcas</a>
-        <a class="prospection-tab{% if active_tab == 'logica' %} is-active{% endif %}" href="?tab=logica" role="tab" data-tab-link="logica">Fases do lead</a>
+        <a class="prospection-tab{% if active_tab == 'pipeline' %} is-active{% endif %}" href="?tab=pipeline" role="tab" data-tab-link="pipeline">Painel ativo</a>
+        <a class="prospection-tab{% if active_tab == 'dashboard' %} is-active{% endif %}" href="?tab=dashboard" role="tab" data-tab-link="dashboard">Dashboard</a>
+        <a class="prospection-tab{% if active_tab == 'banco' %} is-active{% endif %}" href="?tab=banco" role="tab" data-tab-link="banco">Contatos</a>
+        <a class="prospection-tab{% if active_tab == 'logica' %} is-active{% endif %}" href="?tab=logica" role="tab" data-tab-link="logica">Como funciona</a>
     </nav>
 
     {# ===================== PIPELINE ATIVO ===================== #}
@@ -52,13 +54,13 @@
             </div>
         </article>
 
-        {% if stale_alert %}
+        {% if attention.total %}
             <article class="banner banner--warning stale-alert">
                 <div>
-                    <strong>{{ stale_alert|length }} lead{{ stale_alert|length|pluralize:",s" }} sem resposta há +5 dias em Prospecção</strong>
-                    <p class="muted">Aos 7 dias eles caem automaticamente para a coluna “Sem Retorno”.</p>
+                    <strong>{{ attention.total }} oportunidade{{ attention.total|pluralize:",s" }} precisando de ação</strong>
+                    <p class="muted">Nada sai do pipeline sozinho. Veja no Dashboard quem está sem resposta, qual proposta pede follow-up e quem está pronta para reativar.</p>
                 </div>
-                <a class="ghost-button small" href="#stale-list">Ver agora</a>
+                <a class="ghost-button small" href="?tab=dashboard">Ver no Dashboard</a>
             </article>
         {% endif %}
 
@@ -120,24 +122,48 @@
                                     </div>
                                     {% if item.channel %}<span class="pipeline-chip">{{ item.channel }}</span>{% endif %}
                                 </div>
+                                {% if item.contact_outcome_label or item.recovery_reason_label %}
+                                    <div class="pipeline-card-tags">
+                                        {% if item.contact_outcome_label %}<span class="pipeline-tag">{{ item.contact_outcome_label }}</span>{% endif %}
+                                        {% if item.recovery_reason_label %}<span class="pipeline-tag pipeline-tag--warn">{{ item.recovery_reason_label }}</span>{% endif %}
+                                    </div>
+                                {% endif %}
                                 <div class="pipeline-card-bottom">
-                                    <small class="muted">{{ item.contact_date|default:"" }}</small>
+                                    <small class="muted">
+                                        {% if column.key == "Proposta" or column.key == "Negociacao" or column.key == "Follow-up" %}
+                                            {% if item.days_in_stage %}parada há {{ item.days_in_stage }}d{% else %}movimentada hoje{% endif %}
+                                        {% else %}
+                                            {{ item.contact_date|default:"" }}
+                                        {% endif %}
+                                    </small>
                                     <div class="pipeline-card-actions">
                                         {% if column.key == "Rascunho" %}
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Prospeccao"><button class="primary-button xsmall" type="submit">Prospectar</button></form>
-                                        {% elif column.key == "Sem Retorno" %}
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Primeiro Contato"><button class="primary-button xsmall" type="submit">Prospectar</button></form>
+                                        {% elif column.key == "Primeiro Contato" %}
+                                            <button class="ghost-button xsmall" type="button" data-outcome-open data-prospect="{{ item.id }}" data-company="{{ item.company }}" data-current="{{ item.contact_outcome }}">Retorno</button>
+                                            <button class="ghost-button xsmall" type="button" data-recovery-open data-prospect="{{ item.id }}" data-company="{{ item.company }}">Recuperação</button>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Qualificacao"><button class="primary-button xsmall" type="submit">Qualificar</button></form>
+                                        {% elif column.key == "Qualificacao" %}
                                             <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Arquivar</button></form>
-                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Prospeccao"><button class="primary-button xsmall" type="submit">Reativar</button></form>
+                                            <button class="ghost-button xsmall" type="button" data-recovery-open data-prospect="{{ item.id }}" data-company="{{ item.company }}">Recuperação</button>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Proposta"><button class="primary-button xsmall" type="submit">Enviei proposta</button></form>
+                                        {% elif column.key == "Proposta" %}
+                                            <form method="post" action="{% url 'prospect_follow_up' item.id %}">{% csrf_token %}<button class="ghost-button xsmall" type="submit">Follow-up</button></form>
+                                            <button class="ghost-button xsmall" type="button" data-recovery-open data-prospect="{{ item.id }}" data-company="{{ item.company }}">Recuperação</button>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Negociacao"><button class="primary-button xsmall" type="submit">Negociar</button></form>
                                         {% elif column.key == "Follow-up" %}
-                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Sem retorno</button></form>
+                                            <form method="post" action="{% url 'prospect_follow_up' item.id %}">{% csrf_token %}<button class="ghost-button xsmall" type="submit">Follow-up</button></form>
+                                            <button class="ghost-button xsmall" type="button" data-recovery-open data-prospect="{{ item.id }}" data-company="{{ item.company }}">Recuperação</button>
                                             <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Negociacao"><button class="primary-button xsmall" type="submit">Negociar</button></form>
                                         {% elif column.key == "Negociacao" %}
-                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Editar</a>
-                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="nao_tem_interesse"><button class="ghost-button xsmall" type="submit">Não fechou</button></form>
-                                            <a class="primary-button xsmall" href="{% url 'prospect_convert' item.id %}">Fechar ✓</a>
+                                            <a class="ghost-button xsmall" href="{% url 'prospect_edit' item.id %}">Valores</a>
+                                            <button class="ghost-button xsmall" type="button" data-recovery-open data-prospect="{{ item.id }}" data-company="{{ item.company }}">Recuperação</button>
+                                            <a class="primary-button xsmall" href="{% url 'prospect_convert' item.id %}">Converter em trabalho</a>
+                                        {% elif column.key == "Recuperacao" %}
+                                            <form method="post" action="{% url 'prospect_follow_up' item.id %}">{% csrf_token %}<button class="ghost-button xsmall" type="submit">Follow-up</button></form>
+                                            <form method="post" action="{% url 'prospect_archive' item.id %}">{% csrf_token %}<input type="hidden" name="reason" value="sem_retorno"><button class="ghost-button xsmall" type="submit">Descartar</button></form>
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Primeiro Contato"><button class="primary-button xsmall" type="submit">Nova tentativa</button></form>
                                         {% elif column.key == "Fechado" %}
                                             <span class="pipeline-chip pipeline-chip--success">Fechado ✓</span>
                                         {% else %}
@@ -182,6 +208,57 @@
                 </div>
             {% endfor %}
         </div>
+    </section>
+
+    {# ===================== DASHBOARD ===================== #}
+    <section class="tab-pane{% if active_tab == 'dashboard' %} is-active{% endif %}" data-tab-pane="dashboard">
+        <section class="prosp-metrics">
+            <article class="card prosp-metric"><small>Marcas prospectadas</small><strong>{{ dashboard.total_prospectadas }}</strong><span class="muted">{{ dashboard.total_rascunho }} ainda em rascunho</span></article>
+            <article class="card prosp-metric"><small>Responderam</small><strong>{{ dashboard.total_responderam }}</strong><span class="muted">{{ dashboard.taxa_resposta }}% de taxa de resposta</span></article>
+            <article class="card prosp-metric"><small>Propostas enviadas</small><strong>{{ dashboard.total_propostas }}</strong><span class="muted">{{ dashboard.taxa_proposta_fechamento }}% viram fechamento</span></article>
+            <article class="card prosp-metric"><small>Negociando agora</small><strong>{{ dashboard.total_negociando }}</strong><span class="muted">{{ dashboard.total_recuperacao }} em recuperação</span></article>
+            <article class="card prosp-metric prosp-metric--good"><small>Fechamentos</small><strong>{{ dashboard.total_fechadas }}</strong><span class="muted">{{ dashboard.taxa_conversao }}% de conversão</span></article>
+            <article class="card prosp-metric prosp-metric--good"><small>Valor gerado</small><strong>{{ dashboard.valor_gerado|money }}</strong><span class="muted">ticket médio {{ dashboard.ticket_medio|money }}</span></article>
+        </section>
+
+        <div class="prosp-attention-head">
+            <h2>Precisa de ação</h2>
+            <span class="muted">{{ attention.total }} oportunidade{{ attention.total|pluralize:",s" }} esperando você</span>
+        </div>
+
+        <section class="prosp-attention">
+            {% for grupo in attention_groups %}
+                <article class="card prosp-attention-group">
+                    <header>
+                        <strong>{{ grupo.title }}</strong>
+                        <span class="pipeline-column-count">{{ grupo.items|length }}</span>
+                    </header>
+                    <p class="muted prosp-attention-hint">{{ grupo.hint }}</p>
+                    {% if grupo.items %}
+                        <ul class="prosp-attention-list">
+                            {% for item in grupo.items %}
+                                <li>
+                                    <div>
+                                        <strong>{{ item.company }}</strong>
+                                        <span class="muted">{{ item.days_in_stage }} dia{{ item.days_in_stage|pluralize:",s" }} parada{% if item.niche %} · {{ item.niche }}{% endif %}</span>
+                                    </div>
+                                    <div class="prosp-attention-actions">
+                                        <form method="post" action="{% url 'prospect_follow_up' item.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="ghost-button xsmall" type="submit">Follow-up</button></form>
+                                        {% if grupo.key == 'para_reativar' %}
+                                            <form method="post" action="{% url 'prospect_set_stage' item.id %}">{% csrf_token %}<input type="hidden" name="stage" value="Primeiro Contato"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="primary-button xsmall" type="submit">Nova tentativa</button></form>
+                                        {% else %}
+                                            <button class="ghost-button xsmall" type="button" data-recovery-open data-prospect="{{ item.id }}" data-company="{{ item.company }}">Recuperação</button>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted prosp-attention-empty">Nada pendente aqui.</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </section>
     </section>
 
     {# ===================== BANCO DE MARCAS ===================== #}
@@ -290,42 +367,129 @@
     {# ===================== LÓGICA DO SISTEMA ===================== #}
     <section class="tab-pane{% if active_tab == 'logica' %} is-active{% endif %}" data-tab-pane="logica">
         <article class="card logica-funnel">
-            <h3>Fases do lead</h3>
+            <h3>As etapas do painel</h3>
             <ol class="logica-steps">
-                <li><span class="logica-num">1</span><div><strong>Rascunho</strong>. Lead criado, ainda não contatado. Você pesquisa a marca, anota contatos, prepara abordagem.</div></li>
-                <li><span class="logica-num">2</span><div><strong>Prospecção</strong>. Primeiro contato enviado. Aguardando resposta inicial.</div></li>
-                <li><span class="logica-num">★</span><div><strong>Follow-up</strong>. Contato ativo de retomada.</div></li>
-                <li><span class="logica-num">3</span><div><strong>Negociação</strong>. Proposta enviada, valores sendo discutidos. Próximo do fechamento.</div></li>
-                <li><span class="logica-num logica-num--check">✓</span><div><strong>Fechado</strong> vai para Trabalhos.</div></li>
-                <li><span class="logica-num">↺</span><div><strong>Sem Retorno</strong>. Coluna intermediária: leads que ficaram 7+ dias em Prospecção sem atividade caem aqui automaticamente. Se virar o mês sem retomar, arquivam no Banco de Marcas.</div></li>
+                <li><span class="logica-num">1</span><div><strong>Rascunho</strong>. Marcas que você pretende abordar. Nenhuma abordagem foi feita ainda.</div></li>
+                <li><span class="logica-num">2</span><div><strong>Primeiro contato</strong>. A abordagem saiu, normalmente pelo Instagram. O que a marca respondeu (mandou para o e-mail, passou WhatsApp, recusou) fica registrado no botão <strong>Retorno</strong> do card, sem virar coluna nova.</div></li>
+                <li><span class="logica-num">3</span><div><strong>Qualificação</strong>. Você encontrou um canal ou uma pessoa de verdade para continuar: e-mail do marketing, WhatsApp da responsável, agência, formulário. Primeiro contato é ter tentado; qualificação é ter para onde ir.</div></li>
+                <li><span class="logica-num">4</span><div><strong>Proposta enviada</strong>. Proposta, orçamento, mídia kit ou portfólio já foram. O card mostra há quantos dias está parado, porque follow-up aqui é o que decide.</div></li>
+                <li><span class="logica-num">★</span><div><strong>Follow-up</strong>. Coluna de retomada ativa. O follow-up também existe como <strong>ação</strong>: o botão em qualquer card registra a cobrança no histórico e zera o contador de dias parados, sem mudar a marca de etapa.</div></li>
+                <li><span class="logica-num">5</span><div><strong>Negociação</strong>. Valor, entregáveis, permuta, aprovação interna. Guarde os três valores: o que você pediu, o que a marca ofereceu e o final.</div></li>
+                <li><span class="logica-num logica-num--check">✓</span><div><strong>Fechado</strong>. Use <strong>Converter em trabalho</strong>: a marca, o nicho e o valor final já vão preenchidos para a área de execução.</div></li>
+                <li><span class="logica-num">↺</span><div><strong>Recuperação</strong>. Não é perdido. É a fila de quem ainda vale uma nova tentativa. Ao mover para cá você registra o motivo, e a marca continua no painel até você decidir descartar.</div></li>
             </ol>
         </article>
 
         <section class="logica-grid">
             <article class="card logica-tile">
                 <div class="logica-icon">⏱</div>
-                <h4>Regra dos 7 dias</h4>
-                <p class="muted">Se um lead em <strong>Prospecção</strong> ficar 7 dias sem nenhuma interação registrada, o sistema move automaticamente para a coluna <strong>Sem Retorno</strong>. Depois, quando virar o mês, ele arquiva no Banco de Marcas com status <strong>“Sem retorno”</strong>.</p>
+                <h4>Nada sai do painel sozinho</h4>
+                <p class="muted">Antes, marca parada 7 dias caía para “Sem Retorno” e sumia no arquivo na virada do mês, sem ninguém mandar. Agora o sistema só <strong>sugere</strong>: o Dashboard aponta quem está sem resposta, qual proposta pede follow-up e quem está pronta para reativar. Mover é decisão sua.</p>
             </article>
             <article class="card logica-tile">
                 <div class="logica-icon">🗂</div>
-                <h4>Banco de Marcas</h4>
-                <p class="muted">Repositório permanente de todas as marcas abordadas. Nunca é excluído. Cada marca tem status: <strong>Sem retorno, Não tem interesse, Pausado ou Fechado</strong>. Exportável como planilha (.csv) a qualquer momento. Qualquer marca pode ser <strong>Reativada</strong> e volta ao pipeline.</p>
+                <h4>Contatos</h4>
+                <p class="muted">Repositório permanente de todas as marcas abordadas, ativas e encerradas. Nunca é excluído, é exportável como planilha (.csv) e qualquer marca pode ser <strong>Reativada</strong>, voltando para <strong>Recuperação</strong> com o histórico preservado.</p>
             </article>
             <article class="card logica-tile">
                 <div class="logica-icon">📊</div>
-                <h4>Taxa de conversão</h4>
-                <p class="muted">Calculada automaticamente: <strong>fechamentos ÷ total de abordagens</strong>. Aparece no topo do Pipeline e no Banco de Marcas. Permite saber de 50 abordagens quantas viraram trabalho — o KPI mais importante da prospecção.</p>
+                <h4>Taxa de resposta e de conversão</h4>
+                <p class="muted"><strong>Resposta</strong> é quantas marcas deram retorno sobre o total abordado, e depende de você registrar o retorno no card. <strong>Conversão</strong> é fechamentos ÷ marcas abordadas. Rascunho não entra na conta: ainda não houve abordagem.</p>
             </article>
             <article class="card logica-tile">
                 <div class="logica-icon">♻</div>
-                <h4>Reativar marcas</h4>
-                <p class="muted">Uma marca que foi para o Banco de Marcas pode ser reativada a qualquer momento — voltando ao pipeline como novo lead, com histórico preservado. Ideal para marcas sazonais ou que mudaram de responsável de marketing.</p>
+                <h4>Follow-up é ação</h4>
+                <p class="muted">O botão <strong>Follow-up</strong> em qualquer card registra a cobrança no histórico da marca e zera o contador de dias parados, sem mudar a etapa. Cobrar uma proposta não muda o estágio da oportunidade.</p>
             </article>
         </section>
     </section>
 
+    {% comment %}
+    Motivo obrigatorio ao mandar pra Recuperacao: e' o que permite montar
+    depois o fluxo de retomada e saber por que cada marca esfriou.
+    {% endcomment %}
+    <dialog class="prosp-dialog" data-recovery-dialog>
+        <form method="post" data-recovery-form>
+            {% csrf_token %}
+            <input type="hidden" name="stage" value="Recuperacao">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <h3>Mover para Recuperação</h3>
+            <p class="muted" data-recovery-company></p>
+            <label class="prosp-dialog-label" for="recovery-reason">Por que essa oportunidade esfriou?</label>
+            <select id="recovery-reason" name="recovery_reason" required>
+                <option value="">Escolha o motivo</option>
+                {% for value, label in recovery_reason_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+            <p class="muted prosp-dialog-hint">Recuperação não é perdido: a marca continua no painel para você tentar de novo antes de descartar.</p>
+            <div class="prosp-dialog-actions">
+                <button class="ghost-button small" type="button" data-recovery-cancel>Cancelar</button>
+                <button class="primary-button small" type="submit">Mover</button>
+            </div>
+        </form>
+    </dialog>
+
+    {# Retorno do primeiro contato: fica no card, sem virar coluna nova. #}
+    <dialog class="prosp-dialog" data-outcome-dialog>
+        <form method="post" data-outcome-form>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <h3>Retorno do contato</h3>
+            <p class="muted" data-outcome-company></p>
+            <label class="prosp-dialog-label" for="contact-outcome">O que a marca respondeu?</label>
+            <select id="contact-outcome" name="contact_outcome">
+                {% for value, label in contact_outcome_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+            <p class="muted prosp-dialog-hint">Conseguiu e-mail, WhatsApp, agência ou falou com a responsável? Isso é uma marca qualificada.</p>
+            <div class="prosp-dialog-actions">
+                <button class="ghost-button small" type="button" data-outcome-cancel>Cancelar</button>
+                <button class="primary-button small" type="submit">Salvar</button>
+            </div>
+        </form>
+    </dialog>
+
 </div>
+
+<script>
+/* Diálogos de Recuperação e de retorno do contato. Ficam fora da IIFE do
+   board porque o Dashboard também os abre. */
+const dialogoRecuperacao = document.querySelector("[data-recovery-dialog]");
+const formRecuperacao = document.querySelector("[data-recovery-form]");
+const dialogoRetorno = document.querySelector("[data-outcome-dialog]");
+const formRetorno = document.querySelector("[data-outcome-form]");
+
+function abrirRecuperacao(id, empresa) {
+    formRecuperacao.action = "/prospeccao/" + id + "/etapa/";
+    formRecuperacao.querySelector("[data-recovery-company]").textContent = empresa;
+    formRecuperacao.querySelector("select").value = "";
+    dialogoRecuperacao.showModal();
+}
+
+function abrirRetorno(id, empresa, atual) {
+    formRetorno.action = "/prospeccao/" + id + "/retorno/";
+    formRetorno.querySelector("[data-outcome-company]").textContent = empresa;
+    formRetorno.querySelector("select").value = atual || "";
+    dialogoRetorno.showModal();
+}
+
+document.addEventListener("click", (evento) => {
+    const recuperar = evento.target.closest("[data-recovery-open]");
+    if (recuperar) {
+        abrirRecuperacao(recuperar.dataset.prospect, recuperar.dataset.company);
+        return;
+    }
+    const retorno = evento.target.closest("[data-outcome-open]");
+    if (retorno) {
+        abrirRetorno(retorno.dataset.prospect, retorno.dataset.company, retorno.dataset.current);
+    }
+});
+
+document.querySelector("[data-recovery-cancel]").addEventListener("click", () => dialogoRecuperacao.close());
+document.querySelector("[data-outcome-cancel]").addEventListener("click", () => dialogoRetorno.close());
+</script>
 
 <script>
     (() => {
@@ -411,12 +575,15 @@
             || (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || "";
 
         const STAGE_ENDPOINTS = {
-            "Rascunho":             { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Rascunho" } },
-            "Prospeccao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Prospeccao" } },
-            "Sem Retorno":   { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Sem Retorno" } },
-            "Follow-up":            { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Follow-up" } },
-            "Negociacao":           { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Negociacao" } },
-            "Fechado":              { url: "{% url 'prospect_archive' 0 %}",   body: { reason: "fechado" } },
+            "Rascunho":         { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Rascunho" } },
+            "Primeiro Contato": { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Primeiro Contato" } },
+            "Qualificacao":     { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Qualificacao" } },
+            "Proposta":         { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Proposta" } },
+            "Follow-up":        { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Follow-up" } },
+            "Negociacao":       { url: "{% url 'prospect_set_stage' 0 %}", body: { stage: "Negociacao" } },
+            "Fechado":          { url: "{% url 'prospect_archive' 0 %}",   body: { reason: "fechado" } },
+            // "Recuperacao" nao entra aqui de proposito: mover pra la exige
+            // motivo, entao o drop abre o dialogo em vez de salvar direto.
         };
 
         let dragged = null;
@@ -459,6 +626,15 @@
                 const currentStage = card.dataset.currentStage;
                 const sourceColumn = card.closest("[data-pipeline-column]");
                 if (targetStage === currentStage) return;
+
+                // Recuperação pede motivo: abre o diálogo e deixa o card onde
+                // está até a creator confirmar.
+                if (targetStage === "Recuperacao") {
+                    const nome = card.querySelector("strong");
+                    abrirRecuperacao(card.dataset.prospectId, nome ? nome.textContent.trim() : "");
+                    return;
+                }
+
                 const config = STAGE_ENDPOINTS[targetStage];
                 if (!config) return;
 

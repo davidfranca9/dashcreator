@@ -35,7 +35,7 @@ class DashboardSmokeTest(TestCase):
             company="Nike",
             contact="Paula",
             contact_type="Marketing",
-            stage="Prospeccao",
+            stage="Primeiro Contato",
             contact_date=date.today(),
             niche=self.niche,
             email="paula@nike.com",
@@ -140,7 +140,7 @@ class DashboardSmokeTest(TestCase):
                 "company": "Insider",
                 "contact": "Julia",
                 "contact_type": "Social media",
-                "stage": "Prospeccao",
+                "stage": "Primeiro Contato",
                 "contact_date": date.today().isoformat(),
                 "niche": self.niche.pk,
                 "email": "julia@insider.com",
@@ -220,18 +220,18 @@ class DashboardSmokeTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         nike_row = next(row for row in response.context["archived_rows"] if row["company"] == "Nike")
-        self.assertEqual(nike_row["status_key"], "Prospeccao")
-        self.assertEqual(nike_row["status_label"], "Prospecção")
+        self.assertEqual(nike_row["status_key"], "Primeiro Contato")
+        self.assertEqual(nike_row["status_label"], "Primeiro contato")
         self.assertFalse(nike_row["is_archived"])
 
     def test_banco_de_marcas_filters_active_statuses(self):
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse("prospection"), {"tab": "banco", "banco_status": "Prospeccao"})
+        response = self.client.get(reverse("prospection"), {"tab": "banco", "banco_status": "Primeiro Contato"})
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["archived_rows"])
-        self.assertTrue(all(row["status_key"] == "Prospeccao" for row in response.context["archived_rows"]))
+        self.assertTrue(all(row["status_key"] == "Primeiro Contato" for row in response.context["archived_rows"]))
 
     def test_prospect_form_hides_estimated_value_until_conversion(self):
         form = ProspectForm(workspace=self.workspace)
@@ -316,7 +316,7 @@ class DashboardSmokeTest(TestCase):
                 "company": "Insider",
                 "contact": "Julia",
                 "contact_type": "Social media",
-                "stage": "Prospeccao",
+                "stage": "Primeiro Contato",
                 "contact_date": date.today().isoformat(),
                 "niche": "",
                 "new_niche": "",
@@ -444,7 +444,7 @@ class DashboardSmokeTest(TestCase):
                 company=f"Marca extra {index}",
                 contact="Julia",
                 contact_type="Email",
-                stage="Prospeccao",
+                stage="Primeiro Contato",
                 contact_date=date.today() - timedelta(days=index),
                 niche=self.niche,
                 email=f"extra{index}@marca.com",
@@ -457,7 +457,7 @@ class DashboardSmokeTest(TestCase):
         response = self.client.get(reverse("prospection"))
 
         self.assertEqual(response.status_code, 200)
-        prospect_column = next(column for column in response.context["pipeline_columns"] if column["key"] == "Prospeccao")
+        prospect_column = next(column for column in response.context["pipeline_columns"] if column["key"] == "Primeiro Contato")
         self.assertEqual(prospect_column["overflow"], 2)
         self.assertFalse(prospect_column["items"][0]["is_overflow"])
         self.assertTrue(all(item["is_overflow"] for item in prospect_column["items"][2:]))
@@ -1954,7 +1954,7 @@ class DashboardSmokeTest(TestCase):
             company=" shein ",
             contact="Marina",
             contact_type="Instagram DM",
-            stage="Prospeccao",
+            stage="Primeiro Contato",
             contact_date=date.today(),
             niche=self.niche,
             email="marina@shein.com",
@@ -2204,7 +2204,7 @@ class DashboardSmokeTest(TestCase):
             company="O BoticÃ¡rio!!!",
             contact="Julia",
             contact_type="Email",
-            stage="Prospeccao",
+            stage="Primeiro Contato",
             contact_date=date.today(),
             niche=self.niche,
             email="julia@boticario.com",

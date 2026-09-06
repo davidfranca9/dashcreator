@@ -15,6 +15,8 @@ from .constants import (
     PROJECT_STAGE_CHOICES,
     PROJECT_STATUS_CHOICES,
     PROSPECT_ARCHIVE_REASON_CHOICES,
+    PROSPECT_CONTACT_OUTCOME_CHOICES,
+    PROSPECT_RECOVERY_REASON_CHOICES,
     PROSPECT_STAGE_CHOICES,
     SERVICE_TYPE_CHOICES,
 )
@@ -223,6 +225,40 @@ class Prospect(WorkspaceOwnedModel):
     last_activity_at = models.DateTimeField(null=True, blank=True)
     channel = models.CharField(max_length=40, blank=True, default="")
 
+    # O que saiu do primeiro contato. Fica como informacao do card em vez de
+    # virar coluna: sao muitas variacoes e o pipeline precisa seguir enxuto.
+    contact_outcome = models.CharField(
+        max_length=20,
+        choices=PROSPECT_CONTACT_OUTCOME_CHOICES,
+        blank=True,
+        default="",
+    )
+
+    # Negociacao: os tres valores que a creator precisa comparar depois.
+    # proposal_value (acima) e' o que ela pediu.
+    brand_offer_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    final_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    negotiation_note = models.TextField(blank=True, default="")
+
+    # Carimbado quando o card entra em "Proposta". Fica gravado mesmo se a
+    # marca depois voltar ou for pra Recuperacao: sem isso, "quantas propostas
+    # enviei" viraria chute a partir da etapa em que o card parou.
+    proposal_sent_at = models.DateTimeField(null=True, blank=True)
+
+    # Recuperacao: por que a marca esfriou, e desde quando.
+    recovery_reason = models.CharField(
+        max_length=30,
+        choices=PROSPECT_RECOVERY_REASON_CHOICES,
+        blank=True,
+        default="",
+    )
+    recovery_at = models.DateTimeField(null=True, blank=True)
+
+    # Quando o card entrou na etapa atual. last_activity_at conta qualquer
+    # movimento; este conta so a troca de etapa, que e' o numero que importa
+    # pra saber ha quanto tempo uma proposta esta parada.
+    stage_changed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ["stage", "-updated_at"]
 
@@ -232,6 +268,34 @@ class Prospect(WorkspaceOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.company} - {self.contact}"
+
+
+class ProspectEvent(WorkspaceOwnedModel):
+    """Memoria comercial da marca: cada linha e' uma interacao.
+
+    Espelha o InfoLeadEvent do CRM em vez de inventar outra estrutura. O texto
+    ja vem escrito pronto pra leitura ("Proposta enviada", "Follow-up feito
+    pelo Instagram") porque a tela e' um extrato, nao um log tecnico.
+    """
+
+    KIND_STAGE = "etapa"
+    KIND_FOLLOW_UP = "follow_up"
+    KIND_NOTE = "nota"
+    KIND_CHOICES = [
+        (KIND_STAGE, "Mudança de etapa"),
+        (KIND_FOLLOW_UP, "Follow-up"),
+        (KIND_NOTE, "Anotação"),
+    ]
+
+    prospect = models.ForeignKey(Prospect, on_delete=models.CASCADE, related_name="events")
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default=KIND_NOTE)
+    text = models.CharField(max_length=240)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    def __str__(self) -> str:
+        return f"{self.prospect.company}: {self.text}"
 
 
 class Project(WorkspaceOwnedModel):
