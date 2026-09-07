@@ -74,7 +74,7 @@ from .services import (
     INFO_CRM_STAGE_IDS,
     INFO_CRM_ORIGINS,
     INFO_CRM_LOSS_REASONS,
-    is_layfe_account,
+    is_internal_account,
     jobs_snapshot_filtered,
     legal_snapshot,
     parse_month_value,
@@ -2702,12 +2702,12 @@ def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("jobs")
 
 
-# ── Detalhe do trabalho / Assistente de Atualizações (EXCLUSIVO Layfe) ──────
-# Toda entrada aqui passa por _layfe_project_or_404: qualquer conta que não
-# seja a da Layfe recebe 404 no servidor, mesmo adivinhando a URL.
-def _layfe_project_or_404(request: HttpRequest, pk: int) -> tuple:
+# ── Detalhe do trabalho / Assistente de Atualizações (interno do time) ──────
+# Toda entrada aqui passa por _internal_project_or_404: conta de creator
+# recebe 404 no servidor, mesmo adivinhando a URL.
+def _internal_project_or_404(request: HttpRequest, pk: int) -> tuple:
     workspace = _workspace(request)
-    if not is_layfe_account(workspace, request.user):
+    if not is_internal_account(workspace, request.user):
         raise Http404("Pagina nao encontrada.")
     project = get_object_or_404(Project, pk=pk, workspace=workspace)
     return workspace, project
@@ -2715,7 +2715,7 @@ def _layfe_project_or_404(request: HttpRequest, pk: int) -> tuple:
 
 @login_required
 def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
-    workspace, project = _layfe_project_or_404(request, pk)
+    workspace, project = _internal_project_or_404(request, pk)
     ensure_campaign_started(project)
     context = shell_context(
         "jobs",
@@ -2731,7 +2731,7 @@ def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 @require_POST
 def project_detail_advance(request: HttpRequest, pk: int) -> HttpResponse:
-    workspace, project = _layfe_project_or_404(request, pk)
+    workspace, project = _internal_project_or_404(request, pk)
     message = advance_campaign_stage(project)
     if message is None:
         messages.info(request, "A campanha já está concluída.")
@@ -2743,7 +2743,7 @@ def project_detail_advance(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 @require_POST
 def project_detail_save(request: HttpRequest, pk: int) -> HttpResponse:
-    workspace, project = _layfe_project_or_404(request, pk)
+    workspace, project = _internal_project_or_404(request, pk)
     project.contact_name = (request.POST.get("contact_name") or "").strip()[:120]
     project.roteiro_link = (request.POST.get("roteiro_link") or "").strip()[:500]
     project.delivery_link = (request.POST.get("delivery_link") or "").strip()[:500]
@@ -2755,7 +2755,7 @@ def project_detail_save(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 @require_POST
 def project_message_action(request: HttpRequest, pk: int, message_id: int) -> HttpResponse:
-    workspace, project = _layfe_project_or_404(request, pk)
+    workspace, project = _internal_project_or_404(request, pk)
     message = get_object_or_404(
         ProjectUpdateMessage, pk=message_id, project=project, workspace=workspace
     )

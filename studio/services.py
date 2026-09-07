@@ -503,10 +503,20 @@ def _percentage_text(value: Decimal) -> str:
     return f"{amount.normalize()}%".replace(".", ",")
 
 
-def is_layfe_account(workspace: Workspace | None, user: User | None = None) -> bool:
-    """Fonte única de verdade para recursos exclusivos da Layfe. Verdadeiro
-    somente quando 'layfeamorim' aparece no workspace (nome/slug/razão social)
-    ou no usuário (username/email/nome). Nenhuma outra conta passa por aqui."""
+# Contas internas do time, que enxergam os recursos ainda nao liberados pras
+# creators. O marcador do David leva o "9" de proposito: sem ele, qualquer
+# usuaria chamada "David França" entraria junto, porque a normalizacao tira o
+# acento e junta tudo ("davidfranca").
+INTERNAL_ACCOUNT_MARKERS = ("layfeamorim", "davidfranca9")
+
+
+def is_internal_account(workspace: Workspace | None, user: User | None = None) -> bool:
+    """Fonte única de verdade para os recursos internos do time.
+
+    Verdadeiro quando um dos marcadores aparece no workspace (nome, slug ou
+    razão social) ou no usuário (username, email ou nome). Nenhuma outra conta
+    passa por aqui.
+    """
     candidates = [
         getattr(workspace, "name", ""),
         getattr(workspace, "slug", ""),
@@ -520,13 +530,13 @@ def is_layfe_account(workspace: Workspace | None, user: User | None = None) -> b
         ])
     for value in candidates:
         normalized = normalize_company_name(value).replace(" ", "")
-        if "layfeamorim" in normalized:
+        if any(marker in normalized for marker in INTERNAL_ACCOUNT_MARKERS):
             return True
     return False
 
 
 def workspace_has_infoproducts_access(workspace: Workspace | None, user: User | None = None) -> bool:
-    return is_layfe_account(workspace, user)
+    return is_internal_account(workspace, user)
 
 
 def navigation(
@@ -848,7 +858,7 @@ def shell_context(
         # Workspace de teste vê as novidades antes de todos (flag por workspace).
         "beta": bool(getattr(workspace, "is_beta", False)),
         "has_infoproducts_access": workspace_has_infoproducts_access(workspace, user),
-        "is_layfe": is_layfe_account(workspace, user),
+        "is_internal": is_internal_account(workspace, user),
     }
 
 
