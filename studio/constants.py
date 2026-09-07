@@ -4,18 +4,19 @@ NAV_ITEMS = [
     {"key": "dashboard", "label": "Dashboard", "subtitle": "Visão executiva do negócio UGC.", "url_name": "dashboard", "icon": "dashboard"},
     {"key": "planning", "label": "Planejamento", "subtitle": "Overview da sua semana.", "url_name": "planning", "icon": "calendar"},
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs", "icon": "briefcase"},
-    {"key": "prospection", "label": "Prospecção", "subtitle": "Leads, follow-ups e negociações em aberto.", "url_name": "prospection", "icon": "target"},
+    {"key": "prospection", "label": "Prospecção", "subtitle": "Marcas que você foi atrás, do primeiro contato ao fechamento.", "url_name": "prospection", "icon": "target"},
+    {"key": "crm", "label": "CRM", "subtitle": "Leads de serviço que chegaram até você, do contato à venda.", "url_name": "crm", "icon": "users"},
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance", "icon": "cash"},
     {"key": "distribution", "label": "Distribuição", "subtitle": "Destino do material entregue entre orgânico e ads.", "url_name": "distribution", "icon": "share"},
     {"key": "legal", "label": "Jurídico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal", "icon": "file-text"},
-    {"key": "infoproducts", "label": "Infoprodutos", "subtitle": "Produtos digitais, entradas, alunas e prazos.", "url_name": "infoproducts", "icon": "monitor"},
+    {"key": "infoproducts", "label": "Infoprodutos", "subtitle": "Produtos digitais, vendas e alunas.", "url_name": "infoproducts", "icon": "monitor"},
     {"key": "reports", "label": "Relatórios", "subtitle": "Indicadores estratégicos do negócio.", "url_name": "reports", "icon": "chart-bar"},
     {"key": "profile", "label": "Perfil", "subtitle": "Dados cadastrais da conta e do workspace.", "url_name": "profile", "icon": "user"},
     {"key": "settings", "label": "Configurações", "subtitle": "Preferências visuais e operacionais.", "url_name": "settings", "icon": "settings"},
 ]
 
 NAV_GROUPS = [
-    {"label": "Principal", "keys": ["dashboard", "planning", "jobs", "prospection"]},
+    {"label": "Principal", "keys": ["dashboard", "planning", "jobs", "prospection", "crm"]},
     {"label": "Gestão", "keys": ["finance", "distribution", "legal", "infoproducts", "reports"]},
     {"label": "Conta", "keys": ["profile", "settings"]},
 ]

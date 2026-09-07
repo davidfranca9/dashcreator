@@ -539,7 +539,9 @@ def navigation(
     badges = badges or {}
     items = []
     for item in NAV_ITEMS:
-        if item["key"] == "infoproducts" and not workspace_has_infoproducts_access(workspace, user):
+        # CRM segue com o mesmo acesso restrito que tinha quando morava
+        # dentro de Infoprodutos: a separacao foi de tela, nao de permissao.
+        if item["key"] in {"infoproducts", "crm"} and not workspace_has_infoproducts_access(workspace, user):
             continue
         url = reverse(item["url_name"])
         if month_filter and item["key"] in MONTH_FILTER_PAGE_KEYS:
@@ -3534,11 +3536,15 @@ def average_project_days(projects: list[Project]) -> float:
 
 # ── CRM comercial de Infoprodutos (kanban, exclusivo Layfe) ─────────────────
 # Modelo copiado do funil de vendas do Quantum: etapas fixas, card arrastável.
+# Os rotulos estavam trocados em relacao aos ids gravados no banco: a coluna
+# "proposta" aparecia como "Negociação" e a "negoc" como "Recuperação", que
+# nem e' conceito de CRM (e' da Prospeccao). O historico do lead registrava o
+# nome errado por causa disso. Ids intactos, so os rotulos corrigidos.
 INFO_CRM_STAGES = [
     {"id": "prospec", "name": "Interessadas", "color": "#4f7cff"},
     {"id": "qualif", "name": "Qualificadas", "color": "#fbbf24"},
-    {"id": "proposta", "name": "Negociação", "color": "#2dd4cf"},
-    {"id": "negoc", "name": "Recuperação", "color": "#8b5cf6"},
+    {"id": "proposta", "name": "Proposta enviada", "color": "#2dd4cf"},
+    {"id": "negoc", "name": "Negociação", "color": "#8b5cf6"},
     {"id": "fechado", "name": "Fechado", "color": "#34d399"},
     {"id": "perdido", "name": "Perdido", "color": "#f87171"},
 ]

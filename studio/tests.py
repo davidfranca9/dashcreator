@@ -4474,7 +4474,7 @@ class FinancePageWithMovementsTest(TestCase):
 
 
 class InfoproductsCrmTest(TestCase):
-    """CRM kanban de Infoprodutos: EXCLUSIVO da Layfe (mesma trava da aba)."""
+    """CRM kanban: aba propria desde 07/09/2026, mesma trava de acesso."""
 
     def setUp(self):
         from studio.models import InfoLead
@@ -4488,24 +4488,24 @@ class InfoproductsCrmTest(TestCase):
         from studio.models import InfoLead
         # Layfe entra
         self.client.force_login(self.layfe)
-        resp = self.client.get(reverse("infoproducts") + "?tab=crm")
+        resp = self.client.get(reverse("crm"))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "CRM comercial")
+        self.assertContains(resp, "Interessadas")
         self.assertContains(resp, "Marina")
-        self.assertEqual(self.client.get(reverse("infoproducts_crm_lead", args=[self.lead.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("crm_lead", args=[self.lead.pk])).status_code, 200)
 
         # conta comum: 404 em tudo, mesmo sabendo a URL
         self.client.force_login(self.other)
-        self.assertEqual(self.client.get(reverse("infoproducts") + "?tab=crm").status_code, 404)
-        self.assertEqual(self.client.get(reverse("infoproducts_crm_lead", args=[self.lead.pk])).status_code, 404)
-        self.assertEqual(self.client.post(reverse("infoproducts_crm_move", args=[self.lead.pk]), {"stage": "negoc"}).status_code, 404)
-        self.assertEqual(self.client.post(reverse("infoproducts_crm_create"), {"name": "X"}).status_code, 404)
+        self.assertEqual(self.client.get(reverse("crm")).status_code, 404)
+        self.assertEqual(self.client.get(reverse("crm_lead", args=[self.lead.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("crm_move", args=[self.lead.pk]), {"stage": "negoc"}).status_code, 404)
+        self.assertEqual(self.client.post(reverse("crm_create"), {"name": "X"}).status_code, 404)
         self.lead.refresh_from_db()
         self.assertEqual(self.lead.stage, "prospec")
 
     def test_board_has_six_stages(self):
         self.client.force_login(self.layfe)
-        columns = self.client.get(reverse("infoproducts") + "?tab=crm").context["crm_columns"]
+        columns = self.client.get(reverse("crm")).context["crm_columns"]
         self.assertEqual([c["id"] for c in columns],
                          ["prospec", "qualif", "proposta", "negoc", "fechado", "perdido"])
         prospec = next(c for c in columns if c["id"] == "prospec")
@@ -4514,7 +4514,7 @@ class InfoproductsCrmTest(TestCase):
     def test_drag_card_moves_stage_and_logs_history(self):
         self.client.force_login(self.layfe)
         resp = self.client.post(
-            reverse("infoproducts_crm_move", args=[self.lead.pk]),
+            reverse("crm_move", args=[self.lead.pk]),
             {"stage": "negoc"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         self.assertEqual(resp.status_code, 200)
@@ -4524,7 +4524,7 @@ class InfoproductsCrmTest(TestCase):
 
     def test_move_rejects_invalid_stage(self):
         self.client.force_login(self.layfe)
-        resp = self.client.post(reverse("infoproducts_crm_move", args=[self.lead.pk]), {"stage": "hacker"})
+        resp = self.client.post(reverse("crm_move", args=[self.lead.pk]), {"stage": "hacker"})
         self.assertEqual(resp.status_code, 400)
         self.lead.refresh_from_db()
         self.assertEqual(self.lead.stage, "prospec")
@@ -4532,7 +4532,7 @@ class InfoproductsCrmTest(TestCase):
     def test_create_lead_accepts_brazilian_value(self):
         from studio.models import InfoLead
         self.client.force_login(self.layfe)
-        self.client.post(reverse("infoproducts_crm_create"), {
+        self.client.post(reverse("crm_create"), {
             "name": "Bruna", "instagram": "@bruna", "value": "1.200,50", "origin": "Story",
         })
         lead = InfoLead.objects.get(name="Bruna")
@@ -4542,11 +4542,11 @@ class InfoproductsCrmTest(TestCase):
 
     def test_tasks_add_and_toggle(self):
         self.client.force_login(self.layfe)
-        self.client.post(reverse("infoproducts_crm_task", args=[self.lead.pk]),
+        self.client.post(reverse("crm_task", args=[self.lead.pk]),
                          {"action": "add", "title": "Mandar proposta"})
         task = self.lead.tasks.get()
         self.assertFalse(task.done)
-        self.client.post(reverse("infoproducts_crm_task", args=[self.lead.pk]),
+        self.client.post(reverse("crm_task", args=[self.lead.pk]),
                          {"action": "toggle", "task_id": task.pk})
         task.refresh_from_db()
         self.assertTrue(task.done)
@@ -4556,7 +4556,7 @@ class InfoproductsCrmTest(TestCase):
         other_ws = get_or_create_workspace_for_user(self.other)
         alien = InfoLead.objects.create(workspace=other_ws, name="De outra conta")
         self.client.force_login(self.layfe)
-        self.assertEqual(self.client.get(reverse("infoproducts_crm_lead", args=[alien.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("crm_lead", args=[alien.pk])).status_code, 404)
 
 
 class ContractPersonalizationTest(TestCase):

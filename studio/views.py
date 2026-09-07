@@ -1683,18 +1683,17 @@ def infoproducts(request: HttpRequest) -> HttpResponse:
             open_buyer_modal = action == "create_buyer"
 
     sale_is_promo = bool(editing_sale and Decimal(editing_sale.amount or 0) != Decimal(editing_sale.product.price or 0))
-    active_subtab = request.GET.get("tab") if request.GET.get("tab") in {"entries", "buyers", "crm"} else ""
+    active_subtab = request.GET.get("tab") if request.GET.get("tab") in {"entries", "buyers"} else ""
 
     context = shell_context(
         "infoproducts",
         workspace,
         "Infoprodutos",
-        "Produtos digitais, entradas, alunas e prazos.",
+        "Produtos digitais, vendas e alunas.",
         user=request.user,
         month_filter=month_filter,
     )
     context.update(infoproducts_snapshot(workspace, month_filter))
-    context.update(infoproducts_crm_snapshot(workspace, request.GET.get("q", "")))
     context["product_form"] = product_form
     context["sale_form"] = sale_form
     context["editing_product"] = editing_product
@@ -3049,9 +3048,30 @@ def _decimal_or_zero(raw) -> Decimal:
         return Decimal("0")
 
 
-# ── CRM comercial de Infoprodutos (kanban) ─────────────────────────────────
-# Mesma trava da aba Infoprodutos: só a conta da Layfe entra. Qualquer outra
-# recebe 404 no servidor, mesmo sabendo a URL.
+@login_required
+def crm(request: HttpRequest) -> HttpResponse:
+    """Aba do CRM comercial: leads de servico que chegaram ate a creator.
+
+    Diferente da Prospeccao, onde ela vai atras da marca, aqui a oportunidade
+    chegou e precisa ser conduzida ate a venda.
+    """
+    workspace = _crm_workspace_or_404(request)
+    context = shell_context(
+        "crm",
+        workspace,
+        "CRM",
+        "Leads de serviço que chegaram até você, do contato à venda.",
+        user=request.user,
+    )
+    context.update(infoproducts_crm_snapshot(workspace, request.GET.get("q", "")))
+    return render(request, "studio/crm.html", context)
+
+
+# ── CRM comercial (kanban) ─────────────────────────────────────────────────
+# Aba propria desde 07/09/2026. Antes vivia dentro de Infoprodutos, o que
+# misturava dois negocios diferentes: infoproduto e' venda em escala, CRM e'
+# lead de servico conduzido ate a venda. O acesso continua o mesmo de antes
+# (so a conta da Layfe), porque a separacao foi de tela, nao de permissao.
 def _crm_workspace_or_404(request: HttpRequest):
     workspace = _workspace(request)
     if not workspace_has_infoproducts_access(workspace, request.user):
@@ -3065,12 +3085,15 @@ def _crm_lead_or_404(request: HttpRequest, pk: int):
 
 
 def _crm_redirect(extra: str = "") -> HttpResponse:
-    return redirect(f"{reverse('infoproducts')}?tab=crm{extra}")
+    destino = reverse("crm")
+    if extra:
+        destino += ("&" if "?" in destino else "?") + extra.lstrip("&?")
+    return redirect(destino)
 
 
 @login_required
 @require_POST
-def infoproducts_crm_move(request: HttpRequest, pk: int) -> HttpResponse:
+def crm_move(request: HttpRequest, pk: int) -> HttpResponse:
     """Arrastar o card para outra coluna."""
     workspace, lead = _crm_lead_or_404(request, pk)
     stage = request.POST.get("stage", "")
@@ -3089,7 +3112,7 @@ def infoproducts_crm_move(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 @require_POST
-def infoproducts_crm_create(request: HttpRequest) -> HttpResponse:
+def crm_create(request: HttpRequest) -> HttpResponse:
     workspace = _crm_workspace_or_404(request)
     name = (request.POST.get("name") or "").strip()
     if not name:
@@ -3117,11 +3140,11 @@ def infoproducts_crm_create(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def infoproducts_crm_lead(request: HttpRequest, pk: int) -> HttpResponse:
+def crm_lead(request: HttpRequest, pk: int) -> HttpResponse:
     workspace, lead = _crm_lead_or_404(request, pk)
     context = shell_context(
-        "infoproducts", workspace, lead.name,
-        "Negociação do CRM de infoprodutos.", user=request.user,
+        "crm", workspace, lead.name,
+        "Negociação em andamento.", user=request.user,
     )
     context.update({
         "lead": lead,
@@ -3132,12 +3155,12 @@ def infoproducts_crm_lead(request: HttpRequest, pk: int) -> HttpResponse:
         "loss_reasons": INFO_CRM_LOSS_REASONS,
         "products": list(InfoProduct.objects.filter(workspace=workspace).order_by("name")),
     })
-    return render(request, "studio/infoproducts_lead.html", context)
+    return render(request, "studio/crm_lead.html", context)
 
 
 @login_required
 @require_POST
-def infoproducts_crm_lead_update(request: HttpRequest, pk: int) -> HttpResponse:
+def crm_lead_update(request: HttpRequest, pk: int) -> HttpResponse:
     workspace, lead = _crm_lead_or_404(request, pk)
     lead.name = (request.POST.get("name") or lead.name).strip()[:160]
     lead.instagram = (request.POST.get("instagram") or "").strip()[:80]
@@ -3163,12 +3186,12 @@ def infoproducts_crm_lead_update(request: HttpRequest, pk: int) -> HttpResponse:
     lead.save()
     log_info_lead(lead, "dados atualizados")
     messages.success(request, "Lead atualizado.")
-    return redirect("infoproducts_crm_lead", pk=lead.pk)
+    return redirect("crm_lead", pk=lead.pk)
 
 
 @login_required
 @require_POST
-def infoproducts_crm_task(request: HttpRequest, pk: int) -> HttpResponse:
+def crm_task(request: HttpRequest, pk: int) -> HttpResponse:
     workspace, lead = _crm_lead_or_404(request, pk)
     action = request.POST.get("action")
     if action == "add":
@@ -3185,12 +3208,12 @@ def infoproducts_crm_task(request: HttpRequest, pk: int) -> HttpResponse:
         task.done = not task.done
         task.save(update_fields=["done", "updated_at"])
         log_info_lead(lead, ("concluiu" if task.done else "reabriu") + f" a tarefa: {task.title[:80]}")
-    return redirect("infoproducts_crm_lead", pk=lead.pk)
+    return redirect("crm_lead", pk=lead.pk)
 
 
 @login_required
 @require_POST
-def infoproducts_crm_delete(request: HttpRequest, pk: int) -> HttpResponse:
+def crm_delete(request: HttpRequest, pk: int) -> HttpResponse:
     workspace, lead = _crm_lead_or_404(request, pk)
     name = lead.name
     lead.delete()

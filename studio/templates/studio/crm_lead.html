@@ -33,12 +33,12 @@
 
 {% block content %}
 <div class="lead-top">
-  <a class="lead-back" href="{% url 'infoproducts' %}?tab=crm">‹ Voltar para o CRM</a>
+  <a class="lead-back" href="{% url 'crm' %}">‹ Voltar para o CRM</a>
 </div>
 
 <div class="lead-stagebar">
   {% for stage in stages %}
-    <form method="post" action="{% url 'infoproducts_crm_lead_update' lead.pk %}" style="flex:1;min-width:118px;">
+    <form method="post" action="{% url 'crm_lead_update' lead.pk %}" style="flex:1;min-width:118px;">
       {% csrf_token %}
       <input type="hidden" name="name" value="{{ lead.name }}">
       <input type="hidden" name="instagram" value="{{ lead.instagram }}">
@@ -63,7 +63,7 @@
   <div>
     <div class="lead-card">
       <h3>Dados da negociação</h3>
-      <form method="post" action="{% url 'infoproducts_crm_lead_update' lead.pk %}">
+      <form method="post" action="{% url 'crm_lead_update' lead.pk %}">
         {% csrf_token %}
         <input type="hidden" name="stage" value="{{ lead.stage }}">
         <div class="lead-field"><label for="f-name">Nome</label>
@@ -118,7 +118,7 @@
       <ul class="lead-tasks">
         {% for task in tasks %}
           <li>
-            <form method="post" action="{% url 'infoproducts_crm_task' lead.pk %}">
+            <form method="post" action="{% url 'crm_task' lead.pk %}">
               {% csrf_token %}
               <input type="hidden" name="action" value="toggle">
               <input type="hidden" name="task_id" value="{{ task.pk }}">
@@ -130,7 +130,7 @@
           <li><span class="muted">Nenhuma tarefa ainda.</span></li>
         {% endfor %}
       </ul>
-      <form method="post" action="{% url 'infoproducts_crm_task' lead.pk %}" class="lead-task-form">
+      <form method="post" action="{% url 'crm_task' lead.pk %}" class="lead-task-form">
         {% csrf_token %}
         <input type="hidden" name="action" value="add">
         <input type="text" name="title" placeholder="Ex.: mandar proposta" required maxlength="180">
@@ -155,7 +155,7 @@
     <div class="lead-card">
       <h3>Remover</h3>
       <p class="muted" style="font-size:12px;margin-bottom:12px;">Apaga o lead e todo o histórico dele. Não dá para desfazer.</p>
-      <form method="post" action="{% url 'infoproducts_crm_delete' lead.pk %}"
+      <form method="post" action="{% url 'crm_delete' lead.pk %}"
             onsubmit="return confirm('Excluir o lead {{ lead.name|escapejs }}? Não dá para desfazer.');">
         {% csrf_token %}
         <button type="submit" class="ghost-button small">Excluir lead</button>

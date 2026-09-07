@@ -532,9 +532,11 @@ class Task(WorkspaceOwnedModel):
 
 
 class InfoLead(WorkspaceOwnedModel):
-    """Lead do CRM comercial de infoprodutos (aba Infoprodutos, exclusivo
-    Layfe). Modelo espelhado no kanban do Quantum: um funil de vendas com
-    etapas fixas, card arrastável entre elas."""
+    """Lead do CRM comercial: a oportunidade que chegou ate a creator e
+    precisa ser conduzida ate a venda (o contrario da Prospeccao, onde ela vai
+    atras da marca). Funil de etapas fixas, card arrastavel entre elas.
+
+    Mora na aba CRM desde 07/09/2026; antes era subaba de Infoprodutos."""
 
     STAGE_PROSPEC = "prospec"
     STAGE_QUALIF = "qualif"
@@ -545,8 +547,8 @@ class InfoLead(WorkspaceOwnedModel):
     STAGE_CHOICES = [
         (STAGE_PROSPEC, "Interessadas"),
         (STAGE_QUALIF, "Qualificadas"),
-        (STAGE_PROPOSTA, "Negociação"),
-        (STAGE_NEGOC, "Recuperação"),
+        (STAGE_PROPOSTA, "Proposta enviada"),
+        (STAGE_NEGOC, "Negociação"),
         (STAGE_FECHADO, "Fechado"),
         (STAGE_PERDIDO, "Perdido"),
     ]
