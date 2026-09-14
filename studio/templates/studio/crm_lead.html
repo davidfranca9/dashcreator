@@ -48,7 +48,7 @@
       <input type="hidden" name="next_action" value="{{ lead.next_action }}">
       <input type="hidden" name="note" value="{{ lead.note }}">
       <input type="hidden" name="value" value="{{ lead.value }}">
-      <input type="hidden" name="product" value="{{ lead.product_id|default:'' }}">
+      <input type="hidden" name="interest" value="{{ lead.interest }}">
       <input type="hidden" name="loss_reason" value="{{ lead.loss_reason }}">
       <input type="hidden" name="stage" value="{{ stage.id }}">
       <button type="submit" class="lead-stage{% if lead.stage == stage.id %} is-current{% endif %}"
@@ -77,13 +77,8 @@
         <div class="lead-field"><label for="f-email">E-mail</label>
           <input id="f-email" type="text" name="email" value="{{ lead.email }}" maxlength="160"></div>
         <div class="lead-2col">
-          <div class="lead-field"><label for="f-prod">Produto de interesse</label>
-            <select id="f-prod" name="product">
-              <option value="">Não definido</option>
-              {% for p in products %}
-                <option value="{{ p.pk }}"{% if lead.product_id == p.pk %} selected{% endif %}>{{ p.name }}</option>
-              {% endfor %}
-            </select></div>
+          <div class="lead-field"><label for="f-interest">Produto de interesse</label>
+            <input id="f-interest" type="text" name="interest" value="{{ lead.interest }}" placeholder="Ex.: Conteúdo UGC, Mentoria" maxlength="160"></div>
           <div class="lead-field"><label for="f-value">Valor (R$)</label>
             <input id="f-value" type="text" name="value" value="{{ lead.value }}" inputmode="decimal"></div>
         </div>
@@ -141,6 +136,18 @@
   </div>
 
   <div>
+    {% if lead.stage == "fechado" %}
+      <div class="lead-card">
+        <h3>Trabalho</h3>
+        {% if lead.project_id %}
+          <p class="muted" style="font-size:12px;margin-bottom:12px;">Este lead já virou trabalho.</p>
+          <a class="primary-button small" href="{% url 'project_edit' lead.project_id %}">Ver trabalho</a>
+        {% else %}
+          <p class="muted" style="font-size:12px;margin-bottom:12px;">Lead fechado. Converta em trabalho com nome, valor, WhatsApp e observações já preenchidos.</p>
+          <a class="primary-button small" href="{% url 'crm_convert' lead.pk %}">Converter em trabalho</a>
+        {% endif %}
+      </div>
+    {% endif %}
     <div class="lead-card">
       <h3>Histórico</h3>
       <ul class="lead-hist">

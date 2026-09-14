@@ -38,7 +38,8 @@
                   </span>
                   {% if card.contact %}<span class="crm-card-sub">{{ card.contact }}</span>{% endif %}
                   <span class="crm-card-tags">
-                    {% if card.product %}<span class="crm-tag crm-tag--prod">{{ card.product }}</span>{% endif %}
+                    {% if card.interest %}<span class="crm-tag crm-tag--prod">{{ card.interest }}</span>{% endif %}
+                    {% if card.stage == "fechado" %}<span class="crm-tag crm-tag--ok">{% if card.converted %}Trabalho criado{% else %}Converter em trabalho{% endif %}</span>{% endif %}
                     {% if card.origin %}<span class="crm-tag">{{ card.origin }}</span>{% endif %}
                     {% if card.next_action %}<span class="crm-tag crm-tag--warn">{{ card.next_action }}</span>{% endif %}
                     {% if card.open_tasks %}<span class="crm-tag crm-tag--task">{{ card.open_tasks }} tarefa{{ card.open_tasks|pluralize:",s" }}</span>{% endif %}
@@ -61,7 +62,7 @@
         <div class="jobs-kpi-modal-header"><div>
           <span class="meeting-popup-badge">CRM</span>
           <h3>Novo lead</h3>
-          <p class="muted">Entra na primeira etapa do funil (Interessadas).</p>
+          <p class="muted">Entra na primeira etapa do funil (Interesse).</p>
         </div></div>
         <form method="post" action="{% url 'crm_create' %}" class="auth-form-stack">
           {% csrf_token %}
@@ -73,11 +74,8 @@
             <input id="crm-whats" type="text" name="whatsapp" maxlength="40"></div>
           <div class="form-field"><label for="crm-email">E-mail</label>
             <input id="crm-email" type="text" name="email" maxlength="160"></div>
-          <div class="form-field"><label for="crm-prod">Produto de interesse</label>
-            <select id="crm-prod" name="product">
-              <option value="">Não definido</option>
-              {% for p in crm_products %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
-            </select></div>
+          <div class="form-field"><label for="crm-interest">Produto de interesse</label>
+            <input id="crm-interest" type="text" name="interest" placeholder="Ex.: Conteúdo UGC, Mentoria" maxlength="160"></div>
           <div class="form-field"><label for="crm-value">Valor (R$)</label>
             <input id="crm-value" type="text" name="value" inputmode="decimal" placeholder="0,00"></div>
           <div class="form-field"><label for="crm-origin">Origem</label>

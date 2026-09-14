@@ -74,9 +74,10 @@ class CrmEtapasTests(TestCase):
         self.assertEqual(
             [(c["id"], c["name"]) for c in colunas],
             [
-                ("prospec", "Interessadas"),
-                ("qualif", "Qualificadas"),
-                ("proposta", "Proposta enviada"),
+                ("prospec", "Interesse"),
+                ("contato", "Primeiro Contato"),
+                ("qualif", "Qualificação"),
+                ("proposta", "Proposta Enviada"),
                 ("negoc", "Negociação"),
                 ("fechado", "Fechado"),
                 ("perdido", "Perdido"),

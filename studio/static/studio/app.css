@@ -7570,3 +7570,6 @@ body.page-legal .legal-dismiss-btn:hover {
     background: #fafaf7; border: 0.5px solid rgba(0,0,0,0.07); border-radius: 10px;
 }
 .prosp-arquivadas a { text-decoration: underline; }
+
+/* CRM: aviso no card fechado de que ele pode virar (ou ja virou) trabalho. */
+.crm-tag--ok { background: #e3f6ec; color: #16704a; }

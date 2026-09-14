@@ -4490,7 +4490,7 @@ class InfoproductsCrmTest(TestCase):
         self.client.force_login(self.layfe)
         resp = self.client.get(reverse("crm"))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Interessadas")
+        self.assertContains(resp, "Interesse")
         self.assertContains(resp, "Marina")
         self.assertEqual(self.client.get(reverse("crm_lead", args=[self.lead.pk])).status_code, 200)
 
@@ -4503,11 +4503,11 @@ class InfoproductsCrmTest(TestCase):
         self.lead.refresh_from_db()
         self.assertEqual(self.lead.stage, "prospec")
 
-    def test_board_has_six_stages(self):
+    def test_board_has_seven_stages(self):
         self.client.force_login(self.layfe)
         columns = self.client.get(reverse("crm")).context["crm_columns"]
         self.assertEqual([c["id"] for c in columns],
-                         ["prospec", "qualif", "proposta", "negoc", "fechado", "perdido"])
+                         ["prospec", "contato", "qualif", "proposta", "negoc", "fechado", "perdido"])
         prospec = next(c for c in columns if c["id"] == "prospec")
         self.assertEqual(prospec["count"], 1)
 

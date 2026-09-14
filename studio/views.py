@@ -3118,10 +3118,6 @@ def crm_create(request: HttpRequest) -> HttpResponse:
     if not name:
         messages.error(request, "Informe o nome do lead.")
         return _crm_redirect()
-    product_id = request.POST.get("product") or ""
-    product = None
-    if product_id.isdigit():
-        product = InfoProduct.objects.filter(pk=int(product_id), workspace=workspace).first()
     lead = InfoLead.objects.create(
         workspace=workspace,
         name=name[:160],
@@ -3132,7 +3128,7 @@ def crm_create(request: HttpRequest) -> HttpResponse:
         next_action=(request.POST.get("next_action") or "").strip()[:160],
         note=(request.POST.get("note") or "").strip(),
         value=_decimal_or_zero(request.POST.get("value")),
-        product=product,
+        interest=(request.POST.get("interest") or "").strip()[:160],
     )
     log_info_lead(lead, "lead criado")
     messages.success(request, f"Lead {lead.name} adicionado.")
@@ -3153,7 +3149,6 @@ def crm_lead(request: HttpRequest, pk: int) -> HttpResponse:
         "tasks": list(lead.tasks.all()),
         "origins": INFO_CRM_ORIGINS,
         "loss_reasons": INFO_CRM_LOSS_REASONS,
-        "products": list(InfoProduct.objects.filter(workspace=workspace).order_by("name")),
     })
     return render(request, "studio/crm_lead.html", context)
 
@@ -3170,11 +3165,7 @@ def crm_lead_update(request: HttpRequest, pk: int) -> HttpResponse:
     lead.next_action = (request.POST.get("next_action") or "").strip()[:160]
     lead.note = (request.POST.get("note") or "").strip()
     lead.value = _decimal_or_zero(request.POST.get("value"))
-    product_id = request.POST.get("product") or ""
-    lead.product = (
-        InfoProduct.objects.filter(pk=int(product_id), workspace=workspace).first()
-        if product_id.isdigit() else None
-    )
+    lead.interest = (request.POST.get("interest") or "").strip()[:160]
     stage = request.POST.get("stage", "")
     if stage in INFO_CRM_STAGE_IDS and stage != lead.stage:
         lead.stage = stage
@@ -3209,6 +3200,80 @@ def crm_task(request: HttpRequest, pk: int) -> HttpResponse:
         task.save(update_fields=["done", "updated_at"])
         log_info_lead(lead, ("concluiu" if task.done else "reabriu") + f" a tarefa: {task.title[:80]}")
     return redirect("crm_lead", pk=lead.pk)
+
+
+@login_required
+def crm_convert(request: HttpRequest, pk: int) -> HttpResponse:
+    """Transforma um lead fechado em trabalho, ja com o que foi preenchido na
+    negociacao (nome, valor, WhatsApp, interesse e observacoes). Segue o mesmo
+    fluxo de prospect_convert, so muda de onde vem o preenchimento."""
+    workspace, lead = _crm_lead_or_404(request, pk)
+    if lead.stage != InfoLead.STAGE_FECHADO:
+        messages.error(request, "Só dá para converter em trabalho um lead que está em Fechado.")
+        return redirect("crm_lead", pk=lead.pk)
+    if lead.project_id:
+        messages.info(request, "Esse lead já foi convertido em trabalho.")
+        return redirect("project_edit", pk=lead.project_id)
+
+    observacoes = "\n\n".join(
+        parte for parte in [f"Interesse: {lead.interest}" if lead.interest else "", lead.note] if parte
+    )
+    initial = {
+        "company": lead.name,
+        "project_name": lead.interest,
+        "company_phone": lead.whatsapp,
+        "closing_source": "Indicacao" if lead.origin == "Indicação" else "Inbound",
+        "niche": None,
+        "service_category": None,
+        "stage": "Fechado",
+        "status": "Briefing",
+        "received_value": lead.value or 0,
+        "deliverables_count": 3,
+        "progress": 15,
+        "meeting_scheduled": False,
+        "meeting_date": None,
+        "note": observacoes,
+        "content_distribution": "",
+        "image_license_term_days": None,
+    }
+    form = ProjectForm(request.POST or None, initial=initial, workspace=workspace)
+    has_installments_post = request.method == "POST" and _installments_payload_present(request)
+    installments_formset = ProjectInstallmentFormSet(
+        request.POST if has_installments_post else None,
+        instance=Project(),
+        prefix="installments",
+    )
+    formset_ok = installments_formset.is_valid() if has_installments_post else True
+    if request.method == "POST" and form.is_valid() and formset_ok:
+        project = form.save(commit=False)
+        project.workspace = workspace
+        project.save()
+        if has_installments_post and form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES:
+            installments_formset.instance = project
+            _save_installments_formset(installments_formset, project, workspace)
+        _sync_auto_monthly_installments(
+            project,
+            workspace,
+            has_installments_yes=(form.cleaned_data.get("has_installments") == HAS_INSTALLMENTS_YES),
+        )
+        _sync_project_monthly_statuses(project, workspace)
+        reconcile_computed_installments(project)
+        lead.project = project
+        lead.save(update_fields=["project", "updated_at"])
+        log_info_lead(lead, "convertido em trabalho")
+        messages.success(request, "Lead convertido em trabalho.")
+        if project.content_distribution == "Ads" and project.image_license_term_days:
+            messages.info(request, "Direito de uso de imagem ativado. O Jurídico vai avisar no vencimento.")
+        return redirect("jobs")
+
+    context = shell_context("crm", workspace, "Converter lead", "Transforme o lead fechado em trabalho.", user=request.user)
+    context.update({
+        "form": form,
+        "form_title": "Trabalho",
+        "cancel_url": "crm",
+        "installments_formset": installments_formset,
+    })
+    return render(request, "studio/project_form.html", context)
 
 
 @login_required

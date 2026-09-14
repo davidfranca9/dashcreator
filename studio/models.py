@@ -539,15 +539,17 @@ class InfoLead(WorkspaceOwnedModel):
     Mora na aba CRM desde 07/09/2026; antes era subaba de Infoprodutos."""
 
     STAGE_PROSPEC = "prospec"
+    STAGE_CONTATO = "contato"
     STAGE_QUALIF = "qualif"
     STAGE_PROPOSTA = "proposta"
     STAGE_NEGOC = "negoc"
     STAGE_FECHADO = "fechado"
     STAGE_PERDIDO = "perdido"
     STAGE_CHOICES = [
-        (STAGE_PROSPEC, "Interessadas"),
-        (STAGE_QUALIF, "Qualificadas"),
-        (STAGE_PROPOSTA, "Proposta enviada"),
+        (STAGE_PROSPEC, "Interesse"),
+        (STAGE_CONTATO, "Primeiro Contato"),
+        (STAGE_QUALIF, "Qualificação"),
+        (STAGE_PROPOSTA, "Proposta Enviada"),
         (STAGE_NEGOC, "Negociação"),
         (STAGE_FECHADO, "Fechado"),
         (STAGE_PERDIDO, "Perdido"),
@@ -557,15 +559,21 @@ class InfoLead(WorkspaceOwnedModel):
     instagram = models.CharField(max_length=80, blank=True, default="")
     whatsapp = models.CharField(max_length=40, blank=True, default="")
     email = models.CharField(max_length=160, blank=True, default="")
-    product = models.ForeignKey(
-        "InfoProduct", on_delete=models.SET_NULL, null=True, blank=True, related_name="leads"
-    )
+    # Texto livre (Conteudo UGC, Mentoria, Social Media...). Antes era uma
+    # lista presa aos infoprodutos cadastrados, que nao serve pra CRM de
+    # servico: o que o lead quer nem sempre e' um produto da vitrine.
+    interest = models.CharField(max_length=160, blank=True, default="")
     stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default=STAGE_PROSPEC, db_index=True)
     value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     origin = models.CharField(max_length=60, blank=True, default="")
     next_action = models.CharField(max_length=160, blank=True, default="")
     note = models.TextField(blank=True, default="")
     loss_reason = models.CharField(max_length=160, blank=True, default="")
+    # Trabalho criado a partir deste lead ao converter. Serve pra nao converter
+    # duas vezes e pra levar direto ao trabalho depois.
+    project = models.ForeignKey(
+        "Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="crm_leads"
+    )
 
     class Meta:
         ordering = ["-updated_at", "-pk"]

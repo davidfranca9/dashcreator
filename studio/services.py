@@ -3550,10 +3550,14 @@ def average_project_days(projects: list[Project]) -> float:
 # "proposta" aparecia como "Negociação" e a "negoc" como "Recuperação", que
 # nem e' conceito de CRM (e' da Prospeccao). O historico do lead registrava o
 # nome errado por causa disso. Ids intactos, so os rotulos corrigidos.
+# Em 14/09/2026 entrou "Primeiro Contato" entre Interesse e Qualificacao, e
+# os nomes passaram a ser os do funil combinado. Os ids gravados continuam os
+# mesmos, entao nenhum lead muda de coluna.
 INFO_CRM_STAGES = [
-    {"id": "prospec", "name": "Interessadas", "color": "#4f7cff"},
-    {"id": "qualif", "name": "Qualificadas", "color": "#fbbf24"},
-    {"id": "proposta", "name": "Proposta enviada", "color": "#2dd4cf"},
+    {"id": "prospec", "name": "Interesse", "color": "#4f7cff"},
+    {"id": "contato", "name": "Primeiro Contato", "color": "#38bdf8"},
+    {"id": "qualif", "name": "Qualificação", "color": "#fbbf24"},
+    {"id": "proposta", "name": "Proposta Enviada", "color": "#2dd4cf"},
     {"id": "negoc", "name": "Negociação", "color": "#8b5cf6"},
     {"id": "fechado", "name": "Fechado", "color": "#34d399"},
     {"id": "perdido", "name": "Perdido", "color": "#f87171"},
@@ -3589,7 +3593,8 @@ def _info_lead_card(lead: InfoLead) -> dict:
         "value": lead.value,
         "value_text": currency(lead.value) if lead.value else "",
         "contact": contact,
-        "product": lead.product.name if lead.product_id else "",
+        "interest": lead.interest,
+        "converted": bool(lead.project_id),
         "origin": lead.origin,
         "next_action": lead.next_action,
         "open_tasks": open_tasks,
@@ -3600,7 +3605,6 @@ def _info_lead_card(lead: InfoLead) -> dict:
 def infoproducts_crm_snapshot(workspace: Workspace, search: str = "") -> dict:
     leads = (
         InfoLead.objects.filter(workspace=workspace)
-        .select_related("product")
         .prefetch_related("tasks")
     )
     term = (search or "").strip()
@@ -3611,6 +3615,7 @@ def infoproducts_crm_snapshot(workspace: Workspace, search: str = "") -> dict:
             | Q(whatsapp__icontains=term)
             | Q(email__icontains=term)
             | Q(origin__icontains=term)
+            | Q(interest__icontains=term)
         )
     leads = list(leads)
 
@@ -3634,7 +3639,6 @@ def infoproducts_crm_snapshot(workspace: Workspace, search: str = "") -> dict:
         "crm_columns": columns,
         "crm_search": term,
         "crm_origins": INFO_CRM_ORIGINS,
-        "crm_products": list(InfoProduct.objects.filter(workspace=workspace).order_by("name")),
         "crm_total_leads": len(leads),
         "crm_open_count": len(open_leads),
         "crm_open_value": currency(sum((lead.value or ZERO) for lead in open_leads)),
