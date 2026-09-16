@@ -53,6 +53,7 @@ from .forms import (
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
 from .models import CashBox, FinanceEntry, FixedCost, InfoLead, InfoLeadEvent, InfoLeadTask, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ProspectEvent, ServiceCategory
+from .creator_day import creator_day_snapshot
 from .services import (
     advance_campaign_stage,
     campaign_detail_snapshot,
@@ -3142,9 +3143,23 @@ def crm_lead(request: HttpRequest, pk: int) -> HttpResponse:
         "crm", workspace, lead.name,
         "Negociação em andamento.", user=request.user,
     )
+    # Barra de etapas: o funil em ordem (com o que já passou, a atual e o que
+    # vem depois) e o "Perdido" à parte, porque não é o passo seguinte ao Fechado.
+    flow_stages = [s for s in INFO_CRM_STAGES if s["id"] != InfoLead.STAGE_PERDIDO]
+    current_step = next((i for i, s in enumerate(flow_stages) if s["id"] == lead.stage), -1)
+    stage_steps = [
+        {
+            **s,
+            "number": i + 1,
+            "state": "current" if i == current_step else "done" if i < current_step else "next",
+        }
+        for i, s in enumerate(flow_stages)
+    ]
     context.update({
         "lead": lead,
-        "stages": INFO_CRM_STAGES,
+        "stage_steps": stage_steps,
+        "lost_stage": next(s for s in INFO_CRM_STAGES if s["id"] == InfoLead.STAGE_PERDIDO),
+        "is_lost": lead.stage == InfoLead.STAGE_PERDIDO,
         "events": list(lead.events.all()[:60]),
         "tasks": list(lead.tasks.all()),
         "origins": INFO_CRM_ORIGINS,
@@ -3284,3 +3299,23 @@ def crm_delete(request: HttpRequest, pk: int) -> HttpResponse:
     lead.delete()
     messages.success(request, f"Lead {name} removido.")
     return _crm_redirect()
+
+
+@login_required
+def creator_day(request: HttpRequest) -> HttpResponse:
+    """Página interna do Creator Day Experience, só para as contas do time:
+    aba Lista de espera (formulário das prévias) e aba Ingressos (checkout)."""
+    workspace = _workspace(request)
+    if not is_internal_account(workspace, request.user):
+        raise Http404("Pagina nao encontrada.")
+    context = shell_context(
+        "creator_day",
+        workspace,
+        "Creator Day",
+        "Lista de espera e ingressos do Creator Day Experience.",
+        user=request.user,
+    )
+    context.update(creator_day_snapshot())
+    tab = request.GET.get("tab")
+    context["active_tab"] = tab if tab in {"lista", "ingressos"} else "lista"
+    return render(request, "studio/creator_day.html", context)

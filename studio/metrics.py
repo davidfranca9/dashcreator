@@ -21,8 +21,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import InfoLead, PageEvent, Prospect
-from .services import log_info_lead
+from .creator_day import CREATOR_DAY_EVENT
+from .models import EventWaitlistEntry, PageEvent, Prospect
 
 # Origens autorizadas a enviar eventos (os sites estáticos).
 ALLOWED_TRACK_ORIGINS = {
@@ -515,12 +515,11 @@ def portfolio_lead(request: HttpRequest) -> HttpResponse:
     return _cors_headers(JsonResponse({"ok": True}), origin)
 
 
-# ── Lista de espera do Creator Day → cai no CRM da Layfe ────────────────────
+# ── Lista de espera do Creator Day → página interna /creator-day/ ───────────
 # Endpoint público chamado pelo formulário das prévias do Creator Day
-# (thecreatorsclub.com.br/creator-experience/conceitos/). Cria um lead no CRM,
-# coluna "Interesse", com o interesse "Creator Day Experience" e origem "Site".
-CREATOR_DAY_INTEREST = "Creator Day Experience"
-_CREATOR_DAY_PAGES = {"imersivo": "Imersivo", "editorial": "Editorial"}
+# (thecreatorsclub.com.br/creator-experience/conceitos/). Grava na lista de
+# espera do evento, que aparece na aba "Lista de espera" da página Creator Day.
+_WAITLIST_PAGES = {"imersivo", "editorial"}
 
 
 @csrf_exempt
@@ -552,36 +551,18 @@ def creator_day_lead(request: HttpRequest) -> HttpResponse:
     if len(name) < 2 or not email_ok or sum(ch.isdigit() for ch in whatsapp) < 10:
         return _cors_headers(JsonResponse({"ok": False, "error": "dados incompletos"}, status=400), origin)
 
-    page = _CREATOR_DAY_PAGES.get(str(payload.get("page", "")).strip().lower(), "do site")
-    workspace = _layfe_workspace()
-    if workspace is None:
-        return _cors_headers(JsonResponse({"ok": False}, status=503), origin)
+    page = str(payload.get("page", "")).strip().lower()
+    if page not in _WAITLIST_PAGES:
+        page = "site"
 
-    # Mesma pessoa entrando de novo não vira outro card: o card existente sobe
-    # no quadro e ganha uma linha no histórico (no máximo uma a cada 6h).
+    # Mesma pessoa entrando de novo não repete linha na lista.
     existing = (
-        InfoLead.objects.filter(workspace=workspace, interest=CREATOR_DAY_INTEREST)
+        EventWaitlistEntry.objects.filter(event_key=CREATOR_DAY_EVENT)
         .filter(Q(email__iexact=email) | Q(whatsapp=whatsapp))
         .first()
     )
-    if existing is not None:
-        if existing.updated_at < timezone.now() - timezone.timedelta(hours=6):
-            log_info_lead(existing, f"entrou de novo na lista de espera pela página {page}")
-            existing.save(update_fields=["updated_at"])
-        return _cors_headers(JsonResponse({"ok": True}), origin)
-
-    lead = InfoLead.objects.create(
-        workspace=workspace,
-        name=name,
-        email=email,
-        whatsapp=whatsapp,
-        interest=CREATOR_DAY_INTEREST,
-        stage=InfoLead.STAGE_PROSPEC,
-        origin="Site",
-        note=(
-            f"Entrou na lista de espera do Creator Day pela página {page} "
-            "(thecreatorsclub.com.br/creator-experience/conceitos/)."
-        ),
-    )
-    log_info_lead(lead, f"entrou na lista de espera pela página {page}")
+    if existing is None:
+        EventWaitlistEntry.objects.create(
+            event_key=CREATOR_DAY_EVENT, name=name, email=email, whatsapp=whatsapp, page=page,
+        )
     return _cors_headers(JsonResponse({"ok": True}), origin)

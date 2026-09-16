@@ -6,6 +6,7 @@ NAV_ITEMS = [
     {"key": "jobs", "label": "Trabalhos", "subtitle": "Projetos assinados e entregas em andamento.", "url_name": "jobs", "icon": "briefcase"},
     {"key": "prospection", "label": "Prospecção", "subtitle": "Marcas que você foi atrás, do primeiro contato ao fechamento.", "url_name": "prospection", "icon": "target"},
     {"key": "crm", "label": "CRM", "subtitle": "Leads de serviço que chegaram até você, do contato à venda.", "url_name": "crm", "icon": "users"},
+    {"key": "creator_day", "label": "Creator Day", "subtitle": "Lista de espera e ingressos do evento.", "url_name": "creator_day", "icon": "ticket"},
     {"key": "finance", "label": "Financeiro", "subtitle": "Entradas, recebimentos e previsões de caixa.", "url_name": "finance", "icon": "cash"},
     {"key": "distribution", "label": "Distribuição", "subtitle": "Destino do material entregue entre orgânico e ads.", "url_name": "distribution", "icon": "share"},
     {"key": "legal", "label": "Jurídico", "subtitle": "Licenciamento e vencimento do direito de uso de imagem.", "url_name": "legal", "icon": "file-text"},
@@ -16,7 +17,7 @@ NAV_ITEMS = [
 ]
 
 NAV_GROUPS = [
-    {"label": "Principal", "keys": ["dashboard", "planning", "jobs", "prospection", "crm"]},
+    {"label": "Principal", "keys": ["dashboard", "planning", "jobs", "prospection", "crm", "creator_day"]},
     {"label": "Gestão", "keys": ["finance", "distribution", "legal", "infoproducts", "reports"]},
     {"label": "Conta", "keys": ["profile", "settings"]},
 ]

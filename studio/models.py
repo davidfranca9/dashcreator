@@ -935,3 +935,23 @@ class PageEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.site}:{self.kind}:{self.label or self.path}"
+
+
+class EventWaitlistEntry(TimestampedModel):
+    """Quem entrou na lista de espera de um evento pelo formulário do site
+    (hoje o Creator Day, pelas prévias Imersivo e Editorial). Fica fora do CRM
+    de propósito: aparece na página interna do evento, aba Lista de espera."""
+
+    PAGE_CHOICES = [("imersivo", "Imersivo"), ("editorial", "Editorial"), ("site", "Site")]
+
+    event_key = models.CharField(max_length=40, db_index=True)
+    name = models.CharField(max_length=160)
+    email = models.EmailField(max_length=160)
+    whatsapp = models.CharField(max_length=40)
+    page = models.CharField(max_length=20, choices=PAGE_CHOICES, default="site")
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    def __str__(self) -> str:
+        return f"{self.event_key} - {self.name}"

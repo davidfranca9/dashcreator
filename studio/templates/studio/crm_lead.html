@@ -5,10 +5,39 @@
 .lead-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .lead-back { font-size: 12px; color: var(--tcc-muted); text-decoration: none; }
 .lead-back:hover { color: var(--tcc-navy); }
-.lead-stagebar { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
-.lead-stage { flex: 1; min-width: 118px; text-align: center; font-size: 11px; font-weight: 600;
-  padding: 9px 6px; border: 1px solid var(--tcc-line); background: #fff; color: var(--tcc-muted); cursor: pointer; }
-.lead-stage.is-current { color: #fff; border-color: transparent; }
+/* Barra de etapas: linha do tempo do funil + "Perdido" à parte */
+.lead-stagebar { position: relative; display: flex; align-items: center; gap: 22px; margin-bottom: 20px; padding: 18px 22px 16px;
+  background: var(--tcc-card); border: 1px solid var(--tcc-line); overflow-x: auto; }
+.lead-steps { display: flex; flex: 1; min-width: 640px; list-style: none; margin: 0; padding: 0; }
+.lead-step { position: relative; flex: 1; min-width: 0; }
+.lead-step form { margin: 0; }
+.lead-step + .lead-step::before { content: ""; position: absolute; top: 15px; left: calc(-50% + 22px); right: calc(50% + 22px);
+  height: 2px; border-radius: 2px; background: var(--tcc-line-strong); }
+.lead-step.is-done + .lead-step::before { background: var(--tcc-navy); }
+.lead-step__btn { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 4px;
+  background: none; border: 0; font: inherit; color: var(--tcc-muted); cursor: pointer; }
+.lead-step__dot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700;
+  background: var(--tcc-white); border: 2px solid var(--tcc-line-strong); color: var(--tcc-muted);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.lead-step__name { font-size: 11.5px; font-weight: 600; line-height: 1.25; text-align: center; white-space: nowrap; transition: color .18s ease; }
+.lead-step.is-done .lead-step__dot { background: var(--tcc-navy); border-color: var(--tcc-navy); color: var(--tcc-white); }
+.lead-step.is-done .lead-step__name { color: var(--tcc-navy-soft); }
+.lead-step.is-current .lead-step__dot { background: var(--step); border-color: var(--step); color: var(--tcc-white);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--step) 24%, transparent); }
+.lead-step.is-current .lead-step__dot:empty::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--tcc-white); }
+.lead-step.is-current .lead-step__name { color: var(--tcc-navy); font-weight: 700; }
+.lead-step__btn:hover .lead-step__dot { transform: scale(1.08); border-color: var(--step); }
+.lead-step__btn:hover .lead-step__name { color: var(--tcc-navy); }
+.lead-step__btn:focus-visible { outline: none; }
+.lead-step__btn:focus-visible .lead-step__dot { box-shadow: 0 0 0 3px var(--tcc-blue); }
+.lead-stagebar.is-lost .lead-steps { opacity: .5; }
+.lead-lost-form { flex: none; margin: 0; padding-left: 22px; border-left: 1px solid var(--tcc-line); }
+.lead-lost { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font: inherit; font-size: 11.5px; font-weight: 600;
+  white-space: nowrap; color: var(--tcc-red); background: transparent; border: 1px solid color-mix(in srgb, var(--tcc-red) 40%, transparent);
+  cursor: pointer; transition: background .18s ease, color .18s ease; }
+.lead-lost:hover { background: color-mix(in srgb, var(--tcc-red) 8%, transparent); }
+.lead-lost.is-current { color: var(--tcc-white); background: var(--tcc-red); border-color: var(--tcc-red); }
+@media (prefers-reduced-motion: reduce) { .lead-step__dot, .lead-step__name, .lead-lost { transition: none; } }
 .lead-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: start; }
 @media (max-width: 900px) { .lead-grid { grid-template-columns: 1fr; } }
 .lead-card { background: var(--tcc-card); border: 1px solid var(--tcc-line); padding: 18px; margin-bottom: 18px; }
@@ -36,27 +65,30 @@
   <a class="lead-back" href="{% url 'crm' %}">‹ Voltar para o CRM</a>
 </div>
 
-<div class="lead-stagebar">
-  {% for stage in stages %}
-    <form method="post" action="{% url 'crm_lead_update' lead.pk %}" style="flex:1;min-width:118px;">
-      {% csrf_token %}
-      <input type="hidden" name="name" value="{{ lead.name }}">
-      <input type="hidden" name="instagram" value="{{ lead.instagram }}">
-      <input type="hidden" name="whatsapp" value="{{ lead.whatsapp }}">
-      <input type="hidden" name="email" value="{{ lead.email }}">
-      <input type="hidden" name="origin" value="{{ lead.origin }}">
-      <input type="hidden" name="next_action" value="{{ lead.next_action }}">
-      <input type="hidden" name="note" value="{{ lead.note }}">
-      <input type="hidden" name="value" value="{{ lead.value }}">
-      <input type="hidden" name="interest" value="{{ lead.interest }}">
-      <input type="hidden" name="loss_reason" value="{{ lead.loss_reason }}">
-      <input type="hidden" name="stage" value="{{ stage.id }}">
-      <button type="submit" class="lead-stage{% if lead.stage == stage.id %} is-current{% endif %}"
-              {% if lead.stage == stage.id %}style="background:{{ stage.color }}"{% endif %}>
-        {{ stage.name }}
-      </button>
-    </form>
-  {% endfor %}
+<div class="lead-stagebar{% if is_lost %} is-lost{% endif %}">
+  <ol class="lead-steps" aria-label="Etapa do lead">
+    {% for step in stage_steps %}
+    <li class="lead-step is-{{ step.state }}" style="--step: {{ step.color }}">
+      <form method="post" action="{% url 'crm_lead_update' lead.pk %}">
+        {% csrf_token %}
+        {% include "studio/includes/crm_lead_campos_ocultos.html" %}
+        <input type="hidden" name="stage" value="{{ step.id }}">
+        <button type="submit" class="lead-step__btn"{% if step.state == "current" %} aria-current="step"{% endif %} title="Mover para {{ step.name }}">
+          <span class="lead-step__dot" aria-hidden="true">{% if step.state == "done" %}✓{% elif step.state == "next" %}{{ step.number }}{% elif step.id == "fechado" %}✓{% endif %}</span>
+          <span class="lead-step__name">{{ step.name }}</span>
+        </button>
+      </form>
+    </li>
+    {% endfor %}
+  </ol>
+  <form class="lead-lost-form" method="post" action="{% url 'crm_lead_update' lead.pk %}">
+    {% csrf_token %}
+    {% include "studio/includes/crm_lead_campos_ocultos.html" %}
+    <input type="hidden" name="stage" value="{{ lost_stage.id }}">
+    <button type="submit" class="lead-lost{% if is_lost %} is-current{% endif %}"{% if is_lost %} aria-current="step"{% endif %}>
+      <span aria-hidden="true">✕</span> {% if is_lost %}{{ lost_stage.name }}{% else %}Marcar como perdido{% endif %}
+    </button>
+  </form>
 </div>
 
 <div class="lead-grid">
@@ -170,4 +202,14 @@
     </div>
   </div>
 </div>
+<script>
+// No celular a barra de etapas rola para o lado: abre já mostrando a etapa atual.
+(function () {
+  var barra = document.querySelector(".lead-stagebar");
+  var atual = barra && barra.querySelector('[aria-current="step"]');
+  if (!atual || barra.scrollWidth <= barra.clientWidth) return;
+  var alvo = atual.closest(".lead-step") || atual;
+  barra.scrollLeft = alvo.offsetLeft - (barra.clientWidth - alvo.offsetWidth) / 2;
+})();
+</script>
 {% endblock %}
