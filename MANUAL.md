@@ -253,40 +253,43 @@ funciona: se errar, o cupom existe mas nunca é aceito.
 
 ## 9. Publicar alterações
 
-Dois caminhos, e eles não se misturam. O que muda é onde o arquivo mora.
-
-### Caminho A: mudou algo do sistema
-
-Pontuação, regras, admin, checkout, API do Desafio. É o app Django.
+Desde 16/09/2026 **tudo sai pelo git**: o sistema (app.thecreatorsclub.com.br)
+e o site (thecreatorsclub.com.br, pasta `landing/`).
 
 ```bash
 git push origin main
 ```
 
-O Coolify vê o push e publica sozinho, já rodando as migrações. Leva alguns
-minutos.
+O Coolify vê o push e publica os dois sozinho. O sistema já roda as migrações;
+o site sobe com os arquivos de `landing/` e a configuração do nginx. Leva
+alguns minutos, e o sistema demora mais que o site.
 
-### Caminho B: mudou uma página do site
+- **Só vai pro ar o que está no git.** Arquivo que existe só no seu computador
+  não sobe, e arquivo copiado direto no servidor some na próxima publicação.
+- A configuração do nginx do site mora em `landing/nginx-default.conf` e também
+  está salva no Coolify, no recurso do site, em "Custom Nginx Configuration".
+  Se mudar o arquivo, atualize lá também.
+- Cada publicação do sistema ocupa cerca de 3,7 GB no servidor. Depois de
+  vários pushes seguidos, confira o disco (seção 10).
 
-Landing do Dash, portal do Desafio, painel da organizadora, textos das
-missões. São arquivos estáticos e **o push sozinho não sobe**, precisa copiar
-na mão:
+> **Se a mudança não aparecer no navegador,** é cache da Cloudflare: suba o
+> `?v=` do css/js que mudou ou faça **Purge Cache** do domínio no painel.
+
+### Emergência: corrigir sem esperar a publicação
+
+Só quando não dá pra esperar. Depois faça o commit e o push do mesmo arquivo,
+senão a próxima publicação desfaz a correção.
 
 ```bash
-# exemplo com o portal do Desafio
-scp -r landing/desafio/. dashcreator-coolify:/tmp/desafio-front/
-
+scp arquivo dashcreator-coolify:/tmp/
 ssh dashcreator-coolify
 
 # acha o container do site (ID muda a cada publicação)
 SITE=$(for c in $(docker ps -q); do docker inspect $c --format '{{json .Config.Labels}}' \
   | tr ',' '\n' | grep -q 'Host(`thecreatorsclub.com.br`)' && echo $c; done)
 
-docker cp /tmp/desafio-front/. $SITE:/usr/share/nginx/html/desafio/
+docker cp /tmp/arquivo $SITE:/usr/share/nginx/html/caminho/do/arquivo
 ```
-
-> **Se a mudança não aparecer no navegador,** é cache da Cloudflare. Entre no
-> painel e faça **Purge Cache** do domínio.
 
 ---
 
