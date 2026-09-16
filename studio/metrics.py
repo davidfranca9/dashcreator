@@ -21,7 +21,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import PageEvent, Prospect
+from .models import InfoLead, PageEvent, Prospect
+from .services import log_info_lead
 
 # Origens autorizadas a enviar eventos (os sites estáticos).
 ALLOWED_TRACK_ORIGINS = {
@@ -511,4 +512,76 @@ def portfolio_lead(request: HttpRequest) -> HttpResponse:
             channel="Portfólio",
             note=note,
         )
+    return _cors_headers(JsonResponse({"ok": True}), origin)
+
+
+# ── Lista de espera do Creator Day → cai no CRM da Layfe ────────────────────
+# Endpoint público chamado pelo formulário das prévias do Creator Day
+# (thecreatorsclub.com.br/creator-experience/conceitos/). Cria um lead no CRM,
+# coluna "Interesse", com o interesse "Creator Day Experience" e origem "Site".
+CREATOR_DAY_INTEREST = "Creator Day Experience"
+_CREATOR_DAY_PAGES = {"imersivo": "Imersivo", "editorial": "Editorial"}
+
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def creator_day_lead(request: HttpRequest) -> HttpResponse:
+    origin = request.headers.get("Origin", "")
+    if request.method == "OPTIONS":
+        return _cors_headers(HttpResponse(status=204), origin)
+
+    ua = request.headers.get("User-Agent", "")[:300]
+    if any(marker in ua.lower() for marker in _BOT_MARKERS):
+        return _cors_headers(JsonResponse({"ok": True}), origin)  # bot: finge sucesso
+
+    try:
+        payload = json.loads((request.body or b"{}").decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        return _cors_headers(JsonResponse({"ok": False}, status=400), origin)
+    if not isinstance(payload, dict):
+        return _cors_headers(JsonResponse({"ok": False}, status=400), origin)
+
+    # Honeypot: campo invisível preenchido = robô.
+    if str(payload.get("site", "")).strip():
+        return _cors_headers(JsonResponse({"ok": True}), origin)
+
+    name = str(payload.get("name", "")).strip()[:160]
+    email = str(payload.get("email", "")).strip().lower()[:160]
+    whatsapp = str(payload.get("whatsapp", "")).strip()[:40]
+    email_ok = "@" in email and "." in email.rsplit("@", 1)[-1]
+    if len(name) < 2 or not email_ok or sum(ch.isdigit() for ch in whatsapp) < 10:
+        return _cors_headers(JsonResponse({"ok": False, "error": "dados incompletos"}, status=400), origin)
+
+    page = _CREATOR_DAY_PAGES.get(str(payload.get("page", "")).strip().lower(), "do site")
+    workspace = _layfe_workspace()
+    if workspace is None:
+        return _cors_headers(JsonResponse({"ok": False}, status=503), origin)
+
+    # Mesma pessoa entrando de novo não vira outro card: o card existente sobe
+    # no quadro e ganha uma linha no histórico (no máximo uma a cada 6h).
+    existing = (
+        InfoLead.objects.filter(workspace=workspace, interest=CREATOR_DAY_INTEREST)
+        .filter(Q(email__iexact=email) | Q(whatsapp=whatsapp))
+        .first()
+    )
+    if existing is not None:
+        if existing.updated_at < timezone.now() - timezone.timedelta(hours=6):
+            log_info_lead(existing, f"entrou de novo na lista de espera pela página {page}")
+            existing.save(update_fields=["updated_at"])
+        return _cors_headers(JsonResponse({"ok": True}), origin)
+
+    lead = InfoLead.objects.create(
+        workspace=workspace,
+        name=name,
+        email=email,
+        whatsapp=whatsapp,
+        interest=CREATOR_DAY_INTEREST,
+        stage=InfoLead.STAGE_PROSPEC,
+        origin="Site",
+        note=(
+            f"Entrou na lista de espera do Creator Day pela página {page} "
+            "(thecreatorsclub.com.br/creator-experience/conceitos/)."
+        ),
+    )
+    log_info_lead(lead, f"entrou na lista de espera pela página {page}")
     return _cors_headers(JsonResponse({"ok": True}), origin)
