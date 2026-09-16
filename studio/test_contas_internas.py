@@ -27,9 +27,37 @@ class ContaInternaTests(TestCase):
         user, ws = self.conta("davidfranca9")
         self.assertTrue(is_internal_account(ws, user))
 
-    def test_david_e_interna_pelo_email(self):
+    def test_email_com_o_marcador_nao_basta(self):
+        """Desde 16/09/2026 só o username exato conta: email e nomes são
+        editáveis pela própria creator."""
         user, ws = self.conta("dfranca", "davidfranca9@gmail.com")
-        self.assertTrue(is_internal_account(ws, user))
+        self.assertFalse(is_internal_account(ws, user))
+
+    def test_creator_que_se_chama_layfe_amorim_no_perfil_nao_vira_interna(self):
+        user = User.objects.create_user(username="marina", password="segura123", first_name="Layfe", last_name="Amorim")
+        ws = get_or_create_workspace_for_user(user)
+        ws.name = "Layfe Amorim"
+        ws.business_full_name = "Layfe Amorim"
+        ws.save()
+        self.assertFalse(is_internal_account(ws, user))
+
+    def test_username_que_so_contem_o_marcador_nao_entra(self):
+        user, ws = self.conta("davidfranca9x")
+        self.assertFalse(is_internal_account(ws, user))
+        user2, ws2 = self.conta("layfeamorim_fake")
+        self.assertFalse(is_internal_account(ws2, user2))
+
+    def test_conta_de_equipe_do_admin_e_interna(self):
+        user = User.objects.create_user(username="equipe_tcc", password="segura123", is_staff=True)
+        self.assertTrue(is_internal_account(get_or_create_workspace_for_user(user), user))
+
+    def test_sem_usuario_vale_o_dono_do_workspace(self):
+        layfe, ws_layfe = self.conta("layfeamorim")
+        creator, ws_creator = self.conta("aamandanegri")
+        ws_creator.name = "Layfe Amorim"
+        ws_creator.save()
+        self.assertTrue(is_internal_account(ws_layfe))
+        self.assertFalse(is_internal_account(ws_creator))
 
     def test_creator_comum_nao_e_interna(self):
         user, ws = self.conta("aamandanegri")

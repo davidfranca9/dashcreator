@@ -503,36 +503,36 @@ def _percentage_text(value: Decimal) -> str:
     return f"{amount.normalize()}%".replace(".", ",")
 
 
-# Contas internas do time, que enxergam os recursos ainda nao liberados pras
-# creators. O marcador do David leva o "9" de proposito: sem ele, qualquer
-# usuaria chamada "David França" entraria junto, porque a normalizacao tira o
-# acento e junta tudo ("davidfranca").
-INTERNAL_ACCOUNT_MARKERS = ("layfeamorim", "davidfranca9")
+# Contas internas do time, que enxergam o que ainda nao foi liberado pras
+# creators (CRM, Infoprodutos, Creator Day, detalhe do trabalho). Lista FECHADA
+# de usernames exatos. Ate 16/09/2026 a checagem procurava "layfeamorim" ou
+# "davidfranca9" dentro de nome, email e nome do workspace, campos que a
+# propria creator edita: bastava escrever "Layfe Amorim" no perfil (ou criar o
+# usuario "davidfranca9x") para ver dados de compradores de outras pessoas.
+INTERNAL_USERNAMES = frozenset({"layfeamorim", "davidfranca9"})
+
+
+def _user_is_internal(user: User | None) -> bool:
+    """Username exato da lista ou conta de equipe (is_staff), que só se liga
+    pelo admin do Django, nunca pelo cadastro."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return (user.username or "").lower() in INTERNAL_USERNAMES or bool(getattr(user, "is_staff", False))
 
 
 def is_internal_account(workspace: Workspace | None, user: User | None = None) -> bool:
     """Fonte única de verdade para os recursos internos do time.
 
-    Verdadeiro quando um dos marcadores aparece no workspace (nome, slug ou
-    razão social) ou no usuário (username, email ou nome). Nenhuma outra conta
-    passa por aqui.
+    Com usuário logado, vale só o usuário. Sem usuário (cálculos por
+    workspace, como a receita de infoprodutos no Dashboard), vale se algum
+    membro do workspace for interno. Nome, email e nome do workspace não
+    contam mais.
     """
-    candidates = [
-        getattr(workspace, "name", ""),
-        getattr(workspace, "slug", ""),
-        getattr(workspace, "business_full_name", ""),
-    ]
-    if user and getattr(user, "is_authenticated", False):
-        candidates.extend([
-            getattr(user, "username", ""),
-            getattr(user, "email", ""),
-            user.get_full_name() if hasattr(user, "get_full_name") else "",
-        ])
-    for value in candidates:
-        normalized = normalize_company_name(value).replace(" ", "")
-        if any(marker in normalized for marker in INTERNAL_ACCOUNT_MARKERS):
-            return True
-    return False
+    if user is not None and getattr(user, "is_authenticated", False):
+        return _user_is_internal(user)
+    if workspace is None or not getattr(workspace, "pk", None):
+        return False
+    return any(_user_is_internal(m.user) for m in workspace.memberships.select_related("user"))
 
 
 def workspace_has_infoproducts_access(workspace: Workspace | None, user: User | None = None) -> bool:
