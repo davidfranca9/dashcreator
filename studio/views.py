@@ -53,6 +53,7 @@ from .forms import (
 )
 from .constants import CASH_BOX_ALLOCATION_SETTINGS
 from .models import CashBox, FinanceEntry, FixedCost, InfoLead, InfoLeadEvent, InfoLeadTask, InfoProduct, InfoProductSale, Project, ProjectInstallment, ProjectMonthlyStatus, ProjectUpdateMessage, Prospect, ProspectEvent, ServiceCategory
+from .central import central_snapshot
 from .creator_day import creator_day_snapshot
 from .services import (
     advance_campaign_stage,
@@ -3319,3 +3320,21 @@ def creator_day(request: HttpRequest) -> HttpResponse:
     tab = request.GET.get("tab")
     context["active_tab"] = tab if tab in {"lista", "ingressos"} else "lista"
     return render(request, "studio/creator_day.html", context)
+
+
+@login_required
+def central(request: HttpRequest) -> HttpResponse:
+    """Central TCC: a plataforma interna com tudo do The Creators Club e os
+    números ao vivo. Só para as contas do time."""
+    workspace = _workspace(request)
+    if not is_internal_account(workspace, request.user):
+        raise Http404("Pagina nao encontrada.")
+    context = shell_context(
+        "central",
+        workspace,
+        "Central TCC",
+        "Tudo do The Creators Club num lugar só: produtos, vendas, links, como fazer, sistema e números ao vivo.",
+        user=request.user,
+    )
+    context.update(central_snapshot())
+    return render(request, "studio/central.html", context)
