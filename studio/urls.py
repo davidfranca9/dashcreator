@@ -76,7 +76,8 @@ from .views import (
     signup,
 )
 from .metrics import creator_day_lead, metrics_dashboard, track, portfolio_lead
-from .views import central, creator_day
+from .central_views import central_entrar, central_painel, central_sair
+from .views import creator_day
 
 
 urlpatterns = [
@@ -108,7 +109,9 @@ urlpatterns = [
     # CRM: aba propria desde 07/09/2026, antes era subaba de Infoprodutos.
     path("crm/", crm, name="crm"),
     path("creator-day/", creator_day, name="creator_day"),
-    path("central/", central, name="central"),
+    path("central/", central_painel, name="central"),
+    path("central/entrar/", central_entrar, name="central_entrar"),
+    path("central/sair/", central_sair, name="central_sair"),
     path("crm/novo/", crm_create, name="crm_create"),
     path("crm/<int:pk>/mover/", crm_move, name="crm_move"),
     path("crm/<int:pk>/", crm_lead, name="crm_lead"),

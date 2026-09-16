@@ -552,7 +552,7 @@ def navigation(
         # CRM segue com o mesmo acesso restrito que tinha quando morava
         # dentro de Infoprodutos: a separacao foi de tela, nao de permissao.
         # Creator Day (lista de espera e ingressos) também é só do time.
-        if item["key"] in {"infoproducts", "crm", "creator_day", "central"} and not workspace_has_infoproducts_access(workspace, user):
+        if item["key"] in {"infoproducts", "crm", "creator_day"} and not workspace_has_infoproducts_access(workspace, user):
             continue
         url = reverse(item["url_name"])
         if month_filter and item["key"] in MONTH_FILTER_PAGE_KEYS:

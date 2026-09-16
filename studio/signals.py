@@ -19,6 +19,11 @@ def enforce_single_active_session(sender, request, user, **kwargs):
     if not request.session.session_key:
         request.session.save()
 
+    # Entrar na Central TCC (thecreatorsclub.com.br/central/) nao conta como
+    # sessao do Dash: nao derruba o login aberto no app.
+    if (getattr(request, "path", "") or "").startswith("/central/"):
+        return
+
     if allows_multiple_active_sessions(user):
         ActiveUserSession.objects.filter(user=user).delete()
         return

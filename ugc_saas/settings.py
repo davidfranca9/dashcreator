@@ -24,6 +24,11 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-dev-key-change-me")
 DEBUG = env_flag("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+# A Central TCC mora em thecreatorsclub.com.br/central/ (o nginx do site repassa
+# para este app), entao o formulario de entrada chega com a origem do dominio do clube.
+for _origem in ("https://thecreatorsclub.com.br", "https://www.thecreatorsclub.com.br"):
+    if _origem not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_origem)
 
 
 INSTALLED_APPS = [

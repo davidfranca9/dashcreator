@@ -1,0 +1,670 @@
+{% extends "central/base.html" %}
+
+{% block titulo %}Central TCC{% endblock %}
+
+{% block estilos %}
+<style>
+  /* ---------- estrutura ---------- */
+  .topo { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 240px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 12px 24px; background: rgba(255, 250, 240, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .topo-marca { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--navy); }
+  .topo-marca img { height: 30px; width: auto; }
+  .topo-marca span { padding-left: 12px; font-family: var(--display); font-size: 20px; font-weight: 600; border-left: 1px solid var(--line-2); }
+  .busca { display: flex; align-items: center; gap: 10px; max-width: 620px; padding: 0 14px; background: var(--white); border: 1px solid var(--line-2); color: var(--muted); transition: border-color .15s, box-shadow .15s; }
+  .busca:focus-within { border-color: var(--navy); box-shadow: 0 0 0 4px rgba(60, 134, 254, .14); }
+  .busca input { flex: 1; min-width: 0; padding: 11px 0; border: 0; outline: none; background: none; font-size: 14px; color: var(--navy); }
+  .busca kbd { padding: 2px 6px; font-family: var(--ui); font-size: 11px; color: var(--muted); border: 1px solid var(--line-2); }
+  .topo-dir { display: flex; align-items: center; gap: 10px; }
+  .ao-vivo { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulso 2s infinite; }
+  @keyframes pulso { 0% { box-shadow: 0 0 0 0 rgba(37, 143, 100, .5); } 70% { box-shadow: 0 0 0 7px rgba(37, 143, 100, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 143, 100, 0); } }
+  .icone-botao { display: inline-grid; place-items: center; width: 38px; height: 38px; color: var(--navy); background: var(--white); border: 1px solid var(--line-2); cursor: pointer; }
+  .icone-botao:hover { border-color: var(--navy); }
+  .icone-botao .fechado { display: none; }
+  .valores-ocultos .icone-botao .aberto { display: none; }
+  .valores-ocultos .icone-botao .fechado { display: block; }
+  .avatar { display: inline-grid; place-items: center; width: 38px; height: 38px; font-size: 13px; font-weight: 700; color: #fff; background: var(--navy); }
+  .sair { padding: 9px 12px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--navy); text-decoration: none; border: 1px solid var(--line-2); background: var(--white); }
+  .sair:hover { border-color: var(--navy); }
+
+  .casca { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: calc(100vh - 63px); }
+  .lateral { position: sticky; top: 63px; align-self: start; height: calc(100vh - 63px); display: flex; flex-direction: column; gap: 18px; padding: 22px 14px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--paper); }
+  .lateral-titulo { padding: 0 12px; font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .menu { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .menu a { display: flex; align-items: center; gap: 11px; padding: 10px 12px; font-size: 14px; font-weight: 500; color: var(--ink-2); text-decoration: none; border-left: 3px solid transparent; transition: background .15s, color .15s; }
+  .menu a:hover { background: var(--card); color: var(--navy); }
+  .menu a.ativo { background: var(--card); color: var(--navy); font-weight: 600; border-left-color: var(--navy); }
+  .menu svg { flex: none; }
+  .selo { margin-left: auto; min-width: 20px; padding: 1px 6px; font-size: 11px; font-weight: 700; text-align: center; color: #fff; background: var(--red); }
+  .selo--ambar { background: var(--amber); }
+  .lateral-rodape { margin-top: auto; display: grid; gap: 2px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .lateral-rodape a { padding: 8px 12px; font-size: 13px; color: var(--ink-2); text-decoration: none; }
+  .lateral-rodape a:hover { color: var(--navy); }
+
+  .conteudo { width: 100%; max-width: 1120px; padding: 28px 36px 60px; }
+
+  @media (max-width: 1080px) {
+    .topo { grid-template-columns: auto 1fr auto; padding: 10px 16px; gap: 10px; }
+    .topo-marca img { height: 26px; }
+    .ao-vivo { display: none; }
+    .casca { display: block; }
+    .lateral { position: sticky; top: 59px; z-index: 20; height: auto; flex-direction: row; padding: 8px 12px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--line); background: rgba(245, 241, 232, .96); backdrop-filter: blur(8px); }
+    .lateral-titulo, .lateral-rodape { display: none; }
+    .menu { display: flex; gap: 6px; margin: 0; }
+    .menu a { white-space: nowrap; padding: 8px 12px; font-size: 13px; border: 1px solid var(--line); border-left-width: 1px; background: var(--card); }
+    .menu a.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .menu a.ativo svg { color: #fff; }
+    .conteudo { padding: 22px 16px 60px; }
+  }
+  @media (max-width: 640px) {
+    .topo { grid-template-columns: 1fr auto; }
+    .busca { grid-column: 1 / -1; grid-row: 2; max-width: none; }
+    .topo-marca span { font-size: 17px; }
+    .avatar { display: none; }
+    .lateral { top: 107px; }
+  }
+
+  /* ---------- componentes ---------- */
+  .dinheiro { transition: filter .2s; }
+  .valores-ocultos .dinheiro { filter: blur(8px); user-select: none; }
+  .secao { display: none; }
+  .secao.ativa, .buscando .secao { display: block; }
+  .buscando .secao { margin-bottom: 32px; }
+  .secao-cabeca { margin-bottom: 18px; }
+  .secao-cabeca h1, .secao-cabeca h2 { margin: 0 0 6px; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.1; color: var(--navy); }
+  .secao-cabeca p { max-width: 720px; margin: 0; font-size: 14px; color: var(--muted); }
+  .h3 { margin: 28px 0 12px; font-family: var(--display); font-size: 19px; font-weight: 600; color: var(--navy); }
+  .sem-resultado { padding: 48px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line-2); }
+
+  .hero { position: relative; overflow: hidden; margin-bottom: 16px; padding: 30px 32px; color: #fff; background: var(--navy); }
+  .hero::after { content: ""; position: absolute; right: -90px; top: -110px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(60, 134, 254, .5), transparent 68%); pointer-events: none; }
+  .hero > * { position: relative; }
+  @media (max-width: 640px) { .hero::after { right: -190px; top: -200px; opacity: .6; } }
+  .kicker { font-size: 10px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); }
+  .hero h1 { margin: 10px 0 8px; font-family: var(--display); font-size: clamp(28px, 3.4vw, 40px); font-weight: 600; line-height: 1.08; }
+  .hero p { max-width: 640px; margin: 0; font-size: 14.5px; line-height: 1.6; color: rgba(255, 255, 255, .8); }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
+  .kpi { display: block; padding: 16px 18px; color: inherit; text-decoration: none; background: var(--card); border: 1px solid var(--line); transition: border-color .15s, transform .15s, box-shadow .15s; }
+  a.kpi:hover { border-color: var(--navy); transform: translateY(-2px); box-shadow: var(--sombra); }
+  .kpi span { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .kpi strong { display: block; margin: 6px 0 3px; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.1; color: var(--navy); }
+  .kpi small { font-size: 12.5px; color: var(--ink-2); }
+
+  .alertas { display: grid; gap: 8px; }
+  .alerta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 13px 16px; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-left-width: 4px; }
+  .alerta--espera { border-left-color: var(--amber); }
+  .alerta--erro { border-left-color: var(--red); }
+  .alerta--neutro, .alerta--ok { border-left-color: var(--blue); }
+  .alerta a { font-size: 13px; font-weight: 600; color: var(--navy); white-space: nowrap; text-decoration: none; }
+  .alerta a:hover { text-decoration: underline; }
+
+  .atalhos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 900px) { .atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .atalhos { grid-template-columns: minmax(0, 1fr); } }
+  .atalho { display: flex; flex-direction: column; gap: 4px; padding: 15px 16px; color: var(--navy); text-decoration: none; background: var(--white); border: 1px solid var(--line); transition: border-color .15s, background .15s; }
+  .atalho:hover { border-color: var(--navy); background: var(--card); }
+  .atalho strong { font-size: 14.5px; }
+  .atalho small { font-size: 12.5px; color: var(--muted); }
+
+  .jornada { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: etapa; }
+  @media (max-width: 900px) { .jornada { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .jornada { grid-template-columns: minmax(0, 1fr); } }
+  .etapa { padding: 16px; background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--navy); }
+  .etapa:nth-child(2) { border-top-color: var(--blue); }
+  .etapa:nth-child(3) { border-top-color: var(--gold); }
+  .etapa:nth-child(4) { border-top-color: var(--green); }
+  .etapa-num { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .etapa h4 { margin: 4px 0 10px; font-size: 15.5px; color: var(--navy); }
+  .etapa ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-2); }
+
+  .produtos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 900px) { .produtos { grid-template-columns: minmax(0, 1fr); } }
+  .produto { display: flex; flex-direction: column; gap: 9px; padding: 18px 20px; background: var(--card); border: 1px solid var(--line); }
+  .produto-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+  .produto h3 { margin: 0 0 7px; font-family: var(--display); font-size: 20px; font-weight: 600; color: var(--navy); }
+  .preco { flex: none; max-width: 46%; text-align: right; font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.15; color: var(--navy); }
+  .detalhe { font-size: 12.5px; color: var(--muted); }
+  .produto p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+  .produto-pe { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; margin-top: auto; padding-top: 11px; font-size: 13px; color: var(--ink-2); border-top: 1px solid var(--line); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display: inline-block; padding: 3px 9px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--ink-2); background: var(--paper-2); }
+  .tag--ok { color: #16704a; background: #e3f6ec; }
+  .tag--espera, .tag--media { color: #8a5a00; background: #fdf3dc; }
+  .tag--erro, .tag--alta { color: var(--red); background: #fbe9ea; }
+  .tag--baixa { color: #27507e; background: #e6eefb; }
+  .tag--confirmar { color: #6b4fa0; background: #efe9f8; }
+  .link { font-weight: 600; color: var(--navy); text-decoration: none; white-space: nowrap; }
+  .link:hover { text-decoration: underline; }
+
+  .tabela-caixa { overflow-x: auto; background: var(--card); border: 1px solid var(--line); }
+  .tabela { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }
+  .tabela th { padding: 11px 16px; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--line); }
+  .tabela td { padding: 11px 16px; vertical-align: top; color: var(--ink-2); border-bottom: 1px solid var(--line); }
+  .tabela tr:last-child td { border-bottom: 0; }
+  .tabela tbody tr:hover td { background: rgba(10, 36, 99, .025); }
+  .tabela .forte { font-weight: 600; color: var(--navy); }
+  .grupo { margin-bottom: 20px; }
+  .grupo-cabeca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 9px; }
+  .grupo-cabeca h3 { margin: 0; font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--navy); }
+  .grupo-cabeca span { font-size: 12.5px; color: var(--muted); }
+
+  .guia { margin-bottom: 8px; background: var(--card); border: 1px solid var(--line); }
+  .guia[open] { border-color: var(--line-2); box-shadow: var(--sombra); }
+  .guia summary { display: flex; align-items: center; gap: 14px; padding: 15px 18px; cursor: pointer; list-style: none; font-size: 15px; font-weight: 600; color: var(--navy); }
+  .guia summary::-webkit-details-marker { display: none; }
+  .guia-num { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; font-size: 12px; font-weight: 700; color: var(--navy); background: var(--paper-2); }
+  .guia summary::after { content: "+"; margin-left: auto; font-size: 22px; font-weight: 400; color: var(--muted); transition: transform .2s; }
+  .guia[open] summary::after { transform: rotate(45deg); }
+  .guia-corpo { padding: 0 18px 18px 60px; font-size: 14px; color: var(--ink-2); }
+  @media (max-width: 480px) { .guia-corpo { padding-left: 18px; } }
+  .guia-corpo ol { display: grid; gap: 7px; margin: 10px 0 16px; padding-left: 20px; line-height: 1.55; }
+  .quando { margin: 0; font-size: 13px; color: var(--muted); }
+  .botao { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #fff; text-decoration: none; background: var(--navy); }
+  .botao:hover { background: var(--navy-2); }
+
+  .colunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 900px) { .colunas { grid-template-columns: minmax(0, 1fr); } }
+  .caixa { padding: 18px; background: var(--card); border: 1px solid var(--line); }
+  .caixa h4 { margin: 0 0 12px; font-size: 15px; color: var(--navy); }
+  .lista { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-2); }
+  .lista li { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+  .lista li:last-child { padding-bottom: 0; border-bottom: 0; }
+  .lista b { color: var(--navy); text-align: right; }
+  .lista--texto li { display: block; line-height: 1.55; }
+  .aviso { margin-bottom: 12px; padding: 12px 16px; font-size: 13.5px; color: var(--ink-2); background: var(--white); border: 1px dashed var(--navy); }
+
+  .risco { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin-bottom: 8px; padding: 13px 16px; background: var(--card); border: 1px solid var(--line); }
+  .risco strong { font-size: 14.5px; color: var(--navy); }
+  .risco p { grid-column: 2; margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+  @media (max-width: 480px) { .risco { grid-template-columns: minmax(0, 1fr); } .risco p { grid-column: 1; } }
+</style>
+{% endblock %}
+
+{% block corpo %}
+<header class="topo">
+  <a class="topo-marca" href="/central/" aria-label="Central TCC, início">
+    <img src="/assets/logo-tcc.png" alt="The Creators Club">
+    <span>Central</span>
+  </a>
+  <label class="busca">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span class="sr-only">Buscar na Central</span>
+    <input type="search" placeholder="Buscar produto, link, processo, risco..." data-busca-central autocomplete="off">
+    <kbd aria-hidden="true">/</kbd>
+  </label>
+  <div class="topo-dir">
+    <span class="ao-vivo"><span class="ponto" aria-hidden="true"></span>Ao vivo · {{ agora|date:"H:i" }}</span>
+    <button type="button" class="icone-botao" data-olho aria-pressed="false" title="Esconder ou mostrar valores">
+      <span class="sr-only">Esconder ou mostrar valores</span>
+      <svg class="aberto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg class="fechado" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    </button>
+    <span class="avatar" title="{{ usuario_nome }}">{{ usuario_iniciais }}</span>
+    <a class="sair" href="/central/sair/">Sair</a>
+  </div>
+</header>
+
+<div class="casca">
+  <nav class="lateral" aria-label="Seções da Central">
+    <div>
+      <div class="lateral-titulo">Central do time</div>
+      <ul class="menu">
+        {% for s in secoes %}
+        <li>
+          <a href="#{{ s.id }}" data-aba="{{ s.id }}">
+            {% if s.id == "inicio" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+            {% elif s.id == "produtos" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>
+            {% elif s.id == "vendas" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            {% elif s.id == "links" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            {% elif s.id == "como-fazer" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+            {% elif s.id == "sistema" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            {% elif s.id == "tecnologia" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/></svg>
+            {% elif s.id == "pendencias" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            {% else %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>{% endif %}
+            <span>{{ s.titulo }}</span>
+            {% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--ambar" title="Compras do Creator Day em aberto">{{ cd_em_aberto }}</span>{% endif %}
+            {% if s.id == "pendencias" and riscos_altos %}<span class="selo" title="Riscos de prioridade alta">{{ riscos_altos }}</span>{% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="lateral-rodape">
+      <a href="{{ app }}/login/" target="_blank" rel="noopener">Abrir o Dash ↗</a>
+      <a href="{{ app }}/creator-day/" target="_blank" rel="noopener">Creator Day no app ↗</a>
+      <a href="{{ app }}/metricas/" target="_blank" rel="noopener">Métricas ↗</a>
+      <a href="/" target="_blank" rel="noopener">Site do clube ↗</a>
+    </div>
+  </nav>
+
+  <main class="conteudo" data-central>
+    <p class="sem-resultado" data-sem-resultado hidden>Nada encontrado para essa busca. Tente outra palavra.</p>
+
+    {# ---------------- VISÃO GERAL ---------------- #}
+    <section class="secao" id="inicio" data-secao="inicio">
+      <div class="hero">
+        <span class="kicker">Olá, {{ usuario_nome }}</span>
+        <h1>Tudo do clube num lugar só.</h1>
+        <p>O que o clube vende, quem comprou e quem se inscreveu, todos os links, como fazer as tarefas do dia a dia e o que está pendente. Os números vêm do sistema na hora em que a página abre.</p>
+      </div>
+
+      <div class="kpis">
+        <a class="kpi" href="#numeros" data-ir="numeros"><span>Usuárias do Dash</span><strong>{{ dash.usuarias }}</strong><small>{{ dash.entraram_30 }} entraram nos últimos 30 dias</small></a>
+        <a class="kpi" href="#vendas" data-ir="vendas"><span>Recebido no checkout</span><strong class="dinheiro">{{ receita_checkout }}</strong><small>Dash {{ checkout.dashcreator.pagas }} pagas · Creator Day {{ checkout.creatorday.pagas }} pagos</small></a>
+        <a class="kpi" href="{{ app }}/creator-day/?tab=ingressos" target="_blank" rel="noopener"><span>Creator Day · 17/10</span><strong>{{ checkout.creatorday.pagas }} pagos</strong><small>{{ cd_em_aberto }} em aberto · {{ lista_espera }} na lista de espera</small></a>
+        <a class="kpi" href="#produtos" data-ir="produtos"><span>Desafio Postaria Mais</span><strong>{{ desafio.inscritas }} inscritas</strong><small>{{ desafio.missao_do_dia }}</small></a>
+        <a class="kpi" href="#produtos" data-ir="produtos"><span>Portal do TCC</span><strong>{{ portal.alunas_ativas }} alunas</strong><small>{{ portal.aulas_assistidas }} aulas assistidas · {{ portal.entregas }} entregas</small></a>
+        <a class="kpi" href="#numeros" data-ir="numeros"><span>Visitas nos sites</span><strong>{{ visitas_total }}</strong><small>nos últimos 30 dias</small></a>
+      </div>
+
+      <h2 class="h3">Pede atenção agora</h2>
+      <div class="alertas">
+        {% for a in alertas %}
+        <div class="alerta alerta--{{ a.tom }}" data-busca>
+          <span>{{ a.texto }}</span>
+          <a href="{{ a.link }}"{% if a.link|slice:":1" == "#" %} data-ir="{{ a.link|slice:"1:" }}"{% else %} target="_blank" rel="noopener"{% endif %}>{{ a.acao }} →</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 class="h3">Comece por aqui</h2>
+      <div class="atalhos">
+        <a class="atalho" href="#vendas" data-ir="vendas" data-busca><strong>Quem comprou ou se inscreveu</strong><small>Onde ver cada venda, lista e lead</small></a>
+        <a class="atalho" href="#produtos" data-ir="produtos" data-busca><strong>Produtos e preços</strong><small>Tudo o que o clube vende</small></a>
+        <a class="atalho" href="#links" data-ir="links" data-busca><strong>Achar um link</strong><small>Sites, páginas, app e Instagram</small></a>
+        <a class="atalho" href="#como-fazer" data-ir="como-fazer" data-busca><strong>Como fazer</strong><small>Acesso, cupom, Desafio, publicar</small></a>
+        <a class="atalho" href="{{ app }}/creator-day/" target="_blank" rel="noopener" data-busca><strong>Creator Day ↗</strong><small>Lista de espera e ingressos</small></a>
+        <a class="atalho" href="{{ app }}/crm/" target="_blank" rel="noopener" data-busca><strong>CRM ↗</strong><small>Leads da mentoria e de serviços</small></a>
+        <a class="atalho" href="/desafio/admin.html" target="_blank" rel="noopener" data-busca><strong>Painel do Desafio ↗</strong><small>Pontos, datas e moderação</small></a>
+        <a class="atalho" href="#pendencias" data-ir="pendencias" data-busca><strong>Pendências e riscos</strong><small>O que falta resolver</small></a>
+      </div>
+
+      <h2 class="h3">Como o clube se conecta</h2>
+      <div class="jornada">
+        <div class="etapa" data-busca><span class="etapa-num">1 · Conhece</span><h4>Onde a creator chega</h4><ul><li>Instagram @thecreatorssclubb e @layfeamorim</li><li>Home do clube</li><li>layfeamorim.com (Sou Creator)</li><li>Desafio Postaria Mais</li></ul></div>
+        <div class="etapa" data-busca><span class="etapa-num">2 · Entra</span><h4>Portas de entrada</h4><ul><li>Planner Creator</li><li>Dash Creator</li><li>Desafio da Semana</li></ul></div>
+        <div class="etapa" data-busca><span class="etapa-num">3 · Se transforma</span><h4>Acompanhamento</h4><ul><li>Mentoria HPC e Renovação</li><li>Acompanhamento 1:1</li><li>Portal do TCC</li></ul></div>
+        <div class="etapa" data-busca><span class="etapa-num">4 · Vive</span><h4>Experiências</h4><ul><li>Creator Day Experience (17/10)</li><li>Encontros da turma</li></ul></div>
+      </div>
+    </section>
+
+    {# ---------------- PRODUTOS ---------------- #}
+    <section class="secao" id="produtos" data-secao="produtos">
+      <div class="secao-cabeca">
+        <h2>Produtos e preços</h2>
+        <p>Preço e vendas do Dash e do Creator Day vêm do checkout; os demais, do cadastro de Infoprodutos da Layfe. "A confirmar" ainda precisa de validação do time.</p>
+      </div>
+      <div class="produtos">
+        {% for p in produtos %}
+        <article class="produto" data-busca>
+          <div class="produto-topo">
+            <div>
+              <h3>{{ p.nome }}</h3>
+              <div class="tags"><span class="tag tag--{{ p.tom }}">{{ p.situacao }}</span>{% if p.confirmar %}<span class="tag tag--confirmar">A confirmar</span>{% endif %}</div>
+            </div>
+            <div class="preco">{{ p.preco }}</div>
+          </div>
+          <span class="detalhe">{{ p.detalhe }}</span>
+          <p>{{ p.frase }}</p>
+          <div class="produto-pe">
+            <span>{{ p.pagamento }}{% if p.vendas %} · <b class="dinheiro">{{ p.vendas }}</b>{% endif %}</span>
+            {% if p.link %}<a class="link" href="{{ p.link }}" target="_blank" rel="noopener">{{ p.link_rotulo }} ↗</a>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ---------------- VENDAS ---------------- #}
+    <section class="secao" id="vendas" data-secao="vendas">
+      <div class="secao-cabeca">
+        <h2>Vendas e inscrições</h2>
+        <p>Onde ver cada coisa, com o número de agora.</p>
+      </div>
+      <div class="tabela-caixa">
+        <table class="tabela">
+          <thead><tr><th>Quero ver</th><th>Agora</th><th>Onde fica</th><th></th></tr></thead>
+          <tbody>
+            {% for pergunta, agora_txt, onde, link in onde_ver %}
+            <tr data-busca>
+              <td class="forte">{{ pergunta }}</td>
+              <td>{{ agora_txt }}</td>
+              <td>{{ onde }}</td>
+              <td>{% if link %}<a class="link" href="{{ link }}" target="_blank" rel="noopener">Abrir ↗</a>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="aviso" style="margin-top:12px" data-busca><b>Vendas da Hubla e do link Nubank</b> (Mentoria HPC, Renovação, Acompanhamento, Planner) não entram sozinhas: lance em Infoprodutos no Dash para aparecerem no faturamento.</div>
+    </section>
+
+    {# ---------------- LINKS ---------------- #}
+    <section class="secao" id="links" data-secao="links">
+      <div class="secao-cabeca">
+        <h2>Sites e links</h2>
+        <p>Tudo que está no ar, por endereço.</p>
+      </div>
+      {% for g in links %}
+      <div class="grupo" data-busca-grupo>
+        <div class="grupo-cabeca"><h3>{{ g.grupo }}</h3><span>{{ g.descricao }}</span></div>
+        <div class="tabela-caixa">
+          <table class="tabela">
+            <thead><tr><th>Página</th><th>O que é</th><th>Para quem</th><th></th></tr></thead>
+            <tbody>
+              {% for nome, url, oque, publico in g.itens %}
+              <tr data-busca>
+                <td class="forte">{{ nome }}</td>
+                <td>{{ oque }}</td>
+                <td><span class="tag">{{ publico }}</span></td>
+                <td><a class="link" href="{{ url }}" target="_blank" rel="noopener">Abrir ↗</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    {# ---------------- COMO FAZER ---------------- #}
+    <section class="secao" id="como-fazer" data-secao="como-fazer">
+      <div class="secao-cabeca">
+        <h2>Como fazer</h2>
+        <p>Passo a passo das tarefas do dia a dia. Clique para abrir.</p>
+      </div>
+      {% for g in guias %}
+      <details class="guia" data-busca>
+        <summary><span class="guia-num">{{ forloop.counter }}</span>{{ g.titulo }}</summary>
+        <div class="guia-corpo">
+          <p class="quando">{{ g.quando }}</p>
+          <ol>{% for passo in g.passos %}<li>{{ passo }}</li>{% endfor %}</ol>
+          {% if g.link %}<a class="botao" href="{{ g.link }}" target="_blank" rel="noopener">{{ g.link_rotulo }} ↗</a>{% endif %}
+        </div>
+      </details>
+      {% endfor %}
+    </section>
+
+    {# ---------------- SISTEMA ---------------- #}
+    <section class="secao" id="sistema" data-secao="sistema">
+      <div class="secao-cabeca">
+        <h2>Sistema Dash Creator</h2>
+        <p>Os módulos do app e quem vê cada um.</p>
+      </div>
+      <div class="tabela-caixa">
+        <table class="tabela">
+          <thead><tr><th>Módulo</th><th>Para que serve</th><th>Quem vê</th><th></th></tr></thead>
+          <tbody>
+            {% for nome, serve, quem, url in modulos %}
+            <tr data-busca>
+              <td class="forte">{{ nome }}</td>
+              <td>{{ serve }}</td>
+              <td><span class="tag{% if quem != 'Todas' %} tag--confirmar{% endif %}">{{ quem }}</span></td>
+              <td><a class="link" href="{{ url }}" target="_blank" rel="noopener">Abrir ↗</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <h3 class="h3">Contas e acesso</h3>
+      <div class="caixa" data-busca-grupo>
+        <ul class="lista lista--texto">{% for regra in regras_acesso %}<li data-busca>{{ regra }}</li>{% endfor %}</ul>
+      </div>
+    </section>
+
+    {# ---------------- TECNOLOGIA ---------------- #}
+    <section class="secao" id="tecnologia" data-secao="tecnologia">
+      <div class="secao-cabeca">
+        <h2>Tecnologia</h2>
+        <p>Servidores, domínios, integrações e onde ficam os acessos. Nenhuma senha aparece aqui.</p>
+      </div>
+      <div class="colunas">
+        {% for s in servidores %}
+        <div class="caixa" data-busca>
+          <h4>{{ s.nome }}</h4>
+          <ul class="lista">
+            <li>Acesso SSH <b>{{ s.ssh }}</b></li>
+            <li>Painel <b>{{ s.painel }}</b></li>
+            <li>Disco <b>{{ s.disco }}</b></li>
+            <li>O que roda <b>{{ s.roda }}</b></li>
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h3 class="h3">Domínios</h3>
+      <div class="tabela-caixa">
+        <table class="tabela">
+          <thead><tr><th>Domínio</th><th>O que é</th><th>Onde roda</th><th>DNS</th><th>Como publica</th></tr></thead>
+          <tbody>
+            {% for dominio, oque, onde, dns, publica in dominios %}
+            <tr data-busca><td class="forte">{{ dominio }}</td><td>{{ oque }}</td><td>{{ onde }}</td><td>{{ dns }}</td><td>{{ publica }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="colunas" style="margin-top:12px">
+        <div class="caixa" data-busca-grupo>
+          <h4>Integrações</h4>
+          <ul class="lista">{% for nome, uso in integracoes %}<li data-busca><span>{{ uso }}</span><b>{{ nome }}</b></li>{% endfor %}</ul>
+        </div>
+        <div class="caixa" data-busca-grupo>
+          <h4>Variáveis do servidor (só nomes)</h4>
+          <ul class="lista lista--texto">{% for grupo, nomes in variaveis %}<li data-busca><b>{{ grupo }}:</b> {{ nomes }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+
+      <h3 class="h3">Onde ficam os acessos</h3>
+      <div class="aviso">Aqui está onde cada acesso mora e quem usa. Senhas ficam num gerenciador de senhas, nunca no sistema.</div>
+      <div class="tabela-caixa">
+        <table class="tabela">
+          <thead><tr><th>Acesso</th><th>Onde entra</th><th>Quem usa</th><th>Onde fica a credencial</th></tr></thead>
+          <tbody>
+            {% for acesso, onde, quem, credencial in acessos %}
+            <tr data-busca><td class="forte">{{ acesso }}</td><td>{{ onde }}</td><td>{{ quem }}</td><td>{{ credencial }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# ---------------- PENDÊNCIAS ---------------- #}
+    <section class="secao" id="pendencias" data-secao="pendencias">
+      <div class="secao-cabeca">
+        <h2>Pendências e riscos</h2>
+        <p>O que falta resolver, por prioridade, e as perguntas que o time ainda precisa responder.</p>
+      </div>
+      {% for nivel, rotulo in niveis %}
+      <h3 class="h3">Prioridade {{ rotulo }}</h3>
+      {% for prioridade, titulo, detalhe in riscos %}{% if prioridade == nivel %}
+      <div class="risco" data-busca>
+        <span class="tag tag--{{ prioridade }}">{{ rotulo }}</span>
+        <strong>{{ titulo }}</strong>
+        <p>{{ detalhe }}</p>
+      </div>
+      {% endif %}{% endfor %}
+      {% endfor %}
+
+      <div class="colunas" style="margin-top:16px">
+        <div class="caixa" data-busca-grupo>
+          <h4>A confirmar com o time</h4>
+          <ul class="lista lista--texto">{% for p in pontas %}<li data-busca>{{ p }}</li>{% endfor %}</ul>
+        </div>
+        <div class="caixa" data-busca-grupo>
+          <h4>Resolvido em 16/09/2026</h4>
+          <ul class="lista lista--texto">{% for r in resolvidos %}<li data-busca>✓ {{ r }}</li>{% endfor %}</ul>
+        </div>
+      </div>
+    </section>
+
+    {# ---------------- NÚMEROS ---------------- #}
+    <section class="secao" id="numeros" data-secao="numeros">
+      <div class="secao-cabeca">
+        <h2>Números ao vivo</h2>
+        <p>Contados em {{ agora|date:"d/m/Y" }} às {{ agora|date:"H:i" }}. Das outras creators que usam o Dash entra só a contagem geral; o detalhe de negócio é da conta da Layfe.</p>
+      </div>
+
+      <div class="colunas">
+        <div class="caixa" data-busca>
+          <h4>Dash Creator (plataforma)</h4>
+          <ul class="lista">
+            <li>Usuárias ativas <b>{{ dash.usuarias }}</b></li>
+            <li>Entraram nos últimos 7 dias <b>{{ dash.entraram_7 }}</b></li>
+            <li>Entraram nos últimos 30 dias <b>{{ dash.entraram_30 }}</b></li>
+            <li>Cadastros nos últimos 30 dias <b>{{ dash.cadastros_30 }}</b></li>
+            <li>Códigos de acesso usados <b>{{ dash.codigos_usados }}</b></li>
+            <li>Códigos livres <b>{{ dash.codigos_livres }}</b></li>
+          </ul>
+        </div>
+        <div class="caixa" data-busca>
+          <h4>Desafio e Portal</h4>
+          <ul class="lista">
+            <li>Desafio: inscritas ativas <b>{{ desafio.inscritas }}</b></li>
+            <li>Desafio: hoje <b>{{ desafio.missao_do_dia }}</b></li>
+            <li>Desafio: missões concluídas <b>{{ desafio.conclusoes }}</b></li>
+            <li>Desafio: check-ins hoje · posts <b>{{ desafio.checkins_hoje }} · {{ desafio.posts }}</b></li>
+            <li>Portal: alunas ativas (de {{ portal.alunas_total }}) <b>{{ portal.alunas_ativas }}</b></li>
+            <li>Portal: aulas assistidas · entregas · dúvidas <b>{{ portal.aulas_assistidas }} · {{ portal.entregas }} · {{ portal.duvidas }}</b></li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="h3">Checkout</h3>
+      <div class="tabela-caixa">
+        <table class="tabela">
+          <thead><tr><th>Produto</th><th>Iniciadas</th><th>Pagas</th><th>Recebido</th><th>Aguardando</th><th>Não finalizou</th><th>Recusadas</th></tr></thead>
+          <tbody>
+            <tr data-busca><td class="forte">Dash Creator</td><td>{{ checkout.dashcreator.iniciadas }}</td><td>{{ checkout.dashcreator.pagas }}</td><td class="dinheiro">{{ checkout.dashcreator.receita_txt }}</td><td>{{ checkout.dashcreator.aguardando }}</td><td>{{ checkout.dashcreator.nao_finalizou }}</td><td>{{ checkout.dashcreator.recusadas }}</td></tr>
+            <tr data-busca><td class="forte">Creator Day Experience</td><td>{{ checkout.creatorday.iniciadas }}</td><td>{{ checkout.creatorday.pagas }}</td><td class="dinheiro">{{ checkout.creatorday.receita_txt }}</td><td>{{ checkout.creatorday.aguardando }}</td><td>{{ checkout.creatorday.nao_finalizou }}</td><td>{{ checkout.creatorday.recusadas }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {% if negocio %}
+      <h3 class="h3">Negócio da Layfe</h3>
+      <div class="kpis">
+        <div class="kpi"><span>Trabalhos fechados no ano</span><strong>{{ negocio.trabalhos_ano }}</strong><small class="dinheiro">{{ negocio.valor_ano }}</small></div>
+        <div class="kpi"><span>Vendas de infoprodutos lançadas</span><strong>{{ negocio.infoprodutos_vendas }}</strong><small class="dinheiro">{{ negocio.infoprodutos_valor }}</small></div>
+        <div class="kpi"><span>Prospecção · CRM</span><strong>{{ negocio.prospeccao_total }} · {{ negocio.crm_total }}</strong><small>marcas · leads</small></div>
+      </div>
+      <div class="colunas" style="margin-top:12px">
+        <div class="caixa" data-busca><h4>Prospecção por etapa</h4><ul class="lista">{% for rotulo, n in negocio.prospeccao_etapas %}<li>{{ rotulo }} <b>{{ n }}</b></li>{% endfor %}</ul></div>
+        <div class="caixa" data-busca><h4>CRM por etapa</h4><ul class="lista">{% for rotulo, n in negocio.crm_etapas %}<li>{{ rotulo }} <b>{{ n }}</b></li>{% endfor %}</ul></div>
+      </div>
+      {% if negocio.por_produto %}
+      <div class="caixa" style="margin-top:12px" data-busca><h4>Infoprodutos por produto</h4><ul class="lista">{% for nome, n, valor in negocio.por_produto %}<li>{{ nome }} ({{ n }}) <b class="dinheiro">{{ valor }}</b></li>{% endfor %}</ul></div>
+      {% endif %}
+      {% endif %}
+
+      <h3 class="h3">Visitas nos sites (30 dias)</h3>
+      <div class="colunas">
+        {% for m in metricas %}
+        <div class="caixa" data-busca>
+          <h4>{{ m.nome }}</h4>
+          <ul class="lista">
+            <li>Visitas · únicos · cliques <b>{{ m.visitas }} · {{ m.visitantes }} · {{ m.cliques }}</b></li>
+            {% for rotulo, n in m.top_cliques %}<li>{{ rotulo }} <b>{{ n }}</b></li>{% endfor %}
+          </ul>
+          <p style="margin:12px 0 0"><a class="link" href="{{ m.link }}" target="_blank" rel="noopener">Abrir métricas ↗</a></p>
+        </div>
+        {% empty %}
+        <div class="caixa">Sem visitas registradas nos últimos 30 dias.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const corpo = document.body;
+  const raiz = document.querySelector("[data-central]");
+  const abas = [...document.querySelectorAll("[data-aba]")];
+  const secoes = [...raiz.querySelectorAll("[data-secao]")];
+  const ids = secoes.map((s) => s.dataset.secao);
+  const busca = document.querySelector("[data-busca-central]");
+  const semResultado = raiz.querySelector("[data-sem-resultado]");
+  const normal = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+  const mostrar = (id) => {
+    if (!ids.includes(id)) id = "inicio";
+    abas.forEach((a) => {
+      const ativa = a.dataset.aba === id;
+      a.classList.toggle("ativo", ativa);
+      if (ativa) {
+        a.setAttribute("aria-current", "page");
+        a.scrollIntoView({ block: "nearest", inline: "nearest" });
+      } else {
+        a.removeAttribute("aria-current");
+      }
+    });
+    secoes.forEach((s) => s.classList.toggle("ativa", s.dataset.secao === id));
+  };
+  const limparBusca = () => {
+    corpo.classList.remove("buscando");
+    raiz.querySelectorAll("[data-busca], [data-busca-grupo]").forEach((el) => { el.hidden = false; });
+    secoes.forEach((s) => { s.hidden = false; });
+    semResultado.hidden = true;
+  };
+  const irPara = (id) => {
+    if (busca.value) { busca.value = ""; limparBusca(); }
+    history.replaceState(null, "", "#" + id);
+    mostrar(id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  abas.forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); irPara(a.dataset.aba); }));
+  raiz.querySelectorAll("[data-ir]").forEach((el) => el.addEventListener("click", (e) => {
+    if (!ids.includes(el.dataset.ir)) return;
+    e.preventDefault();
+    irPara(el.dataset.ir);
+  }));
+
+  busca.addEventListener("input", () => {
+    const termo = normal(busca.value.trim());
+    if (!termo) { limparBusca(); mostrar(location.hash.slice(1)); return; }
+    corpo.classList.add("buscando");
+    abas.forEach((a) => a.classList.remove("ativo"));
+    let total = 0;
+    secoes.forEach((s) => {
+      let achados = 0;
+      s.querySelectorAll("[data-busca]").forEach((el) => {
+        const ok = normal(el.textContent).includes(termo);
+        el.hidden = !ok;
+        if (ok) achados += 1;
+      });
+      s.querySelectorAll("[data-busca-grupo]").forEach((g) => { g.hidden = !g.querySelector("[data-busca]:not([hidden])"); });
+      s.hidden = achados === 0;
+      total += achados;
+    });
+    semResultado.hidden = total > 0;
+  });
+  document.addEventListener("keydown", (e) => {
+    const digitando = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+    if (e.key === "/" && !digitando) { e.preventDefault(); busca.focus(); }
+    if (e.key === "Escape" && document.activeElement === busca) { busca.value = ""; limparBusca(); mostrar(location.hash.slice(1)); busca.blur(); }
+  });
+
+  const olho = document.querySelector("[data-olho]");
+  const CHAVE = "central-valores-ocultos";
+  const aplicarOlho = (ocultar) => {
+    corpo.classList.toggle("valores-ocultos", ocultar);
+    olho.setAttribute("aria-pressed", String(ocultar));
+  };
+  try { aplicarOlho(localStorage.getItem(CHAVE) === "1"); } catch (e) { aplicarOlho(false); }
+  olho.addEventListener("click", () => {
+    const ocultar = !corpo.classList.contains("valores-ocultos");
+    aplicarOlho(ocultar);
+    try { localStorage.setItem(CHAVE, ocultar ? "1" : "0"); } catch (e) { /* sem armazenamento */ }
+  });
+
+  window.addEventListener("hashchange", () => { if (!busca.value) mostrar(location.hash.slice(1)); });
+  mostrar(location.hash.slice(1));
+})();
+</script>
+{% endblock %}

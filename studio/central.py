@@ -134,6 +134,7 @@ LINKS = [
             ("Prévias do Creator Day", SITE + "/creator-experience/conceitos/", "Imersivo e Editorial, com lista de espera", "Link direto"),
             ("Inscrição no Desafio", SITE + "/desafio/login.html", "Link de divulgação do Desafio Postaria Mais", "Público"),
             ("Painel da organizadora", SITE + "/desafio/admin.html", "Pontos, datas, participantes e moderação", "Time"),
+            ("Central TCC", SITE + "/central/", "Esta plataforma, com login do time", "Time"),
         ],
     },
     {
@@ -141,7 +142,6 @@ LINKS = [
         "itens": [
             ("Entrar no app", APP + "/login/", "Login do Dash Creator", "Usuárias"),
             ("Criar conta com código", APP + "/signup/", "Cadastro de quem comprou ou recebeu código", "Novas usuárias"),
-            ("Central TCC", APP + "/central/", "Esta plataforma", "Time"),
             ("Creator Day", APP + "/creator-day/", "Lista de espera e ingressos", "Time"),
             ("CRM", APP + "/crm/", "Leads que chegaram até a Layfe", "Time"),
             ("Infoprodutos", APP + "/infoprodutos/", "Produtos e vendas da Hubla e Nubank", "Time"),
@@ -294,7 +294,6 @@ MODULOS = [
     ("Prospecção", "Marcas que a creator foi atrás: 8 etapas, follow-up como ação, sugestões, contatos e conversão em trabalho.", "Todas", APP + "/prospeccao/"),
     ("CRM", "Leads que chegaram: Interesse até Fechado, Perdido à parte, tarefas, histórico e conversão em trabalho.", "Time", APP + "/crm/"),
     ("Creator Day", "Lista de espera das prévias e ingressos do checkout, com resumo de pagos e em aberto.", "Time", APP + "/creator-day/"),
-    ("Central TCC", "Esta plataforma: tudo do clube e números ao vivo.", "Time", APP + "/central/"),
     ("Financeiro", "Entradas confirmadas, saídas, a receber, custo fixo, pró-labore, reserva, investimento e caixinhas.", "Todas", APP + "/financeiro/"),
     ("Distribuição", "Trabalhos separados em Ads e Orgânico, com vencimento da licença.", "Todas", APP + "/distribuicao/"),
     ("Jurídico", "Contrato em PDF com cláusulas editáveis, busca de CNPJ e vencimento do direito de uso de imagem.", "Todas", APP + "/juridico/"),
@@ -320,7 +319,7 @@ SERVIDORES = [
 ]
 
 DOMINIOS = [
-    ("thecreatorsclub.com.br", "Site estático (nginx)", "Servidor principal", "Cloudflare", "git push"),
+    ("thecreatorsclub.com.br", "Site estático (nginx) + /central/ repassada ao sistema", "Servidor principal", "Cloudflare", "git push"),
     ("app.thecreatorsclub.com.br", "Sistema Django", "Servidor principal", "Direto", "git push"),
     ("portal.thecreatorsclub.com.br", "Front do Portal do TCC", "Servidor principal (container manual)", "Direto", "Copiar arquivos para /data/manual-sites/tcc-portal/"),
     ("evo.thecreatorsclub.com.br", "Evolution API (WhatsApp)", "Servidor principal", "Direto", "Uso desconhecido: não mexer"),
@@ -579,6 +578,8 @@ def central_snapshot() -> dict:
         "agora": agora,
         "secoes": SECOES,
         "niveis": [("alta", "alta"), ("media", "média"), ("baixa", "baixa")],
+        "riscos_altos": riscos_altos,
+        "cd_em_aberto": cd["nao_finalizou"] + cd["aguardando"],
         "dash": dash,
         "checkout": checkout,
         "receita_checkout": brl(receita_checkout),
