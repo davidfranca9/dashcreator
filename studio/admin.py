@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessCode, ActiveUserSession, Coupon, InfoProduct, Membership, Niche, Project, Prospect, ServiceCategory, Workspace, WorkspaceSetting
+from .models import AccessCode, ActiveUserSession, Coupon, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -79,3 +79,15 @@ class WorkspaceSettingAdmin(admin.ModelAdmin):
     list_display = ("workspace", "key", "value", "updated_at")
     list_filter = ("workspace",)
     search_fields = ("workspace__name", "key", "value")
+
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    """Compras do checkout do Mercado Pago. Filtre por produto:
+    creatorday = ingresso do Creator Day Experience, dashcreator = Dash Creator."""
+
+    list_display = ("created_at", "product_name", "customer_name", "customer_email", "customer_phone", "amount", "status", "payment_method", "coupon_code")
+    list_filter = ("product_key", "status", "payment_method")
+    search_fields = ("customer_name", "customer_email", "customer_cpf", "customer_phone", "mp_payment_id")
+    date_hierarchy = "created_at"
+    readonly_fields = ("mp_preference_id", "mp_payment_id", "paid_at", "notified_at", "access_code", "created_at", "updated_at")

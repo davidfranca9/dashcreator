@@ -231,3 +231,20 @@ class CheckoutCreatorDayTest(TestCase):
         compra.refresh_from_db()
         self.assertIsNotNone(compra.access_code)
         self.assertIn(compra.access_code.code, mail.outbox[0].body)
+
+
+class CompraNoAdminTest(TestCase):
+    def test_compras_do_creator_day_aparecem_no_admin_filtradas(self):
+        from django.contrib.auth import get_user_model
+
+        _compra(customer_name="Compradora do Evento")
+        _compra(product_key="dashcreator", product_name="Dash Creator", amount=Decimal("134.90"),
+                customer_name="Cliente do Dash", customer_email="dash@example.com")
+        admin_user = get_user_model().objects.create_superuser("admin_teste", "admin@example.com", "SenhaForte123!")
+        self.client.force_login(admin_user)
+
+        response = self.client.get(reverse("admin:studio_purchase_changelist"), {"product_key": "creatorday"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Compradora do Evento")
+        self.assertNotContains(response, "Cliente do Dash")
