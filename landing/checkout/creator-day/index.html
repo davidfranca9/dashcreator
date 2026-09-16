@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingresso · Creator Day Experience</title>
+<meta name="description" content="Garanta seu ingresso para o Creator Day Experience: 17/10/2026, 14h, Piatã, Salvador/BA.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/creator-experience/favicon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mesmos tokens da página do evento (thecreatorsclub.com.br/creator-experience/) */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --background: oklch(96.8% .012 255.5);
+    --card: oklch(100% 0 0);
+    --primary: oklch(48.9% .209 262.2);
+    --navy: oklch(32.7% .128 262.2);
+    --navy-deep: oklch(25.5% .089 263.1);
+    --secondary: oklch(92.7% .025 255.6);
+    --muted: oklch(59.4% .097 259.3);
+    --border: oklch(92.7% .025 255.6);
+    --gradient-navy: linear-gradient(135deg, oklch(25.5% .089 263.1), oklch(48.9% .209 262.2) 70%, oklch(32.7% .128 262.2));
+    --shadow-soft: 0 20px 50px -24px oklch(32.7% .128 262.2 / .35);
+    --display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; background: var(--background); color: var(--navy-deep); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+.topo { text-align: center; padding: 2.5rem 1.5rem 0; }
+.topo img { width: min(78%, 20rem); height: auto; }
+.shell { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 2rem; }
+@media (max-width: 880px) { .shell { grid-template-columns: minmax(0, 1fr); padding: 1.75rem 1rem 3rem; } .side { order: -1; } }
+.main { background: var(--card); border-radius: 2rem; padding: 2.5rem; box-shadow: var(--shadow-soft); min-width: 0; }
+@media (max-width: 600px) { .main { padding: 1.75rem 1.25rem; border-radius: 1.5rem; } }
+.side { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 2rem; align-self: start; }
+@media (max-width: 880px) { .side { position: static; } }
+.label { display: block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--primary); margin-bottom: 0.75rem; }
+.title { font-family: var(--display); font-size: clamp(1.7rem, 3.2vw, 2.2rem); font-weight: 700; line-height: 1.12; color: var(--navy-deep); margin-bottom: 0.6rem; }
+.subtitle { color: var(--muted); font-size: 0.93rem; line-height: 1.65; margin-bottom: 2rem; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.field label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; color: var(--navy); }
+.field input { width: 100%; border: 1px solid var(--border); border-radius: 0; padding: 0.8rem 0.9rem; background: var(--background); color: var(--navy-deep); font-family: inherit; font-size: 0.95rem; transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; }
+.field input:focus { outline: none; border-color: var(--primary); background: var(--card); box-shadow: 0 0 0 3px oklch(48.9% .209 262.2 / .12); }
+.cta { margin-top: 1.4rem; width: 100%; background: var(--primary); color: #fff; font-family: inherit; font-size: 0.9rem; font-weight: 500; border: none; padding: 1rem; border-radius: 0; cursor: pointer; box-shadow: var(--shadow-soft); transition: transform 0.15s, opacity 0.15s; }
+.cta:hover:not(:disabled) { transform: translateY(-2px); }
+.cta:disabled { opacity: 0.55; cursor: not-allowed; }
+.payment-anchor { margin-top: 2rem; padding-top: 1.75rem; border-top: 1px solid var(--border); }
+#paymentBrick_container { min-height: 320px; }
+.banner { margin-top: 1.2rem; padding: 0.9rem 1rem; font-size: 0.87rem; line-height: 1.5; }
+.banner[hidden] { display: none; }
+.banner.error { background: oklch(63% .2 25 / .08); color: oklch(45% .15 25); border: 1px solid oklch(63% .2 25 / .25); }
+.banner.info { background: var(--secondary); color: var(--navy); border: 1px solid var(--border); }
+.pix-box { margin-top: 1rem; padding: 1.1rem; border: 1px solid var(--border); background: var(--background); display: grid; gap: 0.85rem; }
+.pix-box[hidden] { display: none; }
+.pix-box h2 { font-family: var(--display); font-size: 1rem; font-weight: 700; color: var(--navy-deep); }
+.pix-box p { color: var(--muted); font-size: 0.87rem; line-height: 1.55; }
+.pix-box img { width: min(260px, 100%); justify-self: center; border: 8px solid var(--card); }
+.pix-box textarea { width: 100%; min-height: 92px; resize: vertical; border: 1px solid var(--border); padding: 0.75rem; color: var(--navy-deep); background: var(--card); font-family: inherit; font-size: 0.78rem; line-height: 1.45; }
+.pix-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.pix-copy, .pix-link { border: none; border-radius: 0; padding: 0.8rem 1rem; font-family: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+.pix-copy { background: var(--primary); color: #fff; }
+.pix-link { background: var(--secondary); color: var(--navy); }
+.pix-link[hidden], .pix-copy[hidden], .pix-box img[hidden], .pix-box textarea[hidden] { display: none; }
+.summary { background-image: var(--gradient-navy); color: #fff; border-radius: 2rem; padding: 2rem; }
+.summary .tag { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 0.6rem; }
+.summary .name { font-family: var(--display); font-size: 1.65rem; font-weight: 700; line-height: 1.1; margin-bottom: 1rem; }
+.chips { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1.4rem; }
+.chips span { align-self: flex-start; background: rgba(255,255,255,0.12); border-radius: 999px; padding: 0.35rem 0.85rem; font-size: 0.8rem; font-weight: 500; }
+.bullets { display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 1.5rem; }
+.bullets li { list-style: none; display: flex; align-items: center; gap: 0.65rem; font-size: 0.87rem; color: rgba(255,255,255,0.85); }
+.bullets li::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #fff; flex: 0 0 auto; }
+.total { padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.2); }
+.total span { display: block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.total strong { display: block; font-family: var(--display); font-size: 2.6rem; font-weight: 700; line-height: 1.15; margin-top: 0.2rem; }
+.total small { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
+.help { font-size: 0.78rem; color: var(--muted); line-height: 1.6; padding: 1rem 1.1rem; border: 1px dashed var(--navy); }
+.voltar { display: inline-block; margin-top: 0.25rem; font-size: 0.82rem; color: var(--primary); text-decoration: none; }
+.voltar:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="topo">
+    <a href="/creator-experience/" aria-label="Voltar para a página do Creator Day Experience"><img src="/creator-experience/images/creator-day-logo.png" alt="Creator Day Experience" width="1345" height="396"></a>
+</header>
+<div class="shell">
+    <main class="main">
+        <span class="label">Finalize sua inscrição</span>
+        <h1 class="title">Seu ingresso para o Creator Day Experience</h1>
+        <p class="subtitle">Preencha seus dados para garantir sua vaga. O pagamento é feito com segurança pelo Mercado Pago: cartão em até 12x, Pix ou boleto.</p>
+
+        <form id="customerForm" autocomplete="on" novalidate>
+            <div class="row">
+                <div class="field"><label for="customer_name">Nome completo</label><input id="customer_name" name="customer_name" type="text" autocomplete="name" required></div>
+                <div class="field"><label for="customer_email">Email</label><input id="customer_email" name="customer_email" type="email" autocomplete="email" required></div>
+            </div>
+            <div class="row">
+                <div class="field"><label for="customer_cpf">CPF</label><input id="customer_cpf" name="customer_cpf" type="text" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required></div>
+                <div class="field"><label for="customer_phone">WhatsApp com DDD</label><input id="customer_phone" name="customer_phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(71) 90000-0000" required></div>
+            </div>
+            <div class="field"><label for="coupon_code">Cupom de desconto (opcional)</label><input id="coupon_code" name="coupon_code" type="text" autocomplete="off" style="text-transform:uppercase"></div>
+            <button type="submit" class="cta" id="continueBtn">Continuar para pagamento</button>
+            <div id="customerError" class="banner error" role="alert" hidden></div>
+        </form>
+
+        <section id="paymentSection" class="payment-anchor" hidden>
+            <span class="label">Pagamento</span>
+            <p class="subtitle" style="margin-bottom:1.2rem;">Escolha cartão, Pix ou boleto. Tudo seguro, sem sair da página.</p>
+            <div id="paymentBrick_container"></div>
+            <div id="paymentStatus" class="banner info" role="status" hidden></div>
+            <div id="pixBox" class="pix-box" hidden>
+                <h2>Pix gerado</h2>
+                <p>Escaneie o QR Code no app do seu banco ou copie o código Pix abaixo. Assim que o pagamento cair, seu ingresso é confirmado automaticamente.</p>
+                <img id="pixQrImage" alt="QR Code Pix" hidden>
+                <textarea id="pixCopyCode" readonly hidden></textarea>
+                <div class="pix-actions">
+                    <button type="button" id="copyPixBtn" class="pix-copy" hidden>Copiar código Pix</button>
+                    <a id="pixTicketLink" class="pix-link" target="_blank" rel="noopener" hidden>Abrir Pix</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <aside class="side">
+        <div class="summary">
+            <div class="tag">Seu ingresso</div>
+            <div class="name">Creator Day Experience</div>
+            <div class="chips">
+                <span>17 de outubro de 2026, 14h</span>
+                <span>Piatã, Salvador/BA</span>
+            </div>
+            <ul class="bullets">
+                <li>Skincare guiado</li>
+                <li>Novas conexões com criadores locais</li>
+                <li>Trocas de conhecimento</li>
+                <li>Momento de desacelerar</li>
+            </ul>
+            <div class="total"><span>Total</span><strong id="checkoutTotal">R$ 120,00</strong><small>ou em até 12x no cartão</small></div>
+        </div>
+        <div class="help">Assim que o pagamento for aprovado, você recebe no seu email a confirmação do ingresso. Dúvidas: WhatsApp (71) 9 9723-8419.</div>
+        <a class="voltar" href="/creator-experience/">Voltar para a página do evento</a>
+    </aside>
+</div>
+
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+(() => {
+    const FALLBACK_PUBLIC_KEY = "";
+    const API_BASE = "https://app.thecreatorsclub.com.br";
+    const PRODUCT_KEY = "creatorday";
+    const PRODUCT_AMOUNT = 120.00;
+    const SUCCESS_PATH = "/checkout/creator-day/sucesso/";
+
+    const form = document.getElementById("customerForm");
+    const continueBtn = document.getElementById("continueBtn");
+    const paymentSection = document.getElementById("paymentSection");
+    const customerError = document.getElementById("customerError");
+    const paymentStatus = document.getElementById("paymentStatus");
+    const pixBox = document.getElementById("pixBox");
+    const pixQrImage = document.getElementById("pixQrImage");
+    const pixCopyCode = document.getElementById("pixCopyCode");
+    const copyPixBtn = document.getElementById("copyPixBtn");
+    const pixTicketLink = document.getElementById("pixTicketLink");
+    const checkoutTotal = document.getElementById("checkoutTotal");
+    const cpfInput = document.getElementById("customer_cpf");
+    const phoneInput = document.getElementById("customer_phone");
+
+    const showError = (msg) => { customerError.textContent = msg; customerError.hidden = false; };
+    const showStatus = (msg, type = "info") => { paymentStatus.textContent = msg; paymentStatus.className = "banner " + type; paymentStatus.hidden = false; };
+    const formatMoney = (value) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+    const normalizePixImage = (value) => value && value.startsWith("data:") ? value : `data:image/png;base64,${value}`;
+    const digits = (value) => (value || "").replace(/\D/g, "");
+
+    cpfInput.addEventListener("input", () => {
+        const d = digits(cpfInput.value).slice(0, 11);
+        cpfInput.value = d.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    });
+    phoneInput.addEventListener("input", () => {
+        const d = digits(phoneInput.value).slice(0, 11);
+        const corte = d.length === 11 ? 7 : 6;
+        phoneInput.value = d.length <= 2 ? d : d.length <= 6 ? `(${d.slice(0, 2)}) ${d.slice(2)}` : `(${d.slice(0, 2)}) ${d.slice(2, corte)}-${d.slice(corte)}`;
+    });
+
+    const resetPix = () => {
+        pixBox.hidden = true;
+        pixQrImage.hidden = true;
+        pixQrImage.removeAttribute("src");
+        pixCopyCode.hidden = true;
+        pixCopyCode.value = "";
+        copyPixBtn.hidden = true;
+        pixTicketLink.hidden = true;
+        pixTicketLink.removeAttribute("href");
+    };
+    const renderPix = (pix) => {
+        if (!pix || (!pix.qr_code && !pix.qr_code_base64 && !pix.ticket_url)) return false;
+        if (pix.qr_code_base64) {
+            pixQrImage.src = normalizePixImage(pix.qr_code_base64);
+            pixQrImage.hidden = false;
+        }
+        if (pix.qr_code) {
+            pixCopyCode.value = pix.qr_code;
+            pixCopyCode.hidden = false;
+            copyPixBtn.hidden = false;
+        }
+        if (pix.ticket_url) {
+            pixTicketLink.href = pix.ticket_url;
+            pixTicketLink.hidden = false;
+        }
+        pixBox.hidden = false;
+        pixBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        return true;
+    };
+
+    let bricksController = null;
+    let activePurchaseId = null;
+    let activeCustomer = null;
+    let activeAmount = PRODUCT_AMOUNT;
+    let statusPollTimer = null;
+
+    const redirectToSuccess = () => {
+        if (!activePurchaseId) return;
+        window.location.href = `${SUCCESS_PATH}?p=${encodeURIComponent(activePurchaseId)}`;
+    };
+
+    const stopStatusPolling = () => {
+        if (statusPollTimer) {
+            clearInterval(statusPollTimer);
+            statusPollTimer = null;
+        }
+    };
+
+    const checkPurchaseStatus = async () => {
+        if (!activePurchaseId) return;
+        try {
+            const response = await fetch(`${API_BASE}/checkout/api/status/?purchase_id=${encodeURIComponent(activePurchaseId)}`);
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) return;
+            if (result.status === "approved" && result.access_ready) {
+                stopStatusPolling();
+                showStatus("Pagamento aprovado. Vamos te levar para a confirmação do seu ingresso.", "info");
+                setTimeout(redirectToSuccess, 900);
+            } else if (["rejected", "cancelled"].includes(result.status)) {
+                stopStatusPolling();
+                showStatus("Pagamento recusado. Revise os dados ou tente outro método.", "error");
+            }
+        } catch (error) {
+            console.error("Status polling error", error);
+        }
+    };
+
+    const startStatusPolling = () => {
+        stopStatusPolling();
+        checkPurchaseStatus();
+        statusPollTimer = setInterval(checkPurchaseStatus, 4000);
+    };
+
+    const renderBrick = async (preferenceId, publicKey) => {
+        const key = publicKey || FALLBACK_PUBLIC_KEY;
+        if (!key || typeof MercadoPago === "undefined") {
+            showError("Checkout indisponível no momento. Recarregue a página e tente novamente.");
+            return;
+        }
+        const mp = new MercadoPago(key, { locale: "pt-BR" });
+        if (bricksController) { bricksController.unmount(); bricksController = null; }
+        resetPix();
+        bricksController = await mp.bricks().create("payment", "paymentBrick_container", {
+            initialization: {
+                amount: activeAmount,
+                preferenceId,
+                payer: activeCustomer ? {
+                    email: activeCustomer.email,
+                    identification: { type: "CPF", number: activeCustomer.cpf },
+                } : undefined,
+            },
+            customization: {
+                paymentMethods: { creditCard: "all", debitCard: "all", bankTransfer: "all", ticket: "all", maxInstallments: 12 },
+                visual: { style: { theme: "default" } },
+            },
+            callbacks: {
+                onReady: () => {},
+                onSubmit: ({ selectedPaymentMethod, formData }) => new Promise(async (resolve, reject) => {
+                    try {
+                        const response = await fetch(`${API_BASE}/checkout/api/payment/`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                purchase_id: activePurchaseId,
+                                selected_payment_method: selectedPaymentMethod,
+                                form_data: formData,
+                            }),
+                        });
+                        const result = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            showStatus(result.message || "Não foi possível concluir o pagamento. Confira os dados e tente novamente.", "error");
+                            reject(result);
+                            return;
+                        }
+                        if (result.status === "approved" || result.purchase_status === "approved") {
+                            showStatus("Pagamento aprovado. Vamos te levar para a confirmação do seu ingresso.", "info");
+                            setTimeout(redirectToSuccess, 900);
+                        } else if (["pending", "in_process", "authorized"].includes(result.status)) {
+                            if (renderPix(result.pix)) {
+                                showStatus("Pix gerado. Pague pelo QR Code ou copie o código Pix.", "info");
+                            } else {
+                                showStatus("Pagamento recebido e aguardando confirmação do Mercado Pago.", "info");
+                            }
+                            startStatusPolling();
+                        } else if (["rejected", "cancelled"].includes(result.status)) {
+                            showStatus("Pagamento recusado. Revise os dados ou tente outro método.", "error");
+                        }
+                        resolve();
+                    } catch (error) {
+                        console.error("Payment submit error", error);
+                        showStatus("Erro de conexão ao concluir o pagamento. Tente novamente.", "error");
+                        reject(error);
+                    }
+                }),
+                onError: (error) => { console.error("Brick error", error); showStatus("Não foi possível processar o pagamento. Tente novamente.", "error"); },
+            },
+        });
+    };
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        customerError.hidden = true;
+
+        const data = new FormData(form);
+        const payload = {
+            product_key: PRODUCT_KEY,
+            customer_name: (data.get("customer_name") || "").toString().trim(),
+            customer_email: (data.get("customer_email") || "").toString().trim(),
+            customer_cpf: digits((data.get("customer_cpf") || "").toString()),
+            customer_phone: (data.get("customer_phone") || "").toString().trim(),
+            coupon_code: (data.get("coupon_code") || "").toString().trim().toUpperCase(),
+        };
+
+        if (!payload.customer_name) { showError("Preencha seu nome completo para continuar."); return; }
+        if (!/^\S+@\S+\.\S+$/.test(payload.customer_email)) { showError("Confira seu email para continuar."); return; }
+        if (payload.customer_cpf.length !== 11) { showError("Informe um CPF com 11 dígitos."); return; }
+        if (digits(payload.customer_phone).length < 10) { showError("Informe seu WhatsApp com DDD."); return; }
+
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Preparando pagamento...";
+        try {
+            const response = await fetch(`${API_BASE}/checkout/api/preference/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const errBody = await response.json().catch(() => ({}));
+                if (errBody.error === "invalid_coupon") {
+                    showError("Esse cupom não é válido. Confira o código ou continue sem cupom.");
+                } else {
+                    showError("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
+                }
+                continueBtn.disabled = false;
+                continueBtn.textContent = "Continuar para pagamento";
+                return;
+            }
+            const { preference_id, purchase_id, public_key, amount } = await response.json();
+            activePurchaseId = purchase_id;
+            activeCustomer = { email: payload.customer_email, cpf: payload.customer_cpf };
+            activeAmount = Number(amount || PRODUCT_AMOUNT);
+            checkoutTotal.textContent = formatMoney(activeAmount);
+            paymentSection.hidden = false;
+            paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            await renderBrick(preference_id, public_key);
+            continueBtn.textContent = "Continuar para pagamento";
+            continueBtn.disabled = true;
+        } catch (err) {
+            console.error(err);
+            showError("Erro de conexão. Recarregue a página e tente novamente.");
+            continueBtn.disabled = false;
+            continueBtn.textContent = "Continuar para pagamento";
+        }
+    });
+
+    copyPixBtn.addEventListener("click", async () => {
+        if (!pixCopyCode.value) return;
+        try {
+            await navigator.clipboard.writeText(pixCopyCode.value);
+            copyPixBtn.textContent = "Código copiado";
+            setTimeout(() => { copyPixBtn.textContent = "Copiar código Pix"; }, 1800);
+        } catch (error) {
+            pixCopyCode.focus();
+            pixCopyCode.select();
+        }
+    });
+})();
+</script>
+</body>
+</html>

@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .checkout import CheckoutProduct, get_product
-from .emails import send_access_code_email
+from .emails import send_access_code_email, send_ticket_email
 from .models import AccessCode, Coupon, Purchase, normalize_access_code
 
 logger = logging.getLogger(__name__)
@@ -92,6 +92,19 @@ def _parse_mp_datetime(value: str | None) -> datetime | None:
         return None
 
 
+def _is_ticket_purchase(purchase: Purchase) -> bool:
+    product = get_product(purchase.product_key)
+    return bool(product and product.is_ticket)
+
+
+def _purchase_ready(purchase: Purchase) -> bool:
+    """Compra aprovada e já entregue: código de acesso gerado (Dash Creator)
+    ou ingresso confirmado (evento, que não gera código)."""
+    if purchase.status != Purchase.STATUS_APPROVED:
+        return False
+    return bool(purchase.access_code_id) or _is_ticket_purchase(purchase)
+
+
 # ---------- Views públicas ----------
 
 def _sync_purchase_with_payment_data(purchase: Purchase, payment_data: dict) -> Purchase:
@@ -130,7 +143,11 @@ def checkout_page(request: HttpRequest, product_key: str) -> HttpResponse:
         "product": product,
         "mp_public_key": settings.MERCADO_PAGO_PUBLIC_KEY,
         "preference_endpoint": reverse("checkout_preference"),
-        "success_url": reverse("checkout_success"),
+        "success_url": (
+            f"{CHECKOUT_PUBLIC_BASE}{product.success_path}"
+            if product.is_ticket
+            else reverse("checkout_success")
+        ),
         "price_text": f"R$ {product.price:.2f}".replace(".", ","),
     }
     return render(request, "checkout/checkout_page.html", context)
@@ -188,8 +205,8 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     )
 
     sdk = _mp_sdk()
-    success_url = f"{CHECKOUT_PUBLIC_BASE}/checkout/sucesso/?p={purchase.pk}"
-    failure_url = f"{CHECKOUT_PUBLIC_BASE}/checkout/erro/?p={purchase.pk}"
+    success_url = f"{CHECKOUT_PUBLIC_BASE}{product.success_path}?p={purchase.pk}"
+    failure_url = f"{CHECKOUT_PUBLIC_BASE}{product.failure_path}?p={purchase.pk}"
     preference_payload = {
         "items": [
             {
@@ -262,7 +279,7 @@ def checkout_payment(request: HttpRequest) -> JsonResponse:
     purchase = Purchase.objects.filter(pk=int(purchase_id)).first()
     if purchase is None:
         return _json(request, {"error": "purchase_not_found"}, status=404)
-    if purchase.status == Purchase.STATUS_APPROVED and purchase.access_code_id:
+    if _purchase_ready(purchase):
         return _json(request, {
             "status": purchase.status,
             "payment_id": purchase.mp_payment_id,
@@ -392,7 +409,7 @@ def checkout_status(request: HttpRequest) -> JsonResponse:
         "status": purchase.status,
         "payment_id": purchase.mp_payment_id,
         "payment_method": purchase.payment_method,
-        "access_ready": bool(purchase.access_code_id),
+        "access_ready": _purchase_ready(purchase),
         "notified": bool(purchase.notified_at),
     })
 
@@ -478,6 +495,9 @@ def checkout_webhook(request: HttpRequest) -> HttpResponse:
 def _approve_purchase(purchase: Purchase, payment_data: dict) -> None:
     """Idempotente: se já temos AccessCode gerado pra essa compra, não
     cria outro e não reenviamos email (o MP pode notificar repetido)."""
+    if _is_ticket_purchase(purchase):
+        _approve_ticket_purchase(purchase, payment_data)
+        return
     if purchase.status == Purchase.STATUS_APPROVED and purchase.access_code_id:
         return
 
@@ -508,3 +528,31 @@ def _approve_purchase(purchase: Purchase, payment_data: dict) -> None:
         purchase.save(update_fields=["notified_at", "updated_at"])
     except Exception:
         logger.exception("Falha ao enviar email do código de acesso (purchase=%s)", purchase.pk)
+
+
+def _approve_ticket_purchase(purchase: Purchase, payment_data: dict) -> None:
+    """Ingresso de evento: marca a compra como aprovada e manda o email de
+    confirmação uma vez só. O update condicional garante isso mesmo quando o
+    webhook e a resposta do pagamento chegam ao mesmo tempo."""
+    paid_at = _parse_mp_datetime(payment_data.get("date_approved")) or timezone.now()
+    updated = (
+        Purchase.objects.filter(pk=purchase.pk)
+        .exclude(status=Purchase.STATUS_APPROVED)
+        .update(
+            status=Purchase.STATUS_APPROVED,
+            mp_payment_id=str(payment_data.get("id") or purchase.mp_payment_id or ""),
+            payment_method=payment_data.get("payment_method_id") or purchase.payment_method or "",
+            paid_at=paid_at,
+            updated_at=timezone.now(),
+        )
+    )
+    purchase.refresh_from_db()
+    if not updated:
+        return
+
+    try:
+        send_ticket_email(purchase, get_product(purchase.product_key))
+        purchase.notified_at = timezone.now()
+        purchase.save(update_fields=["notified_at", "updated_at"])
+    except Exception:
+        logger.exception("Falha ao enviar email do ingresso (purchase=%s)", purchase.pk)

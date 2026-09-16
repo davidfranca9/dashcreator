@@ -34,3 +34,21 @@ def send_access_code_email(purchase, access_code) -> None:
         [purchase.customer_email],
         fail_silently=False,
     )
+
+
+def send_ticket_email(purchase, product) -> None:
+    """Confirma a compra de um ingresso de evento. Não tem código de acesso:
+    o email é a confirmação da compra, com data e local do produto."""
+    context = {
+        "purchase": purchase,
+        "product": product,
+    }
+    subject = render_to_string("checkout/ticket_subject.txt", context).strip()
+    body = render_to_string("checkout/ticket_email.txt", context)
+    send_mail(
+        subject,
+        body,
+        settings.DEFAULT_FROM_EMAIL,
+        [purchase.customer_email],
+        fail_silently=False,
+    )

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingresso · Creator Day Experience</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/creator-experience/favicon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --background: oklch(96.8% .012 255.5);
+    --primary: oklch(48.9% .209 262.2);
+    --navy: oklch(32.7% .128 262.2);
+    --navy-deep: oklch(25.5% .089 263.1);
+    --secondary: oklch(92.7% .025 255.6);
+    --muted: oklch(59.4% .097 259.3);
+    --shadow-soft: 0 20px 50px -24px oklch(32.7% .128 262.2 / .35);
+}
+body { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; background: var(--background); color: var(--navy-deep); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; padding: 2.5rem 1rem; -webkit-font-smoothing: antialiased; }
+.logo { width: min(78%, 18rem); height: auto; }
+.card { max-width: 600px; width: 100%; background: #fff; border-radius: 2rem; padding: 3rem 2.5rem; text-align: center; box-shadow: var(--shadow-soft); }
+@media (max-width: 600px) { .card { padding: 2.25rem 1.4rem; border-radius: 1.5rem; } }
+.mark { width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1.4rem; transition: background 0.3s; }
+.label { display: block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--primary); margin-bottom: 0.8rem; }
+h1 { font-family: "Archivo", ui-sans-serif, system-ui, sans-serif; font-size: clamp(1.8rem, 4vw, 2.3rem); font-weight: 700; line-height: 1.12; margin-bottom: 1rem; }
+p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; margin: 0 auto 1rem; max-width: 460px; }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin: 1.4rem 0 0.4rem; }
+.chips[hidden] { display: none; }
+.chips span { background: var(--secondary); color: var(--navy); border-radius: 999px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 500; }
+.note { font-size: 0.82rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; margin-top: 1.4rem; background: var(--primary); color: #fff; min-height: 50px; padding: 0.9rem 1.8rem; text-decoration: none; font-size: 0.9rem; font-weight: 500; box-shadow: var(--shadow-soft); }
+.pending .mark { background: var(--secondary); color: var(--navy); }
+.falhou .mark { background: oklch(58% .2 25); }
+</style>
+</head>
+<body>
+<a href="/creator-experience/" aria-label="Página do Creator Day Experience"><img class="logo" src="/creator-experience/images/creator-day-logo.png" alt="Creator Day Experience" width="1345" height="396"></a>
+<main class="card pending" id="card">
+    <div class="mark" id="mark" aria-hidden="true">✓</div>
+    <span class="label" id="label">Confirmando pagamento</span>
+    <h1 id="title">Estamos confirmando seu pagamento</h1>
+    <p id="text">Assim que o Mercado Pago aprovar, seu ingresso é confirmado nesta página. Pode levar alguns segundos no Pix e no cartão.</p>
+    <div class="chips" id="chips" hidden><span>17 de outubro de 2026, 14h</span><span>Piatã, Salvador/BA</span></div>
+    <p class="note" id="note" role="status"></p>
+    <a class="btn" id="action" href="/creator-experience/">Voltar para a página do evento</a>
+</main>
+<script>
+(() => {
+    const API_BASE = "https://app.thecreatorsclub.com.br";
+    const purchaseId = new URLSearchParams(window.location.search).get("p");
+    const card = document.getElementById("card");
+    const mark = document.getElementById("mark");
+    const label = document.getElementById("label");
+    const title = document.getElementById("title");
+    const text = document.getElementById("text");
+    const chips = document.getElementById("chips");
+    const note = document.getElementById("note");
+    const action = document.getElementById("action");
+    let pollTimer = null;
+
+    const confirmado = () => {
+        clearInterval(pollTimer);
+        card.classList.remove("pending");
+        label.textContent = "Ingresso confirmado";
+        title.textContent = "Sua vaga no Creator Day está garantida!";
+        text.textContent = "Enviamos a confirmação do ingresso para o seu email. Guarde essa mensagem.";
+        chips.hidden = false;
+        note.textContent = "Qualquer dúvida, fale com a gente pelo WhatsApp (71) 9 9723-8419.";
+    };
+
+    const recusado = () => {
+        clearInterval(pollTimer);
+        card.classList.remove("pending");
+        card.classList.add("falhou");
+        mark.textContent = "!";
+        label.textContent = "Pagamento não aprovado";
+        title.textContent = "Não conseguimos confirmar seu pagamento";
+        text.textContent = "Volte para o checkout e tente outro cartão ou outro método de pagamento.";
+        note.textContent = "";
+        action.href = "/checkout/creator-day/";
+        action.textContent = "Voltar para o checkout";
+    };
+
+    const checkStatus = async () => {
+        if (!purchaseId) {
+            clearInterval(pollTimer);
+            note.textContent = "Se você já pagou, a confirmação chega no seu email.";
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE}/checkout/api/status/?purchase_id=${encodeURIComponent(purchaseId)}`);
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.status === "approved" && result.access_ready) {
+                confirmado();
+            } else if (response.ok && ["rejected", "cancelled"].includes(result.status)) {
+                recusado();
+            }
+        } catch (error) {
+            console.error("Status check error", error);
+        }
+    };
+
+    checkStatus();
+    pollTimer = setInterval(checkStatus, 4000);
+})();
+</script>
+</body>
+</html>

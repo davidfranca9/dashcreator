@@ -1,0 +1,1 @@
+{% autoescape off %}Seu ingresso do {{ purchase.product_name }} está confirmado{% endautoescape %}

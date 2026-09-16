@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagamento não concluído · Creator Day Experience</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/creator-experience/favicon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --background: oklch(96.8% .012 255.5);
+    --primary: oklch(48.9% .209 262.2);
+    --navy-deep: oklch(25.5% .089 263.1);
+    --muted: oklch(59.4% .097 259.3);
+    --shadow-soft: 0 20px 50px -24px oklch(32.7% .128 262.2 / .35);
+}
+body { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; background: var(--background); color: var(--navy-deep); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; padding: 2.5rem 1rem; -webkit-font-smoothing: antialiased; }
+.logo { width: min(78%, 18rem); height: auto; }
+.card { max-width: 560px; width: 100%; background: #fff; border-radius: 2rem; padding: 3rem 2.5rem; text-align: center; box-shadow: var(--shadow-soft); }
+@media (max-width: 600px) { .card { padding: 2.25rem 1.4rem; border-radius: 1.5rem; } }
+.dot { width: 60px; height: 60px; border-radius: 50%; background: oklch(58% .2 25); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1.4rem; }
+h1 { font-family: "Archivo", ui-sans-serif, system-ui, sans-serif; font-size: clamp(1.6rem, 4vw, 2rem); font-weight: 700; line-height: 1.15; margin-bottom: 0.8rem; }
+p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1.4rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: #fff; min-height: 50px; padding: 0.9rem 1.8rem; text-decoration: none; font-size: 0.9rem; font-weight: 500; box-shadow: var(--shadow-soft); }
+</style>
+</head>
+<body>
+<a href="/creator-experience/" aria-label="Página do Creator Day Experience"><img class="logo" src="/creator-experience/images/creator-day-logo.png" alt="Creator Day Experience" width="1345" height="396"></a>
+<main class="card">
+    <div class="dot" aria-hidden="true">!</div>
+    <h1>Não conseguimos concluir o pagamento</h1>
+    <p>O Mercado Pago recusou ou cancelou a transação. Tente outro cartão ou outro método de pagamento.</p>
+    <a class="btn" href="/checkout/creator-day/">Tentar novamente</a>
+</main>
+</body>
+</html>
