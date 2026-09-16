@@ -79,6 +79,7 @@ def central_painel(request: HttpRequest) -> HttpResponse:
     contexto = central_snapshot()
     contexto.update({
         "usuario_nome": nome,
+        "usuario_primeiro_nome": nome.split()[0] if nome.split() else nome,
         "usuario_iniciais": "".join(parte[0] for parte in nome.split()[:2]).upper() or "TC",
         "app": APP,
     })

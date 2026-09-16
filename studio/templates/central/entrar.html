@@ -7,56 +7,58 @@
   .entrar { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: 1.1fr 1fr; }
   @media (max-width: 880px) { .entrar { grid-template-columns: 1fr; } }
 
-  .marca { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; padding: 48px 56px; background: var(--navy); color: #fff; }
-  .marca::before { content: ""; position: absolute; width: 520px; height: 520px; right: -180px; top: -160px; border-radius: 50%; background: radial-gradient(circle, rgba(60, 134, 254, .55), transparent 68%); }
-  .marca::after { content: ""; position: absolute; width: 380px; height: 380px; left: -140px; bottom: -160px; border-radius: 50%; background: radial-gradient(circle, rgba(199, 181, 139, .28), transparent 70%); }
-  .marca > * { position: relative; }
-  .marca-nome { font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
-  .marca-nome small { display: block; margin-top: 2px; font-family: var(--ui); font-size: 10px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: var(--gold); }
-  .marca h1 { max-width: 520px; margin: 0 0 16px; font-family: var(--display); font-size: clamp(34px, 4.4vw, 54px); font-weight: 600; line-height: 1.06; letter-spacing: -.02em; }
-  .marca p { max-width: 460px; margin: 0; font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, .78); }
-  .marca ul { display: grid; gap: 14px; margin: 30px 0 0; padding: 0; list-style: none; }
-  .marca li { display: flex; align-items: flex-start; gap: 12px; font-size: 14.5px; color: rgba(255, 255, 255, .9); }
-  .marca li svg { flex: none; margin-top: 1px; color: var(--gold); }
-  .marca-pe { font-size: 12px; color: rgba(255, 255, 255, .55); }
+  .marca { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; padding: 48px 56px; color: #fff; background: radial-gradient(110% 80% at 100% 0%, rgba(107, 157, 255, .42) 0%, rgba(107, 157, 255, 0) 55%), radial-gradient(70% 60% at 0% 100%, rgba(199, 181, 139, .22) 0%, rgba(199, 181, 139, 0) 60%), linear-gradient(160deg, #11317c 0%, var(--navy) 55%, var(--navy-3) 100%); }
+  .marca-nome small { display: block; font-size: 10px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--ouro); }
+  .marca-nome strong { display: block; margin-top: 6px; font-family: var(--display); font-size: 28px; font-weight: 600; line-height: 1; }
+  .marca h1 { max-width: 520px; margin: 0 0 16px; font-family: var(--display); font-size: clamp(34px, 4.4vw, 56px); font-weight: 600; line-height: 1.05; letter-spacing: -.02em; }
+  .marca p { max-width: 460px; margin: 0; font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, .8); }
+  .marca ul { display: grid; gap: 12px; margin: 32px 0 0; padding: 0; list-style: none; }
+  .marca li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; color: rgba(255, 255, 255, .92); }
+  .marca li span { display: inline-grid; place-items: center; width: 34px; height: 34px; flex: none; color: var(--ouro); background: rgba(255, 255, 255, .09); border-radius: 10px; }
+  .marca li .ico { width: 17px; height: 17px; }
+  .marca-pe { font-size: 12.5px; color: rgba(255, 255, 255, .6); }
   @media (max-width: 880px) {
-    .marca { padding: 28px 22px 34px; gap: 22px; }
+    .marca { gap: 22px; padding: 28px 22px 34px; }
     .marca h1 { font-size: 32px; }
     .marca ul, .marca-pe { display: none; }
   }
 
   .lado-form { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
-  .cartao { width: 100%; max-width: 400px; }
-  .cartao-logo { display: block; height: 40px; width: auto; margin-bottom: 28px; }
-  .cartao h2 { margin: 0 0 6px; font-family: var(--display); font-size: 30px; font-weight: 600; color: var(--navy); }
-  .cartao-sub { margin: 0 0 26px; font-size: 14px; color: var(--muted); }
+  .cartao { width: 100%; max-width: 420px; padding: 36px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 18px; box-shadow: var(--sombra-2); }
+  @media (max-width: 480px) { .lado-form { padding: 24px 16px 40px; } .cartao { padding: 26px 20px; } }
+  .cartao-logo { display: block; width: auto; height: 42px; margin-bottom: 26px; }
+  .cartao h2 { margin: 0 0 6px; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.15; color: var(--navy); }
+  .cartao-sub { margin: 0 0 24px; font-size: 14px; color: var(--mudo); }
   .campo { display: grid; gap: 7px; margin-bottom: 16px; }
-  .campo label { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink-2); }
-  .campo input { width: 100%; padding: 13px 14px; font-size: 15px; color: var(--navy); background: var(--white); border: 1px solid var(--line-2); border-radius: 0; transition: border-color .15s, box-shadow .15s; }
-  .campo input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 4px rgba(60, 134, 254, .16); }
+  .campo label { font-size: 13px; font-weight: 600; color: var(--tinta-2); }
+  .campo input { width: 100%; height: 48px; padding: 0 14px; font-size: 16px; color: var(--tinta); background: var(--superficie); border: 1px solid var(--linha-2); border-radius: var(--raio-p); transition: border-color .15s, box-shadow .15s; }
+  .campo input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 4px rgba(47, 111, 237, .15); }
   .senha { position: relative; }
-  .senha input { padding-right: 76px; }
-  .senha button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--navy); background: none; border: 0; cursor: pointer; }
-  .erro { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 18px; padding: 12px 14px; font-size: 13.5px; color: var(--red); background: #fbe9ea; border-left: 3px solid var(--red); }
-  .entrar-botao { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 6px; padding: 14px 18px; font-size: 14px; font-weight: 600; letter-spacing: .04em; color: #fff; background: var(--navy); border: 0; cursor: pointer; box-shadow: var(--sombra); transition: background .15s, transform .15s; }
-  .entrar-botao:hover { background: var(--navy-2); transform: translateY(-1px); }
-  .entrar-botao[disabled] { opacity: .7; cursor: wait; transform: none; }
-  .nota { margin: 22px 0 0; padding-top: 18px; font-size: 12.5px; line-height: 1.55; color: var(--muted); border-top: 1px solid var(--line); }
-  .nota a { color: var(--navy); font-weight: 600; }
+  .senha input { padding-right: 92px; }
+  .senha button { position: absolute; right: 5px; top: 50%; min-height: 38px; padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--navy); background: none; border: 0; border-radius: 8px; transform: translateY(-50%); }
+  .senha button:hover { background: var(--papel); }
+  .erro { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; padding: 12px 14px; font-size: 14px; color: var(--erro); background: var(--erro-fundo); border-radius: var(--raio-p); }
+  .erro .ico { margin-top: 1px; }
+  .entrar-botao { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 50px; margin-top: 6px; font-size: 15px; font-weight: 600; color: #fff; background: var(--navy); border: 0; border-radius: var(--raio-p); transition: background .15s; }
+  .entrar-botao:hover { background: var(--navy-2); }
+  .entrar-botao .ico { width: 17px; height: 17px; }
+  .entrar-botao[disabled] { opacity: .75; cursor: wait; }
+  .nota { margin: 22px 0 0; padding-top: 18px; font-size: 13px; line-height: 1.55; color: var(--mudo); border-top: 1px solid var(--linha); }
+  .nota a { font-weight: 600; color: var(--navy); }
 </style>
 {% endblock %}
 
 {% block corpo %}
 <main class="entrar">
   <section class="marca" aria-label="The Creators Club">
-    <div class="marca-nome">The Creators Club<small>Central do time</small></div>
+    <div class="marca-nome"><small>The Creators Club</small><strong>Central</strong></div>
     <div>
       <h1>Tudo do clube num lugar só.</h1>
       <p>Produtos e preços, quem comprou e quem se inscreveu, todos os links, o passo a passo do dia a dia e os números de agora.</p>
       <ul>
-        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Números ao vivo, direto do sistema</li>
-        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Busca em tudo: produto, link, processo, risco</li>
-        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Só as contas do time entram</li>
+        <li><span><svg class="ico" aria-hidden="true"><use href="#i-pulso"/></svg></span>Números ao vivo, direto do sistema</li>
+        <li><span><svg class="ico" aria-hidden="true"><use href="#i-busca"/></svg></span>Busca em tudo: produto, link, processo, risco</li>
+        <li><span><svg class="ico" aria-hidden="true"><use href="#i-cadeado"/></svg></span>Só as contas do time entram</li>
       </ul>
     </div>
     <div class="marca-pe">thecreatorsclub.com.br/central</div>
@@ -70,7 +72,7 @@
 
       {% if erro %}
       <div class="erro" role="alert">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg class="ico" aria-hidden="true"><use href="#i-alerta"/></svg>
         <span>{{ erro }}</span>
       </div>
       {% endif %}
@@ -89,9 +91,7 @@
             <button type="button" data-mostrar-senha aria-controls="id_password" aria-pressed="false">Mostrar</button>
           </div>
         </div>
-        <button class="entrar-botao" type="submit">Entrar
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
+        <button class="entrar-botao" type="submit"><span data-rotulo-botao>Entrar</span><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></button>
       </form>
 
       <p class="nota">Área exclusiva do time The Creators Club. Esqueceu a senha? Redefina pelo <a href="https://app.thecreatorsclub.com.br/senha/esqueci/">Dash</a>.</p>
@@ -114,7 +114,7 @@
   document.querySelector("[data-form-entrar]")?.addEventListener("submit", (e) => {
     const b = e.currentTarget.querySelector("button[type=submit]");
     b.disabled = true;
-    b.firstChild.textContent = "Entrando ";
+    b.querySelector("[data-rotulo-botao]").textContent = "Entrando...";
   });
 })();
 </script>

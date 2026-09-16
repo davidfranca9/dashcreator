@@ -7,7 +7,7 @@ dado pessoal: só totais, nomes de produtos e onde cada coisa mora.
 """
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -34,16 +34,17 @@ APP = "https://app.thecreatorsclub.com.br"
 PORTAL = "https://portal.thecreatorsclub.com.br"
 LAYFE = "https://layfeamorim.com"
 
+# "grupo" separa o menu: o que se acompanha todo dia e o que se consulta.
 SECOES = [
-    {"id": "inicio", "titulo": "Visão geral"},
-    {"id": "produtos", "titulo": "Produtos e preços"},
-    {"id": "vendas", "titulo": "Vendas e inscrições"},
-    {"id": "links", "titulo": "Sites e links"},
-    {"id": "como-fazer", "titulo": "Como fazer"},
-    {"id": "sistema", "titulo": "Sistema"},
-    {"id": "tecnologia", "titulo": "Tecnologia"},
-    {"id": "pendencias", "titulo": "Pendências"},
-    {"id": "numeros", "titulo": "Números"},
+    {"id": "inicio", "titulo": "Visão geral", "grupo": "Dia a dia"},
+    {"id": "vendas", "titulo": "Vendas e inscrições", "grupo": "Dia a dia"},
+    {"id": "numeros", "titulo": "Números", "grupo": "Dia a dia"},
+    {"id": "pendencias", "titulo": "Pendências", "grupo": "Dia a dia"},
+    {"id": "produtos", "titulo": "Produtos e preços", "grupo": "Consulta"},
+    {"id": "links", "titulo": "Sites e links", "grupo": "Consulta"},
+    {"id": "como-fazer", "titulo": "Como fazer", "grupo": "Consulta"},
+    {"id": "sistema", "titulo": "Sistema", "grupo": "Consulta"},
+    {"id": "tecnologia", "titulo": "Tecnologia", "grupo": "Consulta"},
 ]
 
 # ---------------------------------------------------------------- produtos
@@ -402,7 +403,16 @@ PONTAS = [
     "Para que serve a Evolution API?",
 ]
 
+CREATOR_DAY_DATA = date(2026, 10, 17)
+NIVEIS_RISCO = (("alta", "alta"), ("media", "média"), ("baixa", "baixa"))
+
 SITES_METRICAS = {"tcc": "Home do clube", "dash": "Página do Dash", "layfe": "layfeamorim.com", "portfolio": "Portfólio"}
+
+
+def _com_barra(linhas):
+    """Acrescenta a cada linha (rótulo, n, ...) a largura da barra: % do maior n da lista."""
+    maior = max((linha[1] for linha in linhas), default=0)
+    return [(*linha, round(linha[1] * 100 / maior) if maior else 0) for linha in linhas]
 
 
 def _layfe_workspace():
@@ -480,10 +490,10 @@ def central_snapshot() -> dict:
             "visitas": visitas.count(),
             "visitantes": visitas.values("visitor").distinct().count(),
             "cliques": do_site.filter(kind="click").count(),
-            "top_cliques": [
+            "top_cliques": _com_barra([
                 (_pretty_label(r["label"]), r["n"])
                 for r in do_site.filter(kind="click").exclude(label="").values("label").annotate(n=Count("id")).order_by("-n")[:5]
-            ],
+            ]),
             "link": f"{APP}/metricas/?site={site}",
         })
     visitas_total = sum(m["visitas"] for m in metricas)
@@ -507,12 +517,12 @@ def central_snapshot() -> dict:
             "trabalhos_ano": projetos_ano.count(),
             "valor_ano": brl(projetos_ano.aggregate(s=Sum("total_value"))["s"] or Decimal("0")),
             "prospeccao_total": prospects.count(),
-            "prospeccao_etapas": [(rotulo, por_etapa.get(valor, 0)) for valor, rotulo in PROSPECT_STAGE_CHOICES],
+            "prospeccao_etapas": _com_barra([(rotulo, por_etapa.get(valor, 0)) for valor, rotulo in PROSPECT_STAGE_CHOICES]),
             "crm_total": leads.count(),
-            "crm_etapas": [(rotulo, leads_etapa.get(valor, 0)) for valor, rotulo in InfoLead.STAGE_CHOICES],
+            "crm_etapas": _com_barra([(rotulo, leads_etapa.get(valor, 0)) for valor, rotulo in InfoLead.STAGE_CHOICES]),
             "infoprodutos_vendas": confirmadas.count(),
             "infoprodutos_valor": brl(confirmadas.aggregate(s=Sum("amount"))["s"] or Decimal("0")),
-            "por_produto": [(nome, n, brl(s)) for nome, (n, s) in sorted(vendas_info.items(), key=lambda x: -x[1][0])],
+            "por_produto": _com_barra([(nome, n, brl(s)) for nome, (n, s) in sorted(vendas_info.items(), key=lambda x: -x[1][0])]),
         }
 
     produtos = []
@@ -577,7 +587,8 @@ def central_snapshot() -> dict:
     return {
         "agora": agora,
         "secoes": SECOES,
-        "niveis": [("alta", "alta"), ("media", "média"), ("baixa", "baixa")],
+        "niveis": [(nivel, rotulo, sum(1 for r in RISCOS if r[0] == nivel)) for nivel, rotulo in NIVEIS_RISCO],
+        "creator_day_dias": (CREATOR_DAY_DATA - hoje).days,
         "riscos_altos": riscos_altos,
         "cd_em_aberto": cd["nao_finalizou"] + cd["aguardando"],
         "dash": dash,

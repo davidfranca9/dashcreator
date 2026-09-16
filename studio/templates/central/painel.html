@@ -4,578 +4,920 @@
 
 {% block estilos %}
 <style>
-  /* ---------- estrutura ---------- */
-  .topo { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 240px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 12px 24px; background: rgba(255, 250, 240, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-  .topo-marca { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--navy); }
-  .topo-marca img { height: 30px; width: auto; }
-  .topo-marca span { padding-left: 12px; font-family: var(--display); font-size: 20px; font-weight: 600; border-left: 1px solid var(--line-2); }
-  .busca { display: flex; align-items: center; gap: 10px; max-width: 620px; padding: 0 14px; background: var(--white); border: 1px solid var(--line-2); color: var(--muted); transition: border-color .15s, box-shadow .15s; }
-  .busca:focus-within { border-color: var(--navy); box-shadow: 0 0 0 4px rgba(60, 134, 254, .14); }
-  .busca input { flex: 1; min-width: 0; padding: 11px 0; border: 0; outline: none; background: none; font-size: 14px; color: var(--navy); }
-  .busca kbd { padding: 2px 6px; font-family: var(--ui); font-size: 11px; color: var(--muted); border: 1px solid var(--line-2); }
-  .topo-dir { display: flex; align-items: center; gap: 10px; }
-  .ao-vivo { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulso 2s infinite; }
-  @keyframes pulso { 0% { box-shadow: 0 0 0 0 rgba(37, 143, 100, .5); } 70% { box-shadow: 0 0 0 7px rgba(37, 143, 100, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 143, 100, 0); } }
-  .icone-botao { display: inline-grid; place-items: center; width: 38px; height: 38px; color: var(--navy); background: var(--white); border: 1px solid var(--line-2); cursor: pointer; }
-  .icone-botao:hover { border-color: var(--navy); }
-  .icone-botao .fechado { display: none; }
-  .valores-ocultos .icone-botao .aberto { display: none; }
-  .valores-ocultos .icone-botao .fechado { display: block; }
-  .avatar { display: inline-grid; place-items: center; width: 38px; height: 38px; font-size: 13px; font-weight: 700; color: #fff; background: var(--navy); }
-  .sair { padding: 9px 12px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--navy); text-decoration: none; border: 1px solid var(--line-2); background: var(--white); }
-  .sair:hover { border-color: var(--navy); }
+  /* ================= estrutura ================= */
+  .app { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
 
-  .casca { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: calc(100vh - 63px); }
-  .lateral { position: sticky; top: 63px; align-self: start; height: calc(100vh - 63px); display: flex; flex-direction: column; gap: 18px; padding: 22px 14px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--paper); }
-  .lateral-titulo { padding: 0 12px; font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
-  .menu { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; }
-  .menu a { display: flex; align-items: center; gap: 11px; padding: 10px 12px; font-size: 14px; font-weight: 500; color: var(--ink-2); text-decoration: none; border-left: 3px solid transparent; transition: background .15s, color .15s; }
-  .menu a:hover { background: var(--card); color: var(--navy); }
-  .menu a.ativo { background: var(--card); color: var(--navy); font-weight: 600; border-left-color: var(--navy); }
-  .menu svg { flex: none; }
-  .selo { margin-left: auto; min-width: 20px; padding: 1px 6px; font-size: 11px; font-weight: 700; text-align: center; color: #fff; background: var(--red); }
-  .selo--ambar { background: var(--amber); }
-  .lateral-rodape { margin-top: auto; display: grid; gap: 2px; padding-top: 14px; border-top: 1px solid var(--line); }
-  .lateral-rodape a { padding: 8px 12px; font-size: 13px; color: var(--ink-2); text-decoration: none; }
-  .lateral-rodape a:hover { color: var(--navy); }
+  .lateral { position: sticky; top: 0; z-index: var(--z-lateral); height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 24px 14px 16px; overflow-y: auto; color: rgba(255, 255, 255, .74); background: linear-gradient(180deg, var(--navy) 0%, var(--navy-3) 100%); }
+  .marca { display: block; padding: 0 12px 6px; color: #fff; text-decoration: none; }
+  .marca small { display: block; font-size: 10px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--ouro); }
+  .marca strong { display: block; margin-top: 6px; font-family: var(--display); font-size: 28px; font-weight: 600; line-height: 1; letter-spacing: -.01em; }
+  .menu-grupo { margin: 26px 12px 8px; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .5); }
+  .menu { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .menu a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 8px 12px; font-size: 14px; font-weight: 500; text-decoration: none; border-radius: var(--raio-p); transition: background .15s, color .15s; }
+  .menu a:hover { color: #fff; background: rgba(255, 255, 255, .07); }
+  .menu a.ativo { color: #fff; background: rgba(255, 255, 255, .12); }
+  .menu a.ativo::before { content: ""; position: absolute; left: -14px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--azul-claro); }
+  .selo { margin-left: auto; min-width: 22px; padding: 0 7px; font-size: 11.5px; font-weight: 700; line-height: 20px; text-align: center; color: #fff; background: var(--erro); border-radius: 999px; }
+  .selo--espera { color: #3a2600; background: #f2c14e; }
 
-  .conteudo { width: 100%; max-width: 1120px; padding: 28px 36px 60px; }
+  .lateral-pe { margin-top: auto; padding-top: 22px; }
+  .atalhos-app { display: grid; gap: 2px; margin: 0 0 14px; padding: 14px 0 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, .1); }
+  .atalhos-app a { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; padding: 6px 12px; font-size: 13.5px; text-decoration: none; border-radius: var(--raio-p); transition: background .15s, color .15s; }
+  .atalhos-app a:hover { color: #fff; background: rgba(255, 255, 255, .07); }
+  .atalhos-app .ico { width: 15px; height: 15px; opacity: .6; }
+  .usuario { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, .07); border-radius: var(--raio); }
+  .avatar { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; font-size: 13px; font-weight: 700; color: var(--navy); background: var(--ouro); border-radius: 50%; }
+  .usuario-nome { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; line-height: 1.3; color: #fff; }
+  .usuario-nome span, .usuario-nome small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .usuario-nome small { font-size: 12px; font-weight: 400; color: rgba(255, 255, 255, .6); }
+  .usuario a { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; color: rgba(255, 255, 255, .78); border-radius: var(--raio-p); transition: background .15s, color .15s; }
+  .usuario a:hover { color: #fff; background: rgba(255, 255, 255, .12); }
 
-  @media (max-width: 1080px) {
-    .topo { grid-template-columns: auto 1fr auto; padding: 10px 16px; gap: 10px; }
-    .topo-marca img { height: 26px; }
-    .ao-vivo { display: none; }
-    .casca { display: block; }
-    .lateral { position: sticky; top: 59px; z-index: 20; height: auto; flex-direction: row; padding: 8px 12px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--line); background: rgba(245, 241, 232, .96); backdrop-filter: blur(8px); }
-    .lateral-titulo, .lateral-rodape { display: none; }
-    .menu { display: flex; gap: 6px; margin: 0; }
-    .menu a { white-space: nowrap; padding: 8px 12px; font-size: 13px; border: 1px solid var(--line); border-left-width: 1px; background: var(--card); }
-    .menu a.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
-    .menu a.ativo svg { color: #fff; }
-    .conteudo { padding: 22px 16px 60px; }
+  .principal { min-width: 0; }
+  .barra { position: sticky; top: 0; z-index: var(--z-barra); display: flex; align-items: center; gap: 12px; padding: 14px 40px; background: rgba(245, 241, 232, .88); -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--linha); }
+  .trilha { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; color: var(--mudo); white-space: nowrap; }
+  .trilha strong { overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--tinta); }
+  .marca-cel { display: none; }
+  .busca { flex: 1; display: flex; align-items: center; gap: 10px; max-width: 460px; height: 42px; margin-left: auto; padding: 0 8px 0 12px; color: var(--mudo); background: var(--superficie); border: 1px solid var(--linha-2); border-radius: var(--raio-p); transition: border-color .15s, box-shadow .15s; }
+  .busca:focus-within { border-color: var(--azul); box-shadow: 0 0 0 4px rgba(47, 111, 237, .15); }
+  .busca input { flex: 1; min-width: 0; height: 100%; padding: 0; font-size: 14.5px; color: var(--tinta); background: none; border: 0; outline: none; }
+  .busca input::placeholder { color: var(--mudo); }
+  .busca kbd { padding: 1px 7px; font-family: var(--ui); font-size: 11.5px; color: var(--mudo); background: var(--superficie-2); border: 1px solid var(--linha-2); border-radius: 6px; }
+  .barra-acoes { display: flex; align-items: center; gap: 8px; }
+  .atualizado { display: inline-flex; align-items: center; gap: 9px; height: 42px; padding: 0 5px 0 13px; font-size: 13px; color: var(--tinta-2); white-space: nowrap; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-p); }
+  .ponto { width: 8px; height: 8px; flex: none; background: var(--ok); border-radius: 50%; box-shadow: 0 0 0 3px var(--ok-fundo); }
+  .botao-icone { display: inline-grid; place-items: center; width: 42px; height: 42px; flex: none; padding: 0; color: var(--tinta-2); text-decoration: none; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-p); transition: border-color .15s, color .15s, background .15s; }
+  .botao-icone:hover { color: var(--navy); border-color: var(--linha-2); }
+  .atualizado .botao-icone { width: 32px; height: 32px; border: 0; }
+  .atualizado .botao-icone:hover { background: var(--papel); }
+  .botao-icone .fechado, .valores-ocultos .botao-icone .aberto { display: none; }
+  .valores-ocultos .botao-icone .fechado { display: block; }
+  .so-cel, .abas-cel { display: none; }
+
+  .conteudo { width: 100%; max-width: 1200px; margin: 0 auto; padding: 32px 40px 80px; }
+
+  @media (max-width: 1023px) {
+    .app { display: block; }
+    .lateral, .trilha, .busca kbd { display: none; }
+    .barra { position: static; flex-wrap: wrap; gap: 10px; padding: 14px 16px 6px; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border: 0; }
+    .marca-cel { display: flex; flex-direction: column; margin-right: auto; color: var(--navy); text-decoration: none; }
+    .marca-cel small { font-size: 9.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--mudo); }
+    .marca-cel strong { font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.05; }
+    .busca { order: 3; flex-basis: 100%; max-width: none; margin: 4px 0 0; }
+    .busca input { font-size: 16px; }
+    .atualizado-texto { display: none; }
+    .atualizado { padding-left: 11px; }
+    .so-cel { display: inline-grid; }
+    .abas-cel { position: sticky; top: 0; z-index: var(--z-barra); display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto; scrollbar-width: none; background: rgba(245, 241, 232, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--linha); }
+    .abas-cel::-webkit-scrollbar { display: none; }
+    .abas-cel a { display: inline-flex; flex: none; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; font-size: 13.5px; font-weight: 500; color: var(--tinta-2); text-decoration: none; background: var(--superficie); border: 1px solid var(--linha); border-radius: 999px; }
+    .abas-cel a.ativo { color: #fff; background: var(--navy); border-color: var(--navy); }
+    .abas-cel .ico { width: 16px; height: 16px; }
+    .abas-cel .selo { margin-left: 0; }
+    .conteudo { padding: 20px 16px 64px; }
   }
-  @media (max-width: 640px) {
-    .topo { grid-template-columns: 1fr auto; }
-    .busca { grid-column: 1 / -1; grid-row: 2; max-width: none; }
-    .topo-marca span { font-size: 17px; }
-    .avatar { display: none; }
-    .lateral { top: 107px; }
-  }
 
-  /* ---------- componentes ---------- */
+  /* ================= base dos blocos ================= */
   .dinheiro { transition: filter .2s; }
   .valores-ocultos .dinheiro { filter: blur(8px); user-select: none; }
   .secao { display: none; }
   .secao.ativa, .buscando .secao { display: block; }
-  .buscando .secao { margin-bottom: 32px; }
-  .secao-cabeca { margin-bottom: 18px; }
-  .secao-cabeca h1, .secao-cabeca h2 { margin: 0 0 6px; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.1; color: var(--navy); }
-  .secao-cabeca p { max-width: 720px; margin: 0; font-size: 14px; color: var(--muted); }
-  .h3 { margin: 28px 0 12px; font-family: var(--display); font-size: 19px; font-weight: 600; color: var(--navy); }
-  .sem-resultado { padding: 48px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line-2); }
+  .secao.ativa { animation: entra .25s ease-out; }
+  @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .buscando .secao { margin-bottom: 44px; }
+  .secao-cabeca { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
+  .secao-icone { display: inline-grid; place-items: center; width: 46px; height: 46px; flex: none; color: var(--navy); background: var(--superficie); border: 1px solid var(--linha); border-radius: 12px; box-shadow: var(--sombra-1); }
+  .secao-icone .ico { width: 21px; height: 21px; }
+  .secao-cabeca h2 { margin: 0; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.15; letter-spacing: -.01em; color: var(--navy); }
+  .secao-cabeca p { max-width: 720px; margin: 4px 0 0; font-size: 14.5px; color: var(--mudo); }
+  @media (max-width: 640px) { .secao-cabeca h2 { font-size: 25px; } .secao-icone { width: 42px; height: 42px; } }
+  .subtitulo { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 36px 0 14px; }
+  .subtitulo h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--tinta); }
+  .subtitulo span { font-size: 13px; color: var(--mudo); }
+  .cartao { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); }
+  .cartao--recorte { overflow: hidden; }
+  .bloco { padding: 20px; }
+  @media (max-width: 640px) { .bloco { padding: 16px; } }
+  .bloco-cabeca { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 14px; }
+  .bloco-cabeca h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 16px; font-weight: 600; color: var(--tinta); }
+  .duas-colunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .duas-colunas { grid-template-columns: minmax(0, 1fr); } }
+  .sem-resultado { display: grid; justify-items: center; gap: 6px; padding: 56px 16px; text-align: center; color: var(--mudo); background: var(--superficie); border: 1px dashed var(--linha-2); border-radius: var(--raio); }
+  .sem-resultado .ico { width: 26px; height: 26px; }
+  .sem-resultado strong { font-size: 16px; color: var(--tinta); }
 
-  .hero { position: relative; overflow: hidden; margin-bottom: 16px; padding: 30px 32px; color: #fff; background: var(--navy); }
-  .hero::after { content: ""; position: absolute; right: -90px; top: -110px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(60, 134, 254, .5), transparent 68%); pointer-events: none; }
-  .hero > * { position: relative; }
-  @media (max-width: 640px) { .hero::after { right: -190px; top: -200px; opacity: .6; } }
-  .kicker { font-size: 10px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); }
-  .hero h1 { margin: 10px 0 8px; font-family: var(--display); font-size: clamp(28px, 3.4vw, 40px); font-weight: 600; line-height: 1.08; }
-  .hero p { max-width: 640px; margin: 0; font-size: 14.5px; line-height: 1.6; color: rgba(255, 255, 255, .8); }
+  .botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 16px; font-size: 14px; font-weight: 600; white-space: nowrap; color: #fff; text-decoration: none; background: var(--navy); border: 1px solid var(--navy); border-radius: var(--raio-p); transition: background .15s, border-color .15s; }
+  .botao:hover { background: var(--navy-2); }
+  .botao--claro { color: var(--navy); background: var(--superficie); border-color: var(--linha-2); }
+  .botao--claro:hover { background: var(--superficie); border-color: var(--navy); }
+  .botao .ico, .link-seta .ico { width: 16px; height: 16px; }
+  .link-seta { display: inline-flex; align-items: center; gap: 5px; font-size: 13.5px; font-weight: 600; white-space: nowrap; color: var(--navy); text-decoration: none; }
+  .link-seta:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .mudo { color: var(--mudo); }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; line-height: 1.45; white-space: nowrap; color: var(--tinta-2); background: var(--papel); border-radius: 999px; }
+  .pill::before { content: ""; width: 6px; height: 6px; flex: none; background: currentColor; border-radius: 50%; }
+  .pill--ok { color: var(--ok); background: var(--ok-fundo); }
+  .pill--espera, .pill--media { color: var(--espera); background: var(--espera-fundo); }
+  .pill--erro, .pill--alta { color: var(--erro); background: var(--erro-fundo); }
+  .pill--info, .pill--baixa { color: var(--info); background: var(--info-fundo); }
+  .pill--confirmar { color: var(--confirmar); background: var(--confirmar-fundo); }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .icone-tom { display: inline-grid; place-items: center; width: 34px; height: 34px; flex: none; color: var(--navy); background: var(--info-fundo); border-radius: 10px; }
+  .icone-tom .ico { width: 17px; height: 17px; }
+  .icone-tom--ok { color: var(--ok); background: var(--ok-fundo); }
+  .icone-tom--espera { color: var(--espera); background: var(--espera-fundo); }
+  .icone-tom--erro { color: var(--erro); background: var(--erro-fundo); }
+  .icone-tom--confirmar { color: var(--confirmar); background: var(--confirmar-fundo); }
+
+  /* ================= visão geral ================= */
+  .saudacao { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; margin-bottom: 24px; }
+  .saudacao-data { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--mudo); }
+  .saudacao-data .ico { width: 15px; height: 15px; }
+  .data-texto { display: inline-block; }
+  .data-texto::first-letter { text-transform: uppercase; }
+  .saudacao h1 { margin: 0; font-family: var(--display); font-size: clamp(30px, 3.4vw, 42px); font-weight: 600; line-height: 1.08; letter-spacing: -.02em; color: var(--navy); }
+  .saudacao p { max-width: 560px; margin: 8px 0 0; font-size: 15px; color: var(--tinta-2); }
+  .saudacao-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .painel-topo { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; }
+  @media (max-width: 1180px) { .painel-topo { grid-template-columns: minmax(0, 1fr); } }
+  .destaque { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 22px; padding: 24px; color: #fff; text-decoration: none; background: radial-gradient(120% 90% at 100% 0%, rgba(107, 157, 255, .42) 0%, rgba(107, 157, 255, 0) 55%), linear-gradient(160deg, #11317c 0%, var(--navy) 55%, var(--navy-3) 100%); border-radius: var(--raio); box-shadow: var(--sombra-2); transition: box-shadow .2s, transform .2s; }
+  .destaque:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(10, 36, 99, .24); }
+  .destaque-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .destaque-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ouro); }
+  .destaque-kicker .ico { width: 16px; height: 16px; }
+  .destaque-data { padding: 4px 11px; font-size: 12px; font-weight: 600; white-space: nowrap; background: rgba(255, 255, 255, .13); border-radius: 999px; }
+  .contagem { display: flex; align-items: center; gap: 14px; }
+  .contagem strong { font-size: 68px; font-weight: 600; line-height: .9; letter-spacing: -.045em; }
+  .contagem strong.menor { font-size: 40px; letter-spacing: -.02em; }
+  .contagem span { font-size: 15px; line-height: 1.3; color: rgba(255, 255, 255, .8); }
+  .destaque-numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, .15); }
+  .destaque-numeros div { padding-right: 10px; }
+  .destaque-numeros div + div { padding-left: 14px; border-left: 1px solid rgba(255, 255, 255, .15); }
+  .destaque-numeros b { display: block; font-size: 26px; font-weight: 600; line-height: 1.1; letter-spacing: -.02em; }
+  .destaque-numeros small { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.3; color: rgba(255, 255, 255, .72); }
+  .destaque-pe { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; }
+  .destaque-pe > span:first-child { font-size: 14px; color: rgba(255, 255, 255, .8); }
+  .destaque-pe b { color: #fff; }
+  .destaque-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px; font-size: 13.5px; font-weight: 600; color: var(--navy); background: #fff; border-radius: 999px; }
+  .destaque-cta .ico { width: 16px; height: 16px; transition: transform .15s; }
+  .destaque:hover .destaque-cta .ico { transform: translateX(2px); }
 
   .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 480px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
-  .kpi { display: block; padding: 16px 18px; color: inherit; text-decoration: none; background: var(--card); border: 1px solid var(--line); transition: border-color .15s, transform .15s, box-shadow .15s; }
-  a.kpi:hover { border-color: var(--navy); transform: translateY(-2px); box-shadow: var(--sombra); }
-  .kpi span { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .kpi strong { display: block; margin: 6px 0 3px; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.1; color: var(--navy); }
-  .kpi small { font-size: 12.5px; color: var(--ink-2); }
+  @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+  .kpi { display: flex; flex-direction: column; padding: 16px; color: inherit; text-decoration: none; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); transition: border-color .15s, box-shadow .15s; }
+  a.kpi:hover { border-color: var(--linha-2); box-shadow: var(--sombra-2); }
+  .kpi-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .kpi-seta { width: 16px; height: 16px; color: var(--mudo); opacity: .45; transition: opacity .15s, transform .15s; }
+  a.kpi:hover .kpi-seta { opacity: 1; transform: translate(1px, -1px); }
+  .kpi-rotulo { font-size: 13px; font-weight: 500; color: var(--mudo); }
+  .kpi-valor { margin: 2px 0 4px; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; color: var(--tinta); }
+  .kpi-sub { font-size: 12.5px; line-height: 1.4; color: var(--mudo); }
+  @media (max-width: 720px) { .kpi { padding: 14px; } .kpi-valor { font-size: 24px; } .kpi-topo { margin-bottom: 10px; } }
 
-  .alertas { display: grid; gap: 8px; }
-  .alerta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 13px 16px; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-left-width: 4px; }
-  .alerta--espera { border-left-color: var(--amber); }
-  .alerta--erro { border-left-color: var(--red); }
-  .alerta--neutro, .alerta--ok { border-left-color: var(--blue); }
-  .alerta a { font-size: 13px; font-weight: 600; color: var(--navy); white-space: nowrap; text-decoration: none; }
-  .alerta a:hover { text-decoration: underline; }
+  .alertas { display: grid; margin: 0; padding: 0; list-style: none; }
+  .alerta { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--linha); }
+  .alerta:first-child { padding-top: 2px; border-top: 0; }
+  .alerta:last-child { padding-bottom: 0; }
+  .alerta-icone { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; }
+  .alerta--espera .alerta-icone { color: var(--espera); background: var(--espera-fundo); }
+  .alerta--erro .alerta-icone { color: var(--erro); background: var(--erro-fundo); }
+  .alerta--neutro .alerta-icone, .alerta--ok .alerta-icone { color: var(--info); background: var(--info-fundo); }
+  .alerta small { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .alerta--espera small { color: var(--espera); }
+  .alerta--erro small { color: var(--erro); }
+  .alerta--neutro small, .alerta--ok small { color: var(--info); }
+  .alerta p { margin: 1px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--tinta); }
+  .alerta-acao { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--navy); text-decoration: none; border: 1px solid var(--linha-2); border-radius: 999px; transition: border-color .15s, background .15s; }
+  .alerta-acao:hover { background: var(--superficie-2); border-color: var(--navy); }
+  .alerta-acao .ico { width: 15px; height: 15px; }
+  @media (max-width: 640px) { .alerta { grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 6px 12px; } .alerta-acao { grid-column: 2; justify-self: start; min-height: 36px; } }
 
-  .atalhos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  @media (max-width: 900px) { .atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 420px) { .atalhos { grid-template-columns: minmax(0, 1fr); } }
-  .atalho { display: flex; flex-direction: column; gap: 4px; padding: 15px 16px; color: var(--navy); text-decoration: none; background: var(--white); border: 1px solid var(--line); transition: border-color .15s, background .15s; }
-  .atalho:hover { border-color: var(--navy); background: var(--card); }
-  .atalho strong { font-size: 14.5px; }
-  .atalho small { font-size: 12.5px; color: var(--muted); }
+  .inicio-baixo { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 14px; align-items: start; margin-top: 14px; }
+  @media (max-width: 1080px) { .inicio-baixo { grid-template-columns: minmax(0, 1fr); } }
+  .atalhos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 520px) { .atalhos { grid-template-columns: minmax(0, 1fr); } }
+  .atalho { display: flex; align-items: center; gap: 12px; padding: 11px 12px; color: inherit; text-decoration: none; border: 1px solid var(--linha); border-radius: 12px; transition: border-color .15s, background .15s; }
+  .atalho:hover { background: var(--superficie-2); border-color: var(--linha-2); }
+  .atalho .icone-tom { width: 38px; height: 38px; color: var(--navy); background: var(--papel); }
+  .atalho-texto { flex: 1; min-width: 0; }
+  .atalho strong { display: block; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--tinta); }
+  .atalho small { display: block; font-size: 12.5px; line-height: 1.35; color: var(--mudo); }
+  .atalho > .ico { width: 15px; height: 15px; color: var(--mudo); }
 
-  .jornada { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: etapa; }
-  @media (max-width: 900px) { .jornada { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 480px) { .jornada { grid-template-columns: minmax(0, 1fr); } }
-  .etapa { padding: 16px; background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--navy); }
-  .etapa:nth-child(2) { border-top-color: var(--blue); }
-  .etapa:nth-child(3) { border-top-color: var(--gold); }
-  .etapa:nth-child(4) { border-top-color: var(--green); }
-  .etapa-num { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-  .etapa h4 { margin: 4px 0 10px; font-size: 15.5px; color: var(--navy); }
-  .etapa ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-2); }
+  .jornada { display: grid; margin: 0; padding: 0; list-style: none; }
+  .etapa { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 14px; padding-bottom: 18px; }
+  .etapa:last-child { padding-bottom: 0; }
+  .etapa::before { content: ""; position: absolute; left: 15.5px; top: 36px; bottom: 4px; width: 1px; background: var(--linha-2); }
+  .etapa:last-child::before { display: none; }
+  .etapa-num { display: inline-grid; place-items: center; width: 32px; height: 32px; font-size: 13px; font-weight: 700; color: #fff; background: var(--navy); border-radius: 50%; }
+  .etapa:nth-child(2) .etapa-num { background: var(--azul); }
+  .etapa:nth-child(3) .etapa-num { color: var(--navy); background: var(--ouro); }
+  .etapa:nth-child(4) .etapa-num { background: var(--ok); }
+  .etapa h4 { margin: 5px 0 2px; font-size: 14.5px; font-weight: 600; color: var(--tinta); }
+  .etapa h4 span { font-weight: 500; color: var(--mudo); }
+  .etapa p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--tinta-2); }
 
-  .produtos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  /* ================= vendas ================= */
+  .onde { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 12px; }
+  .onde-item { display: flex; flex-direction: column; gap: 6px; padding: 18px; }
+  .onde-item h3 { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--tinta-2); }
+  .onde-agora { font-size: 20px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; color: var(--navy); }
+  .onde-local { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--mudo); }
+  .onde-local .ico { width: 14px; height: 14px; }
+  .onde-pe { margin-top: auto; padding-top: 10px; }
+  .aviso { display: flex; align-items: flex-start; gap: 12px; margin-top: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.55; color: var(--tinta-2); background: var(--info-fundo); border-radius: var(--raio); }
+  .aviso .ico { margin-top: 2px; color: var(--info); }
+  .aviso b { color: var(--tinta); }
+
+  /* ================= tabelas (viram cartões no celular) ================= */
+  .tabela-caixa { overflow-x: auto; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tabela th { padding: 11px 16px; font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; color: var(--mudo); background: var(--superficie-2); border-bottom: 1px solid var(--linha); }
+  .tabela td { padding: 13px 16px; vertical-align: top; color: var(--tinta-2); border-bottom: 1px solid var(--linha); }
+  .tabela tbody tr:last-child td { border-bottom: 0; }
+  .tabela tbody tr:hover td { background: var(--superficie-2); }
+  .tabela .forte { font-weight: 600; color: var(--tinta); }
+  .tabela .forte small { display: block; margin-top: 2px; font-family: var(--mono); font-size: 11.5px; font-weight: 400; color: var(--mudo); word-break: break-all; }
+  .tabela .celula-acao { text-align: right; white-space: nowrap; }
+  .tabela .num { text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 720px) {
+    .tabela-caixa { overflow: visible; background: none; border: 0; box-shadow: none; }
+    .tabela, .tabela tbody, .tabela tr, .tabela td { display: block; width: 100%; }
+    .tabela thead { display: none; }
+    .tabela tr { margin-bottom: 10px; padding: 14px 16px; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); }
+    .tabela td, .tabela .num { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: start; gap: 12px; padding: 6px 0; text-align: left; border: 0; }
+    .tabela td::before { content: attr(data-rotulo); padding-top: 1px; font-size: 12.5px; font-weight: 500; color: var(--mudo); }
+    .tabela td > .pill { justify-self: start; }
+    .tabela td.forte { display: block; margin-bottom: 4px; padding: 0 0 10px; font-size: 15px; text-align: left; border-bottom: 1px solid var(--linha); }
+    .tabela td.forte::before, .tabela td.celula-acao::before { display: none; }
+    .tabela td.celula-acao { display: block; padding-top: 10px; text-align: left; }
+    .tabela tbody tr:hover td { background: none; }
+  }
+
+  /* ================= produtos ================= */
+  .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .buscando .filtros { display: none; }
+  .filtro { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 15px; font-size: 13.5px; font-weight: 500; color: var(--tinta-2); background: var(--superficie); border: 1px solid var(--linha); border-radius: 999px; transition: background .15s, border-color .15s, color .15s; }
+  .filtro:hover { border-color: var(--linha-2); }
+  .filtro span { font-size: 12px; color: var(--mudo); }
+  .filtro[aria-pressed="true"] { color: #fff; background: var(--navy); border-color: var(--navy); }
+  .filtro[aria-pressed="true"] span { color: rgba(255, 255, 255, .72); }
+  .produtos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   @media (max-width: 900px) { .produtos { grid-template-columns: minmax(0, 1fr); } }
-  .produto { display: flex; flex-direction: column; gap: 9px; padding: 18px 20px; background: var(--card); border: 1px solid var(--line); }
-  .produto-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
-  .produto h3 { margin: 0 0 7px; font-family: var(--display); font-size: 20px; font-weight: 600; color: var(--navy); }
-  .preco { flex: none; max-width: 46%; text-align: right; font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.15; color: var(--navy); }
-  .detalhe { font-size: 12.5px; color: var(--muted); }
-  .produto p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
-  .produto-pe { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; margin-top: auto; padding-top: 11px; font-size: 13px; color: var(--ink-2); border-top: 1px solid var(--line); }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag { display: inline-block; padding: 3px 9px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--ink-2); background: var(--paper-2); }
-  .tag--ok { color: #16704a; background: #e3f6ec; }
-  .tag--espera, .tag--media { color: #8a5a00; background: #fdf3dc; }
-  .tag--erro, .tag--alta { color: var(--red); background: #fbe9ea; }
-  .tag--baixa { color: #27507e; background: #e6eefb; }
-  .tag--confirmar { color: #6b4fa0; background: #efe9f8; }
-  .link { font-weight: 600; color: var(--navy); text-decoration: none; white-space: nowrap; }
-  .link:hover { text-decoration: underline; }
+  .produto { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+  .produto.filtrado { display: none; }
+  .produto-cabeca { display: grid; gap: 8px; }
+  .produto h3 { margin: 0; font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.2; color: var(--navy); }
+  .produto-preco strong { display: block; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; color: var(--tinta); }
+  .produto-preco strong.texto { font-size: 18px; letter-spacing: 0; color: var(--tinta-2); }
+  .produto-preco small { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.45; color: var(--mudo); }
+  .produto p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--tinta-2); }
+  .produto-pe { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-top: auto; padding-top: 14px; font-size: 13px; color: var(--mudo); border-top: 1px solid var(--linha); }
+  .produto-pe b { display: block; font-weight: 600; color: var(--tinta); }
 
-  .tabela-caixa { overflow-x: auto; background: var(--card); border: 1px solid var(--line); }
-  .tabela { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }
-  .tabela th { padding: 11px 16px; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--line); }
-  .tabela td { padding: 11px 16px; vertical-align: top; color: var(--ink-2); border-bottom: 1px solid var(--line); }
-  .tabela tr:last-child td { border-bottom: 0; }
-  .tabela tbody tr:hover td { background: rgba(10, 36, 99, .025); }
-  .tabela .forte { font-weight: 600; color: var(--navy); }
-  .grupo { margin-bottom: 20px; }
-  .grupo-cabeca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 9px; }
-  .grupo-cabeca h3 { margin: 0; font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--navy); }
-  .grupo-cabeca span { font-size: 12.5px; color: var(--muted); }
-
-  .guia { margin-bottom: 8px; background: var(--card); border: 1px solid var(--line); }
-  .guia[open] { border-color: var(--line-2); box-shadow: var(--sombra); }
-  .guia summary { display: flex; align-items: center; gap: 14px; padding: 15px 18px; cursor: pointer; list-style: none; font-size: 15px; font-weight: 600; color: var(--navy); }
+  /* ================= como fazer ================= */
+  .guias { display: grid; gap: 10px; }
+  .guia { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); transition: border-color .2s, box-shadow .2s; }
+  .guia[open] { border-color: var(--linha-2); box-shadow: var(--sombra-2); }
+  .guia summary { display: flex; align-items: center; gap: 14px; padding: 16px 18px; list-style: none; cursor: pointer; border-radius: var(--raio); }
   .guia summary::-webkit-details-marker { display: none; }
-  .guia-num { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; font-size: 12px; font-weight: 700; color: var(--navy); background: var(--paper-2); }
-  .guia summary::after { content: "+"; margin-left: auto; font-size: 22px; font-weight: 400; color: var(--muted); transition: transform .2s; }
-  .guia[open] summary::after { transform: rotate(45deg); }
-  .guia-corpo { padding: 0 18px 18px 60px; font-size: 14px; color: var(--ink-2); }
-  @media (max-width: 480px) { .guia-corpo { padding-left: 18px; } }
-  .guia-corpo ol { display: grid; gap: 7px; margin: 10px 0 16px; padding-left: 20px; line-height: 1.55; }
-  .quando { margin: 0; font-size: 13px; color: var(--muted); }
-  .botao { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #fff; text-decoration: none; background: var(--navy); }
-  .botao:hover { background: var(--navy-2); }
+  .guia-num { display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none; font-size: 13px; font-weight: 700; color: var(--navy); background: var(--papel); border-radius: 50%; transition: background .15s, color .15s; }
+  .guia[open] .guia-num { color: #fff; background: var(--navy); }
+  .guia-titulo { flex: 1; min-width: 0; }
+  .guia-titulo strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--tinta); }
+  .guia-titulo small { display: block; margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--mudo); }
+  .guia summary > .ico { color: var(--mudo); transition: transform .2s; }
+  .guia[open] summary > .ico { transform: rotate(180deg); }
+  .guia-corpo { padding: 0 18px 18px 64px; }
+  @media (max-width: 520px) { .guia-corpo { padding-left: 18px; } }
+  .passos { display: grid; gap: 10px; margin: 0 0 16px; padding: 14px 0 0; list-style: none; counter-reset: passo; border-top: 1px solid var(--linha); }
+  .passos li { position: relative; padding-left: 34px; font-size: 14px; line-height: 1.6; color: var(--tinta-2); counter-increment: passo; }
+  .passos li::before { content: counter(passo); position: absolute; left: 0; top: 1px; display: grid; place-items: center; width: 23px; height: 23px; font-size: 11.5px; font-weight: 700; color: var(--navy); background: var(--info-fundo); border-radius: 50%; }
 
-  .colunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  @media (max-width: 900px) { .colunas { grid-template-columns: minmax(0, 1fr); } }
-  .caixa { padding: 18px; background: var(--card); border: 1px solid var(--line); }
-  .caixa h4 { margin: 0 0 12px; font-size: 15px; color: var(--navy); }
-  .lista { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-2); }
-  .lista li { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
-  .lista li:last-child { padding-bottom: 0; border-bottom: 0; }
-  .lista b { color: var(--navy); text-align: right; }
-  .lista--texto li { display: block; line-height: 1.55; }
-  .aviso { margin-bottom: 12px; padding: 12px 16px; font-size: 13.5px; color: var(--ink-2); background: var(--white); border: 1px dashed var(--navy); }
+  /* ================= listas, servidores, riscos ================= */
+  .lista-icones { display: grid; margin: 0; padding: 4px 20px; list-style: none; }
+  .lista-icones li { display: flex; gap: 12px; padding: 13px 0; font-size: 14px; line-height: 1.55; color: var(--tinta-2); border-top: 1px solid var(--linha); }
+  .lista-icones li:first-child { border-top: 0; }
+  .lista-icones li > .ico { margin-top: 2px; color: var(--navy); }
+  .lista-icones--ok li > .ico { color: var(--ok); }
+  .lista-icones--confirmar li > .ico { color: var(--confirmar); }
+  .lista-icones b { color: var(--tinta); font-weight: 600; }
+  .cartao:not(.bloco) > .bloco-cabeca { margin: 0; padding: 18px 20px 4px; }
 
-  .risco { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin-bottom: 8px; padding: 13px 16px; background: var(--card); border: 1px solid var(--line); }
-  .risco strong { font-size: 14.5px; color: var(--navy); }
-  .risco p { grid-column: 2; margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
-  @media (max-width: 480px) { .risco { grid-template-columns: minmax(0, 1fr); } .risco p { grid-column: 1; } }
+  .servidor { padding: 20px; }
+  .servidor-topo { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .servidor-topo h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--tinta); }
+  .chave-valor { display: grid; margin: 0; }
+  .chave-valor div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 10px 0; font-size: 14px; border-top: 1px solid var(--linha); }
+  .chave-valor dt { color: var(--mudo); }
+  .chave-valor dd { margin: 0; color: var(--tinta); }
+  code, .codigo { padding: 2px 7px; font-family: var(--mono); font-size: 12.5px; color: var(--navy); background: var(--papel); border-radius: 6px; }
+  .variaveis { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--tinta-2); word-break: break-word; }
+
+  .resumo-riscos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .resumo-risco { display: flex; align-items: center; gap: 14px; padding: 16px; }
+  .resumo-risco b { display: block; font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: -.02em; color: var(--tinta); }
+  .resumo-risco span { display: block; margin-top: 3px; font-size: 13px; color: var(--mudo); }
+  @media (max-width: 560px) { .resumo-riscos { gap: 8px; } .resumo-risco { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } }
+  .riscos { display: grid; gap: 8px; }
+  .risco { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 6px 16px; padding: 16px 18px 16px 22px; }
+  .risco::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--espera); }
+  .risco--alta::before { background: var(--erro); }
+  .risco--baixa::before { background: var(--info); }
+  .risco strong { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--tinta); }
+  .risco p { grid-column: 1 / -1; margin: 0; font-size: 14px; line-height: 1.55; color: var(--tinta-2); }
+
+  /* ================= números ================= */
+  .mini-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; overflow: hidden; background: var(--linha); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); }
+  .mini-stats--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cartao .mini-stats { border: 0; border-top: 1px solid var(--linha); border-radius: 0; box-shadow: none; }
+  .mini-stat { padding: 16px 18px; background: var(--superficie); }
+  .mini-stat b { display: block; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; color: var(--tinta); }
+  .mini-stat span { display: block; margin-top: 3px; font-size: 13px; line-height: 1.35; color: var(--mudo); }
+  @media (max-width: 640px) { .mini-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mini-stat { padding: 14px; } .mini-stat b { font-size: 22px; } }
+  .cartao-titulo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 16px 18px; }
+  .cartao-titulo h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15.5px; font-weight: 600; color: var(--tinta); }
+
+  .conversao { padding: 18px; }
+  .conversao-topo { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+  .conversao-topo h3 { margin: 0; font-size: 15.5px; font-weight: 600; color: var(--tinta); }
+  .conversao-topo span { font-size: 13px; color: var(--mudo); }
+  .conversao-valor { margin: 10px 0 8px; font-size: 14px; color: var(--tinta-2); }
+  .conversao-valor b { font-size: 28px; font-weight: 600; letter-spacing: -.02em; color: var(--tinta); }
+  .conversao dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--linha); }
+  .conversao dt { font-size: 12px; color: var(--mudo); }
+  .conversao dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; color: var(--tinta); }
+  @media (max-width: 480px) { .conversao dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .trilho { height: 8px; overflow: hidden; background: rgba(10, 36, 99, .08); border-radius: 4px; }
+  .trilho i { display: block; height: 100%; background: var(--navy); border-radius: 4px; }
+  .barras { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .barras li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 12px; font-size: 13.5px; }
+  .barras li > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tinta-2); }
+  .barras li > b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--tinta); }
+  .barras .trilho { grid-column: 1 / -1; }
+  .barras--zero > span, .barras--zero > b { color: var(--mudo); }
+
+  .sites { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; }
+  .site-numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 0 0 16px; background: var(--linha); border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); }
+  .site-numeros div { padding: 12px 18px; background: var(--superficie); }
+  .site-numeros b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--tinta); }
+  .site-numeros span { font-size: 12px; color: var(--mudo); }
+  .site .barras { padding: 0 18px 18px; }
 </style>
 {% endblock %}
 
 {% block corpo %}
-<header class="topo">
-  <a class="topo-marca" href="/central/" aria-label="Central TCC, início">
-    <img src="/assets/logo-tcc.png" alt="The Creators Club">
-    <span>Central</span>
-  </a>
-  <label class="busca">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <span class="sr-only">Buscar na Central</span>
-    <input type="search" placeholder="Buscar produto, link, processo, risco..." data-busca-central autocomplete="off">
-    <kbd aria-hidden="true">/</kbd>
-  </label>
-  <div class="topo-dir">
-    <span class="ao-vivo"><span class="ponto" aria-hidden="true"></span>Ao vivo · {{ agora|date:"H:i" }}</span>
-    <button type="button" class="icone-botao" data-olho aria-pressed="false" title="Esconder ou mostrar valores">
-      <span class="sr-only">Esconder ou mostrar valores</span>
-      <svg class="aberto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      <svg class="fechado" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    </button>
-    <span class="avatar" title="{{ usuario_nome }}">{{ usuario_iniciais }}</span>
-    <a class="sair" href="/central/sair/">Sair</a>
-  </div>
-</header>
-
-<div class="casca">
-  <nav class="lateral" aria-label="Seções da Central">
-    <div>
-      <div class="lateral-titulo">Central do time</div>
-      <ul class="menu">
-        {% for s in secoes %}
+<div class="app">
+  <aside class="lateral">
+    <a class="marca" href="/central/" aria-label="Central TCC, início">
+      <small>The Creators Club</small>
+      <strong>Central</strong>
+    </a>
+    <nav aria-label="Seções da Central">
+      {% for s in secoes %}
+      {% ifchanged s.grupo %}{% if not forloop.first %}</ul>{% endif %}<p class="menu-grupo">{{ s.grupo }}</p><ul class="menu">{% endifchanged %}
         <li>
-          <a href="#{{ s.id }}" data-aba="{{ s.id }}">
-            {% if s.id == "inicio" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
-            {% elif s.id == "produtos" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>
-            {% elif s.id == "vendas" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            {% elif s.id == "links" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            {% elif s.id == "como-fazer" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
-            {% elif s.id == "sistema" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            {% elif s.id == "tecnologia" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/></svg>
-            {% elif s.id == "pendencias" %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            {% else %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>{% endif %}
+          <a href="#{{ s.id }}" data-aba="{{ s.id }}" data-titulo="{{ s.titulo }}">
+            <svg class="ico" aria-hidden="true"><use href="#i-{{ s.id }}"/></svg>
             <span>{{ s.titulo }}</span>
-            {% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--ambar" title="Compras do Creator Day em aberto">{{ cd_em_aberto }}</span>{% endif %}
+            {% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--espera" title="Ingressos do Creator Day em aberto">{{ cd_em_aberto }}</span>{% endif %}
             {% if s.id == "pendencias" and riscos_altos %}<span class="selo" title="Riscos de prioridade alta">{{ riscos_altos }}</span>{% endif %}
           </a>
         </li>
-        {% endfor %}
+      {% if forloop.last %}</ul>{% endif %}
+      {% endfor %}
+    </nav>
+    <div class="lateral-pe">
+      <ul class="atalhos-app">
+        <li><a href="{{ app }}/login/" target="_blank" rel="noopener">Abrir o Dash <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></li>
+        <li><a href="{{ app }}/creator-day/" target="_blank" rel="noopener">Creator Day no app <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></li>
+        <li><a href="{{ app }}/metricas/" target="_blank" rel="noopener">Métricas <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></li>
+        <li><a href="/" target="_blank" rel="noopener">Site do clube <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></li>
       </ul>
+      <div class="usuario">
+        <span class="avatar" aria-hidden="true">{{ usuario_iniciais }}</span>
+        <div class="usuario-nome"><span>{{ usuario_nome }}</span><small>Time TCC</small></div>
+        <a href="/central/sair/" title="Sair" aria-label="Sair da Central"><svg class="ico" aria-hidden="true"><use href="#i-sair"/></svg></a>
+      </div>
     </div>
-    <div class="lateral-rodape">
-      <a href="{{ app }}/login/" target="_blank" rel="noopener">Abrir o Dash ↗</a>
-      <a href="{{ app }}/creator-day/" target="_blank" rel="noopener">Creator Day no app ↗</a>
-      <a href="{{ app }}/metricas/" target="_blank" rel="noopener">Métricas ↗</a>
-      <a href="/" target="_blank" rel="noopener">Site do clube ↗</a>
-    </div>
-  </nav>
+  </aside>
 
-  <main class="conteudo" data-central>
-    <p class="sem-resultado" data-sem-resultado hidden>Nada encontrado para essa busca. Tente outra palavra.</p>
+  <div class="principal">
+    <header class="barra">
+      <a class="marca-cel" href="/central/" aria-label="Central TCC, início"><small>The Creators Club</small><strong>Central</strong></a>
+      <div class="trilha" aria-hidden="true">Central <span>/</span> <strong data-titulo-secao>Visão geral</strong></div>
+      <label class="busca">
+        <svg class="ico" aria-hidden="true"><use href="#i-busca"/></svg>
+        <span class="sr-only">Buscar na Central</span>
+        <input type="search" placeholder="Buscar produto, link, processo, risco..." data-busca-central autocomplete="off" enterkeyhint="search">
+        <kbd aria-hidden="true">/</kbd>
+      </label>
+      <div class="barra-acoes">
+        <span class="atualizado" title="Os números são contados quando a página abre">
+          <span class="ponto" aria-hidden="true"></span>
+          <span><span class="atualizado-texto">Atualizado às </span>{{ agora|date:"H:i" }}</span>
+          <button type="button" class="botao-icone" data-atualizar aria-label="Atualizar os números"><svg class="ico" aria-hidden="true"><use href="#i-atualizar"/></svg></button>
+        </span>
+        <button type="button" class="botao-icone" data-olho aria-pressed="false" title="Esconder ou mostrar valores">
+          <span class="sr-only">Esconder ou mostrar valores</span>
+          <svg class="ico aberto" aria-hidden="true"><use href="#i-olho"/></svg>
+          <svg class="ico fechado" aria-hidden="true"><use href="#i-olho-fechado"/></svg>
+        </button>
+        <a class="botao-icone so-cel" href="/central/sair/" aria-label="Sair da Central" title="Sair"><svg class="ico" aria-hidden="true"><use href="#i-sair"/></svg></a>
+      </div>
+    </header>
 
-    {# ---------------- VISÃO GERAL ---------------- #}
-    <section class="secao" id="inicio" data-secao="inicio">
-      <div class="hero">
-        <span class="kicker">Olá, {{ usuario_nome }}</span>
-        <h1>Tudo do clube num lugar só.</h1>
-        <p>O que o clube vende, quem comprou e quem se inscreveu, todos os links, como fazer as tarefas do dia a dia e o que está pendente. Os números vêm do sistema na hora em que a página abre.</p>
+    <nav class="abas-cel" aria-label="Seções da Central (celular)">
+        {% for s in secoes %}
+        <a href="#{{ s.id }}" data-aba="{{ s.id }}" data-titulo="{{ s.titulo }}"><svg class="ico" aria-hidden="true"><use href="#i-{{ s.id }}"/></svg>{{ s.titulo }}{% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--espera">{{ cd_em_aberto }}</span>{% endif %}{% if s.id == "pendencias" and riscos_altos %}<span class="selo">{{ riscos_altos }}</span>{% endif %}</a>
+        {% endfor %}
+    </nav>
+
+    <main class="conteudo" data-central>
+      <div class="sem-resultado" data-sem-resultado hidden>
+        <svg class="ico" aria-hidden="true"><use href="#i-busca"/></svg>
+        <strong>Nada encontrado</strong>
+        <span>Tente outra palavra, como "cupom", "Hubla" ou "senha".</span>
       </div>
 
-      <div class="kpis">
-        <a class="kpi" href="#numeros" data-ir="numeros"><span>Usuárias do Dash</span><strong>{{ dash.usuarias }}</strong><small>{{ dash.entraram_30 }} entraram nos últimos 30 dias</small></a>
-        <a class="kpi" href="#vendas" data-ir="vendas"><span>Recebido no checkout</span><strong class="dinheiro">{{ receita_checkout }}</strong><small>Dash {{ checkout.dashcreator.pagas }} pagas · Creator Day {{ checkout.creatorday.pagas }} pagos</small></a>
-        <a class="kpi" href="{{ app }}/creator-day/?tab=ingressos" target="_blank" rel="noopener"><span>Creator Day · 17/10</span><strong>{{ checkout.creatorday.pagas }} pagos</strong><small>{{ cd_em_aberto }} em aberto · {{ lista_espera }} na lista de espera</small></a>
-        <a class="kpi" href="#produtos" data-ir="produtos"><span>Desafio Postaria Mais</span><strong>{{ desafio.inscritas }} inscritas</strong><small>{{ desafio.missao_do_dia }}</small></a>
-        <a class="kpi" href="#produtos" data-ir="produtos"><span>Portal do TCC</span><strong>{{ portal.alunas_ativas }} alunas</strong><small>{{ portal.aulas_assistidas }} aulas assistidas · {{ portal.entregas }} entregas</small></a>
-        <a class="kpi" href="#numeros" data-ir="numeros"><span>Visitas nos sites</span><strong>{{ visitas_total }}</strong><small>nos últimos 30 dias</small></a>
-      </div>
+      {# ================= VISÃO GERAL ================= #}
+      <section class="secao" id="inicio" data-secao="inicio">
+        <div class="saudacao">
+          <div>
+            <p class="saudacao-data"><svg class="ico" aria-hidden="true"><use href="#i-calendario"/></svg><span class="data-texto">{{ agora|date:"l, j \d\e F \d\e Y"|lower }}</span></p>
+            {% with hora=agora|date:"G"|add:0 %}
+            <h1>{% if hora < 12 %}Bom dia{% elif hora < 18 %}Boa tarde{% else %}Boa noite{% endif %}, {{ usuario_primeiro_nome }}.</h1>
+            {% endwith %}
+            <p>Tudo do clube num lugar só. Os números vêm do sistema na hora em que a página abre.</p>
+          </div>
+          <div class="saudacao-acoes">
+            <a class="botao botao--claro" href="{{ app }}/crm/" target="_blank" rel="noopener">CRM <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+            <a class="botao" href="{{ app }}/login/" target="_blank" rel="noopener">Abrir o Dash <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+          </div>
+        </div>
 
-      <h2 class="h3">Pede atenção agora</h2>
-      <div class="alertas">
-        {% for a in alertas %}
-        <div class="alerta alerta--{{ a.tom }}" data-busca>
-          <span>{{ a.texto }}</span>
-          <a href="{{ a.link }}"{% if a.link|slice:":1" == "#" %} data-ir="{{ a.link|slice:"1:" }}"{% else %} target="_blank" rel="noopener"{% endif %}>{{ a.acao }} →</a>
+        <div class="painel-topo">
+          <a class="destaque" href="{{ app }}/creator-day/?tab=ingressos" target="_blank" rel="noopener" data-busca>
+            <div class="destaque-topo">
+              <span class="destaque-kicker"><svg class="ico" aria-hidden="true"><use href="#i-ingresso"/></svg>Creator Day Experience</span>
+              <span class="destaque-data">17/10 · Piatã, Salvador</span>
+            </div>
+            <div class="contagem">
+              {% if creator_day_dias > 1 %}<strong>{{ creator_day_dias }}</strong><span>dias para<br>o evento</span>
+              {% elif creator_day_dias == 1 %}<strong>1</strong><span>dia para<br>o evento</span>
+              {% elif creator_day_dias == 0 %}<strong class="menor">É hoje</strong>
+              {% else %}<strong class="menor">Evento realizado</strong>{% endif %}
+            </div>
+            <div class="destaque-numeros">
+              <div><b>{{ checkout.creatorday.pagas }}</b><small>ingressos pagos</small></div>
+              <div><b>{{ cd_em_aberto }}</b><small>em aberto</small></div>
+              <div><b>{{ lista_espera }}</b><small>na lista de espera</small></div>
+            </div>
+            <div class="destaque-pe">
+              <span><b class="dinheiro">{{ checkout.creatorday.receita_txt }}</b> recebidos</span>
+              <span class="destaque-cta">Ver ingressos <svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></span>
+            </div>
+          </a>
+
+          <div class="kpis">
+            <a class="kpi" href="#numeros" data-ir="numeros">
+              <span class="kpi-topo"><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-pessoas"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="kpi-rotulo">Usuárias do Dash</span>
+              <span class="kpi-valor">{{ dash.usuarias }}</span>
+              <span class="kpi-sub">{{ dash.entraram_30 }} entraram em 30 dias</span>
+            </a>
+            <a class="kpi" href="#numeros" data-ir="numeros">
+              <span class="kpi-topo"><span class="icone-tom icone-tom--ok"><svg class="ico" aria-hidden="true"><use href="#i-carteira"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="kpi-rotulo">Recebido no checkout</span>
+              <span class="kpi-valor dinheiro">{{ receita_checkout }}</span>
+              <span class="kpi-sub">pagos: Dash {{ checkout.dashcreator.pagas }} · Creator Day {{ checkout.creatorday.pagas }}</span>
+            </a>
+            <a class="kpi" href="#numeros" data-ir="numeros">
+              <span class="kpi-topo"><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-globo"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="kpi-rotulo">Visitas nos sites</span>
+              <span class="kpi-valor">{{ visitas_total }}</span>
+              <span class="kpi-sub">nos últimos 30 dias</span>
+            </a>
+            <a class="kpi" href="#numeros" data-ir="numeros">
+              <span class="kpi-topo"><span class="icone-tom icone-tom--espera"><svg class="ico" aria-hidden="true"><use href="#i-trofeu"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="kpi-rotulo">Inscritas no Desafio</span>
+              <span class="kpi-valor">{{ desafio.inscritas }}</span>
+              <span class="kpi-sub">{{ desafio.missao_do_dia }}</span>
+            </a>
+            <a class="kpi" href="#numeros" data-ir="numeros">
+              <span class="kpi-topo"><span class="icone-tom icone-tom--confirmar"><svg class="ico" aria-hidden="true"><use href="#i-formatura"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="kpi-rotulo">Alunas no Portal</span>
+              <span class="kpi-valor">{{ portal.alunas_ativas }}</span>
+              <span class="kpi-sub">{{ portal.aulas_assistidas }} aulas vistas · {{ portal.entregas }} entregas</span>
+            </a>
+            {% if negocio %}
+            <a class="kpi" href="{{ app }}/crm/" target="_blank" rel="noopener">
+              <span class="kpi-topo"><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-alvo"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-externo"/></svg></span>
+              <span class="kpi-rotulo">Leads no CRM</span>
+              <span class="kpi-valor">{{ negocio.crm_total }}</span>
+              <span class="kpi-sub">{{ negocio.prospeccao_total }} marcas na prospecção</span>
+            </a>
+            {% else %}
+            <a class="kpi" href="#como-fazer" data-ir="como-fazer">
+              <span class="kpi-topo"><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-chave"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="kpi-rotulo">Códigos livres</span>
+              <span class="kpi-valor">{{ dash.codigos_livres }}</span>
+              <span class="kpi-sub">para liberar o Dash sem compra</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="cartao bloco" style="margin-top:14px">
+          <div class="bloco-cabeca">
+            <h3>Pede atenção agora</h3>
+            <span class="pill">{{ alertas|length }} aviso{{ alertas|length|pluralize }}</span>
+          </div>
+          <ul class="alertas">
+            {% for a in alertas %}
+            <li class="alerta alerta--{{ a.tom }}" data-busca>
+              <span class="alerta-icone"><svg class="ico" aria-hidden="true"><use href="#{% if a.tom == 'espera' %}i-relogio{% elif a.tom == 'erro' %}i-alerta{% else %}i-info{% endif %}"/></svg></span>
+              <div>
+                <small>{% if a.tom == "espera" %}Atenção{% elif a.tom == "erro" %}Urgente{% else %}Aviso{% endif %}</small>
+                <p>{{ a.texto }}</p>
+              </div>
+              <a class="alerta-acao" href="{{ a.link }}"{% if a.link|slice:":1" == "#" %} data-ir="{{ a.link|slice:"1:" }}"{% else %} target="_blank" rel="noopener"{% endif %}>{{ a.acao }} <svg class="ico" aria-hidden="true"><use href="#{% if a.link|slice:':1' == '#' %}i-seta{% else %}i-externo{% endif %}"/></svg></a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="inicio-baixo">
+          <div class="cartao bloco">
+            <div class="bloco-cabeca"><h3>Comece por aqui</h3></div>
+            <div class="atalhos">
+              <a class="atalho" href="#vendas" data-ir="vendas" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-vendas"/></svg></span><span class="atalho-texto"><strong>Quem comprou ou se inscreveu</strong><small>Cada venda, lista e lead</small></span><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></a>
+              <a class="atalho" href="#produtos" data-ir="produtos" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-produtos"/></svg></span><span class="atalho-texto"><strong>Produtos e preços</strong><small>Tudo o que o clube vende</small></span><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></a>
+              <a class="atalho" href="#links" data-ir="links" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-links"/></svg></span><span class="atalho-texto"><strong>Achar um link</strong><small>Sites, páginas, app e Instagram</small></span><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></a>
+              <a class="atalho" href="#como-fazer" data-ir="como-fazer" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-como-fazer"/></svg></span><span class="atalho-texto"><strong>Como fazer</strong><small>Acesso, cupom, Desafio, publicar</small></span><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></a>
+              <a class="atalho" href="{{ app }}/creator-day/" target="_blank" rel="noopener" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-ingresso"/></svg></span><span class="atalho-texto"><strong>Creator Day no app</strong><small>Lista de espera e ingressos</small></span><svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+              <a class="atalho" href="{{ app }}/crm/" target="_blank" rel="noopener" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-alvo"/></svg></span><span class="atalho-texto"><strong>CRM</strong><small>Leads da mentoria e de serviços</small></span><svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+              <a class="atalho" href="/desafio/admin.html" target="_blank" rel="noopener" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-trofeu"/></svg></span><span class="atalho-texto"><strong>Painel do Desafio</strong><small>Pontos, datas e moderação</small></span><svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+              <a class="atalho" href="#pendencias" data-ir="pendencias" data-busca><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-pendencias"/></svg></span><span class="atalho-texto"><strong>Pendências e riscos</strong><small>O que falta resolver</small></span><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></a>
+            </div>
+          </div>
+
+          <div class="cartao bloco">
+            <div class="bloco-cabeca"><h3>Como o clube se conecta</h3></div>
+            <ol class="jornada">
+              <li class="etapa" data-busca><span class="etapa-num">1</span><div><h4>Conhece <span>· onde a creator chega</span></h4><p>Instagram @thecreatorssclubb e @layfeamorim, home do clube, layfeamorim.com (Sou Creator) e Desafio Postaria Mais.</p></div></li>
+              <li class="etapa" data-busca><span class="etapa-num">2</span><div><h4>Entra <span>· portas de entrada</span></h4><p>Planner Creator, Dash Creator e Desafio da Semana.</p></div></li>
+              <li class="etapa" data-busca><span class="etapa-num">3</span><div><h4>Se transforma <span>· acompanhamento</span></h4><p>Mentoria HPC e Renovação, Acompanhamento 1:1 e Portal do TCC.</p></div></li>
+              <li class="etapa" data-busca><span class="etapa-num">4</span><div><h4>Vive <span>· experiências</span></h4><p>Creator Day Experience (17/10) e encontros da turma.</p></div></li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {# ================= VENDAS ================= #}
+      <section class="secao" id="vendas" data-secao="vendas">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-vendas"/></svg></span>
+          <div><h2>Vendas e inscrições</h2><p>Onde ver cada coisa, com o número de agora.</p></div>
+        </header>
+        <div class="onde">
+          {% for pergunta, agora_txt, onde, link in onde_ver %}
+          <article class="cartao onde-item" data-busca>
+            <h3>{{ pergunta }}</h3>
+            <div class="onde-agora">{{ agora_txt }}</div>
+            <div class="onde-local"><svg class="ico" aria-hidden="true"><use href="#i-links"/></svg>{{ onde }}</div>
+            <div class="onde-pe">{% if link %}<a class="link-seta" href="{{ link }}" target="_blank" rel="noopener">Abrir <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>{% else %}<span class="mudo" style="font-size:13px">Sem link direto</span>{% endif %}</div>
+          </article>
+          {% endfor %}
+        </div>
+        <div class="aviso" data-busca><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span><b>Vendas da Hubla e do link Nubank</b> (Mentoria HPC, Renovação, Acompanhamento, Planner) não entram sozinhas: lance em Infoprodutos no Dash para aparecerem no faturamento.</span></div>
+      </section>
+
+      {# ================= NÚMEROS ================= #}
+      <section class="secao" id="numeros" data-secao="numeros">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-numeros"/></svg></span>
+          <div><h2>Números ao vivo</h2><p>Contados em {{ agora|date:"d/m/Y" }} às {{ agora|date:"H:i" }}. Das outras creators que usam o Dash entra só a contagem geral; o detalhe de negócio é da conta da Layfe.</p></div>
+        </header>
+
+        <div class="subtitulo" style="margin-top:0"><h3>Dash Creator (plataforma)</h3></div>
+        <div class="mini-stats" data-busca>
+          <div class="mini-stat"><b>{{ dash.usuarias }}</b><span>usuárias ativas</span></div>
+          <div class="mini-stat"><b>{{ dash.entraram_7 }}</b><span>entraram nos últimos 7 dias</span></div>
+          <div class="mini-stat"><b>{{ dash.entraram_30 }}</b><span>entraram nos últimos 30 dias</span></div>
+          <div class="mini-stat"><b>{{ dash.cadastros_30 }}</b><span>cadastros em 30 dias</span></div>
+          <div class="mini-stat"><b>{{ dash.codigos_usados }}</b><span>códigos de acesso usados</span></div>
+          <div class="mini-stat"><b>{{ dash.codigos_livres }}</b><span>códigos livres</span></div>
+        </div>
+
+        <div class="subtitulo"><h3>Checkout</h3><span>quantas compras começaram e quantas foram pagas</span></div>
+        <div class="duas-colunas">
+          {% with c=checkout.dashcreator %}
+          <div class="cartao conversao" data-busca>
+            <div class="conversao-topo"><h3>Dash Creator</h3><span>{{ c.iniciadas }} iniciadas</span></div>
+            <p class="conversao-valor"><b>{{ c.pagas }}</b> pagas · {% widthratio c.pagas c.iniciadas 100 %}% das iniciadas</p>
+            <div class="trilho" title="{{ c.pagas }} de {{ c.iniciadas }} pagas"><i style="width:{% widthratio c.pagas c.iniciadas 100 %}%"></i></div>
+            <dl>
+              <div><dt>Recebido</dt><dd class="dinheiro">{{ c.receita_txt }}</dd></div>
+              <div><dt>Aguardando</dt><dd>{{ c.aguardando }}</dd></div>
+              <div><dt>Não finalizou</dt><dd>{{ c.nao_finalizou }}</dd></div>
+              <div><dt>Recusadas</dt><dd>{{ c.recusadas }}</dd></div>
+            </dl>
+          </div>
+          {% endwith %}
+          {% with c=checkout.creatorday %}
+          <div class="cartao conversao" data-busca>
+            <div class="conversao-topo"><h3>Creator Day Experience</h3><span>{{ c.iniciadas }} iniciadas</span></div>
+            <p class="conversao-valor"><b>{{ c.pagas }}</b> pagos · {% widthratio c.pagas c.iniciadas 100 %}% dos iniciados</p>
+            <div class="trilho" title="{{ c.pagas }} de {{ c.iniciadas }} pagos"><i style="width:{% widthratio c.pagas c.iniciadas 100 %}%"></i></div>
+            <dl>
+              <div><dt>Recebido</dt><dd class="dinheiro">{{ c.receita_txt }}</dd></div>
+              <div><dt>Aguardando</dt><dd>{{ c.aguardando }}</dd></div>
+              <div><dt>Não finalizou</dt><dd>{{ c.nao_finalizou }}</dd></div>
+              <div><dt>Recusados</dt><dd>{{ c.recusadas }}</dd></div>
+            </dl>
+          </div>
+          {% endwith %}
+        </div>
+
+        <div class="subtitulo"><h3>Desafio e Portal</h3><span>Desafio hoje: {{ desafio.missao_do_dia }}</span></div>
+        <div class="duas-colunas">
+          <div class="cartao cartao--recorte" data-busca>
+            <div class="cartao-titulo"><h3><span class="icone-tom icone-tom--espera"><svg class="ico" aria-hidden="true"><use href="#i-trofeu"/></svg></span>Desafio Postaria Mais</h3></div>
+            <div class="mini-stats mini-stats--2">
+              <div class="mini-stat"><b>{{ desafio.inscritas }}</b><span>inscritas ativas</span></div>
+              <div class="mini-stat"><b>{{ desafio.conclusoes }}</b><span>missões concluídas</span></div>
+              <div class="mini-stat"><b>{{ desafio.checkins_hoje }}</b><span>check-ins hoje</span></div>
+              <div class="mini-stat"><b>{{ desafio.posts }}</b><span>posts no mural</span></div>
+            </div>
+          </div>
+          <div class="cartao cartao--recorte" data-busca>
+            <div class="cartao-titulo"><h3><span class="icone-tom icone-tom--confirmar"><svg class="ico" aria-hidden="true"><use href="#i-formatura"/></svg></span>Portal do TCC</h3></div>
+            <div class="mini-stats mini-stats--2">
+              <div class="mini-stat"><b>{{ portal.alunas_ativas }}</b><span>alunas ativas (de {{ portal.alunas_total }})</span></div>
+              <div class="mini-stat"><b>{{ portal.aulas_assistidas }}</b><span>aulas assistidas</span></div>
+              <div class="mini-stat"><b>{{ portal.entregas }}</b><span>entregas</span></div>
+              <div class="mini-stat"><b>{{ portal.duvidas }}</b><span>dúvidas</span></div>
+            </div>
+          </div>
+        </div>
+
+        {% if negocio %}
+        <div class="subtitulo"><h3>Negócio da Layfe</h3></div>
+        <div class="mini-stats" data-busca>
+          <div class="mini-stat"><b>{{ negocio.trabalhos_ano }}</b><span>trabalhos fechados no ano · <span class="dinheiro" style="display:inline">{{ negocio.valor_ano }}</span></span></div>
+          <div class="mini-stat"><b>{{ negocio.infoprodutos_vendas }}</b><span>vendas de infoprodutos · <span class="dinheiro" style="display:inline">{{ negocio.infoprodutos_valor }}</span></span></div>
+          <div class="mini-stat"><b>{{ negocio.prospeccao_total }} · {{ negocio.crm_total }}</b><span>marcas na prospecção · leads no CRM</span></div>
+        </div>
+        <div class="duas-colunas" style="margin-top:14px">
+          <div class="cartao bloco" data-busca>
+            <div class="bloco-cabeca"><h3>Prospecção por etapa</h3><span class="mudo" style="font-size:13px">{{ negocio.prospeccao_total }} marcas</span></div>
+            <ul class="barras">{% for rotulo, n, largura in negocio.prospeccao_etapas %}<li{% if not n %} class="barras--zero"{% endif %}><span>{{ rotulo }}</span><b>{{ n }}</b><div class="trilho"><i style="width:{{ largura }}%"></i></div></li>{% endfor %}</ul>
+          </div>
+          <div class="cartao bloco" data-busca>
+            <div class="bloco-cabeca"><h3>CRM por etapa</h3><span class="mudo" style="font-size:13px">{{ negocio.crm_total }} leads</span></div>
+            <ul class="barras">{% for rotulo, n, largura in negocio.crm_etapas %}<li{% if not n %} class="barras--zero"{% endif %}><span>{{ rotulo }}</span><b>{{ n }}</b><div class="trilho"><i style="width:{{ largura }}%"></i></div></li>{% endfor %}</ul>
+          </div>
+        </div>
+        {% if negocio.por_produto %}
+        <div class="cartao bloco" style="margin-top:14px" data-busca>
+          <div class="bloco-cabeca"><h3>Infoprodutos por produto</h3><span class="mudo" style="font-size:13px">barra pelo número de vendas</span></div>
+          <ul class="barras">{% for nome, n, valor, largura in negocio.por_produto %}<li><span>{{ nome }} · {{ n }} venda{{ n|pluralize }}</span><b class="dinheiro">{{ valor }}</b><div class="trilho"><i style="width:{{ largura }}%"></i></div></li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="subtitulo"><h3>Visitas nos sites</h3><span>últimos 30 dias · cliques mais usados</span></div>
+        <div class="sites">
+          {% for m in metricas %}
+          <div class="cartao cartao--recorte site" data-busca>
+            <div class="cartao-titulo"><h3>{{ m.nome }}</h3><a class="link-seta" href="{{ m.link }}" target="_blank" rel="noopener">Métricas <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></div>
+            <div class="site-numeros">
+              <div><b>{{ m.visitas }}</b><span>visitas</span></div>
+              <div><b>{{ m.visitantes }}</b><span>únicos</span></div>
+              <div><b>{{ m.cliques }}</b><span>cliques</span></div>
+            </div>
+            <ul class="barras">{% for rotulo, n, largura in m.top_cliques %}<li><span>{{ rotulo }}</span><b>{{ n }}</b><div class="trilho"><i style="width:{{ largura }}%"></i></div></li>{% empty %}<li><span class="mudo">Sem cliques registrados.</span></li>{% endfor %}</ul>
+          </div>
+          {% empty %}
+          <div class="cartao bloco mudo">Sem visitas registradas nos últimos 30 dias.</div>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# ================= PENDÊNCIAS ================= #}
+      <section class="secao" id="pendencias" data-secao="pendencias">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-pendencias"/></svg></span>
+          <div><h2>Pendências e riscos</h2><p>O que falta resolver, por prioridade, e as perguntas que o time ainda precisa responder.</p></div>
+        </header>
+        <div class="resumo-riscos">
+          {% for nivel, rotulo, total in niveis %}
+          <div class="cartao resumo-risco">
+            <span class="icone-tom {% if nivel == 'alta' %}icone-tom--erro{% elif nivel == 'media' %}icone-tom--espera{% endif %}"><svg class="ico" aria-hidden="true"><use href="#{% if nivel == 'baixa' %}i-info{% else %}i-alerta{% endif %}"/></svg></span>
+            <div><b>{{ total }}</b><span>prioridade {{ rotulo }}</span></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% for nivel, rotulo, total in niveis %}
+        <div data-busca-grupo>
+          <div class="subtitulo"><h3>Prioridade {{ rotulo }}</h3><span>{{ total }} ite{{ total|pluralize:"m,ns" }}</span></div>
+          <div class="riscos">
+            {% for prioridade, titulo, detalhe in riscos %}{% if prioridade == nivel %}
+            <div class="cartao risco risco--{{ prioridade }}" data-busca>
+              <strong>{{ titulo }}</strong>
+              <span class="pill pill--{{ prioridade }}">{{ rotulo }}</span>
+              <p>{{ detalhe }}</p>
+            </div>
+            {% endif %}{% endfor %}
+          </div>
         </div>
         {% endfor %}
-      </div>
 
-      <h2 class="h3">Comece por aqui</h2>
-      <div class="atalhos">
-        <a class="atalho" href="#vendas" data-ir="vendas" data-busca><strong>Quem comprou ou se inscreveu</strong><small>Onde ver cada venda, lista e lead</small></a>
-        <a class="atalho" href="#produtos" data-ir="produtos" data-busca><strong>Produtos e preços</strong><small>Tudo o que o clube vende</small></a>
-        <a class="atalho" href="#links" data-ir="links" data-busca><strong>Achar um link</strong><small>Sites, páginas, app e Instagram</small></a>
-        <a class="atalho" href="#como-fazer" data-ir="como-fazer" data-busca><strong>Como fazer</strong><small>Acesso, cupom, Desafio, publicar</small></a>
-        <a class="atalho" href="{{ app }}/creator-day/" target="_blank" rel="noopener" data-busca><strong>Creator Day ↗</strong><small>Lista de espera e ingressos</small></a>
-        <a class="atalho" href="{{ app }}/crm/" target="_blank" rel="noopener" data-busca><strong>CRM ↗</strong><small>Leads da mentoria e de serviços</small></a>
-        <a class="atalho" href="/desafio/admin.html" target="_blank" rel="noopener" data-busca><strong>Painel do Desafio ↗</strong><small>Pontos, datas e moderação</small></a>
-        <a class="atalho" href="#pendencias" data-ir="pendencias" data-busca><strong>Pendências e riscos</strong><small>O que falta resolver</small></a>
-      </div>
+        <div class="duas-colunas" style="margin-top:30px">
+          <div class="cartao" data-busca-grupo>
+            <div class="bloco-cabeca"><h3>A confirmar com o time</h3><span class="pill pill--confirmar">{{ pontas|length }}</span></div>
+            <ul class="lista-icones lista-icones--confirmar">{% for p in pontas %}<li data-busca><svg class="ico" aria-hidden="true"><use href="#i-duvida"/></svg><span>{{ p }}</span></li>{% endfor %}</ul>
+          </div>
+          <div class="cartao" data-busca-grupo>
+            <div class="bloco-cabeca"><h3>Resolvido em 16/09/2026</h3><span class="pill pill--ok">{{ resolvidos|length }}</span></div>
+            <ul class="lista-icones lista-icones--ok">{% for r in resolvidos %}<li data-busca><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span>{{ r }}</span></li>{% endfor %}</ul>
+          </div>
+        </div>
+      </section>
 
-      <h2 class="h3">Como o clube se conecta</h2>
-      <div class="jornada">
-        <div class="etapa" data-busca><span class="etapa-num">1 · Conhece</span><h4>Onde a creator chega</h4><ul><li>Instagram @thecreatorssclubb e @layfeamorim</li><li>Home do clube</li><li>layfeamorim.com (Sou Creator)</li><li>Desafio Postaria Mais</li></ul></div>
-        <div class="etapa" data-busca><span class="etapa-num">2 · Entra</span><h4>Portas de entrada</h4><ul><li>Planner Creator</li><li>Dash Creator</li><li>Desafio da Semana</li></ul></div>
-        <div class="etapa" data-busca><span class="etapa-num">3 · Se transforma</span><h4>Acompanhamento</h4><ul><li>Mentoria HPC e Renovação</li><li>Acompanhamento 1:1</li><li>Portal do TCC</li></ul></div>
-        <div class="etapa" data-busca><span class="etapa-num">4 · Vive</span><h4>Experiências</h4><ul><li>Creator Day Experience (17/10)</li><li>Encontros da turma</li></ul></div>
-      </div>
-    </section>
-
-    {# ---------------- PRODUTOS ---------------- #}
-    <section class="secao" id="produtos" data-secao="produtos">
-      <div class="secao-cabeca">
-        <h2>Produtos e preços</h2>
-        <p>Preço e vendas do Dash e do Creator Day vêm do checkout; os demais, do cadastro de Infoprodutos da Layfe. "A confirmar" ainda precisa de validação do time.</p>
-      </div>
-      <div class="produtos">
-        {% for p in produtos %}
-        <article class="produto" data-busca>
-          <div class="produto-topo">
-            <div>
+      {# ================= PRODUTOS ================= #}
+      <section class="secao" id="produtos" data-secao="produtos">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-produtos"/></svg></span>
+          <div><h2>Produtos e preços</h2><p>Preço e vendas do Dash e do Creator Day vêm do checkout; os demais, do cadastro de Infoprodutos da Layfe. "A confirmar" ainda precisa de validação do time.</p></div>
+        </header>
+        <div class="filtros" role="group" aria-label="Filtrar produtos">
+          <button type="button" class="filtro" data-filtro="todos" aria-pressed="true">Todos <span>{{ produtos|length }}</span></button>
+          <button type="button" class="filtro" data-filtro="venda" aria-pressed="false">À venda</button>
+          <button type="button" class="filtro" data-filtro="confirmar" aria-pressed="false">A confirmar</button>
+        </div>
+        <div class="produtos">
+          {% for p in produtos %}
+          <article class="cartao produto" data-busca data-venda="{% if p.situacao == 'À venda' %}1{% endif %}" data-confirmar="{% if p.confirmar %}1{% endif %}">
+            <div class="produto-cabeca">
               <h3>{{ p.nome }}</h3>
-              <div class="tags"><span class="tag tag--{{ p.tom }}">{{ p.situacao }}</span>{% if p.confirmar %}<span class="tag tag--confirmar">A confirmar</span>{% endif %}</div>
+              <div class="pills"><span class="pill pill--{% if p.tom == 'neutro' %}info{% else %}{{ p.tom }}{% endif %}">{{ p.situacao }}</span>{% if p.confirmar %}<span class="pill pill--confirmar">A confirmar</span>{% endif %}</div>
             </div>
-            <div class="preco">{{ p.preco }}</div>
+            <div class="produto-preco">
+              <strong{% if p.preco|slice:":2" != "R$" %} class="texto"{% endif %}>{{ p.preco }}</strong>
+              <small>{{ p.detalhe }}</small>
+            </div>
+            <p>{{ p.frase }}</p>
+            <div class="produto-pe">
+              <span>{{ p.pagamento }}{% if p.vendas %}<b class="dinheiro">{{ p.vendas }}</b>{% endif %}</span>
+              {% if p.link %}<a class="link-seta" href="{{ p.link }}" target="_blank" rel="noopener">{{ p.link_rotulo }} <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>{% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# ================= LINKS ================= #}
+      <section class="secao" id="links" data-secao="links">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-links"/></svg></span>
+          <div><h2>Sites e links</h2><p>Tudo que está no ar, por endereço.</p></div>
+        </header>
+        {% for g in links %}
+        <div data-busca-grupo>
+          <div class="subtitulo"{% if forloop.first %} style="margin-top:0"{% endif %}><h3>{{ g.grupo }}</h3><span>{{ g.descricao }}</span></div>
+          <div class="tabela-caixa">
+            <table class="tabela">
+              <thead><tr><th>Página</th><th>O que é</th><th>Para quem</th><th><span class="sr-only">Abrir</span></th></tr></thead>
+              <tbody>
+                {% for nome, url, oque, publico in g.itens %}
+                <tr data-busca>
+                  <td class="forte">{{ nome }}<small>{{ url|cut:"https://" }}</small></td>
+                  <td data-rotulo="O que é">{{ oque }}</td>
+                  <td data-rotulo="Para quem"><span class="pill{% if publico == 'Público' %} pill--ok{% elif publico == 'Interno' or publico == 'Time' %} pill--info{% endif %}">{{ publico }}</span></td>
+                  <td class="celula-acao"><a class="link-seta" href="{{ url }}" target="_blank" rel="noopener">Abrir <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
-          <span class="detalhe">{{ p.detalhe }}</span>
-          <p>{{ p.frase }}</p>
-          <div class="produto-pe">
-            <span>{{ p.pagamento }}{% if p.vendas %} · <b class="dinheiro">{{ p.vendas }}</b>{% endif %}</span>
-            {% if p.link %}<a class="link" href="{{ p.link }}" target="_blank" rel="noopener">{{ p.link_rotulo }} ↗</a>{% endif %}
-          </div>
-        </article>
+        </div>
         {% endfor %}
-      </div>
-    </section>
+      </section>
 
-    {# ---------------- VENDAS ---------------- #}
-    <section class="secao" id="vendas" data-secao="vendas">
-      <div class="secao-cabeca">
-        <h2>Vendas e inscrições</h2>
-        <p>Onde ver cada coisa, com o número de agora.</p>
-      </div>
-      <div class="tabela-caixa">
-        <table class="tabela">
-          <thead><tr><th>Quero ver</th><th>Agora</th><th>Onde fica</th><th></th></tr></thead>
-          <tbody>
-            {% for pergunta, agora_txt, onde, link in onde_ver %}
-            <tr data-busca>
-              <td class="forte">{{ pergunta }}</td>
-              <td>{{ agora_txt }}</td>
-              <td>{{ onde }}</td>
-              <td>{% if link %}<a class="link" href="{{ link }}" target="_blank" rel="noopener">Abrir ↗</a>{% endif %}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div class="aviso" style="margin-top:12px" data-busca><b>Vendas da Hubla e do link Nubank</b> (Mentoria HPC, Renovação, Acompanhamento, Planner) não entram sozinhas: lance em Infoprodutos no Dash para aparecerem no faturamento.</div>
-    </section>
+      {# ================= COMO FAZER ================= #}
+      <section class="secao" id="como-fazer" data-secao="como-fazer">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-como-fazer"/></svg></span>
+          <div><h2>Como fazer</h2><p>Passo a passo das tarefas do dia a dia. Clique para abrir.</p></div>
+        </header>
+        <div class="guias">
+          {% for g in guias %}
+          <details class="guia" data-busca>
+            <summary>
+              <span class="guia-num">{{ forloop.counter }}</span>
+              <span class="guia-titulo"><strong>{{ g.titulo }}</strong><small>{{ g.quando }}</small></span>
+              <svg class="ico" aria-hidden="true"><use href="#i-abrir"/></svg>
+            </summary>
+            <div class="guia-corpo">
+              <ol class="passos">{% for passo in g.passos %}<li>{{ passo }}</li>{% endfor %}</ol>
+              {% if g.link %}<a class="botao" href="{{ g.link }}" target="_blank" rel="noopener">{{ g.link_rotulo }} <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>{% endif %}
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+      </section>
 
-    {# ---------------- LINKS ---------------- #}
-    <section class="secao" id="links" data-secao="links">
-      <div class="secao-cabeca">
-        <h2>Sites e links</h2>
-        <p>Tudo que está no ar, por endereço.</p>
-      </div>
-      {% for g in links %}
-      <div class="grupo" data-busca-grupo>
-        <div class="grupo-cabeca"><h3>{{ g.grupo }}</h3><span>{{ g.descricao }}</span></div>
+      {# ================= SISTEMA ================= #}
+      <section class="secao" id="sistema" data-secao="sistema">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-sistema"/></svg></span>
+          <div><h2>Sistema Dash Creator</h2><p>Os módulos do app e quem vê cada um.</p></div>
+        </header>
         <div class="tabela-caixa">
           <table class="tabela">
-            <thead><tr><th>Página</th><th>O que é</th><th>Para quem</th><th></th></tr></thead>
+            <thead><tr><th>Módulo</th><th>Para que serve</th><th>Quem vê</th><th><span class="sr-only">Abrir</span></th></tr></thead>
             <tbody>
-              {% for nome, url, oque, publico in g.itens %}
+              {% for nome, serve, quem, url in modulos %}
               <tr data-busca>
                 <td class="forte">{{ nome }}</td>
-                <td>{{ oque }}</td>
-                <td><span class="tag">{{ publico }}</span></td>
-                <td><a class="link" href="{{ url }}" target="_blank" rel="noopener">Abrir ↗</a></td>
+                <td data-rotulo="Para que serve">{{ serve }}</td>
+                <td data-rotulo="Quem vê"><span class="pill{% if quem != 'Todas' %} pill--info{% endif %}">{{ quem }}</span></td>
+                <td class="celula-acao"><a class="link-seta" href="{{ url }}" target="_blank" rel="noopener">Abrir <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-      </div>
-      {% endfor %}
-    </section>
-
-    {# ---------------- COMO FAZER ---------------- #}
-    <section class="secao" id="como-fazer" data-secao="como-fazer">
-      <div class="secao-cabeca">
-        <h2>Como fazer</h2>
-        <p>Passo a passo das tarefas do dia a dia. Clique para abrir.</p>
-      </div>
-      {% for g in guias %}
-      <details class="guia" data-busca>
-        <summary><span class="guia-num">{{ forloop.counter }}</span>{{ g.titulo }}</summary>
-        <div class="guia-corpo">
-          <p class="quando">{{ g.quando }}</p>
-          <ol>{% for passo in g.passos %}<li>{{ passo }}</li>{% endfor %}</ol>
-          {% if g.link %}<a class="botao" href="{{ g.link }}" target="_blank" rel="noopener">{{ g.link_rotulo }} ↗</a>{% endif %}
+        <div class="subtitulo"><h3>Contas e acesso</h3></div>
+        <div class="cartao" data-busca-grupo>
+          <ul class="lista-icones">{% for regra in regras_acesso %}<li data-busca><svg class="ico" aria-hidden="true"><use href="#i-chave"/></svg><span>{{ regra }}</span></li>{% endfor %}</ul>
         </div>
-      </details>
-      {% endfor %}
-    </section>
+      </section>
 
-    {# ---------------- SISTEMA ---------------- #}
-    <section class="secao" id="sistema" data-secao="sistema">
-      <div class="secao-cabeca">
-        <h2>Sistema Dash Creator</h2>
-        <p>Os módulos do app e quem vê cada um.</p>
-      </div>
-      <div class="tabela-caixa">
-        <table class="tabela">
-          <thead><tr><th>Módulo</th><th>Para que serve</th><th>Quem vê</th><th></th></tr></thead>
-          <tbody>
-            {% for nome, serve, quem, url in modulos %}
-            <tr data-busca>
-              <td class="forte">{{ nome }}</td>
-              <td>{{ serve }}</td>
-              <td><span class="tag{% if quem != 'Todas' %} tag--confirmar{% endif %}">{{ quem }}</span></td>
-              <td><a class="link" href="{{ url }}" target="_blank" rel="noopener">Abrir ↗</a></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <h3 class="h3">Contas e acesso</h3>
-      <div class="caixa" data-busca-grupo>
-        <ul class="lista lista--texto">{% for regra in regras_acesso %}<li data-busca>{{ regra }}</li>{% endfor %}</ul>
-      </div>
-    </section>
-
-    {# ---------------- TECNOLOGIA ---------------- #}
-    <section class="secao" id="tecnologia" data-secao="tecnologia">
-      <div class="secao-cabeca">
-        <h2>Tecnologia</h2>
-        <p>Servidores, domínios, integrações e onde ficam os acessos. Nenhuma senha aparece aqui.</p>
-      </div>
-      <div class="colunas">
-        {% for s in servidores %}
-        <div class="caixa" data-busca>
-          <h4>{{ s.nome }}</h4>
-          <ul class="lista">
-            <li>Acesso SSH <b>{{ s.ssh }}</b></li>
-            <li>Painel <b>{{ s.painel }}</b></li>
-            <li>Disco <b>{{ s.disco }}</b></li>
-            <li>O que roda <b>{{ s.roda }}</b></li>
-          </ul>
+      {# ================= TECNOLOGIA ================= #}
+      <section class="secao" id="tecnologia" data-secao="tecnologia">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-tecnologia"/></svg></span>
+          <div><h2>Tecnologia</h2><p>Servidores, domínios, integrações e onde ficam os acessos. Nenhuma senha aparece aqui.</p></div>
+        </header>
+        <div class="duas-colunas">
+          {% for s in servidores %}
+          <div class="cartao servidor" data-busca>
+            <div class="servidor-topo"><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-tecnologia"/></svg></span><h3>{{ s.nome }}</h3></div>
+            <dl class="chave-valor">
+              <div><dt>Acesso SSH</dt><dd><code>{{ s.ssh }}</code></dd></div>
+              <div><dt>Painel</dt><dd>{{ s.painel }}</dd></div>
+              <div><dt>Disco</dt><dd>{{ s.disco }}</dd></div>
+              <div><dt>O que roda</dt><dd>{{ s.roda }}</dd></div>
+            </dl>
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
-      </div>
 
-      <h3 class="h3">Domínios</h3>
-      <div class="tabela-caixa">
-        <table class="tabela">
-          <thead><tr><th>Domínio</th><th>O que é</th><th>Onde roda</th><th>DNS</th><th>Como publica</th></tr></thead>
-          <tbody>
-            {% for dominio, oque, onde, dns, publica in dominios %}
-            <tr data-busca><td class="forte">{{ dominio }}</td><td>{{ oque }}</td><td>{{ onde }}</td><td>{{ dns }}</td><td>{{ publica }}</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="colunas" style="margin-top:12px">
-        <div class="caixa" data-busca-grupo>
-          <h4>Integrações</h4>
-          <ul class="lista">{% for nome, uso in integracoes %}<li data-busca><span>{{ uso }}</span><b>{{ nome }}</b></li>{% endfor %}</ul>
+        <div class="subtitulo"><h3>Domínios</h3></div>
+        <div class="tabela-caixa">
+          <table class="tabela">
+            <thead><tr><th>Domínio</th><th>O que é</th><th>Onde roda</th><th>DNS</th><th>Como publica</th></tr></thead>
+            <tbody>
+              {% for dominio, oque, onde, dns, publica in dominios %}
+              <tr data-busca><td class="forte">{{ dominio }}</td><td data-rotulo="O que é">{{ oque }}</td><td data-rotulo="Onde roda">{{ onde }}</td><td data-rotulo="DNS">{{ dns }}</td><td data-rotulo="Como publica">{{ publica }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="caixa" data-busca-grupo>
-          <h4>Variáveis do servidor (só nomes)</h4>
-          <ul class="lista lista--texto">{% for grupo, nomes in variaveis %}<li data-busca><b>{{ grupo }}:</b> {{ nomes }}</li>{% endfor %}</ul>
+
+        <div class="duas-colunas" style="margin-top:14px">
+          <div class="cartao" data-busca-grupo>
+            <div class="bloco-cabeca"><h3><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-tomada"/></svg></span>Integrações</h3></div>
+            <ul class="lista-icones">{% for nome, uso in integracoes %}<li data-busca><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>{{ nome }}</b><br>{{ uso }}</span></li>{% endfor %}</ul>
+          </div>
+          <div class="cartao" data-busca-grupo>
+            <div class="bloco-cabeca"><h3><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-chave"/></svg></span>Variáveis do servidor (só nomes)</h3></div>
+            <ul class="lista-icones">{% for grupo, nomes in variaveis %}<li data-busca><span><b>{{ grupo }}</b><br><span class="variaveis">{{ nomes }}</span></span></li>{% endfor %}</ul>
+          </div>
         </div>
-      </div>
 
-      <h3 class="h3">Onde ficam os acessos</h3>
-      <div class="aviso">Aqui está onde cada acesso mora e quem usa. Senhas ficam num gerenciador de senhas, nunca no sistema.</div>
-      <div class="tabela-caixa">
-        <table class="tabela">
-          <thead><tr><th>Acesso</th><th>Onde entra</th><th>Quem usa</th><th>Onde fica a credencial</th></tr></thead>
-          <tbody>
-            {% for acesso, onde, quem, credencial in acessos %}
-            <tr data-busca><td class="forte">{{ acesso }}</td><td>{{ onde }}</td><td>{{ quem }}</td><td>{{ credencial }}</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    {# ---------------- PENDÊNCIAS ---------------- #}
-    <section class="secao" id="pendencias" data-secao="pendencias">
-      <div class="secao-cabeca">
-        <h2>Pendências e riscos</h2>
-        <p>O que falta resolver, por prioridade, e as perguntas que o time ainda precisa responder.</p>
-      </div>
-      {% for nivel, rotulo in niveis %}
-      <h3 class="h3">Prioridade {{ rotulo }}</h3>
-      {% for prioridade, titulo, detalhe in riscos %}{% if prioridade == nivel %}
-      <div class="risco" data-busca>
-        <span class="tag tag--{{ prioridade }}">{{ rotulo }}</span>
-        <strong>{{ titulo }}</strong>
-        <p>{{ detalhe }}</p>
-      </div>
-      {% endif %}{% endfor %}
-      {% endfor %}
-
-      <div class="colunas" style="margin-top:16px">
-        <div class="caixa" data-busca-grupo>
-          <h4>A confirmar com o time</h4>
-          <ul class="lista lista--texto">{% for p in pontas %}<li data-busca>{{ p }}</li>{% endfor %}</ul>
+        <div class="subtitulo"><h3>Onde ficam os acessos</h3></div>
+        <div class="aviso" style="margin:0 0 12px"><svg class="ico" aria-hidden="true"><use href="#i-cadeado"/></svg><span>Aqui está onde cada acesso mora e quem usa. Senhas ficam num gerenciador de senhas, nunca no sistema.</span></div>
+        <div class="tabela-caixa">
+          <table class="tabela">
+            <thead><tr><th>Acesso</th><th>Onde entra</th><th>Quem usa</th><th>Onde fica a credencial</th></tr></thead>
+            <tbody>
+              {% for acesso, onde, quem, credencial in acessos %}
+              <tr data-busca><td class="forte">{{ acesso }}</td><td data-rotulo="Onde entra">{{ onde }}</td><td data-rotulo="Quem usa">{{ quem }}</td><td data-rotulo="Credencial">{{ credencial }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="caixa" data-busca-grupo>
-          <h4>Resolvido em 16/09/2026</h4>
-          <ul class="lista lista--texto">{% for r in resolvidos %}<li data-busca>✓ {{ r }}</li>{% endfor %}</ul>
-        </div>
-      </div>
-    </section>
-
-    {# ---------------- NÚMEROS ---------------- #}
-    <section class="secao" id="numeros" data-secao="numeros">
-      <div class="secao-cabeca">
-        <h2>Números ao vivo</h2>
-        <p>Contados em {{ agora|date:"d/m/Y" }} às {{ agora|date:"H:i" }}. Das outras creators que usam o Dash entra só a contagem geral; o detalhe de negócio é da conta da Layfe.</p>
-      </div>
-
-      <div class="colunas">
-        <div class="caixa" data-busca>
-          <h4>Dash Creator (plataforma)</h4>
-          <ul class="lista">
-            <li>Usuárias ativas <b>{{ dash.usuarias }}</b></li>
-            <li>Entraram nos últimos 7 dias <b>{{ dash.entraram_7 }}</b></li>
-            <li>Entraram nos últimos 30 dias <b>{{ dash.entraram_30 }}</b></li>
-            <li>Cadastros nos últimos 30 dias <b>{{ dash.cadastros_30 }}</b></li>
-            <li>Códigos de acesso usados <b>{{ dash.codigos_usados }}</b></li>
-            <li>Códigos livres <b>{{ dash.codigos_livres }}</b></li>
-          </ul>
-        </div>
-        <div class="caixa" data-busca>
-          <h4>Desafio e Portal</h4>
-          <ul class="lista">
-            <li>Desafio: inscritas ativas <b>{{ desafio.inscritas }}</b></li>
-            <li>Desafio: hoje <b>{{ desafio.missao_do_dia }}</b></li>
-            <li>Desafio: missões concluídas <b>{{ desafio.conclusoes }}</b></li>
-            <li>Desafio: check-ins hoje · posts <b>{{ desafio.checkins_hoje }} · {{ desafio.posts }}</b></li>
-            <li>Portal: alunas ativas (de {{ portal.alunas_total }}) <b>{{ portal.alunas_ativas }}</b></li>
-            <li>Portal: aulas assistidas · entregas · dúvidas <b>{{ portal.aulas_assistidas }} · {{ portal.entregas }} · {{ portal.duvidas }}</b></li>
-          </ul>
-        </div>
-      </div>
-
-      <h3 class="h3">Checkout</h3>
-      <div class="tabela-caixa">
-        <table class="tabela">
-          <thead><tr><th>Produto</th><th>Iniciadas</th><th>Pagas</th><th>Recebido</th><th>Aguardando</th><th>Não finalizou</th><th>Recusadas</th></tr></thead>
-          <tbody>
-            <tr data-busca><td class="forte">Dash Creator</td><td>{{ checkout.dashcreator.iniciadas }}</td><td>{{ checkout.dashcreator.pagas }}</td><td class="dinheiro">{{ checkout.dashcreator.receita_txt }}</td><td>{{ checkout.dashcreator.aguardando }}</td><td>{{ checkout.dashcreator.nao_finalizou }}</td><td>{{ checkout.dashcreator.recusadas }}</td></tr>
-            <tr data-busca><td class="forte">Creator Day Experience</td><td>{{ checkout.creatorday.iniciadas }}</td><td>{{ checkout.creatorday.pagas }}</td><td class="dinheiro">{{ checkout.creatorday.receita_txt }}</td><td>{{ checkout.creatorday.aguardando }}</td><td>{{ checkout.creatorday.nao_finalizou }}</td><td>{{ checkout.creatorday.recusadas }}</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      {% if negocio %}
-      <h3 class="h3">Negócio da Layfe</h3>
-      <div class="kpis">
-        <div class="kpi"><span>Trabalhos fechados no ano</span><strong>{{ negocio.trabalhos_ano }}</strong><small class="dinheiro">{{ negocio.valor_ano }}</small></div>
-        <div class="kpi"><span>Vendas de infoprodutos lançadas</span><strong>{{ negocio.infoprodutos_vendas }}</strong><small class="dinheiro">{{ negocio.infoprodutos_valor }}</small></div>
-        <div class="kpi"><span>Prospecção · CRM</span><strong>{{ negocio.prospeccao_total }} · {{ negocio.crm_total }}</strong><small>marcas · leads</small></div>
-      </div>
-      <div class="colunas" style="margin-top:12px">
-        <div class="caixa" data-busca><h4>Prospecção por etapa</h4><ul class="lista">{% for rotulo, n in negocio.prospeccao_etapas %}<li>{{ rotulo }} <b>{{ n }}</b></li>{% endfor %}</ul></div>
-        <div class="caixa" data-busca><h4>CRM por etapa</h4><ul class="lista">{% for rotulo, n in negocio.crm_etapas %}<li>{{ rotulo }} <b>{{ n }}</b></li>{% endfor %}</ul></div>
-      </div>
-      {% if negocio.por_produto %}
-      <div class="caixa" style="margin-top:12px" data-busca><h4>Infoprodutos por produto</h4><ul class="lista">{% for nome, n, valor in negocio.por_produto %}<li>{{ nome }} ({{ n }}) <b class="dinheiro">{{ valor }}</b></li>{% endfor %}</ul></div>
-      {% endif %}
-      {% endif %}
-
-      <h3 class="h3">Visitas nos sites (30 dias)</h3>
-      <div class="colunas">
-        {% for m in metricas %}
-        <div class="caixa" data-busca>
-          <h4>{{ m.nome }}</h4>
-          <ul class="lista">
-            <li>Visitas · únicos · cliques <b>{{ m.visitas }} · {{ m.visitantes }} · {{ m.cliques }}</b></li>
-            {% for rotulo, n in m.top_cliques %}<li>{{ rotulo }} <b>{{ n }}</b></li>{% endfor %}
-          </ul>
-          <p style="margin:12px 0 0"><a class="link" href="{{ m.link }}" target="_blank" rel="noopener">Abrir métricas ↗</a></p>
-        </div>
-        {% empty %}
-        <div class="caixa">Sem visitas registradas nos últimos 30 dias.</div>
-        {% endfor %}
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
+  </div>
 </div>
 {% endblock %}
 
@@ -589,6 +931,7 @@
   const ids = secoes.map((s) => s.dataset.secao);
   const busca = document.querySelector("[data-busca-central]");
   const semResultado = raiz.querySelector("[data-sem-resultado]");
+  const tituloSecao = document.querySelector("[data-titulo-secao]");
   const normal = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
   const mostrar = (id) => {
@@ -598,7 +941,8 @@
       a.classList.toggle("ativo", ativa);
       if (ativa) {
         a.setAttribute("aria-current", "page");
-        a.scrollIntoView({ block: "nearest", inline: "nearest" });
+        if (a.offsetParent) a.scrollIntoView({ block: "nearest", inline: "nearest" });
+        if (tituloSecao) tituloSecao.textContent = a.dataset.titulo;
       } else {
         a.removeAttribute("aria-current");
       }
@@ -630,6 +974,7 @@
     if (!termo) { limparBusca(); mostrar(location.hash.slice(1)); return; }
     corpo.classList.add("buscando");
     abas.forEach((a) => a.classList.remove("ativo"));
+    if (tituloSecao) tituloSecao.textContent = "Busca";
     let total = 0;
     secoes.forEach((s) => {
       let achados = 0;
@@ -646,9 +991,18 @@
   });
   document.addEventListener("keydown", (e) => {
     const digitando = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
-    if (e.key === "/" && !digitando) { e.preventDefault(); busca.focus(); }
+    if ((e.key === "/" && !digitando) || (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey))) { e.preventDefault(); busca.focus(); }
     if (e.key === "Escape" && document.activeElement === busca) { busca.value = ""; limparBusca(); mostrar(location.hash.slice(1)); busca.blur(); }
   });
+
+  const filtros = [...raiz.querySelectorAll("[data-filtro]")];
+  filtros.forEach((f) => f.addEventListener("click", () => {
+    filtros.forEach((outro) => outro.setAttribute("aria-pressed", String(outro === f)));
+    raiz.querySelectorAll(".produto").forEach((p) => {
+      const passa = f.dataset.filtro === "todos" || p.dataset[f.dataset.filtro] === "1";
+      p.classList.toggle("filtrado", !passa);
+    });
+  }));
 
   const olho = document.querySelector("[data-olho]");
   const CHAVE = "central-valores-ocultos";
@@ -661,6 +1015,11 @@
     const ocultar = !corpo.classList.contains("valores-ocultos");
     aplicarOlho(ocultar);
     try { localStorage.setItem(CHAVE, ocultar ? "1" : "0"); } catch (e) { /* sem armazenamento */ }
+  });
+
+  document.querySelector("[data-atualizar]")?.addEventListener("click", (e) => {
+    e.currentTarget.disabled = true;
+    location.reload();
   });
 
   window.addEventListener("hashchange", () => { if (!busca.value) mostrar(location.hash.slice(1)); });
