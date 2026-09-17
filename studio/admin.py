@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessCode, ActiveUserSession, Coupon, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory, Workspace, WorkspaceSetting
+from .models import AccessCode, ActiveUserSession, Coupon, EventScheduleItem, EventSupplier, EventTask, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -91,3 +91,25 @@ class PurchaseAdmin(admin.ModelAdmin):
     search_fields = ("customer_name", "customer_email", "customer_cpf", "customer_phone", "mp_payment_id")
     date_hierarchy = "created_at"
     readonly_fields = ("mp_preference_id", "mp_payment_id", "paid_at", "notified_at", "access_code", "created_at", "updated_at")
+
+
+@admin.register(EventSupplier)
+class EventSupplierAdmin(admin.ModelAdmin):
+    """Fornecedores e parceiros do Creator Day. O time edita pela Central, aba Creator Day."""
+
+    list_display = ("name", "category", "status", "deal", "amount", "paid_amount", "due_date", "event_key")
+    list_filter = ("event_key", "category", "status", "deal")
+    search_fields = ("name", "contact_name", "delivers", "instagram")
+
+
+@admin.register(EventTask)
+class EventTaskAdmin(admin.ModelAdmin):
+    list_display = ("title", "area", "owner", "due_date", "done", "event_key")
+    list_filter = ("event_key", "area", "done")
+    search_fields = ("title", "owner")
+
+
+@admin.register(EventScheduleItem)
+class EventScheduleItemAdmin(admin.ModelAdmin):
+    list_display = ("start", "end", "title", "owner", "event_key")
+    list_filter = ("event_key",)

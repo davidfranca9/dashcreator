@@ -76,7 +76,15 @@ from .views import (
     signup,
 )
 from .metrics import creator_day_lead, metrics_dashboard, track, portfolio_lead
-from .central_views import central_entrar, central_painel, central_sair
+from .central_views import (
+    central_entrar,
+    central_evento_excluir,
+    central_evento_salvar,
+    central_evento_sugestao,
+    central_evento_tarefa_feita,
+    central_painel,
+    central_sair,
+)
 from .views import creator_day
 
 
@@ -112,6 +120,11 @@ urlpatterns = [
     path("central/", central_painel, name="central"),
     path("central/entrar/", central_entrar, name="central_entrar"),
     path("central/sair/", central_sair, name="central_sair"),
+    path("central/evento/sugestao/<str:tipo>/", central_evento_sugestao, name="central_evento_sugestao"),
+    path("central/evento/tarefa/<int:pk>/feita/", central_evento_tarefa_feita, name="central_evento_tarefa_feita"),
+    path("central/evento/<str:tipo>/salvar/", central_evento_salvar, name="central_evento_novo"),
+    path("central/evento/<str:tipo>/<int:pk>/salvar/", central_evento_salvar, name="central_evento_salvar"),
+    path("central/evento/<str:tipo>/<int:pk>/excluir/", central_evento_excluir, name="central_evento_excluir"),
     path("crm/novo/", crm_create, name="crm_create"),
     path("crm/<int:pk>/mover/", crm_move, name="crm_move"),
     path("crm/<int:pk>/", crm_lead, name="crm_lead"),

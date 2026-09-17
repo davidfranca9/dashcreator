@@ -17,6 +17,7 @@ from django.utils import timezone
 from .checkout import get_product
 from .constants import PROSPECT_STAGE_CHOICES
 from .creator_day import CREATOR_DAY_EVENT, brl
+from .evento import evento_snapshot
 from .models import (
     AccessCode,
     EventWaitlistEntry,
@@ -37,6 +38,7 @@ LAYFE = "https://layfeamorim.com"
 # "grupo" separa o menu: o que se acompanha todo dia e o que se consulta.
 SECOES = [
     {"id": "inicio", "titulo": "Visão geral", "grupo": "Dia a dia"},
+    {"id": "evento", "titulo": "Creator Day", "grupo": "Dia a dia"},
     {"id": "vendas", "titulo": "Vendas e inscrições", "grupo": "Dia a dia"},
     {"id": "numeros", "titulo": "Números", "grupo": "Dia a dia"},
     {"id": "pendencias", "titulo": "Pendências", "grupo": "Dia a dia"},
@@ -577,6 +579,20 @@ def central_snapshot() -> dict:
             "texto": f"Só {dash['codigos_livres']} código de acesso livre para liberar o Dash sem compra.",
             "link": "#como-fazer", "acao": "Como gerar",
         })
+    evento = evento_snapshot(cd, lista_espera)
+    if evento["tarefas_atrasadas"]:
+        alertas.insert(0, {
+            "tom": "espera",
+            "texto": f"{evento['tarefas_atrasadas']} tarefa(s) do Creator Day com prazo vencido.",
+            "link": "#evento/tarefas", "acao": "Ver tarefas",
+        })
+    vencidos = [p for p in evento["pagamentos"] if p["vencido"]]
+    if vencidos:
+        alertas.insert(0, {
+            "tom": "erro",
+            "texto": f"{len(vencidos)} pagamento(s) de fornecedor do Creator Day vencido(s).",
+            "link": "#evento/resumo", "acao": "Ver pagamentos",
+        })
     riscos_altos = sum(1 for r in RISCOS if r[0] == "alta")
     alertas.append({
         "tom": "erro",
@@ -589,6 +605,7 @@ def central_snapshot() -> dict:
         "secoes": SECOES,
         "niveis": [(nivel, rotulo, sum(1 for r in RISCOS if r[0] == nivel)) for nivel, rotulo in NIVEIS_RISCO],
         "creator_day_dias": (CREATOR_DAY_DATA - hoje).days,
+        "evento": evento,
         "riscos_altos": riscos_altos,
         "cd_em_aberto": cd["nao_finalizou"] + cd["aguardando"],
         "dash": dash,

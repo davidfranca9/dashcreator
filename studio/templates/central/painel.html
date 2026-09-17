@@ -113,6 +113,7 @@
   .botao .ico, .link-seta .ico { width: 16px; height: 16px; }
   .link-seta { display: inline-flex; align-items: center; gap: 5px; font-size: 13.5px; font-weight: 600; white-space: nowrap; color: var(--navy); text-decoration: none; }
   .link-seta:hover { text-decoration: underline; text-underline-offset: 3px; }
+  button.link-seta { min-height: 36px; padding: 0; background: none; border: 0; }
   .mudo { color: var(--mudo); }
 
   .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; line-height: 1.45; white-space: nowrap; color: var(--tinta-2); background: var(--papel); border-radius: 999px; }
@@ -367,6 +368,155 @@
   .site-numeros b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--tinta); }
   .site-numeros span { font-size: 12px; color: var(--mudo); }
   .site .barras { padding: 0 18px 18px; }
+
+  /* ================= creator day ================= */
+  .pequeno { font-size: 13px; }
+  .texto-erro { color: var(--erro); font-weight: 600; }
+  .pill--neutro { color: var(--tinta-2); background: var(--papel); }
+  .pill--sem-ponto::before { display: none; }
+  .subabas { display: flex; gap: 4px; margin: 0 0 20px; padding: 4px; overflow-x: auto; scrollbar-width: none; background: var(--papel-2); border-radius: 12px; }
+  .subabas::-webkit-scrollbar { display: none; }
+  .buscando .subabas { display: none; }
+  .subabas button { display: inline-flex; flex: 1 0 auto; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 16px; font-size: 14px; font-weight: 500; white-space: nowrap; color: var(--tinta-2); background: none; border: 0; border-radius: 9px; transition: background .15s, color .15s, box-shadow .15s; }
+  .subabas button:hover { color: var(--tinta); }
+  .subabas button[aria-selected="true"] { font-weight: 600; color: var(--navy); background: var(--superficie); box-shadow: 0 1px 3px rgba(10, 36, 99, .12); }
+  .subabas button span { padding: 0 7px; font-size: 12px; font-weight: 600; line-height: 20px; color: var(--mudo); background: rgba(10, 36, 99, .07); border-radius: 999px; }
+  .buscando .subpainel { display: block !important; }
+  .buscando .subpainel[hidden] { display: block !important; }
+  .mini-stats--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .mini-stats--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .mini-stats--5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mini-stats--5 .mini-stat:last-child { grid-column: 1 / -1; } }
+
+  .contas { display: grid; margin: 0; }
+  .contas div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 14px; border-top: 1px solid var(--linha); }
+  .contas div:first-child { border-top: 0; padding-top: 0; }
+  .contas dt { color: var(--tinta-2); }
+  .contas dt small { color: var(--mudo); }
+  .contas dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--tinta); }
+  .contas .positivo { color: var(--ok); }
+  .contas .negativo { color: var(--erro); }
+  .contas .contas-total { margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--linha-2); }
+  .contas .contas-total dt { font-weight: 600; color: var(--tinta); }
+  .contas .contas-total dd { font-size: 22px; letter-spacing: -.02em; }
+  .pagamento-linha { margin-top: 14px; }
+  .pagamento-linha p { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; color: var(--mudo); }
+  .pagamento-linha b { color: var(--tinta); }
+  .nota-rodape { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; padding: 10px 12px; font-size: 13px; color: var(--tinta-2); background: var(--info-fundo); border-radius: var(--raio-p); }
+  .nota-rodape .ico { width: 16px; height: 16px; color: var(--info); }
+
+  .progresso-linha { display: grid; gap: 8px; margin-bottom: 12px; font-size: 13px; color: var(--mudo); }
+  .progresso-linha b { color: var(--tinta); }
+  .progresso-linha--largo { flex: 1; max-width: 420px; margin: 0; }
+  .lista-curta { display: grid; margin: 0; padding: 0; list-style: none; }
+  .lista-curta li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 14px; color: var(--tinta); border-top: 1px solid var(--linha); }
+  .lista-curta li:first-child { border-top: 0; }
+  .lista-curta-texto { min-width: 0; }
+  .lista-curta-texto small { display: block; font-size: 12px; color: var(--mudo); }
+  .lista-curta-valor { display: grid; justify-items: end; gap: 2px; }
+  .prazo { flex: none; padding: 2px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--tinta-2); background: var(--papel); border-radius: 999px; }
+  .prazo--atrasado { color: var(--erro); background: var(--erro-fundo); }
+  .prazo--hoje { color: var(--espera); background: var(--espera-fundo); }
+  .vazio { display: grid; justify-items: start; gap: 12px; }
+  .vazio p { margin: 0; font-size: 14px; color: var(--mudo); }
+  .vazio--grande { justify-items: center; padding: 40px 24px; text-align: center; }
+  .vazio--grande h3 { margin: 4px 0 0; font-size: 17px; color: var(--tinta); }
+  .vazio--grande p { max-width: 520px; line-height: 1.6; }
+
+  .situacoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 480px) { .situacoes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .situacao { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: var(--superficie-2); border: 1px solid var(--linha); border-radius: var(--raio-p); }
+  .situacao b { font-size: 16px; color: var(--tinta); }
+  .situacao--zero { opacity: .6; }
+  .falta-titulo { margin: 16px 0 8px; font-size: 13px; font-weight: 600; color: var(--tinta-2); }
+  .chave-valor--colunas { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+  @media (max-width: 640px) { .chave-valor--colunas { grid-template-columns: minmax(0, 1fr); } }
+  .botoes-linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+  .ferramentas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .ferramentas .filtros { margin: 0; }
+  .buscando .ferramentas { display: none; }
+  .categoria .subtitulo { margin-top: 26px; }
+  .lista-itens { display: grid; margin: 0; padding: 0; list-style: none; }
+  .lista-itens > * + * { border-top: 1px solid var(--linha); }
+  .fornecedor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 20px; padding: 16px 18px; }
+  .fornecedor.cancelado { opacity: .55; }
+  .fornecedor.filtrado, .categoria.filtrado { display: none; }
+  .fornecedor-principal strong { display: block; font-size: 15px; font-weight: 600; color: var(--tinta); }
+  .fornecedor-principal p { margin: 3px 0 0; font-size: 14px; line-height: 1.5; color: var(--tinta-2); }
+  .fornecedor-nota { font-size: 13px !important; color: var(--mudo) !important; }
+  .contatos { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 13px; color: var(--mudo); }
+  .contatos > * { display: inline-flex; align-items: center; gap: 5px; }
+  .contatos a { color: var(--navy); font-weight: 500; text-decoration: none; }
+  .contatos a:hover { text-decoration: underline; }
+  .contatos .ico { width: 14px; height: 14px; }
+  .fornecedor-lado { display: grid; justify-items: end; align-content: start; gap: 6px; text-align: right; }
+  .fornecedor-valor { font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--tinta); }
+  .fornecedor-lado small { font-size: 12.5px; }
+  @media (max-width: 640px) { .fornecedor { grid-template-columns: minmax(0, 1fr); } .fornecedor-lado { justify-items: start; text-align: left; } }
+  .botao-editar { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--navy); background: none; border: 1px solid var(--linha-2); border-radius: 999px; transition: background .15s, border-color .15s; }
+  .botao-editar:hover { background: var(--superficie-2); border-color: var(--navy); }
+  .botao-editar .ico { width: 15px; height: 15px; }
+  .vazio-slot { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 56px; padding: 12px; font-size: 14px; font-weight: 500; color: var(--mudo); background: rgba(255, 255, 255, .5); border: 1px dashed var(--linha-2); border-radius: var(--raio); transition: color .15s, border-color .15s, background .15s; }
+  .vazio-slot:hover { color: var(--navy); background: var(--superficie); border-color: var(--navy); }
+  .vazio-slot .ico { width: 16px; height: 16px; }
+
+  .tarefa { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 16px 10px 12px; }
+  .tarefa form { margin: 0; }
+  .marcar { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; color: transparent; background: none; border: 0; border-radius: 50%; }
+  .marcar .ico { box-sizing: content-box; width: 14px; height: 14px; padding: 4px; stroke-width: 3; border: 2px solid var(--linha-2); border-radius: 7px; transition: background .15s, border-color .15s, color .15s; }
+  .marcar:hover .ico { border-color: var(--navy); }
+  .tarefa.feita .marcar .ico { color: #fff; background: var(--ok); border-color: var(--ok); }
+  .tarefa-texto span { font-size: 14.5px; color: var(--tinta); }
+  .tarefa-texto small { display: block; font-size: 12.5px; color: var(--mudo); }
+  .tarefa.feita .tarefa-texto span { color: var(--mudo); text-decoration: line-through; }
+  .tarefa-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+  @media (max-width: 640px) {
+    .tarefa { grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; padding: 10px 12px 12px 6px; }
+    .tarefa-meta { grid-column: 2; justify-content: flex-start; }
+    .some-cel { display: none; }
+    .tarefa .botao-editar, .roteiro-item .botao-editar { width: 36px; padding: 0; justify-content: center; }
+  }
+
+  .roteiro { display: grid; margin: 0; padding: 0; list-style: none; }
+  .roteiro-item { position: relative; display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: start; gap: 16px; padding: 16px 18px; }
+  .roteiro-item + .roteiro-item { border-top: 1px solid var(--linha); }
+  .roteiro-hora b { display: block; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--navy); }
+  .roteiro-hora span { font-size: 12.5px; color: var(--mudo); }
+  .roteiro-texto strong { display: block; font-size: 15px; font-weight: 600; color: var(--tinta); }
+  .roteiro-texto p { margin: 3px 0 6px; font-size: 14px; line-height: 1.5; color: var(--tinta-2); }
+  @media (max-width: 520px) { .roteiro-item { grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; padding: 14px; } .roteiro-hora b { font-size: 16px; } }
+
+  /* ================= janelas de edição e avisos ================= */
+  .modal { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; color: var(--tinta); background: var(--superficie); border: 0; border-radius: 18px; box-shadow: 0 30px 80px rgba(7, 26, 71, .35); }
+  .modal--pequeno { width: min(520px, calc(100vw - 24px)); }
+  .modal[open] { animation: modal-entra .18s ease-out; }
+  @keyframes modal-entra { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+  .modal::backdrop { background: rgba(7, 26, 71, .45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  .modal form { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); }
+  .modal-cabeca { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 16px 22px; border-bottom: 1px solid var(--linha); }
+  .modal-cabeca h3 { margin: 0; font-family: var(--display); font-size: 23px; font-weight: 600; color: var(--navy); }
+  .modal-cabeca .botao-icone { border: 0; }
+  .modal-corpo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 20px 22px; overflow-y: auto; }
+  .modal-corpo .inteiro { grid-column: 1 / -1; }
+  @media (max-width: 560px) { .modal-corpo { grid-template-columns: minmax(0, 1fr); padding: 18px; } }
+  .modal-grupo { margin: 8px 0 -4px; font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--mudo); }
+  .campo { display: grid; gap: 6px; align-content: start; }
+  .campo label { font-size: 13px; font-weight: 600; color: var(--tinta-2); }
+  .campo input, .campo select, .campo textarea { width: 100%; min-height: 44px; padding: 9px 12px; font-size: 15px; color: var(--tinta); background: var(--superficie); border: 1px solid var(--linha-2); border-radius: var(--raio-p); transition: border-color .15s, box-shadow .15s; }
+  .campo textarea { resize: vertical; line-height: 1.5; }
+  .campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 4px rgba(47, 111, 237, .15); }
+  @media (max-width: 560px) { .campo input, .campo select, .campo textarea { font-size: 16px; } }
+  .modal-pe { display: flex; align-items: center; gap: 8px; padding: 14px 22px; background: var(--superficie-2); border-top: 1px solid var(--linha); }
+  .modal-pe .espaco { flex: 1; }
+  .botao-perigo { min-height: 42px; padding: 0 12px; font-size: 14px; font-weight: 600; color: var(--erro); background: none; border: 0; border-radius: var(--raio-p); }
+  .botao-perigo:hover { background: var(--erro-fundo); }
+
+  .toasts { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: grid; gap: 8px; width: min(440px, calc(100vw - 32px)); transform: translateX(-50%); }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; font-weight: 500; color: #fff; background: var(--navy); border-radius: 12px; box-shadow: 0 12px 30px rgba(7, 26, 71, .3); animation: modal-entra .2s ease-out; transition: opacity .3s, transform .3s; }
+  .toast .ico { color: #7ee2b0; }
+  .toast--erro { background: var(--erro); }
+  .toast--erro .ico { color: #fff; }
+  .toast.saindo { opacity: 0; transform: translateY(8px); }
 </style>
 {% endblock %}
 
@@ -384,6 +534,7 @@
           <a href="#{{ s.id }}" data-aba="{{ s.id }}" data-titulo="{{ s.titulo }}">
             <svg class="ico" aria-hidden="true"><use href="#i-{{ s.id }}"/></svg>
             <span>{{ s.titulo }}</span>
+            {% if s.id == "evento" and evento.tarefas_atrasadas %}<span class="selo" title="Tarefas atrasadas">{{ evento.tarefas_atrasadas }}</span>{% endif %}
             {% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--espera" title="Ingressos do Creator Day em aberto">{{ cd_em_aberto }}</span>{% endif %}
             {% if s.id == "pendencias" and riscos_altos %}<span class="selo" title="Riscos de prioridade alta">{{ riscos_altos }}</span>{% endif %}
           </a>
@@ -433,7 +584,7 @@
 
     <nav class="abas-cel" aria-label="Seções da Central (celular)">
         {% for s in secoes %}
-        <a href="#{{ s.id }}" data-aba="{{ s.id }}" data-titulo="{{ s.titulo }}"><svg class="ico" aria-hidden="true"><use href="#i-{{ s.id }}"/></svg>{{ s.titulo }}{% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--espera">{{ cd_em_aberto }}</span>{% endif %}{% if s.id == "pendencias" and riscos_altos %}<span class="selo">{{ riscos_altos }}</span>{% endif %}</a>
+        <a href="#{{ s.id }}" data-aba="{{ s.id }}" data-titulo="{{ s.titulo }}"><svg class="ico" aria-hidden="true"><use href="#i-{{ s.id }}"/></svg>{{ s.titulo }}{% if s.id == "evento" and evento.tarefas_atrasadas %}<span class="selo">{{ evento.tarefas_atrasadas }}</span>{% endif %}{% if s.id == "vendas" and cd_em_aberto %}<span class="selo selo--espera">{{ cd_em_aberto }}</span>{% endif %}{% if s.id == "pendencias" and riscos_altos %}<span class="selo">{{ riscos_altos }}</span>{% endif %}</a>
         {% endfor %}
     </nav>
 
@@ -461,7 +612,7 @@
         </div>
 
         <div class="painel-topo">
-          <a class="destaque" href="{{ app }}/creator-day/?tab=ingressos" target="_blank" rel="noopener" data-busca>
+          <a class="destaque" href="#evento" data-ir="evento" data-busca>
             <div class="destaque-topo">
               <span class="destaque-kicker"><svg class="ico" aria-hidden="true"><use href="#i-ingresso"/></svg>Creator Day Experience</span>
               <span class="destaque-data">17/10 · Piatã, Salvador</span>
@@ -479,7 +630,7 @@
             </div>
             <div class="destaque-pe">
               <span><b class="dinheiro">{{ checkout.creatorday.receita_txt }}</b> recebidos</span>
-              <span class="destaque-cta">Ver ingressos <svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></span>
+              <span class="destaque-cta">Abrir o evento <svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></span>
             </div>
           </a>
 
@@ -577,6 +728,229 @@
           </div>
         </div>
       </section>
+
+      {# ================= CREATOR DAY ================= #}
+      {% with e=evento %}
+      <section class="secao" id="evento" data-secao="evento">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-evento"/></svg></span>
+          <div><h2>Creator Day Experience</h2><p>{{ e.info.data|date:"j \d\e F"|lower }} · {{ e.info.hora }} · {{ e.info.local }} · {{ e.info.tema }}. Fornecedores, orçamento, tarefas e roteiro do dia, tudo num lugar.</p></div>
+        </header>
+
+        <div class="subabas" role="tablist" aria-label="Partes do evento">
+          <button type="button" role="tab" id="aba-evento-resumo" aria-controls="evento-resumo" data-subaba="resumo" aria-selected="true">Resumo</button>
+          <button type="button" role="tab" id="aba-evento-fornecedores" aria-controls="evento-fornecedores" data-subaba="fornecedores" aria-selected="false">Fornecedores e parceiros <span>{{ e.fornecedores_total }}</span></button>
+          <button type="button" role="tab" id="aba-evento-tarefas" aria-controls="evento-tarefas" data-subaba="tarefas" aria-selected="false">Tarefas <span data-contador-tarefas>{{ e.tarefas_feitas }}/{{ e.tarefas_total }}</span></button>
+          <button type="button" role="tab" id="aba-evento-roteiro" aria-controls="evento-roteiro" data-subaba="roteiro" aria-selected="false">Roteiro do dia <span>{{ e.roteiro|length }}</span></button>
+        </div>
+
+        {# ---------- resumo ---------- #}
+        <div class="subpainel" id="evento-resumo" role="tabpanel" aria-labelledby="aba-evento-resumo" data-subpainel="resumo">
+          <div class="mini-stats mini-stats--5" data-busca>
+            <div class="mini-stat"><b>{% if e.dias > 0 %}{{ e.dias }}{% elif e.dias == 0 %}Hoje{% else %}Feito{% endif %}</b><span>{% if e.dias > 0 %}dias para o evento{% elif e.dias == 0 %}é dia de evento{% else %}evento realizado{% endif %}</span></div>
+            <div class="mini-stat"><b>{{ e.ingressos.pagas }}</b><span>ingressos pagos</span></div>
+            <div class="mini-stat"><b>{{ cd_em_aberto }}</b><span>compras em aberto</span></div>
+            <div class="mini-stat"><b>{{ e.lista_espera }}</b><span>na lista de espera</span></div>
+            <div class="mini-stat"><b class="dinheiro">{{ e.orcamento.receita_ingressos }}</b><span>recebido em ingressos</span></div>
+          </div>
+
+          <div class="duas-colunas" style="margin-top:14px">
+            <div class="cartao bloco" data-busca>
+              <div class="bloco-cabeca"><h3><span class="icone-tom icone-tom--ok"><svg class="ico" aria-hidden="true"><use href="#i-carteira"/></svg></span>Orçamento</h3><span class="mudo pequeno">só entra o que está fechado</span></div>
+              <dl class="contas">
+                <div><dt>Ingressos vendidos</dt><dd class="dinheiro positivo">+ {{ e.orcamento.receita_ingressos }}</dd></div>
+                <div><dt>Patrocínios fechados</dt><dd class="dinheiro positivo">+ {{ e.orcamento.patrocinios }}</dd></div>
+                <div><dt>Fornecedores fechados <small>({{ e.orcamento.custos_n }})</small></dt><dd class="dinheiro">&minus; {{ e.orcamento.custos }}</dd></div>
+                <div class="contas-total"><dt>Saldo previsto</dt><dd class="dinheiro{% if e.orcamento.saldo_negativo %} negativo{% endif %}">{{ e.orcamento.saldo }}</dd></div>
+              </dl>
+              <div class="pagamento-linha">
+                <div class="trilho" title="{{ e.orcamento.pago_pct }}% dos custos já pagos"><i style="width:{{ e.orcamento.pago_pct }}%"></i></div>
+                <p><span>Já pago <b class="dinheiro">{{ e.orcamento.ja_pago }}</b></span><span>Falta pagar <b class="dinheiro">{{ e.orcamento.falta_pagar }}</b></span></p>
+              </div>
+              {% if e.orcamento.cotacoes %}<p class="nota-rodape"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span>Em cotação: <b class="dinheiro">{{ e.orcamento.em_cotacao }}</b> em {{ e.orcamento.cotacoes }} fornecedor{{ e.orcamento.cotacoes|pluralize:"es" }} (ainda fora da conta).</span></p>{% endif %}
+            </div>
+
+            <div class="cartao bloco" data-busca>
+              <div class="bloco-cabeca"><h3><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>Próximas tarefas</h3>{% if e.tarefas_total %}<button type="button" class="link-seta" data-ir-sub="tarefas">Ver todas <svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></button>{% endif %}</div>
+              {% if e.tarefas_total %}
+              <div class="progresso-linha"><div class="trilho"><i style="width:{{ e.tarefas_pct }}%" data-barra-tarefas></i></div><span><b data-tarefas-feitas>{{ e.tarefas_feitas }}</b> de {{ e.tarefas_total }} feitas{% if e.tarefas_atrasadas %} · <span class="texto-erro">{{ e.tarefas_atrasadas }} atrasada{{ e.tarefas_atrasadas|pluralize }}</span>{% endif %}</span></div>
+              <ul class="lista-curta">
+                {% for i in e.proximas %}
+                <li><span class="lista-curta-texto">{{ i.obj.title }}</span>{% if i.obj.due_date %}<span class="prazo{% if i.atrasada %} prazo--atrasado{% elif i.hoje %} prazo--hoje{% endif %}">{% if i.atrasada %}Atrasada · {% elif i.hoje %}Hoje · {% endif %}{{ i.obj.due_date|date:"d/m" }}</span>{% endif %}</li>
+                {% empty %}
+                <li class="mudo">Tudo feito por aqui.</li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <div class="vazio">
+                <p>O checklist ainda está vazio.</p>
+                <form method="post" action="/central/evento/sugestao/tarefas/">{% csrf_token %}<button type="submit" class="botao">Usar checklist sugerido</button></form>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="duas-colunas" style="margin-top:14px">
+            <div class="cartao bloco" data-busca>
+              <div class="bloco-cabeca"><h3><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-pessoas"/></svg></span>Fornecedores</h3><button type="button" class="link-seta" data-ir-sub="fornecedores">Ver todos <svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></button></div>
+              <div class="situacoes">
+                {% for rotulo, n, tom in e.por_situacao %}<div class="situacao{% if not n %} situacao--zero{% endif %}"><span class="pill pill--{{ tom }}">{{ rotulo }}</span><b>{{ n }}</b></div>{% endfor %}
+              </div>
+              {% if e.categorias_sem %}
+              <p class="falta-titulo">Ainda sem fornecedor</p>
+              <div class="pills">{% for rotulo in e.categorias_sem %}<span class="pill pill--sem-ponto">{{ rotulo }}</span>{% endfor %}</div>
+              {% endif %}
+              <button type="button" class="botao botao--claro" style="margin-top:16px" data-abrir="fornecedor"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Adicionar fornecedor</button>
+            </div>
+
+            <div class="cartao bloco" data-busca>
+              <div class="bloco-cabeca"><h3><span class="icone-tom icone-tom--espera"><svg class="ico" aria-hidden="true"><use href="#i-calendario"/></svg></span>Próximos pagamentos</h3></div>
+              {% if e.pagamentos %}
+              <ul class="lista-curta">
+                {% for p in e.pagamentos %}
+                <li><span class="lista-curta-texto">{{ p.obj.name }}<small>{{ p.obj.get_category_display }}</small></span><span class="lista-curta-valor"><b class="dinheiro">{{ p.falta }}</b><span class="prazo{% if p.vencido %} prazo--atrasado{% endif %}">{% if p.vencido %}Vencido · {% endif %}{{ p.obj.due_date|date:"d/m" }}</span></span></li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <p class="mudo pequeno" style="margin:0">Nenhum pagamento com vencimento. Ao fechar um fornecedor, preencha o valor, o quanto já foi pago e o vencimento.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="cartao bloco links-evento" style="margin-top:14px" data-busca>
+            <div class="bloco-cabeca"><h3>Dados e links do evento</h3></div>
+            <dl class="chave-valor chave-valor--colunas">
+              <div><dt>Data</dt><dd>{{ e.info.data|date:"d/m/Y" }}, {{ e.info.hora }}</dd></div>
+              <div><dt>Local</dt><dd>{{ e.info.local }} <span class="pill pill--confirmar">endereço a confirmar</span></dd></div>
+              <div><dt>Ingresso</dt><dd>{{ e.info.ingresso }}</dd></div>
+              <div><dt>WhatsApp</dt><dd>{{ e.info.whatsapp }}</dd></div>
+            </dl>
+            <div class="botoes-linha">
+              <a class="botao botao--claro" href="/creator-experience/" target="_blank" rel="noopener">Página do evento <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+              <a class="botao botao--claro" href="/checkout/creator-day/" target="_blank" rel="noopener">Checkout <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+              <a class="botao botao--claro" href="{{ app }}/creator-day/?tab=ingressos" target="_blank" rel="noopener">Quem comprou <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+              <a class="botao botao--claro" href="{{ app }}/creator-day/?tab=lista" target="_blank" rel="noopener">Lista de espera <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+            </div>
+          </div>
+        </div>
+
+        {# ---------- fornecedores ---------- #}
+        <div class="subpainel" id="evento-fornecedores" role="tabpanel" aria-labelledby="aba-evento-fornecedores" data-subpainel="fornecedores" hidden>
+          <div class="ferramentas">
+            <div class="filtros" role="group" aria-label="Filtrar fornecedores">
+              <button type="button" class="filtro" data-filtro-fornecedor="todos" aria-pressed="true">Todos <span>{{ e.fornecedores_total }}</span></button>
+              <button type="button" class="filtro" data-filtro-fornecedor="fechados" aria-pressed="false">Fechados</button>
+              <button type="button" class="filtro" data-filtro-fornecedor="cotacao" aria-pressed="false">Em cotação</button>
+              <button type="button" class="filtro" data-filtro-fornecedor="parceiros" aria-pressed="false">Parceiros <span>{{ e.parceiros_total }}</span></button>
+            </div>
+            <button type="button" class="botao" data-abrir="fornecedor"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Novo fornecedor</button>
+          </div>
+          {% for c in e.por_categoria %}{% if c.itens or c.chave != "outros" %}
+          <div class="categoria" data-busca-grupo data-categoria-grupo>
+            <div class="subtitulo"><h3>{{ c.rotulo }}</h3><span>{% if c.itens %}{{ c.itens|length }}{% else %}nenhum ainda{% endif %}</span></div>
+            {% if c.itens %}
+            <div class="cartao lista-itens">
+              {% for i in c.itens %}{% with f=i.obj %}
+              <article class="fornecedor{% if f.status == 'cancelado' %} cancelado{% endif %}" data-busca data-situacao="{{ f.status }}" data-parceiro="{% if i.parceiro %}1{% endif %}">
+                <div class="fornecedor-principal">
+                  <strong>{{ f.name }}</strong>
+                  {% if f.delivers %}<p>{{ f.delivers }}</p>{% endif %}
+                  <div class="contatos">
+                    {% if f.contact_name %}<span><svg class="ico" aria-hidden="true"><use href="#i-pessoas"/></svg>{{ f.contact_name }}</span>{% endif %}
+                    {% if i.whatsapp_link %}<a href="{{ i.whatsapp_link }}" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-mensagem"/></svg>{{ f.whatsapp }}</a>{% elif f.whatsapp %}<span><svg class="ico" aria-hidden="true"><use href="#i-mensagem"/></svg>{{ f.whatsapp }}</span>{% endif %}
+                    {% if f.instagram %}<a href="https://instagram.com/{{ f.instagram }}" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-instagram"/></svg>@{{ f.instagram }}</a>{% endif %}
+                    {% if f.email %}<a href="mailto:{{ f.email }}"><svg class="ico" aria-hidden="true"><use href="#i-email"/></svg>{{ f.email }}</a>{% endif %}
+                  </div>
+                  {% if f.notes %}<p class="fornecedor-nota">{{ f.notes }}</p>{% endif %}
+                </div>
+                <div class="fornecedor-lado">
+                  <div class="pills"><span class="pill pill--{{ i.tom }}">{{ i.situacao }}</span>{% if i.parceiro %}<span class="pill pill--confirmar">{{ i.acordo }}</span>{% endif %}</div>
+                  {% if i.valor %}<b class="fornecedor-valor dinheiro">{{ i.valor }}</b>{% endif %}
+                  {% if i.falta %}<small class="{% if i.vencido %}texto-erro{% else %}mudo{% endif %}">falta <span class="dinheiro">{{ i.falta }}</span>{% if f.due_date %} · vence {{ f.due_date|date:"d/m" }}{% endif %}</small>{% endif %}
+                  <button type="button" class="botao-editar" data-editar="fornecedor" data-id="{{ f.pk }}"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg>Editar</button>
+                </div>
+              </article>
+              {% endwith %}{% endfor %}
+            </div>
+            {% else %}
+            <button type="button" class="vazio-slot" data-abrir="fornecedor" data-categoria="{{ c.chave }}"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Adicionar em {{ c.rotulo }}</button>
+            {% endif %}
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+
+        {# ---------- tarefas ---------- #}
+        <div class="subpainel" id="evento-tarefas" role="tabpanel" aria-labelledby="aba-evento-tarefas" data-subpainel="tarefas" hidden>
+          <div class="ferramentas">
+            {% if e.tarefas_total %}
+            <div class="progresso-linha progresso-linha--largo"><div class="trilho"><i style="width:{{ e.tarefas_pct }}%" data-barra-tarefas></i></div><span><b data-tarefas-feitas>{{ e.tarefas_feitas }}</b> de {{ e.tarefas_total }} feitas{% if e.tarefas_atrasadas %} · <span class="texto-erro">{{ e.tarefas_atrasadas }} atrasada{{ e.tarefas_atrasadas|pluralize }}</span>{% endif %}</span></div>
+            {% else %}<span></span>{% endif %}
+            <button type="button" class="botao" data-abrir="tarefa"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Nova tarefa</button>
+          </div>
+          {% if e.tarefas_total %}
+          {% for a in e.por_area %}{% if a.itens %}
+          <div data-busca-grupo>
+            <div class="subtitulo"><h3>{{ a.rotulo }}</h3><span>{{ a.feitas }} de {{ a.itens|length }}</span></div>
+            <ul class="cartao lista-itens">
+              {% for i in a.itens %}{% with t=i.obj %}
+              <li class="tarefa{% if t.done %} feita{% endif %}" data-busca>
+                <form method="post" action="/central/evento/tarefa/{{ t.pk }}/feita/" data-alternar>{% csrf_token %}
+                  <button type="submit" class="marcar" role="checkbox" aria-checked="{{ t.done|yesno:'true,false' }}" aria-label="Marcar como feita: {{ t.title }}"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></button>
+                </form>
+                <div class="tarefa-texto"><span>{{ t.title }}</span>{% if t.notes %}<small>{{ t.notes }}</small>{% endif %}</div>
+                <div class="tarefa-meta">
+                  {% if t.owner %}<span class="pill pill--sem-ponto">{{ t.owner }}</span>{% endif %}
+                  {% if t.due_date %}<span class="prazo{% if i.atrasada %} prazo--atrasado{% elif i.hoje %} prazo--hoje{% endif %}">{% if i.atrasada %}Atrasada · {% elif i.hoje %}Hoje · {% endif %}{{ t.due_date|date:"d/m" }}</span>{% endif %}
+                  <button type="button" class="botao-editar" data-editar="tarefa" data-id="{{ t.pk }}" aria-label="Editar tarefa: {{ t.title }}"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg><span class="some-cel">Editar</span></button>
+                </div>
+              </li>
+              {% endwith %}{% endfor %}
+            </ul>
+          </div>
+          {% endif %}{% endfor %}
+          {% else %}
+          <div class="cartao vazio vazio--grande">
+            <span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>
+            <h3>O checklist está vazio</h3>
+            <p>Comece com o checklist sugerido: {{ e.checklist_sugerido_total }} tarefas de local, fornecedores, divulgação, vendas, kit, dia do evento e pós-evento, com prazo contado a partir de {{ e.info.data|date:"d/m" }}. Depois é só ajustar.</p>
+            <div class="botoes-linha" style="justify-content:center">
+              <form method="post" action="/central/evento/sugestao/tarefas/">{% csrf_token %}<button type="submit" class="botao">Usar checklist sugerido</button></form>
+              <button type="button" class="botao botao--claro" data-abrir="tarefa">Criar do zero</button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {# ---------- roteiro ---------- #}
+        <div class="subpainel" id="evento-roteiro" role="tabpanel" aria-labelledby="aba-evento-roteiro" data-subpainel="roteiro" hidden>
+          <div class="ferramentas">
+            <p class="mudo" style="margin:0">{{ e.info.data|date:"d/m" }} · começa às {{ e.info.hora }}</p>
+            <button type="button" class="botao" data-abrir="roteiro"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Novo horário</button>
+          </div>
+          {% if e.roteiro %}
+          <ol class="cartao roteiro">
+            {% for r in e.roteiro %}
+            <li class="roteiro-item" data-busca>
+              <div class="roteiro-hora"><b>{{ r.start|time:"H:i" }}</b>{% if r.end %}<span>até {{ r.end|time:"H:i" }}</span>{% endif %}</div>
+              <div class="roteiro-texto"><strong>{{ r.title }}</strong>{% if r.details %}<p>{{ r.details }}</p>{% endif %}{% if r.owner %}<span class="pill pill--sem-ponto">{{ r.owner }}</span>{% endif %}</div>
+              <button type="button" class="botao-editar" data-editar="roteiro" data-id="{{ r.pk }}" aria-label="Editar horário: {{ r.title }}"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg><span class="some-cel">Editar</span></button>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <div class="cartao vazio vazio--grande">
+            <span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-relogio"/></svg></span>
+            <h3>O roteiro do dia está vazio</h3>
+            <p>Use o roteiro sugerido (das 14h às 18h30: credenciamento, boas-vindas, skincare guiado, conexões, troca de conhecimento, momento de desacelerar e encerramento) ou monte o seu.</p>
+            <div class="botoes-linha" style="justify-content:center">
+              <form method="post" action="/central/evento/sugestao/roteiro/">{% csrf_token %}<button type="submit" class="botao">Usar roteiro sugerido</button></form>
+              <button type="button" class="botao botao--claro" data-abrir="roteiro">Criar do zero</button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endwith %}
 
       {# ================= VENDAS ================= #}
       <section class="secao" id="vendas" data-secao="vendas">
@@ -919,6 +1293,95 @@
     </main>
   </div>
 </div>
+
+{% if messages %}
+<div class="toasts" role="status" aria-live="polite" data-toasts>
+  {% for m in messages %}<div class="toast{% if m.level_tag == 'error' %} toast--erro{% endif %}"><svg class="ico" aria-hidden="true"><use href="#{% if m.level_tag == 'error' %}i-alerta{% else %}i-check{% endif %}"/></svg><span>{{ m }}</span></div>{% endfor %}
+</div>
+{% endif %}
+
+{{ evento.dados_edicao|json_script:"evento-dados" }}
+
+<dialog class="modal" data-modal="fornecedor" aria-labelledby="modal-fornecedor-titulo">
+  <form method="post" data-form-modal>
+    {% csrf_token %}
+    <div class="modal-cabeca">
+      <h3 id="modal-fornecedor-titulo" data-titulo-novo="Novo fornecedor" data-titulo-editar="Editar fornecedor">Novo fornecedor</h3>
+      <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
+    </div>
+    <div class="modal-corpo">
+      <div class="campo inteiro"><label for="f-name">Nome do fornecedor ou marca</label><input id="f-name" name="name" required maxlength="160" autocomplete="off"></div>
+      <div class="campo"><label for="f-category">Categoria</label><select id="f-category" name="category">{% for valor, rotulo in evento.categorias %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+      <div class="campo"><label for="f-status">Situação</label><select id="f-status" name="status">{% for valor, rotulo in evento.situacoes %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+      <div class="campo inteiro"><label for="f-delivers">O que entrega</label><textarea id="f-delivers" name="delivers" rows="2" placeholder="Ex.: coffee break para 40 pessoas, com montagem"></textarea></div>
+      <p class="modal-grupo inteiro">Acordo e valores</p>
+      <div class="campo inteiro"><label for="f-deal">Tipo de acordo</label><select id="f-deal" name="deal">{% for valor, rotulo in evento.acordos %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+      <div class="campo"><label for="f-amount">Valor combinado (R$)</label><input id="f-amount" name="amount" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+      <div class="campo"><label for="f-paid_amount">Já pago (R$)</label><input id="f-paid_amount" name="paid_amount" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+      <div class="campo"><label for="f-due_date">Vencimento</label><input id="f-due_date" name="due_date" type="date"></div>
+      <p class="modal-grupo inteiro">Contato</p>
+      <div class="campo"><label for="f-contact_name">Nome do contato</label><input id="f-contact_name" name="contact_name" maxlength="120" autocomplete="off"></div>
+      <div class="campo"><label for="f-whatsapp">WhatsApp</label><input id="f-whatsapp" name="whatsapp" type="tel" inputmode="tel" maxlength="40" placeholder="(71) 9 0000-0000" autocomplete="off"></div>
+      <div class="campo"><label for="f-instagram">Instagram</label><input id="f-instagram" name="instagram" maxlength="80" placeholder="@perfil" autocomplete="off"></div>
+      <div class="campo"><label for="f-email">E-mail</label><input id="f-email" name="email" type="email" maxlength="160" autocomplete="off"></div>
+      <div class="campo inteiro"><label for="f-notes">Observações</label><textarea id="f-notes" name="notes" rows="2" placeholder="Condições, horário de montagem, o que ficou combinado"></textarea></div>
+    </div>
+    <div class="modal-pe">
+      <button type="submit" class="botao-perigo" data-excluir formnovalidate hidden>Excluir</button>
+      <span class="espaco"></span>
+      <button type="button" class="botao botao--claro" data-fechar>Cancelar</button>
+      <button type="submit" class="botao">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal modal--pequeno" data-modal="tarefa" aria-labelledby="modal-tarefa-titulo">
+  <form method="post" data-form-modal>
+    {% csrf_token %}
+    <div class="modal-cabeca">
+      <h3 id="modal-tarefa-titulo" data-titulo-novo="Nova tarefa" data-titulo-editar="Editar tarefa">Nova tarefa</h3>
+      <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
+    </div>
+    <div class="modal-corpo">
+      <div class="campo inteiro"><label for="t-title">Tarefa</label><input id="t-title" name="title" required maxlength="200" autocomplete="off"></div>
+      <div class="campo"><label for="t-area">Área</label><select id="t-area" name="area">{% for valor, rotulo in evento.areas %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+      <div class="campo"><label for="t-due_date">Prazo</label><input id="t-due_date" name="due_date" type="date"></div>
+      <div class="campo inteiro"><label for="t-owner">Responsável</label><input id="t-owner" name="owner" maxlength="80" list="responsaveis" autocomplete="off"></div>
+      <div class="campo inteiro"><label for="t-notes">Observações</label><textarea id="t-notes" name="notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-pe">
+      <button type="submit" class="botao-perigo" data-excluir formnovalidate hidden>Excluir</button>
+      <span class="espaco"></span>
+      <button type="button" class="botao botao--claro" data-fechar>Cancelar</button>
+      <button type="submit" class="botao">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal modal--pequeno" data-modal="roteiro" aria-labelledby="modal-roteiro-titulo">
+  <form method="post" data-form-modal>
+    {% csrf_token %}
+    <div class="modal-cabeca">
+      <h3 id="modal-roteiro-titulo" data-titulo-novo="Novo horário" data-titulo-editar="Editar horário">Novo horário</h3>
+      <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
+    </div>
+    <div class="modal-corpo">
+      <div class="campo"><label for="r-start">Começa</label><input id="r-start" name="start" type="time" required></div>
+      <div class="campo"><label for="r-end">Termina</label><input id="r-end" name="end" type="time"></div>
+      <div class="campo inteiro"><label for="r-title">Atividade</label><input id="r-title" name="title" required maxlength="160" autocomplete="off"></div>
+      <div class="campo inteiro"><label for="r-owner">Quem conduz</label><input id="r-owner" name="owner" maxlength="80" list="responsaveis" autocomplete="off"></div>
+      <div class="campo inteiro"><label for="r-details">Detalhes</label><textarea id="r-details" name="details" rows="3"></textarea></div>
+    </div>
+    <div class="modal-pe">
+      <button type="submit" class="botao-perigo" data-excluir formnovalidate hidden>Excluir</button>
+      <span class="espaco"></span>
+      <button type="button" class="botao botao--claro" data-fechar>Cancelar</button>
+      <button type="submit" class="botao">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<datalist id="responsaveis"><option value="Layfe"><option value="David"></datalist>
 {% endblock %}
 
 {% block scripts %}
@@ -934,7 +1397,18 @@
   const tituloSecao = document.querySelector("[data-titulo-secao]");
   const normal = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-  const mostrar = (id) => {
+  /* ---------- seções e subabas (endereço: #secao ou #secao/subaba) ---------- */
+  const subabas = [...raiz.querySelectorAll("[data-subaba]")];
+  const subpaineis = [...raiz.querySelectorAll("[data-subpainel]")];
+  const mostrarSub = (sub) => {
+    if (!subpaineis.some((p) => p.dataset.subpainel === sub)) sub = "resumo";
+    subabas.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.subaba === sub)));
+    subpaineis.forEach((p) => { p.hidden = p.dataset.subpainel !== sub; });
+    const ativa = subabas.find((b) => b.dataset.subaba === sub);
+    if (ativa && ativa.offsetParent) ativa.scrollIntoView({ block: "nearest", inline: "nearest" });
+  };
+  const mostrar = (endereco) => {
+    let [id, sub] = (endereco || "").split("/");
     if (!ids.includes(id)) id = "inicio";
     abas.forEach((a) => {
       const ativa = a.dataset.aba === id;
@@ -948,6 +1422,7 @@
       }
     });
     secoes.forEach((s) => s.classList.toggle("ativa", s.dataset.secao === id));
+    if (id === "evento") mostrarSub(sub);
   };
   const limparBusca = () => {
     corpo.classList.remove("buscando");
@@ -955,20 +1430,29 @@
     secoes.forEach((s) => { s.hidden = false; });
     semResultado.hidden = true;
   };
-  const irPara = (id) => {
+  const irPara = (endereco, rolar = true) => {
     if (busca.value) { busca.value = ""; limparBusca(); }
-    history.replaceState(null, "", "#" + id);
-    mostrar(id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    history.replaceState(null, "", "#" + endereco);
+    mostrar(endereco);
+    if (rolar) window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   abas.forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); irPara(a.dataset.aba); }));
   raiz.querySelectorAll("[data-ir]").forEach((el) => el.addEventListener("click", (e) => {
-    if (!ids.includes(el.dataset.ir)) return;
+    if (!ids.includes(el.dataset.ir.split("/")[0])) return;
     e.preventDefault();
     irPara(el.dataset.ir);
   }));
+  subabas.forEach((b) => b.addEventListener("click", () => irPara("evento/" + b.dataset.subaba, false)));
+  raiz.querySelectorAll("[data-ir-sub]").forEach((b) => b.addEventListener("click", () => irPara("evento/" + b.dataset.irSub)));
+  subabas.forEach((b, i) => b.addEventListener("keydown", (e) => {
+    if (!["ArrowRight", "ArrowLeft"].includes(e.key)) return;
+    const proxima = subabas[(i + (e.key === "ArrowRight" ? 1 : subabas.length - 1)) % subabas.length];
+    proxima.focus();
+    proxima.click();
+  }));
 
+  /* ---------- busca ---------- */
   busca.addEventListener("input", () => {
     const termo = normal(busca.value.trim());
     if (!termo) { limparBusca(); mostrar(location.hash.slice(1)); return; }
@@ -990,11 +1474,13 @@
     semResultado.hidden = total > 0;
   });
   document.addEventListener("keydown", (e) => {
-    const digitando = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+    const digitando = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+    if (document.querySelector("dialog[open]")) return;
     if ((e.key === "/" && !digitando) || (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey))) { e.preventDefault(); busca.focus(); }
     if (e.key === "Escape" && document.activeElement === busca) { busca.value = ""; limparBusca(); mostrar(location.hash.slice(1)); busca.blur(); }
   });
 
+  /* ---------- filtros ---------- */
   const filtros = [...raiz.querySelectorAll("[data-filtro]")];
   filtros.forEach((f) => f.addEventListener("click", () => {
     filtros.forEach((outro) => outro.setAttribute("aria-pressed", String(outro === f)));
@@ -1003,7 +1489,89 @@
       p.classList.toggle("filtrado", !passa);
     });
   }));
+  const filtrosFornecedor = [...raiz.querySelectorAll("[data-filtro-fornecedor]")];
+  const REGRAS = {
+    todos: () => true,
+    fechados: (el) => ["fechado", "pago"].includes(el.dataset.situacao),
+    cotacao: (el) => ["cotar", "orcamento", "negociando"].includes(el.dataset.situacao),
+    parceiros: (el) => el.dataset.parceiro === "1",
+  };
+  filtrosFornecedor.forEach((f) => f.addEventListener("click", () => {
+    const regra = REGRAS[f.dataset.filtroFornecedor];
+    filtrosFornecedor.forEach((outro) => outro.setAttribute("aria-pressed", String(outro === f)));
+    raiz.querySelectorAll(".fornecedor").forEach((el) => el.classList.toggle("filtrado", !regra(el)));
+    raiz.querySelectorAll("[data-categoria-grupo]").forEach((g) => {
+      const visiveis = g.querySelectorAll(".fornecedor:not(.filtrado)").length;
+      g.classList.toggle("filtrado", f.dataset.filtroFornecedor !== "todos" && visiveis === 0);
+    });
+  }));
 
+  /* ---------- janelas de edição ---------- */
+  const dadosEl = document.getElementById("evento-dados");
+  const dados = dadosEl ? JSON.parse(dadosEl.textContent) : {};
+  const abrirModal = (tipo, id, extras = {}) => {
+    const modal = document.querySelector(`[data-modal="${tipo}"]`);
+    if (!modal) return;
+    const form = modal.querySelector("[data-form-modal]");
+    const titulo = modal.querySelector("h3");
+    const excluir = form.querySelector("[data-excluir]");
+    form.reset();
+    const valores = id ? (dados[tipo] || {})[id] || {} : extras;
+    Object.entries(valores).forEach(([campo, valor]) => {
+      if (form.elements[campo]) form.elements[campo].value = valor ?? "";
+    });
+    form.action = id ? `/central/evento/${tipo}/${id}/salvar/` : `/central/evento/${tipo}/salvar/`;
+    titulo.textContent = id ? titulo.dataset.tituloEditar : titulo.dataset.tituloNovo;
+    excluir.hidden = !id;
+    if (id) excluir.setAttribute("formaction", `/central/evento/${tipo}/${id}/excluir/`);
+    modal.showModal();
+    setTimeout(() => form.querySelector("input:not([type=hidden]), select, textarea")?.focus(), 30);
+  };
+  raiz.querySelectorAll("[data-abrir]").forEach((b) => b.addEventListener("click", () => {
+    abrirModal(b.dataset.abrir, null, b.dataset.categoria ? { category: b.dataset.categoria } : {});
+  }));
+  raiz.querySelectorAll("[data-editar]").forEach((b) => b.addEventListener("click", () => abrirModal(b.dataset.editar, b.dataset.id)));
+  document.querySelectorAll("dialog.modal").forEach((modal) => {
+    modal.querySelectorAll("[data-fechar]").forEach((b) => b.addEventListener("click", () => modal.close()));
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.close(); });
+    const form = modal.querySelector("[data-form-modal]");
+    form.addEventListener("submit", (e) => {
+      if (e.submitter?.hasAttribute("data-excluir") && !confirm("Excluir de vez? Não dá para desfazer.")) {
+        e.preventDefault();
+        return;
+      }
+      form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = true; });
+    });
+  });
+
+  /* ---------- marcar tarefa sem recarregar ---------- */
+  raiz.querySelectorAll("form[data-alternar]").forEach((form) => form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const botao = form.querySelector("button");
+    const item = form.closest(".tarefa");
+    botao.disabled = true;
+    try {
+      const resposta = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { "X-Central-Fetch": "1" }, credentials: "same-origin" });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      const r = await resposta.json();
+      item.classList.toggle("feita", r.feita);
+      botao.setAttribute("aria-checked", String(r.feita));
+      raiz.querySelectorAll("[data-tarefas-feitas]").forEach((el) => { el.textContent = r.feitas; });
+      raiz.querySelectorAll("[data-barra-tarefas]").forEach((el) => { el.style.width = (r.total ? Math.round(r.feitas * 100 / r.total) : 0) + "%"; });
+      raiz.querySelectorAll("[data-contador-tarefas]").forEach((el) => { el.textContent = `${r.feitas}/${r.total}`; });
+    } catch (erro) {
+      form.submit();
+    } finally {
+      botao.disabled = false;
+    }
+  }));
+
+  /* ---------- avisos que somem sozinhos ---------- */
+  document.querySelectorAll("[data-toasts] .toast").forEach((t, i) => {
+    setTimeout(() => { t.classList.add("saindo"); setTimeout(() => t.remove(), 350); }, 4200 + i * 400);
+  });
+
+  /* ---------- olho e atualizar ---------- */
   const olho = document.querySelector("[data-olho]");
   const CHAVE = "central-valores-ocultos";
   const aplicarOlho = (ocultar) => {
@@ -1016,7 +1584,6 @@
     aplicarOlho(ocultar);
     try { localStorage.setItem(CHAVE, ocultar ? "1" : "0"); } catch (e) { /* sem armazenamento */ }
   });
-
   document.querySelector("[data-atualizar]")?.addEventListener("click", (e) => {
     e.currentTarget.disabled = true;
     location.reload();

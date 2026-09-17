@@ -955,3 +955,110 @@ class EventWaitlistEntry(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.event_key} - {self.name}"
+
+
+class EventSupplier(TimestampedModel):
+    """Fornecedor ou parceiro de um evento do clube (hoje o Creator Day),
+    cadastrado pelo time na Central, aba Creator Day > Fornecedores."""
+
+    CATEGORY_CHOICES = [
+        ("local", "Espaço e estrutura"),
+        ("comida", "Comida e bebida"),
+        ("decoracao", "Decoração e ambientação"),
+        ("foto", "Foto e vídeo"),
+        ("som", "Som e luz"),
+        ("skincare", "Marcas de skincare"),
+        ("kit", "Kit e brindes"),
+        ("grafica", "Gráfica e sinalização"),
+        ("equipe", "Equipe de apoio"),
+        ("transporte", "Transporte"),
+        ("outros", "Outros"),
+    ]
+    STATUS_CHOICES = [
+        ("cotar", "A cotar"),
+        ("orcamento", "Orçamento recebido"),
+        ("negociando", "Negociando"),
+        ("fechado", "Fechado"),
+        ("pago", "Pago"),
+        ("cancelado", "Cancelado"),
+    ]
+    DEAL_CHOICES = [
+        ("pago", "Pago pelo clube"),
+        ("permuta", "Permuta"),
+        ("patrocinio", "Patrocínio (paga o clube)"),
+        ("cortesia", "Cortesia"),
+    ]
+
+    event_key = models.CharField(max_length=40, db_index=True)
+    category = models.CharField("categoria", max_length=20, choices=CATEGORY_CHOICES, default="outros")
+    name = models.CharField("nome", max_length=160)
+    delivers = models.TextField("o que entrega", blank=True)
+    contact_name = models.CharField("contato", max_length=120, blank=True)
+    whatsapp = models.CharField(max_length=40, blank=True)
+    email = models.EmailField("e-mail", max_length=160, blank=True)
+    instagram = models.CharField(max_length=80, blank=True)
+    status = models.CharField("situação", max_length=20, choices=STATUS_CHOICES, default="cotar")
+    deal = models.CharField("acordo", max_length=20, choices=DEAL_CHOICES, default="pago")
+    amount = models.DecimalField("valor combinado", max_digits=10, decimal_places=2, null=True, blank=True)
+    paid_amount = models.DecimalField("já pago", max_digits=10, decimal_places=2, default=0)
+    due_date = models.DateField("vencimento", null=True, blank=True)
+    notes = models.TextField("observações", blank=True)
+
+    class Meta:
+        ordering = ["category", "name", "pk"]
+        verbose_name = "fornecedor do evento"
+        verbose_name_plural = "fornecedores do evento"
+
+    def __str__(self) -> str:
+        return f"{self.event_key} - {self.name}"
+
+
+class EventTask(TimestampedModel):
+    """Tarefa do checklist de um evento, marcada como feita na Central."""
+
+    AREA_CHOICES = [
+        ("local", "Local e estrutura"),
+        ("fornecedores", "Fornecedores"),
+        ("divulgacao", "Divulgação"),
+        ("vendas", "Vendas e ingressos"),
+        ("programacao", "Programação"),
+        ("kit", "Kit e brindes"),
+        ("dia", "No dia"),
+        ("pos", "Pós-evento"),
+    ]
+
+    event_key = models.CharField(max_length=40, db_index=True)
+    title = models.CharField("tarefa", max_length=200)
+    area = models.CharField("área", max_length=20, choices=AREA_CHOICES, default="local")
+    owner = models.CharField("responsável", max_length=80, blank=True)
+    due_date = models.DateField("prazo", null=True, blank=True)
+    done = models.BooleanField("feita", default=False)
+    done_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField("observações", blank=True)
+
+    class Meta:
+        ordering = ["done", models.F("due_date").asc(nulls_last=True), "pk"]
+        verbose_name = "tarefa do evento"
+        verbose_name_plural = "tarefas do evento"
+
+    def __str__(self) -> str:
+        return f"{self.event_key} - {self.title}"
+
+
+class EventScheduleItem(TimestampedModel):
+    """Um horário do roteiro do dia do evento."""
+
+    event_key = models.CharField(max_length=40, db_index=True)
+    start = models.TimeField("início")
+    end = models.TimeField("fim", null=True, blank=True)
+    title = models.CharField("atividade", max_length=160)
+    owner = models.CharField("responsável", max_length=80, blank=True)
+    details = models.TextField("detalhes", blank=True)
+
+    class Meta:
+        ordering = ["start", "pk"]
+        verbose_name = "horário do roteiro"
+        verbose_name_plural = "roteiro do evento"
+
+    def __str__(self) -> str:
+        return f"{self.event_key} - {self.start:%H:%M} {self.title}"
