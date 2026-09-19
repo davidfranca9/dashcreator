@@ -43,6 +43,9 @@ class Workspace(TimestampedModel):
     business_street = models.CharField(max_length=180, blank=True, default="")
     business_number = models.CharField(max_length=20, blank=True, default="")
     business_complement = models.CharField(max_length=120, blank=True, default="")
+    # Cidade e UF vêm do CEP e valem para o foro do contrato (Jurídico).
+    business_city = models.CharField(max_length=120, blank=True, default="")
+    business_state = models.CharField(max_length=2, blank=True, default="")
     business_cnpj = models.CharField(max_length=18, blank=True, default="")
     business_pis = models.CharField(max_length=20, blank=True, default="")
     instagram_url = models.URLField(blank=True, default="")

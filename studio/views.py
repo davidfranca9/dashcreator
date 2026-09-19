@@ -183,7 +183,7 @@ def _compose_company_address(data: dict) -> str:
 
 
 def _viacep_lookup(zip_code: str) -> dict | None:
-    """Consulta o ViaCEP (grátis, sem token). Retorna {street, zip_code} ou None."""
+    """Consulta o ViaCEP (grátis, sem token). Retorna {street, zip_code, city, state} ou None."""
     try:
         req = Request(f"https://viacep.com.br/ws/{zip_code}/json/", headers={"Accept": "application/json"})
         with urlopen(req, timeout=8) as response:
@@ -192,11 +192,13 @@ def _viacep_lookup(zip_code: str) -> dict | None:
         return None
     if not isinstance(data, dict) or data.get("erro"):
         return None
-    street = (data.get("logradouro") or "").strip()
-    if not street:
-        return None
     cep = (data.get("cep") or "").strip() or f"{zip_code[:5]}-{zip_code[5:]}"
-    return {"street": street, "zip_code": cep}
+    return {
+        "street": (data.get("logradouro") or "").strip(),
+        "zip_code": cep,
+        "city": (data.get("localidade") or "").strip(),
+        "state": (data.get("uf") or "").strip().upper(),
+    }
 
 
 @login_required
@@ -209,9 +211,9 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
     # Sem a API paga (APIBrasil) configurada, usa o ViaCEP (grátis).
     if not django_settings.APIBRASIL_CEP_URL:
         result = _viacep_lookup(zip_code)
-        if result is None:
+        if result is None or not result["street"]:
             return JsonResponse({"ok": False, "error": "CEP não encontrado."}, status=404)
-        return JsonResponse({"ok": True, "zip_code": result["zip_code"], "street": result["street"]})
+        return JsonResponse({"ok": True, **result})
 
     headers = {"Accept": "application/json"}
     if django_settings.APIBRASIL_CEP_TOKEN:
@@ -226,8 +228,8 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
             payload = json.loads(response.read().decode("utf-8"))
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
         result = _viacep_lookup(zip_code)  # se a API paga falhar, cai pro ViaCEP
-        if result is not None:
-            return JsonResponse({"ok": True, "zip_code": result["zip_code"], "street": result["street"]})
+        if result is not None and result["street"]:
+            return JsonResponse({"ok": True, **result})
         return JsonResponse({"ok": False, "error": "A busca de CEP falhou. Tente novamente."}, status=502)
 
     data = payload
@@ -272,6 +274,8 @@ def business_zip_lookup(request: HttpRequest) -> JsonResponse:
             "ok": True,
             "zip_code": normalized_zip_code,
             "street": street,
+            "city": _first_non_empty(data.get("city"), data.get("municipio"), data.get("cidade"), data.get("localidade")),
+            "state": _first_non_empty(data.get("state"), data.get("uf"), data.get("estado")).upper()[:2],
         }
     )
 
@@ -479,6 +483,50 @@ def _build_creator_line(name, gender, marital_key, document, address, email) -> 
     )
 
 
+# Estado por UF, com o artigo certo: "Estado da Bahia", "Estado de São Paulo", "Estado do Ceará".
+UF_ESTADOS = {
+    "AC": ("do", "Acre"), "AL": ("de", "Alagoas"), "AM": ("do", "Amazonas"), "AP": ("do", "Amapá"),
+    "BA": ("da", "Bahia"), "CE": ("do", "Ceará"), "DF": ("do", "Distrito Federal"), "ES": ("do", "Espírito Santo"),
+    "GO": ("de", "Goiás"), "MA": ("do", "Maranhão"), "MG": ("de", "Minas Gerais"), "MS": ("de", "Mato Grosso do Sul"),
+    "MT": ("de", "Mato Grosso"), "PA": ("do", "Pará"), "PB": ("da", "Paraíba"), "PE": ("de", "Pernambuco"),
+    "PI": ("do", "Piauí"), "PR": ("do", "Paraná"), "RJ": ("do", "Rio de Janeiro"), "RN": ("do", "Rio Grande do Norte"),
+    "RO": ("de", "Rondônia"), "RR": ("de", "Roraima"), "RS": ("do", "Rio Grande do Sul"), "SC": ("de", "Santa Catarina"),
+    "SE": ("de", "Sergipe"), "SP": ("de", "São Paulo"), "TO": ("do", "Tocantins"),
+}
+
+
+def creator_city_state(workspace) -> tuple[str, str]:
+    """Cidade e UF da creator. Se só tiver o CEP, busca uma vez e guarda no perfil."""
+    cidade = (workspace.business_city or "").strip()
+    uf = (workspace.business_state or "").strip().upper()
+    if cidade and uf:
+        return cidade, uf
+    zip_code = re.sub(r"\D", "", workspace.business_zip_code or "")
+    if len(zip_code) != 8:
+        return cidade, uf
+    achado = _viacep_lookup(zip_code)
+    if not achado or not achado["city"]:
+        return cidade, uf
+    cidade, uf = cidade or achado["city"], uf or achado["state"]
+    if workspace.pk:
+        workspace.business_city, workspace.business_state = cidade, uf
+        workspace.save(update_fields=["business_city", "business_state", "updated_at"])
+    return cidade, uf
+
+
+def _contract_venue(workspace) -> tuple[str, str]:
+    """(linha da assinatura, trecho do foro) a partir da cidade da creator."""
+    cidade, uf = creator_city_state(workspace)
+    if not cidade:
+        return "", "o foro da comarca do domicílio da CONTRATADA"
+    artigo, estado = UF_ESTADOS.get(uf, ("", ""))
+    local = f"{cidade}/{uf}" if uf else cidade
+    foro = f"o foro da Comarca de {cidade}"
+    if estado:
+        foro = f"{foro}, Estado {artigo} {estado}"
+    return local, foro
+
+
 def _project_contract_payload(workspace, user, project: Project) -> dict:
     settings_values = settings_map(workspace)
     creator_name = _contract_placeholder(
@@ -518,8 +566,12 @@ def _project_contract_payload(workspace, user, project: Project) -> dict:
     image_term = project.image_license_term_days or 90
     image_term_months_text, image_term_days_text = _license_term_labels(image_term)
     license_expires_on = project.image_usage_expires_on or project.due_date
+    contract_local, contract_venue = _contract_venue(workspace)
 
     return {
+        "contract_local": contract_local,
+        "contract_local_text": f"{contract_local}, " if contract_local else "",
+        "contract_venue": contract_venue,
         "is_ads": is_ads,
         "contract_title": contract_title,
         "creator_name": creator_name,
@@ -725,8 +777,8 @@ def _contract_clauses(payload: dict) -> list[dict[str, str]]:
             "body": (
                 "11.1. Qualquer alteração neste contrato somente terá validade se realizada por meio de termo aditivo por escrito, "
                 "assinado por ambas as partes.<br/>"
-                "11.2. Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem o foro da Comarca de Salvador, "
-                "Estado da Bahia, com renúncia de qualquer outro, por mais privilegiado que seja."
+                "11.2. Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem "
+                f"{payload['contract_venue']}, com renúncia de qualquer outro, por mais privilegiado que seja."
             ),
         },
     ]
@@ -853,7 +905,7 @@ def _build_contract_pdf_from_clauses(workspace, user, project: Project, clauses:
                 "E, por estarem justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor e forma, para que produza seus efeitos legais.",
                 body_style,
             ),
-            Paragraph(f"Salvador/BA, {payload['close_date_text']}.", body_style),
+            Paragraph(f"{payload['contract_local_text']}{payload['close_date_text']}.", body_style),
             Spacer(1, 26),
             Paragraph("__________________________________", signature_style),
             Paragraph(f"{payload['creator_name']}<br/>CNPJ nº {payload['creator_cnpj']}", signature_style),
@@ -1098,8 +1150,8 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
             (
                 "11.1. Qualquer alteração neste contrato somente terá validade se realizada por meio de termo aditivo por escrito, "
                 "assinado por ambas as partes.<br/>"
-                "11.2. Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem o foro da Comarca de Salvador, "
-                "Estado da Bahia, com renúncia de qualquer outro, por mais privilegiado que seja."
+                "11.2. Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem "
+                f"{payload['contract_venue']}, com renúncia de qualquer outro, por mais privilegiado que seja."
             ),
             body_style,
         ),
@@ -1108,7 +1160,7 @@ def _build_contract_pdf(workspace, user, project: Project) -> bytes:
             "E, por estarem justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor e forma, para que produza seus efeitos legais.",
             body_style,
         ),
-        Paragraph(f"Salvador/BA, {payload['close_date_text']}.", body_style),
+        Paragraph(f"{payload['contract_local_text']}{payload['close_date_text']}.", body_style),
         Spacer(1, 26),
         Paragraph("__________________________________", signature_style),
         Paragraph(f"{payload['creator_name']}<br/>CNPJ nº {payload['creator_cnpj']}", signature_style),

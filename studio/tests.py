@@ -3584,7 +3584,7 @@ class DashboardSmokeTest(TestCase):
     def test_profile_zip_lookup_returns_street_from_api_brasil_payload(self, mocked_urlopen):
         self.client.force_login(self.user)
         mocked_urlopen.return_value.__enter__.return_value.read.return_value = (
-            b'{"result": {"cep": "41810-205", "logradouro": "Rua das Palmeiras"}}'
+            b'{"result": {"cep": "41810-205", "logradouro": "Rua das Palmeiras", "municipio": "Salvador", "uf": "BA"}}'
         )
 
         with self.settings(
@@ -3600,6 +3600,8 @@ class DashboardSmokeTest(TestCase):
                 "ok": True,
                 "zip_code": "41810-205",
                 "street": "Rua das Palmeiras",
+                "city": "Salvador",
+                "state": "BA",
             },
         )
 

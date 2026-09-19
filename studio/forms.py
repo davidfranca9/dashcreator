@@ -1078,6 +1078,12 @@ class ProjectForm(forms.ModelForm):
 
 
 class WorkspaceBusinessForm(forms.ModelForm):
+    def clean_business_state(self):
+        return (self.cleaned_data.get("business_state") or "").strip().upper()
+
+    def clean_business_city(self):
+        return (self.cleaned_data.get("business_city") or "").strip()
+
     def clean_business_zip_code(self):
         zip_code = re.sub(r"\D", "", self.cleaned_data.get("business_zip_code", ""))
         if not zip_code:
@@ -1094,6 +1100,8 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "business_street",
             "business_number",
             "business_complement",
+            "business_city",
+            "business_state",
             "business_cnpj",
             "business_pis",
             "instagram_url",
@@ -1106,6 +1114,8 @@ class WorkspaceBusinessForm(forms.ModelForm):
             "business_street": "Rua",
             "business_number": "Número",
             "business_complement": "Complemento",
+            "business_city": "Cidade",
+            "business_state": "Estado (UF)",
             "business_cnpj": "CPF ou CNPJ",
             "business_pis": "Chave PIX",
             "instagram_url": "Instagram",

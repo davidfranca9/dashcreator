@@ -36,7 +36,7 @@
                         {{ business_form.business_zip_code }}
                         <button type="button" class="ghost-button small" data-zip-submit>Buscar CEP</button>
                     </div>
-                    <span class="field-help">Digite o CEP para preencher a rua automaticamente.</span>
+                    <span class="field-help">Digite o CEP para preencher rua, cidade e estado. A cidade entra no foro do contrato do Jurídico.</span>
                     {{ business_form.business_zip_code.errors }}
                 </div>
                 <div class="form-field form-field--full">
@@ -53,6 +53,16 @@
                     <label for="{{ business_form.business_complement.id_for_label }}">{{ business_form.business_complement.label }}</label>
                     {{ business_form.business_complement }}
                     {{ business_form.business_complement.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.business_city.id_for_label }}">{{ business_form.business_city.label }}</label>
+                    {{ business_form.business_city }}
+                    {{ business_form.business_city.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ business_form.business_state.id_for_label }}">{{ business_form.business_state.label }}</label>
+                    {{ business_form.business_state }}
+                    {{ business_form.business_state.errors }}
                 </div>
                 <div class="form-field">
                     <label for="{{ business_form.business_cnpj.id_for_label }}">{{ business_form.business_cnpj.label }}</label>
@@ -112,6 +122,8 @@
     if (!form) return;
     const zipInput = form.querySelector("#{{ business_form.business_zip_code.id_for_label }}");
     const streetInput = form.querySelector("#{{ business_form.business_street.id_for_label }}");
+    const cityInput = form.querySelector("#{{ business_form.business_city.id_for_label }}");
+    const stateInput = form.querySelector("#{{ business_form.business_state.id_for_label }}");
     const submitButton = form.querySelector("[data-zip-submit]");
     const feedback = form.querySelector("[data-zip-feedback]");
     const csrfToken = form.querySelector("input[name='csrfmiddlewaretoken']");
@@ -134,6 +146,8 @@
             if (!r.ok || !p.ok) { setFeedback(p.error || "Não foi possível buscar esse CEP.", true); return; }
             zipInput.value = p.zip_code || zipInput.value;
             if (p.street) streetInput.value = p.street;
+            if (p.city && cityInput) cityInput.value = p.city;
+            if (p.state && stateInput) stateInput.value = p.state;
             setFeedback("CEP encontrado.");
         } catch (e) { setFeedback("Não foi possível buscar esse CEP agora.", true); }
         finally { submitButton.disabled = false; }

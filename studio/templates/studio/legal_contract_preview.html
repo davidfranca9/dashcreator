@@ -17,6 +17,9 @@
         <input type="hidden" name="company_address" value="{{ project.company_address }}">
         <input type="hidden" name="company_phone" value="{{ project.company_phone }}">
 
+        {% if not payload.contract_local %}
+        <p class="field-help" style="margin:0 0 12px">Sem cidade no seu perfil: o contrato usa "foro da comarca do domicílio da CONTRATADA". Preencha o CEP em <a href="{% url 'profile' %}">Perfil</a> para sair a sua cidade.</p>
+        {% endif %}
         <div class="contract-preview-actions">
             <div>
                 <span class="chip">{{ payload.company_name }}</span>
@@ -48,7 +51,7 @@
 
             <footer class="contract-preview-signatures">
                 <p>E, por estarem justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor e forma, para que produza seus efeitos legais.</p>
-                <p>Salvador/BA, {{ payload.close_date_text }}.</p>
+                <p>{{ payload.contract_local_text }}{{ payload.close_date_text }}.</p>
                 <div>
                     <span>__________________________________</span>
                     <strong>{{ payload.creator_name }}</strong>
