@@ -102,6 +102,7 @@
   .bloco-cabeca h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 16px; font-weight: 600; color: var(--tinta); }
   .duas-colunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
   @media (max-width: 900px) { .duas-colunas { grid-template-columns: minmax(0, 1fr); } }
+  .tres-colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 14px; align-items: start; }
   .sem-resultado { display: grid; justify-items: center; gap: 6px; padding: 56px 16px; text-align: center; color: var(--mudo); background: var(--superficie); border: 1px dashed var(--linha-2); border-radius: var(--raio); }
   .sem-resultado .ico { width: 26px; height: 26px; }
   .sem-resultado strong { font-size: 16px; color: var(--tinta); }
@@ -645,7 +646,7 @@
               <span class="kpi-topo"><span class="icone-tom icone-tom--ok"><svg class="ico" aria-hidden="true"><use href="#i-carteira"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
               <span class="kpi-rotulo">Recebido no checkout</span>
               <span class="kpi-valor dinheiro">{{ receita_checkout }}</span>
-              <span class="kpi-sub">pagos: Dash {{ checkout.dashcreator.pagas }} · Creator Day {{ checkout.creatorday.pagas }}</span>
+              <span class="kpi-sub">pagos: Dash {{ checkout.dashcreator.pagas }} · Creator Day {{ checkout.creatorday.pagas }} · HPC {{ checkout.hpc.pagas }}</span>
             </a>
             <a class="kpi" href="#numeros" data-ir="numeros">
               <span class="kpi-topo"><span class="icone-tom"><svg class="ico" aria-hidden="true"><use href="#i-globo"/></svg></span><svg class="ico kpi-seta" aria-hidden="true"><use href="#i-seta"/></svg></span>
@@ -989,7 +990,7 @@
         </div>
 
         <div class="subtitulo"><h3>Checkout</h3><span>quantas compras começaram e quantas foram pagas</span></div>
-        <div class="duas-colunas">
+        <div class="tres-colunas">
           {% with c=checkout.dashcreator %}
           <div class="cartao conversao" data-busca>
             <div class="conversao-topo"><h3>Dash Creator</h3><span>{{ c.iniciadas }} iniciadas</span></div>
@@ -1013,6 +1014,19 @@
               <div><dt>Aguardando</dt><dd>{{ c.aguardando }}</dd></div>
               <div><dt>Não finalizou</dt><dd>{{ c.nao_finalizou }}</dd></div>
               <div><dt>Recusados</dt><dd>{{ c.recusadas }}</dd></div>
+            </dl>
+          </div>
+          {% endwith %}
+          {% with c=checkout.hpc %}
+          <div class="cartao conversao" data-busca>
+            <div class="conversao-topo"><h3>Mentoria HPC</h3><span>{{ c.iniciadas }} iniciadas</span></div>
+            <p class="conversao-valor"><b>{{ c.pagas }}</b> pagas · {% widthratio c.pagas c.iniciadas 100 %}% das iniciadas</p>
+            <div class="trilho" title="{{ c.pagas }} de {{ c.iniciadas }} pagas"><i style="width:{% widthratio c.pagas c.iniciadas 100 %}%"></i></div>
+            <dl>
+              <div><dt>Recebido</dt><dd class="dinheiro">{{ c.receita_txt }}</dd></div>
+              <div><dt>Aguardando</dt><dd>{{ c.aguardando }}</dd></div>
+              <div><dt>Não finalizou</dt><dd>{{ c.nao_finalizou }}</dd></div>
+              <div><dt>Recusadas</dt><dd>{{ c.recusadas }}</dd></div>
             </dl>
           </div>
           {% endwith %}

@@ -1,0 +1,27 @@
+PALETA E TIPOGRAFIA (alinhadas ao site da The Creators Club, landing/index.html)
+
+Fontes: Playfair Display (títulos, pesos 400 e 500, itálico 400 nos destaques) e Inter (texto e interface, pesos 400 a 700)
+
+Cores (hex do TCC e oklch usado em src/styles.css):
+Papel (fundo):        #f5f1e8  oklch(0.959 0.013 87)
+Papel escuro:         #eae4d4  oklch(0.919 0.022 90)
+Azul-marinho:         #0a2463  oklch(0.288 0.116 264)
+Azul claro (foco):    #3e6cb5  oklch(0.535 0.126 259)
+Tinta (texto):        #1a1410  oklch(0.197 0.013 56)
+Tinta suave:          #5a5345  oklch(0.445 0.024 85)
+Dourado:              #c9956a  oklch(0.71 0.085 60)
+Dourado para texto grande sobre creme:   oklch(0.588 0.094 61)  (contraste 3,4:1 a 3,8:1)
+Dourado para texto pequeno sobre creme:  oklch(0.501 0.082 61)  (contraste 4,8:1 a 5,4:1)
+
+O dourado exato só passa no contraste sobre o azul-marinho (5,5:1); sobre o creme use os dois tons fechados acima.
+
+Linguagem: botões quadrados, cartões com cantos de 10px e linha fina, imagens com cantos de 8px, sem sombra dura.
+Cantos de "visor de câmera" (o desenho do logo do TCC) no topo e no vídeo.
+
+Versão anterior (azul elétrico oklch(0.56 0.245 255), amarelo oklch(0.86 0.17 95), Montserrat 400/500/600):
+avaliacao/versao-anterior-azul-e-amarelo.zip
+
+Imagem:
+O ZIP original continha apenas uma referência expirada ao logo. O logo foi remontado a partir dos glifos oficiais do logo do TCC
+(public/hpc-logo.png para fundo claro, public/hpc-logo-claro.png para fundo escuro). Se existir o arquivo original da HPC, é só
+salvar por cima com os mesmos nomes. Os espaços para vídeo e print da área de membros estão prontos para substituição (src/config.ts).

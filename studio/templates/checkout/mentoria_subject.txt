@@ -1,0 +1,1 @@
+{% autoescape off %}Sua vaga na {{ purchase.product_name }} está confirmada{% endautoescape %}

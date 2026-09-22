@@ -73,11 +73,11 @@ PRODUTOS = [
         "situacao": "À venda", "tom": "ok", "confirmar": True,
     },
     {
-        "nome": "Mentoria HPC", "infoproduto": "Mentoria HPC",
-        "frase": "Mentoria em grupo e produto mais vendido. O significado de HPC e a relação com o Acompanhamento TCC e a Turma 01 estão a confirmar.",
-        "detalhe": "sem página pública: lead chega pelo Instagram e vai para o CRM",
-        "pagamento": "Hubla", "link": APP + "/crm/", "link_rotulo": "Leads no CRM",
-        "situacao": "Ativo no cadastro", "tom": "neutro", "confirmar": True,
+        "nome": "Mentoria HPC", "checkout": "hpc", "infoproduto": "Mentoria HPC", "somar_lancadas": True,
+        "frase": "High Performance Creator: mentoria em grupo com a Layfe, 04 encontros ao vivo às segundas, 19h, 45 dias de acesso, Comunidade TCC e desafios. Edição especial antes da Black Friday.",
+        "detalhe": "à vista ou em até 12x no cartão · a página diz 12x de R$ 60,66",
+        "pagamento": "Checkout próprio (Mercado Pago); turmas antigas pela Hubla", "link": SITE + "/hpc/", "link_rotulo": "Página de vendas",
+        "situacao": "À venda", "tom": "ok", "confirmar": False,
     },
     {
         "nome": "Renovação HPC", "infoproduto": "Renovação HPC",
@@ -132,6 +132,8 @@ LINKS = [
             ("Página de vendas do Dash", SITE + "/dashcreator/", "Vendas do Dash Creator, com Meta Pixel", "Público"),
             ("Página do Planner", SITE + "/planner/", "Vendas do Planner, checkout na Hubla", "Público"),
             ("Checkout do Dash", SITE + "/checkout/dashcreator/", "Pagamento Mercado Pago e código por e-mail", "Compradoras"),
+            ("Página da HPC", SITE + "/hpc/", "Vendas da mentoria High Performance Creator (R$ 597)", "Público"),
+            ("Checkout da HPC", SITE + "/checkout/hpc/", "Pagamento Mercado Pago e confirmação da vaga por e-mail", "Compradoras"),
             ("Página do Creator Day", SITE + "/creator-experience/", "Evento de 17/10/2026", "Público"),
             ("Checkout do ingresso", SITE + "/checkout/creator-day/", "Pagamento do ingresso e e-mail de confirmação", "Compradoras"),
             ("Prévias do Creator Day", SITE + "/creator-experience/conceitos/", "Imersivo e Editorial, com lista de espera", "Link direto"),
@@ -207,7 +209,7 @@ GUIAS = [
         "quando": "Promoção do Dash Creator ou do ingresso.",
         "passos": [
             "Admin > Coupons > Adicionar.",
-            "Code: o código que a pessoa digita. Product key: dashcreator ou creatorday.",
+            "Code: o código que a pessoa digita. Product key: dashcreator, creatorday ou hpc.",
             "Discount percent: o desconto em %. Active marcado. Salve.",
             "Vale na hora, sem publicar nada. Na lista dá para mudar o % e desativar direto.",
         ],
@@ -215,7 +217,7 @@ GUIAS = [
     },
     {
         "titulo": "Lançar uma venda da Hubla ou do link Nubank",
-        "quando": "Mentoria HPC, Renovação, Acompanhamento e Planner não passam pelo checkout próprio.",
+        "quando": "Renovação, Acompanhamento, Planner e as turmas antigas da HPC não passam pelo checkout próprio.",
         "passos": [
             "Abra Infoprodutos > Entradas.",
             "Lance a venda: produto, comprador, plataforma, valor, data e status Confirmado.",
@@ -336,7 +338,7 @@ INTEGRACOES = [
     ("Coolify + GitHub", "Publicação automática a cada push (davidfranca9/dashcreator)"),
     ("Hetzner", "As duas VPS"),
     ("Hostinger", "DNS de layfeamorim.com"),
-    ("Hubla", "Checkout do Planner e da Mentoria HPC (sem integração com o sistema)"),
+    ("Hubla", "Checkout do Planner e das turmas antigas da Mentoria HPC (sem integração com o sistema)"),
     ("Google Apps Script + planilha", "Formulários do layfeamorim.com (planilha Leads Layfe)"),
     ("CallMeBot", "Aviso no WhatsApp a cada lead do layfeamorim.com"),
     ("Meta Pixel", "Só na página de vendas do Dash"),
@@ -395,7 +397,7 @@ RESOLVIDOS = [
 
 PONTAS = [
     "Os preços continuam valendo (Dash, Planner, Mentoria HPC, Renovação, Acompanhamento, Creator Day)?",
-    "O que significa HPC? Mentoria HPC, Acompanhamento TCC, mentoria UGC e Turma 01 são o mesmo produto?",
+    "HPC é a High Performance Creator (página /hpc/). Acompanhamento TCC, mentoria UGC e Turma 01 são o mesmo produto?",
     "O Desafio Postaria Mais é gratuito? Qual é o prêmio? Quanto vale uma indicação?",
     "O Portal do TCC está em uso ou a área oficial é a Hubla?",
     "Endereço exato do Creator Day em Piatã.",
@@ -451,7 +453,7 @@ def central_snapshot() -> dict:
         "codigos_livres": AccessCode.objects.filter(is_active=True, assigned_user__isnull=True).count(),
         "codigos_usados": AccessCode.objects.filter(assigned_user__isnull=False).count(),
     }
-    checkout = {chave: _checkout(chave) for chave in ("dashcreator", "creatorday")}
+    checkout = {chave: _checkout(chave) for chave in ("dashcreator", "creatorday", "hpc")}
     for dados in checkout.values():
         dados["receita_txt"] = brl(dados["receita"])
     receita_checkout = sum((d["receita"] for d in checkout.values()), Decimal("0"))
@@ -535,6 +537,9 @@ def central_snapshot() -> dict:
             item["preco"] = brl(produto.price) if produto else base.get("preco_fixo", "")
             dados = checkout[base["checkout"]]
             item["vendas"] = f"{dados['pagas']} paga(s) no checkout · {dados['receita_txt']}"
+            if base.get("somar_lancadas") and base.get("infoproduto") in vendas_info:
+                n, s = vendas_info[base["infoproduto"]]
+                item["vendas"] += f" · {n} lançada(s) antes · {brl(s)}"
         elif base.get("infoproduto") and base["infoproduto"] in precos_info:
             item["preco"] = brl(precos_info[base["infoproduto"]])
         else:
@@ -549,6 +554,7 @@ def central_snapshot() -> dict:
         ("Ingressos do Creator Day", f"{cd['pagas']} pagos · {cd['aguardando'] + cd['nao_finalizou']} em aberto", "Creator Day > Ingressos", APP + "/creator-day/?tab=ingressos"),
         ("Lista de espera do Creator Day", f"{lista_espera} na lista", "Creator Day > Lista de espera", APP + "/creator-day/?tab=lista"),
         ("Compras do Dash Creator", f"{checkout['dashcreator']['pagas']} pagas · {checkout['dashcreator']['iniciadas']} iniciadas", "Admin > Compras (dashcreator)", APP + "/admin/studio/purchase/?product_key=dashcreator"),
+        ("Compras da Mentoria HPC", f"{checkout['hpc']['pagas']} pagas · {checkout['hpc']['iniciadas']} iniciadas", "Admin > Compras (hpc)", APP + "/admin/studio/purchase/?product_key=hpc"),
         ("Contas criadas no Dash", f"{dash['codigos_usados']} códigos usados · {dash['codigos_livres']} livres", "Admin > Access codes", APP + "/admin/studio/accesscode/"),
         ("Vendas da Hubla e do Nubank", f"{negocio['infoprodutos_vendas'] if negocio else 0} lançadas", "Infoprodutos > Entradas", APP + "/infoprodutos/"),
         ("Leads da mentoria e de serviços", f"{negocio['crm_total'] if negocio else 0} leads", "CRM", APP + "/crm/"),
@@ -565,6 +571,13 @@ def central_snapshot() -> dict:
             "tom": "espera",
             "texto": f"{cd['nao_finalizou'] + cd['aguardando']} pessoa(s) começaram a comprar o ingresso do Creator Day e ainda não pagaram.",
             "link": APP + "/creator-day/?tab=ingressos", "acao": "Ver e chamar no WhatsApp",
+        })
+    hpc = checkout["hpc"]
+    if hpc["nao_finalizou"] or hpc["aguardando"]:
+        alertas.append({
+            "tom": "espera",
+            "texto": f"{hpc['nao_finalizou'] + hpc['aguardando']} pessoa(s) começaram a comprar a Mentoria HPC e ainda não pagaram.",
+            "link": APP + "/admin/studio/purchase/?product_key=hpc", "acao": "Ver quem é",
         })
     inicio_desafio, fim_desafio = hoje.replace(month=9, day=14), hoje.replace(month=9, day=20)
     if hoje.year == 2026 and inicio_desafio <= hoje <= fim_desafio and desafio["inscritas"] < 20:

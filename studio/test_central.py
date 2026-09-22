@@ -89,7 +89,8 @@ class CentralTests(TestCase):
         self.assertEqual(ctx["cd_em_aberto"], 1)
         self.assertEqual(ctx["lista_espera"], 1)
         produto = next(p for p in ctx["produtos"] if p["nome"] == "Mentoria HPC")
-        self.assertEqual(produto["preco"], "R$ 397,00")
+        self.assertEqual(produto["preco"], "R$ 597,00")  # agora vem do checkout próprio (produto hpc)
+        self.assertIn("1 lançada(s) antes · R$ 397,00", produto["vendas"])
         self.assertContains(r, "começaram a comprar o ingresso do Creator Day e ainda não pagaram")
 
     def test_sem_travessao(self):

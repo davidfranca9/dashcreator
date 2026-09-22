@@ -1,0 +1,337 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * Identidade alinhada à The Creators Club (landing/index.html é a fonte de verdade):
+ * papel creme, azul-marinho, dourado, Playfair Display nos títulos e Inter no texto,
+ * botões quadrados, cantos de 8 a 10px e linhas finas (sem sombra dura).
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-navy -> bg-navy, text-navy).
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * Paleta anterior (azul elétrico e amarelo, Montserrat), caso precise voltar:
+ *   fundo oklch(0.965 0.012 85) | azul oklch(0.56 0.245 255) | azul escuro oklch(0.275 0.096 258)
+ *   amarelo oklch(0.86 0.17 95) | azul suave oklch(0.93 0.04 250)
+ * A versão completa está em avaliacao/versao-anterior-azul-e-amarelo.zip.
+ */
+
+@theme inline {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Playfair Display", serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-navy: var(--navy);
+  --color-navy-lt: var(--navy-lt);
+  --color-paper-dk: var(--paper-dk);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-ink: var(--gold-ink);
+  --color-line: var(--line);
+  --color-line-st: var(--line-st);
+}
+
+:root {
+  --radius: 0.5rem;
+  /* papel #f5f1e8 */
+  --background: oklch(0.959 0.013 87);
+  /* tinta #1a1410 */
+  --foreground: oklch(0.197 0.013 56);
+  --card: oklch(0.977 0.01 87);
+  --card-foreground: oklch(0.197 0.013 56);
+  --popover: oklch(0.977 0.01 87);
+  --popover-foreground: oklch(0.197 0.013 56);
+  /* azul-marinho do TCC #0a2463 */
+  --primary: oklch(0.288 0.116 264);
+  --primary-hover: oklch(0.34 0.12 264);
+  --primary-foreground: oklch(0.959 0.013 87);
+  --secondary: oklch(0.288 0.116 264);
+  --secondary-foreground: oklch(0.959 0.013 87);
+  /* papel mais escuro #eae4d4 */
+  --muted: oklch(0.919 0.022 90);
+  --muted-foreground: oklch(0.445 0.024 85);
+  /* dourado do TCC #c9956a */
+  --accent: oklch(0.71 0.085 60);
+  --accent-foreground: oklch(0.197 0.013 56);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.197 0.013 56 / 14%);
+  --input: oklch(0.197 0.013 56 / 28%);
+  --ring: oklch(0.535 0.126 259);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Tokens da marca (mesmos nomes do landing do TCC) */
+  --navy: oklch(0.288 0.116 264);
+  --navy-lt: oklch(0.535 0.126 259);
+  --paper-dk: oklch(0.919 0.022 90);
+  --ink-soft: oklch(0.445 0.024 85);
+  --ink-mute: oklch(0.616 0.024 83);
+  --gold: oklch(0.71 0.085 60);
+  /* O dourado exato só passa no contraste sobre o azul-marinho (5,5:1). Sobre o creme usamos
+     tons mais fechados da mesma família: --gold-deep em texto grande (3,4:1 a 3,8:1) e
+     --gold-ink em texto pequeno (4,8:1 a 5,4:1). */
+  --gold-deep: oklch(0.588 0.094 61);
+  --gold-ink: oklch(0.501 0.082 61);
+  --line: oklch(0.197 0.013 56 / 14%);
+  --line-st: oklch(0.197 0.013 56 / 28%);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html {
+    /* Âncoras (#inscricao etc.) não ficam escondidas atrás do cabeçalho fixo. */
+    scroll-padding-top: 5.5rem;
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-foreground);
+  }
+
+  a:focus-visible,
+  summary:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 3px;
+  }
+
+  .on-dark a:focus-visible,
+  .on-dark button:focus-visible {
+    outline-color: var(--color-gold);
+  }
+}
+
+/* Títulos: Playfair Display regular, como no site do TCC. */
+@utility display-type {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+}
+
+/* Cantos de "visor de câmera", o mesmo desenho do logo do TCC. A cor vem de --frame-color. */
+@utility corner-frame {
+  --frame: var(--frame-color, var(--color-gold));
+  background:
+    linear-gradient(var(--frame), var(--frame)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) right top / 22px 2px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) right top / 2px 22px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) left bottom / 22px 2px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) left bottom / 2px 22px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) right bottom / 22px 2px no-repeat,
+    linear-gradient(var(--frame), var(--frame)) right bottom / 2px 22px no-repeat;
+}
+
+/* Rótulo de seção do TCC: caixa-alta miúda com bastante respiro entre as letras. */
+@utility eyebrow {
+  display: inline-block;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+/*
+ * Títulos em duas linhas. Cada linha vira um bloco (sem quebrar) e o tamanho da fonte se
+ * ajusta à largura disponível: 100cqi é a largura do contêiner do título e --em é a largura
+ * da linha mais comprida em "em". Abaixo do ponto de corte a quebra volta a ser natural.
+ */
+@utility title-fit {
+  font-size: min(
+    calc(100cqi / var(--em, 12)),
+    clamp(var(--min, 1.875rem), var(--vw, 6vw), var(--max, 3rem))
+  );
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  background: var(--color-navy);
+  color: var(--color-primary-foreground);
+  transition: top 150ms ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Entrada do topo: só CSS, não depende de JavaScript. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-in {
+  animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Aparecer ao rolar. A classe .js é colocada no <html> por um script no <head>,
+   então sem JavaScript o conteúdo continua visível. */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 600ms ease,
+    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Colunas do gráfico crescem a partir da linha de base. */
+.js .bar {
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 800ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 120ms + 250ms);
+}
+
+.js [data-reveal].is-in .bar {
+  transform: scaleY(1);
+}
+
+.js .bar-label {
+  opacity: 0;
+  transition: opacity 400ms ease;
+  transition-delay: calc(var(--i, 0) * 120ms + 900ms);
+}
+
+.js [data-reveal].is-in .bar-label {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-in,
+  .js [data-reveal],
+  .js .bar,
+  .js .bar-label {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}

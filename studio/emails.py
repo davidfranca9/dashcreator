@@ -43,8 +43,9 @@ def send_ticket_email(purchase, product) -> None:
         "purchase": purchase,
         "product": product,
     }
-    subject = render_to_string("checkout/ticket_subject.txt", context).strip()
-    body = render_to_string("checkout/ticket_email.txt", context)
+    prefixo = getattr(product, "email_template", "ticket") or "ticket"
+    subject = render_to_string(f"checkout/{prefixo}_subject.txt", context).strip()
+    body = render_to_string(f"checkout/{prefixo}_email.txt", context)
     send_mail(
         subject,
         body,

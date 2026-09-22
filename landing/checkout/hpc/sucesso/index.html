@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscrição · High Performance Creator</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/hpc/favicon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --background: #f5f1e8;
+    --primary: #0a2463;
+    --navy: #0a2463;
+    --navy-deep: #1a1410;
+    --secondary: #eae4d4;
+    --muted: #5a5345;
+    --shadow-soft: 0 20px 50px -24px rgba(10, 36, 99, .22);
+}
+body { font-family: "Inter", ui-sans-serif, system-ui, sans-serif; background: var(--background); color: var(--navy-deep); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; padding: 2.5rem 1rem; -webkit-font-smoothing: antialiased; }
+.logo { width: min(56%, 12rem); height: auto; }
+.card { max-width: 600px; width: 100%; background: #fff; border-radius: 10px; padding: 3rem 2.5rem; text-align: center; box-shadow: var(--shadow-soft); }
+@media (max-width: 600px) { .card { padding: 2.25rem 1.4rem; border-radius: 10px; } }
+.mark { width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1.4rem; transition: background 0.3s; }
+.label { display: block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--primary); margin-bottom: 0.8rem; }
+h1 { font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-size: clamp(1.8rem, 4vw, 2.3rem); font-weight: 500; line-height: 1.12; margin-bottom: 1rem; }
+p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; margin: 0 auto 1rem; max-width: 460px; }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin: 1.4rem 0 0.4rem; }
+.chips[hidden] { display: none; }
+.chips span { background: var(--secondary); color: var(--navy); border-radius: 999px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 500; }
+.note { font-size: 0.82rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; margin-top: 1.4rem; background: var(--primary); color: #fff; min-height: 50px; padding: 0.9rem 1.8rem; text-decoration: none; font-size: 0.9rem; font-weight: 500; box-shadow: var(--shadow-soft); }
+.pending .mark { background: var(--secondary); color: var(--navy); }
+.falhou .mark { background: oklch(58% .2 25); }
+</style>
+</head>
+<body>
+<a href="/hpc/" aria-label="Página da High Performance Creator"><img class="logo" src="/hpc/hpc-logo.png" alt="High Performance Creator" width="817" height="346"></a>
+<main class="card pending" id="card">
+    <div class="mark" id="mark" aria-hidden="true">✓</div>
+    <span class="label" id="label">Confirmando pagamento</span>
+    <h1 id="title">Estamos confirmando seu pagamento</h1>
+    <p id="text">Assim que o Mercado Pago aprovar, sua vaga é confirmada nesta página. Pode levar alguns segundos no Pix e no cartão.</p>
+    <div class="chips" id="chips" hidden><span>04 encontros ao vivo</span><span>Segundas, às 19h</span><span>45 dias de acesso</span></div>
+    <p class="note" id="note" role="status"></p>
+    <a class="btn" id="action" href="/hpc/">Voltar para a página da mentoria</a>
+</main>
+<script>
+(() => {
+    const API_BASE = "https://app.thecreatorsclub.com.br";
+    const purchaseId = new URLSearchParams(window.location.search).get("p");
+    const card = document.getElementById("card");
+    const mark = document.getElementById("mark");
+    const label = document.getElementById("label");
+    const title = document.getElementById("title");
+    const text = document.getElementById("text");
+    const chips = document.getElementById("chips");
+    const note = document.getElementById("note");
+    const action = document.getElementById("action");
+    let pollTimer = null;
+
+    const confirmado = () => {
+        clearInterval(pollTimer);
+        card.classList.remove("pending");
+        label.textContent = "Vaga confirmada";
+        title.textContent = "Sua vaga na High Performance Creator está garantida!";
+        text.textContent = "Enviamos a confirmação para o seu email. A equipe da Layfe vai te chamar no WhatsApp com os próximos passos.";
+        chips.hidden = false;
+        note.textContent = "Qualquer dúvida, fale com a gente pelo WhatsApp (71) 9 9723-8419.";
+    };
+
+    const recusado = () => {
+        clearInterval(pollTimer);
+        card.classList.remove("pending");
+        card.classList.add("falhou");
+        mark.textContent = "!";
+        label.textContent = "Pagamento não aprovado";
+        title.textContent = "Não conseguimos confirmar seu pagamento";
+        text.textContent = "Volte para o checkout e tente outro cartão ou outro método de pagamento.";
+        note.textContent = "";
+        action.href = "/checkout/hpc/";
+        action.textContent = "Voltar para o checkout";
+    };
+
+    const checkStatus = async () => {
+        if (!purchaseId) {
+            clearInterval(pollTimer);
+            note.textContent = "Se você já pagou, a confirmação chega no seu email.";
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE}/checkout/api/status/?purchase_id=${encodeURIComponent(purchaseId)}`);
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.status === "approved" && result.access_ready) {
+                confirmado();
+            } else if (response.ok && ["rejected", "cancelled"].includes(result.status)) {
+                recusado();
+            }
+        } catch (error) {
+            console.error("Status check error", error);
+        }
+    };
+
+    checkStatus();
+    pollTimer = setInterval(checkStatus, 4000);
+})();
+</script>
+</body>
+</html>

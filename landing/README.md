@@ -3,6 +3,19 @@
 Arquivos estaticos do dominio `thecreatorsclub.com.br` (home, Dash Creator, Planner,
 checkouts, Creator Day, Desafio Postaria Mais, metricas).
 
+## Mentoria HPC (`/hpc/`)
+
+A pasta `hpc/` e gerada, nao se edita a mao. O codigo fica em
+`high-performance-creator/` (projeto do Lovable, TanStack Start). Para atualizar:
+
+```sh
+cd high-performance-creator
+MSYS_NO_PATHCONV=1 HPC_BASE=/hpc/ npm run build   # no Git Bash; no PowerShell: $env:HPC_BASE="/hpc/"; npm run build
+rm -rf ../landing/hpc && cp -r dist/client ../landing/hpc && rm -f ../landing/hpc/robots.txt
+```
+
+O botao da oferta leva ao checkout proprio em `/checkout/hpc/` (produto `hpc` no app).
+
 ## Como publica
 
 Desde 16/09/2026 o site sai pelo git: `git push origin main` e o Coolify publica

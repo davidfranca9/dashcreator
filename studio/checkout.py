@@ -7,7 +7,8 @@ from decimal import Decimal, InvalidOperation
 
 
 # O que a compra aprovada entrega: código de acesso ao Dash Creator ou
-# ingresso de evento (só confirma a compra e manda o email do ingresso).
+# confirmação sem código (ingresso de evento, vaga na mentoria): só marca a
+# compra como paga e manda o email de confirmação do produto.
 FULFILLMENT_ACCESS_CODE = "access_code"
 FULFILLMENT_TICKET = "ticket"
 
@@ -27,6 +28,8 @@ class CheckoutProduct:
     failure_path: str = "/checkout/erro/"
     # Pares (rótulo, valor) que vão no email do ingresso, ex.: ("Data", "...")
     details: tuple[tuple[str, str], ...] = ()
+    # Prefixo dos templates do email de confirmação (checkout/<prefixo>_subject.txt e _email.txt)
+    email_template: str = "ticket"
 
     @property
     def is_ticket(self) -> bool:
@@ -77,6 +80,32 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
             ("Data", "17 de outubro de 2026, às 14h"),
             ("Local", "Piatã, Salvador/BA"),
         ),
+    ),
+    "hpc": CheckoutProduct(
+        key="hpc",
+        name="High Performance Creator",
+        short_description="Mentoria em grupo com a Layfe: 04 encontros ao vivo, segundas às 19h",
+        long_description=(
+            "A mentoria para transformar o seu Instagram em um ímã de marcas: "
+            "conteúdo, portfólio, roteiros e prospecção, com acompanhamento ao vivo."
+        ),
+        price=Decimal("597.00"),
+        audience="",
+        bullet_points=(
+            "Acompanhamento 100% ao vivo e em grupo",
+            "01 mês de acesso à Comunidade TCC",
+            "Desafios com premiações semanais",
+            "Guia O Jogo da Prospecção",
+            "Diagnóstico completo do seu perfil",
+        ),
+        fulfillment=FULFILLMENT_TICKET,
+        success_path="/checkout/hpc/sucesso/",
+        failure_path="/checkout/hpc/erro/",
+        details=(
+            ("Encontros", "04 encontros ao vivo, às segundas, 19h"),
+            ("Acesso", "45 dias"),
+        ),
+        email_template="mentoria",
     ),
 }
 
