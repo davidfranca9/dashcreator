@@ -30,6 +30,8 @@ class CheckoutProduct:
     details: tuple[tuple[str, str], ...] = ()
     # Prefixo dos templates do email de confirmação (checkout/<prefixo>_subject.txt e _email.txt)
     email_template: str = "ticket"
+    # Manda o ingresso personalizado (PNG com o nome), quando CREATOR_DAY_EMAIL_INGRESSO estiver ligado
+    personalized_ticket: bool = False
 
     @property
     def is_ticket(self) -> bool:
@@ -80,6 +82,7 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
             ("Data", "17 de outubro de 2026, às 14h"),
             ("Local", "Piatã, Salvador/BA"),
         ),
+        personalized_ticket=True,
     ),
     "hpc": CheckoutProduct(
         key="hpc",
