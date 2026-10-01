@@ -1,1310 +1,403 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Layfe Amorim · UGC Creator & Estrategista de Conteúdo</title>
-  <meta name="description" content="UGC Creator estratégica. Conteúdo que vende para marcas. Mentoria para creators.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Layfe Company · Produtos e Serviços</title>
+<meta name="description" content="Transforme criação de conteúdo em posicionamento, oportunidades e negócio. Conheça os produtos e serviços da Layfe Amorim: DashCreator, mentoria, infoproduto e Creator Day.">
+<link rel="icon" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --paper:#f5f1e8; --paper-dk:#eae4d4;
+    --navy:#0a2463; --navy-dp:#081b4d; --navy-lt:#3e6cb5;
+    --ink:#1a1410; --ink-soft:#5a5345; --ink-mute:#8c8475;
+    --line:rgba(26,20,16,.14); --line-st:rgba(26,20,16,.28);
+    --accent:#c9956a; --accent-lt:rgba(201,149,106,.14);
+    --cream:#f5f1e8;
+    --line-cream:rgba(245,241,232,.14);
+  }
 
-    :root {
-      --navy:     #0a2563;
-      --navy-mid: #14336e;
-      --cream:    #f5f0e8;
-      --cream-dk: #e4ddd0;
-      --gold:     #c9b99a;
-      --gold-dim: rgba(201,185,154,.22);
-      --gold-bdr: rgba(201,185,154,.55);
-      --white:    #ffffff;
-      --text-md:  #4a4a6a;
-      --text-lt:  #8a8aaa;
-    }
+  html{scroll-behavior:smooth;scroll-padding-top:76px}
+  body{
+    font-family:'Inter',sans-serif; background:var(--paper); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.6; overflow-x:hidden;
+  }
+  img{max-width:100%;display:block}
 
-    html, body {
-      height: 100%;
-      font-family: 'Montserrat', sans-serif;
-      background: var(--navy);
-      color: var(--white);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
+  .wrap{max-width:1200px;margin:0 auto;padding:0 clamp(22px,5vw,64px)}
 
-    /* ─── HEADER ─── */
-    header {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      min-height: 46px;
-      padding: 0 clamp(18px, 4vw, 38px);
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      background: rgba(13,31,60,.96);
-      border-top: 1px solid rgba(201,185,154,.42);
-      border-bottom: 1px solid rgba(201,185,154,.42);
-      pointer-events: all;
-    }
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      justify-self: start;
-      pointer-events: all;
-    }
-    .logo-mark {
-      width: 22px;
-      height: auto;
-      display: block;
-    }
-    .logo-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-    .logo-name {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 16px;
-      font-style: italic;
-      font-weight: 700;
-      letter-spacing: 0;
-      color: var(--cream);
-      line-height: 1;
-      white-space: nowrap;
-    }
-    .logo-name .company {
-      font-style: normal;
-      font-size: 14px;
-    }
-    .logo-sub {
-      font-size: 9px;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold);
-    }
-    .header-nav {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(14px, 2.5vw, 34px);
-      justify-self: center;
-    }
-    .header-nav button,
-    .header-nav a {
-      background: none;
-      border: 0;
-      padding: 0;
-      color: rgba(245,240,232,.6);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      text-decoration: none;
-      cursor: pointer;
-      transition: color .2s;
-    }
-    .header-nav button:hover,
-    .header-nav a:hover {
-      color: var(--gold);
-    }
-    body.inner-active header { display: none; }
+  .display{font-family:'Playfair Display',serif;font-weight:400;letter-spacing:-.012em;line-height:1.08;color:var(--navy)}
+  .display em{font-style:italic;font-weight:400;color:var(--accent)}
+  .eyebrow{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
 
-    /* ─── SCREENS ─── */
-    .screen {
-      min-height: 100vh;
-      display: none;
-      flex-direction: column;
-    }
-    .screen.active { display: flex; }
+  /* ─── BUTTONS ─── */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    min-height:54px;padding:0 34px;
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;text-decoration:none;cursor:pointer;
+    border:1px solid var(--cream);background:var(--cream);color:var(--navy);
+    border-radius:0;transition:transform .18s ease,box-shadow .25s ease,background .2s,color .2s;white-space:nowrap;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.22)}
+  .btn-navy{background:var(--navy);border-color:var(--navy);color:var(--cream)}
+  .btn-ghost{background:transparent;color:var(--navy);border-color:var(--line-st)}
+  .btn-ghost:hover{background:var(--navy);color:var(--cream);border-color:var(--navy)}
+  .btn .arw{transition:transform .2s}
+  .btn:hover .arw{transform:translateX(4px)}
 
-    /* ─── HERO SCREEN ─── */
-    #hero {
-      display: grid;
-      grid-template-columns: 52% 48%;
-      min-height: 100vh;
-    }
+  /* ─── HEADER ─── */
+  header{position:sticky;top:0;z-index:100;background:rgba(8,27,77,.86);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line-cream)}
+  .nav{display:flex;align-items:center;justify-content:space-between;min-height:70px;gap:20px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;flex-shrink:0}
+  .brand .emblem{font-family:'Playfair Display',serif;font-style:italic;font-weight:500;font-size:22px;color:var(--accent);line-height:1}
+  .brand .wordmark{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--cream)}
+  .nav-links{display:flex;align-items:center;gap:clamp(16px,2.4vw,32px);margin-left:auto}
+  .nav-links a{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,241,232,.78);text-decoration:none;transition:color .2s;white-space:nowrap}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-toggle{display:none;background:none;border:0;cursor:pointer;padding:8px;flex-direction:column;gap:5px}
+  .nav-toggle span{width:24px;height:2px;background:var(--cream);transition:.3s}
 
-    .hero-left {
-      background: var(--navy);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 72px clamp(36px, 7vw, 96px) 60px;
-      position: relative;
-      z-index: 1;
-    }
+  /* ─── HERO ─── */
+  .hero{background:var(--navy);color:var(--cream);position:relative;overflow:hidden;padding:clamp(44px,6vw,86px) 0 clamp(52px,7vw,96px)}
+  .hero::before{content:'';position:absolute;top:-30%;right:-10%;width:60vw;height:120%;background:radial-gradient(circle at center,rgba(62,108,181,.22),transparent 62%);pointer-events:none}
+  .hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(30px,5vw,72px);align-items:center}
+  .hero h1{max-width:15ch;margin-bottom:24px;font-size:clamp(32px,4.4vw,60px);color:var(--cream)}
+  .hero h1 em{color:var(--accent)}
+  .hero-sub{max-width:46ch;margin-bottom:34px;font-size:clamp(15px,1.5vw,17.5px);line-height:1.72;color:rgba(245,241,232,.74)}
+  .hero-figure{position:relative}
+  .hero-figure img{width:100%;height:clamp(400px,54vw,560px);object-fit:cover;object-position:center 22%;border-radius:10px;box-shadow:0 30px 70px rgba(0,0,0,.4)}
+  .hero-figure::after{content:'';position:absolute;inset:0;border:1px solid var(--line-cream);border-radius:10px;transform:translate(16px,16px);z-index:-1}
 
-    .hero-intro {
-      width: min(100%, 430px);
-      color: var(--white);
-    }
+  /* ─── STATS ─── */
+  .stats{background:var(--paper);border-bottom:1px solid var(--line)}
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,4vw,40px);padding:clamp(34px,4.5vw,52px) 0;text-align:center}
+  .stat{position:relative}
+  .stat + .stat::before{content:'';position:absolute;left:calc(clamp(18px,4vw,40px)/-2);top:14%;height:72%;width:1px;background:var(--line)}
+  .stat .num{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(34px,5vw,58px);line-height:1;color:var(--navy);letter-spacing:-.01em}
+  .stat .lbl{margin-top:12px;font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute);line-height:1.5}
 
-    .hero-kicker {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-      font-size: 8px;
-      font-weight: 700;
-      letter-spacing: 0.32em;
-      text-transform: uppercase;
-      color: rgba(201,185,154,.9);
-    }
-    .hero-kicker::before {
-      display: none;
-    }
+  /* ─── SECTION base ─── */
+  section{padding:clamp(60px,8.5vw,116px) 0}
+  .sec-head{margin-bottom:clamp(38px,5vw,58px)}
+  .sec-head.center{text-align:center;max-width:46ch;margin-left:auto;margin-right:auto}
+  .sec-head h2{font-size:clamp(28px,4.4vw,52px);margin-bottom:16px}
 
-    .hero-name {
-      margin-bottom: 12px;
-      font-family: 'Cormorant Garamond', serif;
-      color: var(--cream);
-      line-height: .78;
-    }
-    .hero-name span {
-      display: block;
-    }
-    .hero-name .name-script {
-      font-size: clamp(46px, 6vw, 76px);
-      font-style: italic;
-      font-weight: 600;
-      letter-spacing: 0;
-    }
-    .hero-name .name-last {
-      font-size: clamp(56px, 7vw, 92px);
-      font-weight: 700;
-      letter-spacing: 0;
-      text-transform: uppercase;
-    }
+  /* ─── ABOUT + LOGOS ─── */
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(34px,5vw,72px);align-items:center}
+  .about-copy .eyebrow{margin-bottom:16px}
+  .about-copy h2{font-size:clamp(28px,3.9vw,46px);line-height:1.1;margin-bottom:26px}
+  .about-copy p{font-size:14.5px;line-height:1.8;color:var(--ink-soft);margin-bottom:16px;max-width:52ch}
+  .about-copy p strong{color:var(--ink);font-weight:600}
+  .logo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .logo-cell{aspect-ratio:1;border-radius:10px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(26,20,16,.05);transition:transform .25s ease,box-shadow .25s ease}
+  .logo-cell img{width:100%;height:100%;object-fit:cover}
+  .logo-cell.contain{background:#fff}
+  .logo-cell.contain img{object-fit:contain;padding:11%}
+  .logo-cell:hover{transform:translateY(-4px) scale(1.015);box-shadow:0 16px 34px rgba(26,20,16,.16);z-index:2}
 
-    .hero-role {
-      margin-bottom: 22px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgba(245,240,232,.82);
-    }
+  /* ─── MESSAGES (navy) ─── */
+  .msgs{background:var(--navy);color:var(--cream);position:relative;overflow:hidden}
+  .msgs::before{content:'';position:absolute;bottom:-25%;left:-8%;width:50vw;height:90%;background:radial-gradient(circle at center,rgba(201,149,106,.12),transparent 64%);pointer-events:none}
+  .msgs .wrap{position:relative;z-index:2}
+  .msgs .eyebrow{color:rgba(201,149,106,.95)}
+  .msgs h2{color:var(--cream);font-size:clamp(26px,3.8vw,46px)}
+  .msgs h2 em{font-style:italic;color:var(--accent)}
+  .msg-gallery{column-count:3;column-gap:18px;margin-bottom:38px}
+  .msg-gallery img{width:100%;border-radius:12px;margin-bottom:18px;break-inside:avoid;box-shadow:0 16px 40px rgba(0,0,0,.3);border:1px solid var(--line-cream);transition:transform .25s ease}
+  .msg-gallery img:hover{transform:translateY(-4px)}
+  .msg-note{text-align:center;max-width:62ch;margin:0 auto;font-size:14.5px;line-height:1.75;color:rgba(245,241,232,.66)}
 
-    .hero-rule {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      margin-bottom: 22px;
-      color: var(--gold);
-    }
-    .hero-rule::before {
-      content: '';
-      width: 38px;
-      height: 1px;
-      background: rgba(201,185,154,.45);
-    }
-    .hero-rule::after {
-      content: '';
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--gold);
-    }
+  /* ─── PRODUCTS ─── */
+  .prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  .prod{display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:clamp(28px,3.4vw,42px);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+  .prod:hover{transform:translateY(-5px);box-shadow:0 26px 56px rgba(26,20,16,.13);border-color:var(--accent)}
+  .prod .kicker{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+  .prod h3{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(22px,2.4vw,28px);color:var(--navy);margin-bottom:14px;letter-spacing:-.01em}
+  .prod p{font-size:14px;line-height:1.7;color:var(--ink-soft);margin-bottom:26px;flex:1}
+  .prod .more{display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);text-decoration:none;transition:gap .2s,color .2s}
+  .prod .more:hover{gap:15px;color:var(--accent)}
 
-    .hero-btns {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      gap: 0;
-      width: min(100%, 520px);
-    }
+  /* ─── CTA (navy) ─── */
+  .cta{background:var(--navy);color:var(--cream);text-align:center;position:relative;overflow:hidden}
+  .cta .seal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(520px,76vw);aspect-ratio:1;border:1px solid var(--line-cream);border-radius:50%;pointer-events:none}
+  .cta .seal::before{content:'';position:absolute;inset:26px;border:1px solid rgba(245,241,232,.08);border-radius:50%}
+  .cta .wrap{position:relative;z-index:2}
+  .cta h2{font-family:'Playfair Display',serif;font-weight:400;font-style:italic;font-size:clamp(26px,3.6vw,44px);line-height:1.22;color:var(--cream);max-width:20ch;margin:0 auto 36px}
+  .cta h2 em{color:var(--accent)}
 
-    .hero-btn {
-      flex: 1 1 0;
-      width: 50%;
-      min-width: 0;
-      min-height: 46px;
-      padding: 0 22px;
-      background: transparent;
-      border: 1px solid var(--gold-bdr);
-      color: var(--white);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      transition: background .25s, border-color .25s, color .25s;
-      text-align: center;
-    }
-    .hero-btn + .hero-btn {
-      margin-left: -1px;
-    }
-    .hero-btn:hover {
-      background: var(--gold);
-      border-color: var(--gold);
-      color: var(--navy);
-    }
-    .hero-btn .btn-arrow {
-      font-size: 18px;
-      opacity: .6;
-      transition: transform .2s, opacity .2s;
-    }
-    .hero-btn:hover .btn-arrow {
-      transform: translateX(4px);
-      opacity: 1;
-    }
+  /* ─── FOOTER ─── */
+  footer{background:var(--navy-dp);color:rgba(245,241,232,.6);border-top:1px solid var(--line-cream)}
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:30px 0;font-size:12px}
+  .foot-social{display:flex;gap:16px}
+  .foot-social a{color:rgba(245,241,232,.7);transition:color .2s}
+  .foot-social a:hover{color:var(--accent)}
+  .foot-social svg{width:20px;height:20px;display:block}
 
-    /* HERO RIGHT — photo panel */
-    .hero-right {
-      position: relative;
-      overflow: hidden;
-      background: var(--navy-mid);
-    }
-    /* Gradient overlay — left edge blends into navy */
-    .hero-right::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        to right,
-        var(--navy) 0%,
-        rgba(13,31,60,.65) 30%,
-        rgba(13,31,60,.2) 100%
-      );
-      z-index: 1;
-    }
-    .hero-photo {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
-      /* 
-        ↑ SUBSTITUA PELA SUA FOTO:
-        Coloque sua imagem na mesma pasta e aponte aqui.
-        Ex: background-image: url('layfe.jpg');
-        ou use a tag <img> abaixo.
-      */
-      background: linear-gradient(145deg, var(--navy-mid) 0%, #2a4a7a 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    /* Placeholder quando não há foto */
-    .photo-placeholder {
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      color: rgba(201,185,154,.25);
-      text-transform: uppercase;
-      text-align: center;
-      line-height: 2;
-      position: relative;
-      z-index: 2;
-    }
+  /* ─── REVEAL ANIMATION ─── */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .reveal[data-d="1"]{transition-delay:.08s}
+  .reveal[data-d="2"]{transition-delay:.16s}
+  .reveal[data-d="3"]{transition-delay:.24s}
+  .reveal[data-d="4"]{transition-delay:.32s}
 
-    /* ─── INNER SCREENS (Marcas / Creators) ─── */
-    .inner-screen {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+  /* ─── RESPONSIVE ─── */
+  @media(max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:38px}
+    .hero-figure{order:-1;max-width:460px;margin:0 auto}
+    .about-grid{grid-template-columns:1fr;gap:40px}
+    .msg-gallery{column-count:2}
+    .nav-links{position:fixed;inset:70px 0 auto 0;background:var(--navy-dp);flex-direction:column;align-items:stretch;gap:0;padding:8px 0;transform:translateY(-130%);transition:transform .35s ease;border-bottom:1px solid var(--line-cream)}
+    .nav-links.open{transform:none}
+    .nav-links a{padding:15px clamp(22px,5vw,64px)}
+    .nav-toggle{display:flex}
+  }
+  @media(max-width:640px){
+    .stats-grid{grid-template-columns:1fr;gap:28px}
+    .stat + .stat::before{display:none}
+    .stat + .stat{border-top:1px solid var(--line);padding-top:26px}
+    .logo-grid{grid-template-columns:repeat(3,1fr)}
+    .msg-gallery{column-count:1;max-width:400px;margin-left:auto;margin-right:auto}
+    .prod-grid{grid-template-columns:1fr}
+  }
 
-    /* ── Back bar ── */
-    .back-bar {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      min-height: 68px;
-      padding: 14px clamp(22px, 5vw, 72px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid;
-    }
-    .back-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      transition: opacity .2s;
-      min-height: 40px;
-      padding: 0;
-    }
-    .back-btn:hover { opacity: .55; }
-    .back-btn svg { width: 14px; height: 14px; }
-    .back-section-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: none;
-    }
-
-    /* ── Inner content area ── */
-    .inner-content {
-      flex: 1;
-      max-width: 1120px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 56px clamp(22px, 7vw, 96px) 80px;
-      text-align: center;
-    }
-
-    .inner-eyebrow {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-      display: block;
-    }
-
-    .inner-title {
-      max-width: 680px;
-      font-size: 52px;
-      font-weight: 800;
-      letter-spacing: 0;
-      line-height: 1.08;
-      margin: 0 auto 14px;
-    }
-
-    .inner-sub {
-      font-size: 14px;
-      font-weight: 400;
-      line-height: 1.7;
-      max-width: 520px;
-      margin: 0 auto 52px;
-    }
-
-    /* ── Cards ── */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-      text-align: left;
-    }
-
-    .card {
-      padding: 24px 26px;
-      border-radius: 2px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      font-family: 'Montserrat', sans-serif;
-      text-align: left;
-      width: 100%;
-      transition: transform .18s, opacity .18s;
-    }
-    .card:hover { transform: translateY(-2px); opacity: .9; }
-    .card:active { transform: scale(.98); }
-
-    .card-body { flex: 1; }
-    .card-title {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0;
-      line-height: 1.3;
-      margin-bottom: 5px;
-    }
-    .card-desc {
-      font-size: 12px;
-      font-weight: 400;
-      line-height: 1.5;
-    }
-    .card-arrow {
-      font-size: 18px;
-      opacity: .4;
-      flex-shrink: 0;
-      align-self: center;
-    }
-
-    /* ── MARCAS screen ── */
-    #marcas {
-      background: var(--white);
-      color: var(--navy);
-    }
-    #marcas .back-bar {
-      background: var(--white);
-      border-color: var(--cream-dk);
-      color: var(--navy);
-    }
-    #marcas .back-btn { color: var(--navy); }
-    #marcas .back-btn svg { stroke: var(--navy); fill: none; }
-    #marcas .back-section-label { color: var(--text-lt); }
-    #marcas .inner-eyebrow { color: var(--gold); }
-    #marcas .inner-content { padding-top: 32px; }
-    #marcas .inner-title {
-      color: var(--navy);
-      font-size: 42px;
-    }
-    #marcas .inner-sub {
-      color: var(--text-md);
-      margin-bottom: 24px;
-    }
-
-    /* Stats row */
-    .stats-row {
-      display: flex;
-      gap: 0;
-      margin-bottom: 20px;
-      border-top: 1px solid var(--cream-dk);
-      border-bottom: 1px solid var(--cream-dk);
-      padding: 12px 0;
-    }
-    .stat {
-      flex: 1;
-      text-align: center;
-      padding: 0 20px;
-      border-right: 1px solid var(--cream-dk);
-    }
-    .stat:last-child { border-right: none; }
-    .stat-n {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: 0;
-      color: var(--navy);
-      line-height: 1;
-    }
-    .stat-l {
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      color: var(--text-lt);
-      margin-top: 4px;
-      line-height: 1.4;
-    }
-
-    #marcas .card {
-      background: var(--cream);
-      color: var(--navy);
-    }
-    #marcas .card.featured {
-      background: var(--navy);
-      color: var(--white);
-    }
-    #marcas .card.featured .card-desc { color: rgba(255,255,255,.55); }
-    #marcas .card-desc { color: var(--text-md); }
-    #marcas .card-arrow { color: inherit; }
-    #marcas .choice-card {
-      min-height: 208px;
-      padding: 16px 14px 14px;
-    }
-    #marcas .choice-desc {
-      min-height: 44px;
-      margin-bottom: 10px;
-    }
-
-    /* ── CREATORS screen ── */
-    #creators {
-      background: var(--cream);
-      color: var(--navy);
-    }
-    #creators .back-bar {
-      background: var(--cream);
-      border-color: var(--cream-dk);
-      color: var(--navy);
-    }
-    #creators .back-btn { color: var(--navy); }
-    #creators .back-btn svg { stroke: var(--navy); fill: none; }
-    #creators .back-section-label { color: var(--text-lt); }
-    #creators .inner-eyebrow { color: var(--gold); }
-    #creators .inner-title { color: var(--navy); }
-    #creators .inner-sub {
-      color: var(--text-md);
-      margin-bottom: 38px;
-    }
-
-    #creators .card {
-      background: var(--white);
-      color: var(--navy);
-      border: 1px solid var(--cream-dk);
-    }
-    #creators .card.featured {
-      background: var(--navy);
-      color: var(--white);
-      border-color: transparent;
-    }
-    #creators .card.featured .card-desc { color: rgba(255,255,255,.5); }
-    #creators .card-desc { color: var(--text-md); }
-
-    .choice-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(168px, 1fr));
-      gap: 12px;
-      text-align: center;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      scrollbar-width: thin;
-    }
-    .brand-choice-grid {
-      grid-template-columns: repeat(4, minmax(190px, 1fr));
-    }
-    .choice-card {
-      min-height: 226px;
-      padding: 18px 14px 16px;
-      border: 1px solid rgba(13,31,60,.16);
-      background: rgba(255,255,255,.7);
-      color: var(--navy);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      cursor: default;
-      transition: transform .18s, border-color .18s, background .18s;
-    }
-    .choice-card:hover,
-    .choice-card:focus-within {
-      transform: translateY(-2px);
-      border-color: rgba(201,185,154,.35);
-      background: var(--navy);
-      color: var(--white);
-    }
-    .choice-icon {
-      font-size: 21px;
-      line-height: 1;
-      margin-bottom: 7px;
-    }
-    .choice-title {
-      margin-bottom: 6px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 14px;
-      font-weight: 800;
-      line-height: 1.18;
-      color: var(--navy);
-    }
-    .choice-desc {
-      max-width: 220px;
-      min-height: 54px;
-      margin-bottom: 10px;
-      font-size: 10px;
-      line-height: 1.6;
-      color: var(--text-md);
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .choice-button {
-      min-height: 42px;
-      width: 100%;
-      padding: 0 12px;
-      border: 1px solid rgba(13,31,60,.38);
-      background: transparent;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .09em;
-      text-transform: uppercase;
-      text-decoration: none;
-      color: var(--navy);
-      margin-top: auto;
-      cursor: pointer;
-      transition: background .18s, border-color .18s, color .18s;
-    }
-    .choice-card.featured {
-      background: var(--navy);
-      color: var(--white);
-      border-color: rgba(201,185,154,.35);
-    }
-    .choice-card.featured .choice-title {
-      color: var(--cream);
-    }
-    .choice-card.featured .choice-desc {
-      color: rgba(245,240,232,.64);
-    }
-    .choice-card.featured .choice-button {
-      border-color: var(--gold);
-      background: var(--gold);
-      color: var(--navy);
-    }
-    .choice-card:hover .choice-title,
-    .choice-card:focus-within .choice-title {
-      color: var(--cream);
-    }
-    .choice-card:hover .choice-desc,
-    .choice-card:focus-within .choice-desc {
-      color: rgba(245,240,232,.64);
-    }
-    .choice-card:hover .choice-button,
-    .choice-card:focus-within .choice-button {
-      border-color: var(--gold);
-      background: var(--gold);
-      color: var(--navy);
-    }
-    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover),
-    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) {
-      background: rgba(255,255,255,.7);
-      color: var(--navy);
-      border-color: rgba(13,31,60,.16);
-    }
-    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover) .choice-title,
-    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) .choice-title {
-      color: var(--navy);
-    }
-    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover) .choice-desc,
-    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) .choice-desc {
-      color: var(--text-md);
-    }
-    .choice-grid:has(.choice-card:hover) .choice-card.featured:not(:hover) .choice-button,
-    .choice-grid:has(.choice-card:focus-within) .choice-card.featured:not(:focus-within) .choice-button {
-      border-color: rgba(13,31,60,.38);
-      background: transparent;
-      color: var(--navy);
-    }
-
-    /* ── FOOTER inside sections ── */
-    .inner-footer {
-      border-top: 1px solid;
-      padding: 24px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .inner-footer p {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-    }
-    #marcas .inner-footer { border-color: var(--cream-dk); color: var(--text-lt); }
-    #creators .inner-footer { border-color: var(--cream-dk); color: var(--text-lt); }
-    .footer-contact a,
-    .footer-contact span {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      color: var(--navy);
-      text-decoration: none;
-      transition: opacity .2s;
-    }
-    .footer-contact a:hover { opacity: .6; }
-
-    /* ── WAITLIST MODAL ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(8,18,36,.72);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-card {
-      position: relative;
-      width: min(100%, 420px);
-      max-height: calc(100vh - 48px);
-      overflow-y: auto;
-      padding: 38px clamp(24px, 5vw, 40px) 32px;
-      background: var(--navy);
-      border: 1px solid var(--gold-bdr);
-      border-radius: 3px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.5);
-      text-align: center;
-      animation: fadeUp .3s ease;
-    }
-    .modal-close {
-      position: absolute;
-      top: 12px;
-      right: 14px;
-      width: 32px;
-      height: 32px;
-      background: none;
-      border: 0;
-      color: rgba(245,240,232,.5);
-      font-size: 22px;
-      line-height: 1;
-      cursor: pointer;
-      transition: color .2s;
-    }
-    .modal-close:hover { color: var(--gold); }
-    .modal-icon {
-      font-size: 24px;
-      line-height: 1;
-      margin-bottom: 10px;
-    }
-    .modal-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 30px;
-      font-weight: 700;
-      color: var(--cream);
-      line-height: 1.05;
-      margin-bottom: 8px;
-    }
-    .modal-sub {
-      font-size: 12px;
-      font-weight: 400;
-      line-height: 1.6;
-      color: rgba(245,240,232,.6);
-      max-width: 300px;
-      margin: 0 auto 24px;
-    }
-    .modal-form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      text-align: left;
-    }
-    .field-label {
-      display: block;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: rgba(201,185,154,.9);
-      margin-bottom: 6px;
-    }
-    .modal-form input {
-      width: 100%;
-      min-height: 46px;
-      padding: 0 14px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(201,185,154,.3);
-      border-radius: 2px;
-      color: var(--white);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 13px;
-      font-weight: 400;
-      transition: border-color .2s, background .2s;
-    }
-    .modal-form input::placeholder { color: rgba(245,240,232,.35); }
-    .modal-form input:focus {
-      outline: none;
-      border-color: var(--gold);
-      background: rgba(255,255,255,.07);
-    }
-    .modal-form input:invalid:not(:placeholder-shown) {
-      border-color: rgba(220,120,120,.6);
-    }
-    .modal-submit {
-      min-height: 48px;
-      margin-top: 8px;
-      background: var(--gold);
-      border: 1px solid var(--gold);
-      border-radius: 2px;
-      color: var(--navy);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: opacity .2s;
-    }
-    .modal-submit:hover { opacity: .85; }
-    .modal-submit:disabled { opacity: .5; cursor: default; }
-    .modal-note {
-      font-size: 10px;
-      line-height: 1.5;
-      color: rgba(245,240,232,.4);
-      margin-top: 4px;
-      text-align: center;
-    }
-    /* success state */
-    .modal-success { display: none; }
-    .modal-card.done .modal-form,
-    .modal-card.done .modal-sub,
-    .modal-card.done .modal-icon { display: none; }
-    .modal-card.done .modal-success { display: block; }
-    .modal-success .modal-icon { display: block; font-size: 30px; margin-bottom: 14px; }
-    .modal-success-text {
-      font-size: 13px;
-      line-height: 1.6;
-      color: rgba(245,240,232,.7);
-      margin-top: 6px;
-    }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 768px) {
-      #hero {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-        position: relative;
-        overflow: hidden;
-      }
-      .hero-left {
-        padding: 96px 28px 56px;
-        background: transparent;
-        position: relative;
-        z-index: 2;
-        min-height: 100vh;
-        align-items: flex-start;
-      }
-      .hero-right {
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-      }
-      .hero-right::before {
-        background: linear-gradient(to bottom, rgba(13,31,60,.85) 0%, rgba(13,31,60,.95) 100%);
-      }
-      .hero-intro { width: min(100%, 420px); }
-      header {
-        min-height: 54px;
-        grid-template-columns: 1fr;
-      }
-      .header-nav { display: none; }
-      .hero-btns {
-        flex-direction: row;
-        max-width: 360px;
-      }
-      .hero-btn {
-        width: 50%;
-        justify-content: space-between;
-        padding: 0 18px;
-      }
-      header { padding: 18px 24px; }
-      .back-bar {
-        min-height: 60px;
-        padding: 10px 22px;
-      }
-      .inner-content { padding: 38px 22px 60px; }
-      .inner-title { font-size: 36px; }
-      #marcas .inner-content { padding-top: 38px; }
-      #marcas .inner-title { font-size: 36px; }
-      .inner-sub {
-        max-width: none;
-        margin-bottom: 36px;
-      }
-      .cards-grid { grid-template-columns: 1fr; }
-      .choice-grid {
-        grid-template-columns: repeat(5, minmax(188px, 1fr));
-        gap: 10px;
-        margin-left: -22px;
-        margin-right: -22px;
-        padding-left: 22px;
-        padding-right: 22px;
-      }
-      .brand-choice-grid {
-        grid-template-columns: repeat(4, minmax(188px, 1fr));
-      }
-      .choice-card {
-        min-height: 224px;
-        padding: 18px 14px 16px;
-      }
-      .choice-icon { font-size: 22px; }
-      .choice-title { font-size: 13px; }
-      .choice-desc {
-        min-height: 56px;
-        font-size: 10px;
-      }
-      .choice-button {
-        width: 100%;
-        min-height: 40px;
-        padding: 0 8px;
-        font-size: 9px;
-        letter-spacing: .08em;
-      }
-      .stats-row { overflow-x: auto; }
-      .stat { min-width: 120px; }
-      .inner-footer { padding: 20px 24px; }
-    }
-
-    @media (max-width: 480px) {
-      .inner-title { font-size: 32px; }
-      .cards-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;scroll-behavior:auto!important}
+    .reveal{opacity:1;transform:none;transition:none}
+  }
+</style>
 </head>
 <body>
 
-<!-- ════════ HEADER (fixed, sempre visível) ════════ -->
+<!-- HEADER -->
 <header>
-  <div class="header-logo">
-    <img class="logo-mark" src="logo.png" alt="Layfe Amorim">
-    <div class="logo-copy">
-      <span class="logo-name">The Layfe <span class="company">Company</span></span>
-    </div>
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="The Layfe Company">
+      <span class="emblem">L</span>
+      <span class="wordmark">The Layfe Company</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#produtos">Aplicativo de Organização</a>
+      <a href="/mentoria/">Mentoria</a>
+      <a href="#produtos">Eventos</a>
+      <a href="#produtos">Comunidade</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
-  <nav class="header-nav" aria-label="Redes sociais">
-    <a href="https://instagram.com/layfeamorim" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://www.tiktok.com/@layfeamorim" target="_blank" rel="noopener">TikTok</a>
-    <a href="https://www.youtube.com/@Layfeamoriim" target="_blank" rel="noopener">YouTube</a>
-    <a href="https://wa.me/5571997238419" target="_blank" rel="noopener">WhatsApp</a>
-    <a href="mailto:ugclayfeamorim@gmail.com">E-mail</a>
-  </nav>
 </header>
 
-
-<!-- ════════ HERO ════════ -->
-<div id="hero" class="active">
-
-  <!-- ESQUERDA -->
-  <div class="hero-left">
-    <div class="hero-intro">
-      <p class="hero-kicker">UGC 2026</p>
-      <h1 class="hero-name">
-        <span class="name-script">Layfe</span>
-        <span class="name-last">Amorim</span>
-      </h1>
-      <p class="hero-role">UGC Creator & Estrategista de Conteúdo</p>
-      <div class="hero-btns">
-        <button type="button" class="hero-btn" data-track="sou-marca" onclick="showSection('marcas')">
-          Sou Marca
-          <span class="btn-arrow">→</span>
-        </button>
-        <button type="button" class="hero-btn" data-track="sou-creator" onclick="showSection('creators')">
-          Sou Creator
-          <span class="btn-arrow">→</span>
-        </button>
-      </div>
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1 class="display reveal">Transforme criação de conteúdo em <em>posicionamento</em>, <em>oportunidades</em> e negócio.</h1>
+      <p class="hero-sub reveal" data-d="1">Você não precisa depender de mais trabalhos para crescer no digital. Precisa de uma estrutura de negócio que sustente esse crescimento.</p>
+      <a class="btn reveal" data-d="2" href="#produtos">Ver meus produtos <span class="arw">→</span></a>
+    </div>
+    <div class="hero-figure reveal" data-d="1">
+      <img src="/produtos/img/hero-book.png" alt="Layfe Amorim segurando o livro Ideias que Colam" loading="eager">
     </div>
   </div>
+</section>
 
-  <!-- DIREITA — sua foto aqui -->
-  <div class="hero-right">
-    <img class="hero-photo" src="layfe.png" alt="Layfe Amorim">
-  </div>
-
-</div>
-
-
-<!-- ════════ SEÇÃO MARCAS ════════ -->
-<div id="marcas" class="inner-screen" style="display:none;">
-
-  <div class="back-bar">
-    <button type="button" class="back-btn" onclick="showHero()">
-      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      Voltar
-    </button>
-    <span class="back-section-label">@layfeamorim</span>
-  </div>
-
-  <div class="inner-content">
-    <span class="inner-eyebrow">Para marcas</span>
-    <h2 class="inner-title">Crio conteúdo de alta performance que converte.</h2>
-    <p class="inner-sub">
-      Selecione a opção mais relevante para você!
-    </p>
-
-    <!-- Números -->
-    <div class="stats-row">
-      <div class="stat">
-        <div class="stat-n">+150</div>
-        <div class="stat-l">marcas<br>trabalhadas</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n">+2M</div>
-        <div class="stat-l">views acumuladas<br>em cases orgânicos</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n">4,11</div>
-        <div class="stat-l">ROI<br>médio</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n">+20K</div>
-        <div class="stat-l">em vendas de<br>um único vídeo</div>
-      </div>
+<!-- STATS -->
+<div class="stats">
+  <div class="wrap stats-grid" id="stats">
+    <div class="stat reveal">
+      <div class="num" data-count="300" data-prefix="+">+300</div>
+      <div class="lbl">Conteúdos criados<br>no último ano</div>
     </div>
-
-    <!-- Cards -->
-    <div class="choice-grid brand-choice-grid">
-      <article class="choice-card featured">
-        <span class="choice-icon" aria-hidden="true">🎬</span>
-        <h3 class="choice-title">Portfólio UGC</h3>
-        <p class="choice-desc">Veja os conteúdos que já produzi para marcas. Cases com números reais.</p>
-        <a class="choice-button" data-track="ver-portfolio" href="/portfolio/" target="_blank" rel="noopener">Ver portfólio</a>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">📈</span>
-        <h3 class="choice-title">Social Media</h3>
-        <p class="choice-desc">Estratégia e gestão para o seu Instagram.</p>
-        <button type="button" class="choice-button" data-track="marca-quero-social" onclick="openSocial()">Quero social</button>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">💬</span>
-        <h3 class="choice-title">Quero falar direto no WhatsApp</h3>
-        <p class="choice-desc">Fale diretamente comigo.</p>
-        <a class="choice-button" data-track="whatsapp-marca" href="https://wa.me/5571997238419" target="_blank" rel="noopener">Abrir WhatsApp</a>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">📩</span>
-        <h3 class="choice-title">Enviar proposta personalizada</h3>
-        <p class="choice-desc">Tem uma proposta específica? Envia ela pra mim!</p>
-        <a class="choice-button" data-track="marca-enviar-proposta" href="mailto:ugclayfeamorim@gmail.com">Enviar proposta</a>
-      </article>
+    <div class="stat reveal" data-d="1">
+      <div class="num" data-count="100" data-prefix="+">+100</div>
+      <div class="lbl">Marcas<br>trabalhadas</div>
     </div>
-  </div>
-
-  <footer class="inner-footer">
-    <p>Layfe Amorim · UGC Creator & Estrategista · Salvador, BA</p>
-    <div class="footer-contact">
-      <span>© 2026 Layfe Amorim. Todos os direitos reservados.</span>
-    </div>
-  </footer>
-
-</div>
-
-
-<!-- ════════ SEÇÃO CREATORS ════════ -->
-<div id="creators" class="inner-screen" style="display:none;">
-
-  <div class="back-bar">
-    <button type="button" class="back-btn" onclick="showHero()">
-      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      Voltar
-    </button>
-    <span class="back-section-label">@layfeamorim</span>
-  </div>
-
-  <div class="inner-content">
-    <span class="inner-eyebrow">Para creators</span>
-    <h2 class="inner-title">Do conteúdo<br>para o negócio.</h2>
-    <p class="inner-sub">
-      Método, comunidade e ferramentas para creators que querem ir além de curtidas e construir uma carreira de verdade.
-    </p>
-
-    <div class="choice-grid">
-      <article class="choice-card featured">
-        <span class="choice-icon" aria-hidden="true">🎓</span>
-        <h3 class="choice-title">Lista de Espera</h3>
-        <p class="choice-desc">Entre na lista da próxima turma da mentoria UGC e receba os detalhes em primeira mão.</p>
-        <button type="button" class="choice-button" data-track="creator-lista-espera" onclick="openWaitlist()">Entrar na lista</button>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">🗓️</span>
-        <h3 class="choice-title">Cronograma</h3>
-        <p class="choice-desc">Veja como funciona o acompanhamento, os encontros e o caminho da mentoria.</p>
-        <a class="choice-button" data-track="creator-ver-cronograma" href="https://wa.me/5571997238419?text=Quero%20ver%20o%20cronograma%20da%20mentoria%20UGC" target="_blank" rel="noopener">Ver cronograma</a>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">💻</span>
-        <h3 class="choice-title">Dash Creator</h3>
-        <p class="choice-desc">App de gestão para creators organizarem projetos, rotina, entregas e financeiro.</p>
-        <a class="choice-button" data-track="creator-conhecer-app" href="https://thecreatorsclub.com.br/dashcreator/" target="_blank" rel="noopener">Conhecer app</a>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">📝</span>
-        <h3 class="choice-title">Planner Creator</h3>
-        <p class="choice-desc">Organize sua produção de conteúdo, ideias, metas e próximos passos como creator.</p>
-        <a class="choice-button" data-track="creator-ver-planner" href="https://thecreatorsclub.com.br/planner/" target="_blank" rel="noopener">Ver planner</a>
-      </article>
-      <article class="choice-card">
-        <span class="choice-icon" aria-hidden="true">✨</span>
-        <h3 class="choice-title">The Creators Club</h3>
-        <p class="choice-desc">Comunidade para creators que querem pensar estratégia, conteúdo e negócio com clareza.</p>
-        <a class="choice-button" data-track="creator-conhecer-clube" href="https://thecreatorsclub.com.br" target="_blank" rel="noopener">Conhecer clube</a>
-      </article>
-    </div>
-  </div>
-
-  <footer class="inner-footer">
-    <p>Layfe Amorim · The Creators Club · Salvador, BA</p>
-    <div class="footer-contact">
-      <span>© 2026 Layfe Amorim. Todos os direitos reservados.</span>
-    </div>
-  </footer>
-
-</div>
-
-
-<!-- ════════ MODAL — LISTA DE ESPERA ════════ -->
-<div id="waitlist-overlay" class="modal-overlay" onclick="if(event.target===this)closeWaitlist()">
-  <div class="modal-card" id="waitlist-card" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
-    <button type="button" class="modal-close" aria-label="Fechar" onclick="closeWaitlist()">×</button>
-
-    <div class="modal-icon" aria-hidden="true">🎓</div>
-    <h2 class="modal-title" id="waitlist-title">Lista de Espera</h2>
-    <p class="modal-sub">Garanta sua vaga na próxima turma da mentoria UGC. Você recebe os detalhes em primeira mão.</p>
-
-    <form class="modal-form" id="waitlist-form" novalidate>
-      <div>
-        <label class="field-label" for="wl-name">Nome completo</label>
-        <input id="wl-name" name="name" type="text" placeholder="Seu nome" required autocomplete="name">
-      </div>
-      <div>
-        <label class="field-label" for="wl-whats">WhatsApp</label>
-        <input id="wl-whats" name="whatsapp" type="tel" placeholder="(71) 99999-9999" required autocomplete="tel">
-      </div>
-      <div>
-        <label class="field-label" for="wl-insta">Instagram</label>
-        <input id="wl-insta" name="instagram" type="text" placeholder="@seuusuario" autocomplete="off">
-      </div>
-      <div>
-        <label class="field-label" for="wl-email">E-mail</label>
-        <input id="wl-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email">
-      </div>
-      <button type="submit" class="modal-submit" data-track="creator-enviou-lista">Entrar na lista</button>
-      <p class="modal-note">Seus dados são usados apenas para o contato da mentoria.</p>
-    </form>
-
-    <div class="modal-success">
-      <div class="modal-icon" aria-hidden="true">✓</div>
-      <h2 class="modal-title">Tudo certo!</h2>
-      <p class="modal-success-text">Você está na lista de espera.<br>Em breve entro em contato com os detalhes da próxima turma. 💛</p>
+    <div class="stat reveal" data-d="2">
+      <div class="num" data-count="100" data-prefix="+ R$" data-suffix="K">+ R$100K</div>
+      <div class="lbl">Faturados<br>este ano</div>
     </div>
   </div>
 </div>
 
-
-<!-- ════════ MODAL — SOCIAL MEDIA ════════ -->
-<div id="social-overlay" class="modal-overlay" onclick="if(event.target===this)closeSocial()">
-  <div class="modal-card" id="social-card" role="dialog" aria-modal="true" aria-labelledby="social-title">
-    <button type="button" class="modal-close" aria-label="Fechar" onclick="closeSocial()">×</button>
-
-    <div class="modal-icon" aria-hidden="true">📈</div>
-    <h2 class="modal-title" id="social-title">Social Media</h2>
-    <p class="modal-sub">Conta um pouco da sua marca que eu te retorno com a melhor estratégia pro seu Instagram.</p>
-
-    <form class="modal-form" id="social-form" novalidate>
-      <div>
-        <label class="field-label" for="sm-name">Seu nome</label>
-        <input id="sm-name" name="name" type="text" placeholder="Seu nome" required autocomplete="name">
-      </div>
-      <div>
-        <label class="field-label" for="sm-insta">Instagram da marca</label>
-        <input id="sm-insta" name="instagram" type="text" placeholder="@suamarca" required autocomplete="off">
-      </div>
-      <div>
-        <label class="field-label" for="sm-whats">WhatsApp</label>
-        <input id="sm-whats" name="whatsapp" type="tel" placeholder="(71) 99999-9999" required autocomplete="tel">
-      </div>
-      <div>
-        <label class="field-label" for="sm-msg">O que você precisa?</label>
-        <input id="sm-msg" name="mensagem" type="text" placeholder="Ex: gestão de Instagram, conteúdo…" autocomplete="off">
-      </div>
-      <button type="submit" class="modal-submit" data-track="marca-enviou-social">Quero social media</button>
-      <p class="modal-note">Seus dados são usados apenas para esse contato.</p>
-    </form>
-
-    <div class="modal-success">
-      <div class="modal-icon" aria-hidden="true">✓</div>
-      <h2 class="modal-title">Recebido!</h2>
-      <p class="modal-success-text">Recebi seus dados! Em breve te retorno com a melhor estratégia pro seu Instagram. 💛</p>
+<!-- ABOUT + LOGOS -->
+<section>
+  <div class="wrap about-grid">
+    <div class="about-copy">
+      <span class="eyebrow reveal">Posicionamento não é só movimentar um perfil</span>
+      <h2 class="display reveal" data-d="1">É construir uma <em>estrutura</em> que <em>venda</em> por você!</h2>
+      <p class="reveal" data-d="1">Ooooi, eu sou a Layfe, criadora de conteúdo UGC e mentora de creators. Sou especialista em estratégia de conteúdo e uso meu Instagram como uma vitrine de oportunidades, criando conteúdos que fortalecem meu posicionamento e atraem clientes qualificados.</p>
+      <p class="reveal" data-d="2">No último ano, criei <strong>mais de 300 conteúdos para marcas</strong>, e grande parte dessas entregas veio de clientes que voltaram a trabalhar comigo.</p>
+      <p class="reveal" data-d="2">Hoje, ensino outras creators a fazerem o mesmo: se posicionarem melhor, venderem seu valor e estruturarem um negócio mais profissional, estratégico e menos improvisado.</p>
+      <p class="reveal" data-d="3">Eu precisei testar muito para entender o que funciona. <strong>Você não precisa começar do zero.</strong></p>
+    </div>
+    <div class="logo-grid reveal" data-d="1" aria-label="Marcas com quem a Layfe já trabalhou">
+      <div class="logo-cell"><img src="/produtos/img/logo-ilike.png" alt="iLike Professional" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-guday.jpg" alt="Guday" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-cafe-deus-pai.png" alt="Café com Deus Pai" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-espacolaser.png" alt="Espaçolaser" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-gummy.png" alt="Gummy Original" loading="lazy"></div>
+      <div class="logo-cell contain"><img src="/produtos/img/logo-meu-rodape.jpg" alt="Meu Rodapé" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-rap10.png" alt="Rap10" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-aice.jpg" alt="Aice" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-three.png" alt="Marca parceira" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-natura.png" alt="Natura" loading="lazy"></div>
+      <div class="logo-cell contain"><img src="/produtos/img/logo-ton.png" alt="Ton" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-mercado-livre.jpg" alt="Mercado Livre" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-inoar.jpg" alt="Inoar" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-party-games.png" alt="Party Games" loading="lazy"></div>
+      <div class="logo-cell"><img src="/produtos/img/logo-coala.jpg" alt="Coala" loading="lazy"></div>
+      <div class="logo-cell contain"><img src="/produtos/img/logo-leapmotor.jpg" alt="Leapmotor" loading="lazy"></div>
     </div>
   </div>
-</div>
+</section>
 
+<!-- MESSAGES -->
+<section class="msgs">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow reveal">Prova real</span>
+      <h2 class="display reveal" data-d="1">O tipo de mensagem que um <em>perfil bem posicionado</em> atrai</h2>
+    </div>
+    <div class="msg-gallery">
+      <img class="reveal" src="/produtos/img/chat3.jpg" alt="Mensagem de marca querendo fechar pacote de vídeos" loading="lazy">
+      <img class="reveal" data-d="1" src="/produtos/img/chat1.jpg" alt="Mensagem sobre agenda para criação de conteúdo" loading="lazy">
+      <img class="reveal" data-d="2" src="/produtos/img/chat4.jpg" alt="Mensagem de marca que achou o perfil pela tag" loading="lazy">
+      <img class="reveal" data-d="1" src="/produtos/img/chat2.jpg" alt="Mensagem agradecendo retorno rápido" loading="lazy">
+      <img class="reveal" data-d="2" src="/produtos/img/chat5.jpg" alt="Mensagem com oportunidade de trabalho de duas marcas" loading="lazy">
+    </div>
+    <p class="msg-note reveal">Essas mensagens são resultado de um perfil que comunica valor antes mesmo da primeira conversa. É isso que eu ensino outras creators a construir.</p>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="produtos">
+  <div class="wrap">
+    <div class="sec-head center">
+      <h2 class="display reveal">Meus produtos e serviços</h2>
+      <p class="reveal" data-d="1" style="color:var(--ink-soft);font-size:15px">Conheça meus produtos e comece a transformar oportunidades em negócio.</p>
+    </div>
+    <div class="prod-grid">
+      <article class="prod reveal">
+        <span class="kicker">Aplicativo</span>
+        <h3>DashCreator</h3>
+        <p>Plataforma de organização e gestão de trabalhos para criadores de conteúdo.</p>
+        <a class="more" href="https://thecreatorsclub.com.br/dashcreator/">Quero saber mais <span class="arw">→</span></a>
+      </article>
+      <article class="prod reveal" data-d="1">
+        <span class="kicker">Infoproduto</span>
+        <h3>Meu Primeiro Infoproduto</h3>
+        <p>Para criadores que querem transformar conhecimento em uma primeira oferta digital.</p>
+        <a class="more" href="#">Quero saber mais <span class="arw">→</span></a>
+      </article>
+      <article class="prod reveal">
+        <span class="kicker">Evento</span>
+        <h3>Creator Day Experience</h3>
+        <p>Para creators que querem profissionalizar o perfil, se posicionar e gerar mais oportunidades com marcas.</p>
+        <a class="more" href="https://thecreatorsclub.com.br/creator-experience/">Quero saber mais <span class="arw">→</span></a>
+      </article>
+      <article class="prod reveal" data-d="1">
+        <span class="kicker">Mentoria</span>
+        <h3>Mentoria Perfil Contratável</h3>
+        <p>Para creators que querem profissionalizar o perfil, se posicionar e gerar mais oportunidades com marcas.</p>
+        <a class="more" href="/mentoria/">Quero saber mais <span class="arw">→</span></a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="seal" aria-hidden="true"></div>
+  <div class="wrap">
+    <h2 class="reveal">Conheça meus <em>produtos</em> e comece a transformar <em>oportunidades</em> em negócio.</h2>
+    <a class="btn reveal" data-d="1" href="#produtos">Conhecer produtos da Layfe <span class="arw">→</span></a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot">
+    <div class="foot-social">
+      <a href="https://instagram.com/layfeamorim" aria-label="Instagram" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <a href="https://tiktok.com/@layfeamorim" aria-label="TikTok" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.3 2 1.6 3.6 3.5 3.9v2.6c-1.3.1-2.6-.3-3.6-1v5.9c0 3.3-2.7 5.6-5.7 5.3-2.6-.3-4.5-2.5-4.4-5.1.1-2.6 2.3-4.7 4.9-4.6.3 0 .6 0 .9.1v2.7c-.3-.1-.6-.2-.9-.2-1.2 0-2.1 1-2.1 2.1 0 1.2 1 2.1 2.1 2.1 1.2 0 2.2-.9 2.2-2.1V3h2.6z"/></svg>
+      </a>
+      <a href="mailto:contato@layfeamorim.com" aria-label="E-mail">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="M3 6l9 6 9-6"/></svg>
+      </a>
+    </div>
+    <div>© 2026 Layfe Amorim. Todos os direitos reservados.</div>
+  </div>
+</footer>
 
 <script>
-  /* ── Configuração ── */
-  var LAYFE_WHATS = '5571997238419';
-  // URL do Web App do Google Apps Script (planilha "Leads Layfe").
-  var SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzxWQN0q9NoiwIMoIWbjfLoMY6zqqu24F_kMqgMzlbmG4HhIZPPakZA9pP-mdrTdwQQ-Q/exec';
+  // Scroll reveal
+  (function(){
+    var els=document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);} });
+    },{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){io.observe(e);});
+  })();
 
-  function sendLead(tipo, data, intro) {
-    // Envia os dados pro Apps Script, que (1) salva na planilha e
-    // (2) notifica a Layfe automaticamente no WhatsApp via CallMeBot.
-    if (SHEETS_ENDPOINT) {
-      try {
-        fetch(SHEETS_ENDPOINT, {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(Object.assign({ tipo: tipo, intro: intro }, data))
-        });
-      } catch (e) {}
+  // Count-up numbers
+  (function(){
+    var stats=document.getElementById('stats');
+    if(!stats)return;
+    var done=false;
+    function run(){
+      if(done)return; done=true;
+      stats.querySelectorAll('.num').forEach(function(el){
+        var target=+el.getAttribute('data-count');
+        var pre=el.getAttribute('data-prefix')||'';
+        var suf=el.getAttribute('data-suffix')||'';
+        var dur=1400, t0=null;
+        function step(ts){
+          if(!t0)t0=ts;
+          var p=Math.min((ts-t0)/dur,1);
+          var eased=1-Math.pow(1-p,3);
+          el.textContent=pre+Math.round(target*eased)+suf;
+          if(p<1)requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
     }
-  }
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)run();});},{threshold:.5});
+    io.observe(stats);
+  })();
 
-  /* ── Lista de Espera ── */
-  function openWaitlist() {
-    var card = document.getElementById('waitlist-card');
-    card.classList.remove('done');
-    document.getElementById('waitlist-form').reset();
-    document.getElementById('waitlist-overlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(function(){ document.getElementById('wl-name').focus(); }, 50);
-  }
-  function closeWaitlist() {
-    document.getElementById('waitlist-overlay').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') { closeWaitlist(); closeSocial(); }
-  });
+  // Parallax on hero image
+  (function(){
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+    var img=document.querySelector('.hero-figure img');
+    if(!img)return;
+    window.addEventListener('scroll',function(){
+      var y=window.scrollY;
+      if(y<700)img.style.transform='translateY('+(y*0.04)+'px)';
+    },{passive:true});
+  })();
 
-  document.getElementById('waitlist-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    if (!this.checkValidity()) { this.reportValidity(); return; }
-
-    var data = {
-      name:      document.getElementById('wl-name').value.trim(),
-      whatsapp:  document.getElementById('wl-whats').value.trim(),
-      instagram: document.getElementById('wl-insta').value.trim(),
-      email:     document.getElementById('wl-email').value.trim()
-    };
-
-    sendLead('Lista de Espera', data, 'Olá Layfe! Quero entrar na lista de espera da mentoria UGC.');
-    document.getElementById('waitlist-card').classList.add('done');
-  });
-
-  /* ── Social Media ── */
-  function openSocial() {
-    var card = document.getElementById('social-card');
-    card.classList.remove('done');
-    document.getElementById('social-form').reset();
-    document.getElementById('social-overlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(function(){ document.getElementById('sm-name').focus(); }, 50);
-  }
-  function closeSocial() {
-    document.getElementById('social-overlay').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  document.getElementById('social-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    if (!this.checkValidity()) { this.reportValidity(); return; }
-    var data = {
-      name:      document.getElementById('sm-name').value.trim(),
-      instagram: document.getElementById('sm-insta').value.trim(),
-      whatsapp:  document.getElementById('sm-whats').value.trim(),
-      mensagem:  document.getElementById('sm-msg').value.trim()
-    };
-    sendLead('Social Media', data, 'Olá Layfe! Quero Social Media para o meu Instagram.');
-    document.getElementById('social-card').classList.add('done');
-  });
-
-  function showSection(id) {
-    document.body.classList.add('inner-active');
-    document.getElementById('hero').classList.remove('active');
-    document.getElementById('hero').style.display = 'none';
-    document.getElementById('marcas').style.display   = 'none';
-    document.getElementById('creators').style.display = 'none';
-    var el = document.getElementById(id);
-    el.style.display = 'flex';
-    el.style.flexDirection = 'column';
-    window.scrollTo(0, 0);
-  }
-  function showHero() {
-    document.body.classList.remove('inner-active');
-    document.getElementById('marcas').style.display   = 'none';
-    document.getElementById('creators').style.display = 'none';
-    document.getElementById('hero').style.display = 'grid';
-    document.getElementById('hero').classList.add('active');
-    window.scrollTo(0, 0);
-  }
+  // Mobile menu
+  (function(){
+    var t=document.getElementById('navToggle'), n=document.getElementById('navLinks');
+    if(!t)return;
+    t.addEventListener('click',function(){
+      var open=n.classList.toggle('open');
+      t.setAttribute('aria-expanded',open?'true':'false');
+    });
+    n.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){n.classList.remove('open');t.setAttribute('aria-expanded','false');});});
+  })();
 </script>
-<script src="https://app.thecreatorsclub.com.br/static/studio/track.js" data-site="layfe" defer></script>
 </body>
 </html>
