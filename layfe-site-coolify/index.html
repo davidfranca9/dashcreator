@@ -66,20 +66,20 @@
   /* ─── HERO ─── */
   .hero{background:var(--navy);color:var(--cream);position:relative;overflow:hidden;padding:clamp(44px,6vw,86px) 0 clamp(52px,7vw,96px)}
   .hero::before{content:'';position:absolute;top:-30%;right:-10%;width:60vw;height:120%;background:radial-gradient(circle at center,rgba(62,108,181,.22),transparent 62%);pointer-events:none}
-  .hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(30px,5vw,72px);align-items:center}
-  .hero h1{max-width:15ch;margin-bottom:24px;font-size:clamp(32px,4.4vw,60px);color:var(--cream)}
+  .hero-grid{position:relative;display:grid;grid-template-columns:1fr 1.08fr;gap:clamp(30px,5vw,60px);align-items:center}
+  .hero h1{max-width:14ch;margin-bottom:24px;font-size:clamp(34px,4.9vw,66px);color:var(--cream)}
   .hero h1 em{color:var(--accent)}
   .hero-sub{max-width:46ch;margin-bottom:34px;font-size:clamp(15px,1.5vw,17.5px);line-height:1.72;color:rgba(245,241,232,.74)}
   .hero-figure{position:relative}
-  .hero-figure img{width:100%;height:clamp(400px,54vw,560px);object-fit:cover;object-position:center 22%;border-radius:10px;box-shadow:0 30px 70px rgba(0,0,0,.4)}
-  .hero-figure::after{content:'';position:absolute;inset:0;border:1px solid var(--line-cream);border-radius:10px;transform:translate(16px,16px);z-index:-1}
+  .hero-figure img{width:100%;height:clamp(440px,56vw,620px);object-fit:cover;object-position:center 24%;border-radius:14px}
+  @media(min-width:901px){.hero-figure{margin-right:calc(-1*clamp(22px,5vw,64px))}.hero-figure img{border-radius:14px 0 0 14px;height:clamp(500px,46vw,640px)}}
 
   /* ─── STATS ─── */
   .stats{background:var(--paper);border-bottom:1px solid var(--line)}
   .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,4vw,40px);padding:clamp(34px,4.5vw,52px) 0;text-align:center}
   .stat{position:relative}
   .stat + .stat::before{content:'';position:absolute;left:calc(clamp(18px,4vw,40px)/-2);top:14%;height:72%;width:1px;background:var(--line)}
-  .stat .num{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(34px,5vw,58px);line-height:1;color:var(--navy);letter-spacing:-.01em}
+  .stat .num{font-family:'Inter',sans-serif;font-weight:700;font-size:clamp(34px,5.2vw,58px);line-height:1;color:var(--navy);letter-spacing:-.02em}
   .stat .lbl{margin-top:12px;font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute);line-height:1.5}
 
   /* ─── SECTION base ─── */
@@ -94,8 +94,8 @@
   .about-copy h2{font-size:clamp(28px,3.9vw,46px);line-height:1.1;margin-bottom:26px}
   .about-copy p{font-size:14.5px;line-height:1.8;color:var(--ink-soft);margin-bottom:16px;max-width:52ch}
   .about-copy p strong{color:var(--ink);font-weight:600}
-  .logo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .logo-cell{aspect-ratio:1;border-radius:10px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(26,20,16,.05);transition:transform .25s ease,box-shadow .25s ease}
+  .logo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .logo-cell{aspect-ratio:1;border-radius:8px;overflow:hidden;background:#fff;transition:transform .25s ease,box-shadow .25s ease}
   .logo-cell img{width:100%;height:100%;object-fit:cover}
   .logo-cell.contain{background:#fff}
   .logo-cell.contain img{object-fit:contain;padding:11%}
@@ -108,8 +108,8 @@
   .msgs .eyebrow{color:rgba(201,149,106,.95)}
   .msgs h2{color:var(--cream);font-size:clamp(26px,3.8vw,46px)}
   .msgs h2 em{font-style:italic;color:var(--accent)}
-  .msg-gallery{column-count:3;column-gap:18px;margin-bottom:38px}
-  .msg-gallery img{width:100%;border-radius:12px;margin-bottom:18px;break-inside:avoid;box-shadow:0 16px 40px rgba(0,0,0,.3);border:1px solid var(--line-cream);transition:transform .25s ease}
+  .msg-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;margin-bottom:38px}
+  .msg-gallery img{width:100%;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.3);border:1px solid var(--line-cream);transition:transform .25s ease}
   .msg-gallery img:hover{transform:translateY(-4px)}
   .msg-note{text-align:center;max-width:62ch;margin:0 auto;font-size:14.5px;line-height:1.75;color:rgba(245,241,232,.66)}
 
@@ -118,7 +118,8 @@
   .prod{display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:clamp(28px,3.4vw,42px);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
   .prod:hover{transform:translateY(-5px);box-shadow:0 26px 56px rgba(26,20,16,.13);border-color:var(--accent)}
   .prod .kicker{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
-  .prod h3{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(22px,2.4vw,28px);color:var(--navy);margin-bottom:14px;letter-spacing:-.01em}
+  .prod{padding:clamp(32px,3.6vw,48px)}
+  .prod h3{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(24px,2.7vw,33px);color:var(--navy);margin-bottom:14px;letter-spacing:-.01em}
   .prod p{font-size:14px;line-height:1.7;color:var(--ink-soft);margin-bottom:26px;flex:1}
   .prod .more{display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);text-decoration:none;transition:gap .2s,color .2s}
   .prod .more:hover{gap:15px;color:var(--accent)}
@@ -128,7 +129,7 @@
   .cta .seal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(520px,76vw);aspect-ratio:1;border:1px solid var(--line-cream);border-radius:50%;pointer-events:none}
   .cta .seal::before{content:'';position:absolute;inset:26px;border:1px solid rgba(245,241,232,.08);border-radius:50%}
   .cta .wrap{position:relative;z-index:2}
-  .cta h2{font-family:'Playfair Display',serif;font-weight:400;font-style:italic;font-size:clamp(26px,3.6vw,44px);line-height:1.22;color:var(--cream);max-width:20ch;margin:0 auto 36px}
+  .cta h2{font-family:'Playfair Display',serif;font-weight:400;font-style:normal;font-size:clamp(28px,3.8vw,46px);line-height:1.2;color:var(--cream);max-width:22ch;margin:0 auto 36px}
   .cta h2 em{color:var(--accent)}
 
   /* ─── FOOTER ─── */
@@ -152,7 +153,7 @@
     .hero-grid{grid-template-columns:1fr;gap:38px}
     .hero-figure{order:-1;max-width:460px;margin:0 auto}
     .about-grid{grid-template-columns:1fr;gap:40px}
-    .msg-gallery{column-count:2}
+    .msg-gallery{grid-template-columns:repeat(2,1fr)}
     .nav-links{position:fixed;inset:70px 0 auto 0;background:var(--navy-dp);flex-direction:column;align-items:stretch;gap:0;padding:8px 0;transform:translateY(-130%);transition:transform .35s ease;border-bottom:1px solid var(--line-cream)}
     .nav-links.open{transform:none}
     .nav-links a{padding:15px clamp(22px,5vw,64px)}
@@ -163,7 +164,7 @@
     .stat + .stat::before{display:none}
     .stat + .stat{border-top:1px solid var(--line);padding-top:26px}
     .logo-grid{grid-template-columns:repeat(3,1fr)}
-    .msg-gallery{column-count:1;max-width:400px;margin-left:auto;margin-right:auto}
+    .msg-gallery{grid-template-columns:1fr;max-width:380px;margin-left:auto;margin-right:auto}
     .prod-grid{grid-template-columns:1fr}
   }
 
@@ -262,15 +263,13 @@
 <section class="msgs">
   <div class="wrap">
     <div class="sec-head center">
-      <span class="eyebrow reveal">Prova real</span>
-      <h2 class="display reveal" data-d="1">O tipo de mensagem que um <em>perfil bem posicionado</em> atrai</h2>
+      <h2 class="display reveal">O tipo de mensagem que um <em>perfil bem posicionado</em> atrai</h2>
     </div>
     <div class="msg-gallery">
-      <img class="reveal" src="/produtos/img/chat3.jpg" alt="Mensagem de marca querendo fechar pacote de vídeos" loading="lazy">
-      <img class="reveal" data-d="1" src="/produtos/img/chat1.jpg" alt="Mensagem sobre agenda para criação de conteúdo" loading="lazy">
-      <img class="reveal" data-d="2" src="/produtos/img/chat4.jpg" alt="Mensagem de marca que achou o perfil pela tag" loading="lazy">
-      <img class="reveal" data-d="1" src="/produtos/img/chat2.jpg" alt="Mensagem agradecendo retorno rápido" loading="lazy">
-      <img class="reveal" data-d="2" src="/produtos/img/chat5.jpg" alt="Mensagem com oportunidade de trabalho de duas marcas" loading="lazy">
+      <img class="reveal" src="/produtos/img/chat5.jpg" alt="Mensagem com oportunidade de trabalho de duas marcas" loading="lazy">
+      <img class="reveal" data-d="1" src="/produtos/img/chat3.jpg" alt="Mensagem de marca querendo fechar pacote de vídeos" loading="lazy">
+      <img class="reveal" data-d="2" src="/produtos/img/chat1.jpg" alt="Mensagem sobre agenda para criação de conteúdo" loading="lazy">
+      <img class="reveal" data-d="3" src="/produtos/img/chat2.jpg" alt="Mensagem agradecendo retorno rápido" loading="lazy">
     </div>
     <p class="msg-note reveal">Essas mensagens são resultado de um perfil que comunica valor antes mesmo da primeira conversa. É isso que eu ensino outras creators a construir.</p>
   </div>
@@ -281,29 +280,24 @@
   <div class="wrap">
     <div class="sec-head center">
       <h2 class="display reveal">Meus produtos e serviços</h2>
-      <p class="reveal" data-d="1" style="color:var(--ink-soft);font-size:15px">Conheça meus produtos e comece a transformar oportunidades em negócio.</p>
     </div>
     <div class="prod-grid">
       <article class="prod reveal">
-        <span class="kicker">Aplicativo</span>
         <h3>DashCreator</h3>
         <p>Plataforma de organização e gestão de trabalhos para criadores de conteúdo.</p>
         <a class="more" href="https://thecreatorsclub.com.br/dashcreator/">Quero saber mais <span class="arw">→</span></a>
       </article>
       <article class="prod reveal" data-d="1">
-        <span class="kicker">Infoproduto</span>
         <h3>Meu Primeiro Infoproduto</h3>
         <p>Para criadores que querem transformar conhecimento em uma primeira oferta digital.</p>
         <a class="more" href="#">Quero saber mais <span class="arw">→</span></a>
       </article>
       <article class="prod reveal">
-        <span class="kicker">Evento</span>
         <h3>Creator Day Experience</h3>
         <p>Para creators que querem profissionalizar o perfil, se posicionar e gerar mais oportunidades com marcas.</p>
         <a class="more" href="https://thecreatorsclub.com.br/creator-experience/">Quero saber mais <span class="arw">→</span></a>
       </article>
       <article class="prod reveal" data-d="1">
-        <span class="kicker">Mentoria</span>
         <h3>Mentoria Perfil Contratável</h3>
         <p>Para creators que querem profissionalizar o perfil, se posicionar e gerar mais oportunidades com marcas.</p>
         <a class="more" href="/mentoria/">Quero saber mais <span class="arw">→</span></a>
@@ -314,7 +308,6 @@
 
 <!-- CTA -->
 <section class="cta">
-  <div class="seal" aria-hidden="true"></div>
   <div class="wrap">
     <h2 class="reveal">Conheça meus <em>produtos</em> e comece a transformar <em>oportunidades</em> em negócio.</h2>
     <a class="btn reveal" data-d="1" href="#produtos">Conhecer produtos da Layfe <span class="arw">→</span></a>
