@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mentoria Perfil Contratável · The Creators Club</title>
+<meta name="description" content="Uma mentoria ao vivo para creators que querem se posicionar profissionalmente, transformar o perfil em uma vitrine contratável e gerar mais oportunidades pagas com marcas.">
+<link rel="icon" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root{
+    --paper:#f5f1e8; --paper-dk:#eae4d4;
+    --navy:#0a2463; --navy-dp:#081b4d; --navy-lt:#3e6cb5; --blue-br:#7aa2e8;
+    --ink:#1a1410; --ink-soft:#5a5345; --ink-mute:#8c8475;
+    --line:rgba(26,20,16,.14); --line-st:rgba(26,20,16,.28);
+    --accent:#c9956a; --accent-lt:rgba(201,149,106,.14);
+    --cream:#f5f1e8; --line-cream:rgba(245,241,232,.14);
+  }
+
+  html{scroll-behavior:smooth;scroll-padding-top:76px}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+  img{max-width:100%;display:block}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 clamp(22px,5vw,64px)}
+
+  .display{font-family:'Playfair Display',serif;font-weight:400;letter-spacing:-.012em;line-height:1.08;color:var(--navy)}
+  .display em{font-style:italic;font-weight:400;color:var(--accent)}
+  .eyebrow{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:54px;padding:0 34px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;cursor:pointer;border:1px solid var(--cream);background:var(--cream);color:var(--navy);border-radius:0;transition:transform .18s ease,box-shadow .25s ease,background .2s,color .2s;white-space:nowrap}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.22)}
+  .btn-navy{background:var(--navy);border-color:var(--navy);color:var(--cream)}
+  .btn .arw{transition:transform .2s}
+  .btn:hover .arw{transform:translateX(4px)}
+
+  /* HEADER */
+  header{position:sticky;top:0;z-index:100;background:rgba(8,27,77,.86);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line-cream)}
+  .nav{display:flex;align-items:center;justify-content:space-between;min-height:70px;gap:20px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;flex-shrink:0}
+  .brand .emblem{font-family:'Playfair Display',serif;font-style:italic;font-weight:500;font-size:22px;color:var(--accent);line-height:1}
+  .brand .wordmark{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--cream)}
+  .nav-links{display:flex;align-items:center;gap:clamp(16px,2.4vw,32px);margin-left:auto}
+  .nav-links a{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,241,232,.78);text-decoration:none;transition:color .2s;white-space:nowrap}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-toggle{display:none;background:none;border:0;cursor:pointer;padding:8px;flex-direction:column;gap:5px}
+  .nav-toggle span{width:24px;height:2px;background:var(--cream);transition:.3s}
+
+  /* HERO */
+  .hero{background:var(--navy);color:var(--cream);position:relative;overflow:hidden;padding:clamp(44px,6vw,86px) 0 clamp(52px,7vw,96px)}
+  .hero::before{content:'';position:absolute;top:-30%;right:-10%;width:60vw;height:120%;background:radial-gradient(circle at center,rgba(62,108,181,.28),transparent 62%);pointer-events:none}
+  .hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(30px,5vw,72px);align-items:center}
+  .hero h1{max-width:16ch;margin-bottom:22px;font-size:clamp(32px,4.4vw,58px);color:var(--cream);font-family:'Playfair Display',serif;font-weight:500;line-height:1.08;letter-spacing:-.012em}
+  .hero h1 em{font-style:normal;color:var(--blue-br)}
+  .hero-sub{max-width:48ch;margin-bottom:34px;font-size:clamp(15px,1.5vw,17.5px);line-height:1.72;color:rgba(245,241,232,.74)}
+  .hero-figure{position:relative}
+  .hero-figure img{width:100%;height:clamp(380px,50vw,520px);object-fit:cover;object-position:center 30%;border-radius:10px;box-shadow:0 30px 70px rgba(0,0,0,.4)}
+  .hero-figure::after{content:'';position:absolute;inset:0;border:1px solid var(--line-cream);border-radius:10px;transform:translate(16px,16px);z-index:-1}
+
+  /* SECTIONS */
+  section{padding:clamp(60px,8.5vw,116px) 0}
+  .sec-head{margin-bottom:clamp(38px,5vw,58px)}
+  .sec-head.center{text-align:center;max-width:46ch;margin-left:auto;margin-right:auto}
+  .sec-head h2{font-size:clamp(28px,4.4vw,50px);margin-bottom:16px}
+
+  /* COMO FUNCIONA */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .step{position:relative;overflow:hidden;border-radius:14px;padding:clamp(26px,3vw,40px);color:var(--cream);background:linear-gradient(150deg,#315fb0,#102a68 72%);box-shadow:0 18px 44px rgba(10,36,99,.26);transition:transform .25s ease,box-shadow .25s ease}
+  .step:hover{transform:translateY(-6px);box-shadow:0 28px 60px rgba(10,36,99,.34)}
+  .step .n{font-family:'Playfair Display',serif;font-style:italic;font-weight:500;font-size:46px;line-height:1;color:rgba(245,241,232,.4);margin-bottom:22px;display:block}
+  .step p{font-size:15px;line-height:1.66;color:rgba(245,241,232,.95)}
+  .step::after{content:'';position:absolute;right:-30px;bottom:-30px;width:120px;height:120px;border-radius:50%;border:1px solid rgba(245,241,232,.12)}
+
+  /* DEPOIMENTOS */
+  .deps{background:var(--navy);color:var(--cream);position:relative;overflow:hidden}
+  .deps::before{content:'';position:absolute;top:-20%;right:-8%;width:50vw;height:90%;background:radial-gradient(circle at center,rgba(201,149,106,.12),transparent 64%);pointer-events:none}
+  .deps .wrap{position:relative;z-index:2}
+  .deps .eyebrow{color:rgba(201,149,106,.95)}
+  .deps h2{color:var(--cream);font-size:clamp(26px,3.8vw,46px)}
+  .deps h2 em{font-style:italic;color:var(--accent)}
+  .dep-gallery{column-count:3;column-gap:18px}
+  .dep-gallery img{width:100%;border-radius:12px;margin-bottom:18px;break-inside:avoid;box-shadow:0 16px 40px rgba(0,0,0,.3);border:1px solid var(--line-cream);transition:transform .25s ease}
+  .dep-gallery img:hover{transform:translateY(-4px)}
+
+  /* O QUE VAI APRENDER */
+  .learn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  .learn{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:clamp(26px,3vw,40px);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+  .learn:hover{transform:translateY(-5px);box-shadow:0 26px 56px rgba(26,20,16,.13);border-color:var(--accent)}
+  .learn .n{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--accent);margin-bottom:14px;display:block}
+  .learn h3{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(21px,2.3vw,27px);color:var(--navy);margin-bottom:14px;letter-spacing:-.01em}
+  .learn p{font-size:14px;line-height:1.72;color:var(--ink-soft)}
+
+  /* MITO (navy band) */
+  .myth{background:var(--navy);position:relative;overflow:hidden}
+  .myth-card{max-width:860px;margin:0 auto;background:var(--paper);border-radius:16px;padding:clamp(34px,5vw,64px);text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.3)}
+  .myth-card h2{font-family:'Playfair Display',serif;font-weight:500;font-size:clamp(24px,3.4vw,40px);color:var(--navy);line-height:1.14;margin-bottom:22px}
+  .myth-card h2 em{font-style:italic;color:var(--accent)}
+  .myth-card p{font-size:clamp(14.5px,1.5vw,16.5px);line-height:1.8;color:var(--ink-soft);max-width:62ch;margin:0 auto}
+
+  /* CTA */
+  .cta{background:var(--navy-dp);color:var(--cream);text-align:center;position:relative;overflow:hidden}
+  .cta .seal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(520px,76vw);aspect-ratio:1;border:1px solid var(--line-cream);border-radius:50%;pointer-events:none}
+  .cta .wrap{position:relative;z-index:2}
+  .cta h2{font-family:'Playfair Display',serif;font-weight:400;font-style:italic;font-size:clamp(26px,3.6vw,44px);line-height:1.22;color:var(--cream);max-width:20ch;margin:0 auto 36px}
+  .cta h2 em{color:var(--accent)}
+
+  /* FOOTER */
+  footer{background:var(--navy-dp);color:rgba(245,241,232,.6);border-top:1px solid var(--line-cream)}
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:30px 0;font-size:12px}
+  .foot-social{display:flex;gap:16px}
+  .foot-social a{color:rgba(245,241,232,.7);transition:color .2s}
+  .foot-social a:hover{color:var(--accent)}
+  .foot-social svg{width:20px;height:20px;display:block}
+
+  /* REVEAL */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .reveal[data-d="1"]{transition-delay:.08s}
+  .reveal[data-d="2"]{transition-delay:.16s}
+  .reveal[data-d="3"]{transition-delay:.24s}
+
+  /* RESPONSIVE */
+  @media(max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:38px}
+    .hero-figure{order:-1;max-width:460px;margin:0 auto}
+    .steps{grid-template-columns:1fr}
+    .dep-gallery{column-count:2}
+    .nav-links{position:fixed;inset:70px 0 auto 0;background:var(--navy-dp);flex-direction:column;align-items:stretch;gap:0;padding:8px 0;transform:translateY(-130%);transition:transform .35s ease;border-bottom:1px solid var(--line-cream)}
+    .nav-links.open{transform:none}
+    .nav-links a{padding:15px clamp(22px,5vw,64px)}
+    .nav-toggle{display:flex}
+  }
+  @media(max-width:640px){
+    .learn-grid{grid-template-columns:1fr}
+    .dep-gallery{column-count:1;max-width:400px;margin-left:auto;margin-right:auto}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;scroll-behavior:auto!important}
+    .reveal{opacity:1;transform:none;transition:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="The Creators Club">
+      <span class="emblem">C</span>
+      <span class="wordmark">The Creators Club</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="/produtos/">Aplicativo de Organização</a>
+      <a href="#top">Mentoria</a>
+      <a href="/produtos/#produtos">Eventos</a>
+      <a href="/produtos/#produtos">Comunidade</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1 class="reveal">Transforme o seu Instagram em um <em>canal de aquisição de clientes.</em></h1>
+      <p class="hero-sub reveal" data-d="1">Uma mentoria ao vivo para creators que querem se posicionar profissionalmente, transformar o perfil em uma vitrine contratável e gerar mais oportunidades pagas com marcas.</p>
+      <a class="btn reveal" data-d="2" href="#inscrever">Quero atrair marcas <span class="arw">→</span></a>
+    </div>
+    <div class="hero-figure reveal" data-d="1">
+      <img src="img/hero.png" alt="Layfe Amorim, mentora de creators" loading="eager">
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section>
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow reveal">Na prática</span>
+      <h2 class="display reveal" data-d="1">Como funciona na prática</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <span class="n">01</span>
+        <p>Você estrutura o seu perfil e posta conteúdos com estratégias de atração.</p>
+      </div>
+      <div class="step reveal" data-d="1">
+        <span class="n">02</span>
+        <p>As marcas chegam até você, entendem rapidamente quem você é, o que você faz e por que deveriam trabalhar com você.</p>
+      </div>
+      <div class="step reveal" data-d="2">
+        <span class="n">03</span>
+        <p>Você aumenta a demanda e, quando quiser abordar, suas respostas serão diferentes porque seu perfil já estará comunicando o seu valor.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="deps">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow reveal">Turmas anteriores</span>
+      <h2 class="display reveal" data-d="1">Divas que entenderam a importância de ter um <em>perfil contratável</em></h2>
+    </div>
+    <div class="dep-gallery">
+      <img class="reveal" src="img/dep-isadora.png" alt="Depoimento de Isadora Marin, Turma 01" loading="lazy">
+      <img class="reveal" data-d="1" src="img/dep-bianca.png" alt="Depoimento de Bianca Aguiar, Turma 01" loading="lazy">
+      <img class="reveal" data-d="2" src="img/dep-raiane.png" alt="Depoimento de Raiane Freitas, Planner" loading="lazy">
+      <img class="reveal" data-d="1" src="img/dep-anna.png" alt="Depoimento de Anna Prieto, Turma 01" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<!-- O QUE VAI APRENDER -->
+<section>
+  <div class="wrap">
+    <div class="sec-head center">
+      <h2 class="display reveal">O que você vai aprender</h2>
+    </div>
+    <div class="learn-grid">
+      <article class="learn reveal">
+        <span class="n">01</span>
+        <h3>Conteúdo para o mês inteiro</h3>
+        <p>Você vai aprender sobre Calendário Editorial. Vamos montar juntas toda a sua Linha Editorial do mês com base nos seus objetivos. Nunca mais vai ficar sem saber o que postar para atrair marcas.</p>
+      </article>
+      <article class="learn reveal" data-d="1">
+        <span class="n">02</span>
+        <h3>Roteirização estratégica</h3>
+        <p>Vamos criar AO VIVO e JUNTAS todos os seus roteiros de conteúdo, totalmente intencionais, estratégicos e com estruturas replicáveis. Você já sai da aula com a estrutura pronta pra gravar!</p>
+      </article>
+      <article class="learn reveal">
+        <span class="n">03</span>
+        <h3>Prospecção e Negociação</h3>
+        <p>Você vai aprender a prospectar marcas com estratégia e a negociar seus trabalhos com segurança, cobrando o seu real valor sem medo e fechando contratos que se repetem.</p>
+      </article>
+      <article class="learn reveal" data-d="1">
+        <span class="n">04</span>
+        <h3>Laboratório de IA</h3>
+        <p>Vamos colocar a inteligência artificial a seu favor para acelerar ideias, roteiros e produção de conteúdo, ganhando tempo sem perder a sua essência e o seu posicionamento.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- MITO -->
+<section class="myth">
+  <div class="wrap">
+    <div class="myth-card reveal">
+      <h2>Mentiram pra você quando falaram que <em>UGC não precisa postar!</em></h2>
+      <p>Realmente, não precisa postar os trabalhos que faz para as marcas. Mas uma Creator que performa é constante nas redes sociais e cria conteúdo estratégico para ser notada pelas marcas, receber inbounds e ter previsibilidade financeira.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="inscrever">
+  <div class="seal" aria-hidden="true"></div>
+  <div class="wrap">
+    <h2 class="reveal">Transforme o seu perfil em uma <em>vitrine contratável.</em></h2>
+    <a class="btn reveal" data-d="1" href="#top">Quero atrair marcas <span class="arw">→</span></a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot">
+    <div class="foot-social">
+      <a href="https://instagram.com/layfeamorim" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+      <a href="https://tiktok.com/@layfeamorim" aria-label="TikTok" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.3 2 1.6 3.6 3.5 3.9v2.6c-1.3.1-2.6-.3-3.6-1v5.9c0 3.3-2.7 5.6-5.7 5.3-2.6-.3-4.5-2.5-4.4-5.1.1-2.6 2.3-4.7 4.9-4.6.3 0 .6 0 .9.1v2.7c-.3-.1-.6-.2-.9-.2-1.2 0-2.1 1-2.1 2.1 0 1.2 1 2.1 2.1 2.1 1.2 0 2.2-.9 2.2-2.1V3h2.6z"/></svg></a>
+      <a href="mailto:contato@layfeamorim.com" aria-label="E-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="M3 6l9 6 9-6"/></svg></a>
+    </div>
+    <div>© 2026 Layfe Amorim. Todos os direitos reservados.</div>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var els=document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+    var io=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){io.observe(e);});
+  })();
+  (function(){
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+    var img=document.querySelector('.hero-figure img'); if(!img)return;
+    window.addEventListener('scroll',function(){var y=window.scrollY;if(y<700)img.style.transform='translateY('+(y*0.04)+'px)';},{passive:true});
+  })();
+  (function(){
+    var t=document.getElementById('navToggle'), n=document.getElementById('navLinks'); if(!t)return;
+    t.addEventListener('click',function(){var open=n.classList.toggle('open');t.setAttribute('aria-expanded',open?'true':'false');});
+    n.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){n.classList.remove('open');t.setAttribute('aria-expanded','false');});});
+  })();
+</script>
+</body>
+</html>
