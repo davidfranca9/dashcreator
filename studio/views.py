@@ -96,6 +96,16 @@ class AppLoginView(LoginView):
     authentication_form = EmailOrUsernameAuthenticationForm
     redirect_authenticated_user = True
 
+    def form_valid(self, form):
+        """Marcou "Manter-me conectado": a sessão dura 6 meses, e o prazo se
+        renova a cada visita. Sem marcar, vale o padrão (14 dias)."""
+        resposta = super().form_valid(form)
+        manter = self.request.POST.get("remember_me") in {"1", "on", "true", "True"}
+        self.request.session.set_expiry(
+            django_settings.SESSION_COOKIE_AGE_REMEMBER if manter else django_settings.SESSION_COOKIE_AGE
+        )
+        return resposta
+
 
 class AppPasswordResetView(PasswordResetView):
     template_name = "registration/hubla_password_reset_form.html"

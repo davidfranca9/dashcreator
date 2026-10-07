@@ -63,8 +63,9 @@
       .eye:hover{ color:var(--navy); }
       .eye svg{ width:18px; height:18px; }
 
-      .remember{ display:flex; align-items:center; gap:9px; margin:4px 0 22px; font-size:13.5px; color:var(--ink); cursor:pointer; }
-      .remember input{ width:16px; height:16px; accent-color:var(--blue); cursor:pointer; }
+      .remember{ display:flex; align-items:flex-start; gap:9px; margin:4px 0 22px; font-size:13.5px; color:var(--ink); cursor:pointer; }
+      .remember input{ width:16px; height:16px; margin-top:2px; flex-shrink:0; accent-color:var(--blue); cursor:pointer; }
+      .remember small{ display:block; margin-top:2px; font-size:12px; line-height:1.45; color:var(--muted); }
 
       .submit{ width:100%; border:1px solid var(--navy); border-radius:0; padding:16px; cursor:pointer;
         font-family:'Montserrat',sans-serif; font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#fff;
@@ -127,8 +128,10 @@
           </div>
 
           <label class="remember">
-            <input type="checkbox" name="remember_me">
-            Manter-me conectado
+            <input type="checkbox" name="remember_me" value="1" checked>
+            <span>Manter-me conectado neste aparelho
+              <small>Fica 6 meses sem pedir senha de novo. Desmarque em computador compartilhado.</small>
+            </span>
           </label>
 
           {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}">{% endif %}

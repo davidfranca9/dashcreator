@@ -145,6 +145,13 @@ EMAIL_USE_SSL = env_flag("EMAIL_USE_SSL", False)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env_flag("DJANGO_SECURE_SSL_REDIRECT", False)
 SESSION_COOKIE_SECURE = env_flag("DJANGO_SESSION_COOKIE_SECURE", False)
+# Quanto tempo a pessoa fica conectada. Sem marcar "Manter-me conectado" vale o
+# padrão; marcando, a sessão dura SESSION_COOKIE_AGE_REMEMBER (ver AppLoginView).
+# SESSION_SAVE_EVERY_REQUEST renova o prazo a cada visita, então quem usa o Dash
+# como app no celular não cai fora do nada.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14          # 14 dias
+SESSION_COOKIE_AGE_REMEMBER = 60 * 60 * 24 * 180  # 6 meses
+SESSION_SAVE_EVERY_REQUEST = True
 CSRF_COOKIE_SECURE = env_flag("DJANGO_CSRF_COOKIE_SECURE", False)
 
 MERCADO_PAGO_PUBLIC_KEY = os.getenv("MERCADO_PAGO_PUBLIC_KEY", "").strip()
