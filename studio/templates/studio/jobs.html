@@ -135,6 +135,17 @@
     }
     .jobs-funnel-tab-add { color: #94a3b8; font-weight: 500; }
     .jobs-funnel-tab-add:hover { color: #1a2340; }
+    .jobs-funnel-tab-wrap { display: inline-flex; align-items: center; }
+    .jobs-funnel-tab-wrap .jobs-funnel-tab { padding-right: 10px; }
+    .jobs-funnel-act {
+        display: none; align-items: center; justify-content: center;
+        width: 24px; height: 24px; margin-bottom: -1px; padding: 0;
+        background: transparent; border: none; border-radius: 6px;
+        font-family: inherit; font-size: 13px; line-height: 1; color: #94a3b8; cursor: pointer;
+    }
+    .jobs-funnel-tab-wrap.is-active .jobs-funnel-act { display: inline-flex; }
+    .jobs-funnel-act:hover { color: #1a2340; background: rgba(0,0,0,0.05); }
+    .jobs-funnel-act-delete:hover { color: #b02e3a; background: rgba(176,46,58,0.08); }
     .jobs-funnel-desc {
         font-size: 12.5px; margin-bottom: 14px;
     }
@@ -438,9 +449,17 @@
     {# Tabs de funis #}
     <div class="jobs-funnel-tabs" data-funnel-tabs>
         {% for funnel in funnels %}
-            <button type="button"
-                    class="jobs-funnel-tab{% if forloop.first %} is-active{% endif %}"
-                    data-funnel-tab="{{ funnel.id }}">{{ funnel.name }}</button>
+            <span class="jobs-funnel-tab-wrap{% if forloop.first %} is-active{% endif %}" data-funnel-wrap="{{ funnel.id }}">
+                <button type="button"
+                        class="jobs-funnel-tab{% if forloop.first %} is-active{% endif %}"
+                        data-funnel-tab="{{ funnel.id }}">{{ funnel.name }}</button>
+                <button type="button" class="jobs-funnel-act"
+                        data-funnel-rename="{{ funnel.id }}" data-name="{{ funnel.name }}"
+                        title="Renomear funil" aria-label="Renomear o funil {{ funnel.name }}">&#9998;</button>
+                <button type="button" class="jobs-funnel-act jobs-funnel-act-delete"
+                        data-funnel-delete="{{ funnel.id }}" data-name="{{ funnel.name }}"
+                        title="Excluir funil" aria-label="Excluir o funil {{ funnel.name }}">&times;</button>
+            </span>
         {% endfor %}
         <button type="button" class="jobs-funnel-tab jobs-funnel-tab-add" data-funnel-create title="Criar novo funil">+ Novo funil</button>
     </div>
@@ -511,7 +530,7 @@
         <p class="muted">Nenhum funil cadastrado ainda. Recarregue a página.</p>
     {% endfor %}
 
-    <p class="muted jobs-kanban-hint">Arraste um card entre colunas para mudar o status. Clique no nome da coluna para renomear.</p>
+    <p class="muted jobs-kanban-hint">Arraste um card entre colunas para mudar o status. Clique no nome da coluna para renomear. Na aba do funil aberto, use o lápis para renomear e o x para excluir.</p>
 </section>
 
 <script>
@@ -684,6 +703,7 @@
         const funnelTabs = document.querySelectorAll("[data-funnel-tab]");
         const funnelBoards = document.querySelectorAll("[data-funnel-board]");
         const FUNNEL_KEY = "jobs.funnel";
+        const funnelWraps = document.querySelectorAll("[data-funnel-wrap]");
         const showFunnel = (id) => {
             let matched = false;
             funnelTabs.forEach((tab) => {
@@ -695,6 +715,9 @@
                 funnelTabs[0].classList.add("is-active");
                 id = funnelTabs[0].dataset.funnelTab;
             }
+            funnelWraps.forEach((wrap) => {
+                wrap.classList.toggle("is-active", String(wrap.dataset.funnelWrap) === String(id));
+            });
             funnelBoards.forEach((board) => {
                 board.hidden = String(board.dataset.funnelBoard) !== String(id);
             });
@@ -731,6 +754,53 @@
                     .catch(() => alert("Falha de rede."));
             });
         }
+
+        // Renomear e excluir funil -----------------------------------------
+        document.querySelectorAll("[data-funnel-rename]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const atual = btn.dataset.name || "";
+                const novo = window.prompt("Novo nome do funil:", atual);
+                if (novo === null) return;
+                if (!novo.trim() || novo.trim() === atual) return;
+                const fd = new FormData();
+                fd.append("name", novo.trim());
+                fetch(`/trabalhos/funis/${btn.dataset.funnelRename}/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    body: fd,
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro ao renomear o funil."); return; }
+                        window.location.reload();
+                    })
+                    .catch(() => alert("Falha de rede."));
+            });
+        });
+        document.querySelectorAll("[data-funnel-delete]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const nome = btn.dataset.name || "esse funil";
+                const board = document.querySelector(`[data-funnel-board="${btn.dataset.funnelDelete}"]`);
+                const cards = board ? board.querySelectorAll("[data-kanban-card]").length : 0;
+                const aviso = cards
+                    ? `Excluir o funil "${nome}"? Os ${cards} trabalho(s) dele vão para o primeiro funil da lista.`
+                    : `Excluir o funil "${nome}"?`;
+                if (!window.confirm(aviso)) return;
+                fetch(`/trabalhos/funis/${btn.dataset.funnelDelete}/excluir/`, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrfToken },
+                    credentials: "same-origin",
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || "Erro ao excluir o funil."); return; }
+                        try { window.localStorage.removeItem(FUNNEL_KEY); } catch (e) {}
+                        window.location.reload();
+                    })
+                    .catch(() => alert("Falha de rede."));
+            });
+        });
 
         // Renomear coluna (inline) ----------------------------------------
         document.querySelectorAll("[data-column-rename]").forEach((input) => {

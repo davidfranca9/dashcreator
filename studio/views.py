@@ -2894,6 +2894,59 @@ def funnel_create(request: HttpRequest) -> JsonResponse:
 
 @login_required
 @require_POST
+def funnel_update(request: HttpRequest, funnel_id: int) -> JsonResponse:
+    """Renomeia o funil (e a descrição, se vier)."""
+    from .models import Funnel
+
+    workspace = _workspace(request)
+    funnel = get_object_or_404(Funnel, pk=funnel_id, workspace=workspace)
+    name = (request.POST.get("name") or "").strip()[:80]
+    if not name:
+        return JsonResponse({"ok": False, "error": "Informe um nome pro funil."}, status=400)
+    if Funnel.objects.filter(workspace=workspace, name=name).exclude(pk=funnel.pk).exists():
+        return JsonResponse({"ok": False, "error": "Já existe um funil com esse nome."}, status=400)
+    funnel.name = name
+    if "description" in request.POST:
+        funnel.description = (request.POST.get("description") or "").strip()[:200]
+    funnel.save()
+    return JsonResponse({"ok": True, "name": funnel.name})
+
+
+@login_required
+@require_POST
+def funnel_delete(request: HttpRequest, funnel_id: int) -> JsonResponse:
+    """Exclui o funil. Os trabalhos vão para outro funil: quem tem coluna com o
+    mesmo nome lá mantém a coluna; o resto cai na primeira coluna."""
+    from .models import Funnel, Project
+
+    workspace = _workspace(request)
+    funnel = get_object_or_404(Funnel, pk=funnel_id, workspace=workspace)
+    if Funnel.objects.filter(workspace=workspace).count() <= 1:
+        return JsonResponse(
+            {"ok": False, "error": "Você precisa ter pelo menos um funil."}, status=400
+        )
+    destino = (
+        Funnel.objects.filter(workspace=workspace)
+        .exclude(pk=funnel.pk)
+        .order_by("position", "name")
+        .first()
+    )
+    primeira = destino.columns.order_by("position", "name").first()
+    projetos = Project.objects.filter(workspace=workspace, funnel=funnel)
+    colunas_destino = set(destino.columns.values_list("name", flat=True))
+    mantem = list(projetos.filter(status__in=colunas_destino).values_list("pk", flat=True))
+    muda = list(projetos.exclude(status__in=colunas_destino).values_list("pk", flat=True))
+    Project.objects.filter(pk__in=mantem).update(funnel=destino)
+    if muda and primeira:
+        Project.objects.filter(pk__in=muda).update(funnel=destino, status=primeira.name)
+    elif muda:
+        Project.objects.filter(pk__in=muda).update(funnel=destino)
+    funnel.delete()
+    return JsonResponse({"ok": True, "moved": len(mantem) + len(muda), "destino": destino.name})
+
+
+@login_required
+@require_POST
 def funnel_column_create(request: HttpRequest, funnel_id: int) -> JsonResponse:
     from .models import Funnel, FunnelColumn
 
