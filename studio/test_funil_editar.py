@@ -89,3 +89,14 @@ class FunilEditarTests(TestCase):
         self.assertContains(pagina, f'data-funnel-rename="{self.errado.pk}"')
         self.assertContains(pagina, f'data-funnel-delete="{self.errado.pk}"')
         self.assertNotContains(pagina, "—")
+
+
+class DashboardDeslogadoTests(TestCase):
+    """Abrir o Dashboard sem estar logado tem que levar para o login, não dar erro 500."""
+
+    def test_dashboard_sem_login_vai_para_a_entrada(self):
+        from django.urls import reverse
+
+        r = self.client.get(reverse("dashboard"))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login/", r["Location"])

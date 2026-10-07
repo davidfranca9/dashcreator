@@ -1362,6 +1362,7 @@ def planning(request: HttpRequest) -> HttpResponse:
     return render(request, "studio/planning.html", context)
 
 
+@login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     from .models import Task
     from .services import sync_dashboard_auto_tasks
