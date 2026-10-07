@@ -2887,8 +2887,16 @@ def funnel_create(request: HttpRequest) -> JsonResponse:
         description=(request.POST.get("description") or "").strip()[:200],
         position=last_position,
     )
-    # Cria uma primeira coluna vazia pro usuário customizar.
-    FunnelColumn.objects.create(funnel=funnel, name="Nova coluna", position=0)
+    # Colunas iniciais: as etapas padrão ou uma coluna vazia pra pessoa montar.
+    if (request.POST.get("columns") or "").strip() == "padrao":
+        from .constants import PROJECT_STATUS_CHOICES
+
+        nomes = [rotulo for _, rotulo in PROJECT_STATUS_CHOICES]
+    else:
+        nomes = ["Nova coluna"]
+    FunnelColumn.objects.bulk_create(
+        [FunnelColumn(funnel=funnel, name=nome, position=i) for i, nome in enumerate(nomes)]
+    )
     return JsonResponse({"ok": True, "funnel_id": funnel.pk, "name": funnel.name})
 
 

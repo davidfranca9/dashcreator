@@ -150,6 +150,58 @@
         font-size: 12.5px; margin-bottom: 14px;
     }
 
+    /* Janela de funil (criar, renomear, excluir) ---------------------------*/
+    .funnel-modal { width: min(460px, 100%); padding: 26px 26px 22px; }
+    .funnel-modal [hidden] { display: none !important; }
+    .funnel-modal, .funnel-modal h3, .funnel-modal label, .funnel-modal strong { color: #1a2340; }
+    body.theme-dark .funnel-modal,
+    body.theme-dark .funnel-modal h3,
+    body.theme-dark .funnel-modal label,
+    body.theme-dark .funnel-modal strong { color: #edf5ff; }
+    body.theme-dark .funnel-modal .muted { color: #95a8c4; }
+    body.theme-dark .funnel-modal .meeting-popup-badge { color: #cfe0ff; background: rgba(103,163,255,0.18); }
+    body.theme-dark .funnel-modal .ghost-button { color: #cfe0ff; border-color: rgba(149,185,255,0.32); }
+    body.theme-dark .funnel-modal-field input { color: #edf5ff; }
+    .funnel-modal h3 { margin: 10px 0 6px; font-size: 20px; font-weight: 600; }
+    .funnel-modal-sub { margin: 0 0 18px; font-size: 13px; line-height: 1.55; }
+    .funnel-modal-field { display: grid; gap: 6px; margin-bottom: 14px; }
+    .funnel-modal-field label { font-size: 12.5px; font-weight: 600; }
+    .funnel-modal-field input {
+        width: 100%; min-height: 44px; padding: 10px 12px;
+        font-family: inherit; font-size: 15px; color: var(--text);
+        background: rgba(255,255,255,0.9); border: 1px solid rgba(26,35,64,0.18);
+        border-radius: 12px; outline: none;
+    }
+    body.theme-dark .funnel-modal-field input {
+        background: rgba(255,255,255,0.06); border-color: rgba(149,185,255,0.22);
+    }
+    .funnel-modal-field input:focus { border-color: #4d8cff; box-shadow: 0 0 0 3px rgba(77,140,255,0.18); }
+    .funnel-modal-escolhas { display: grid; gap: 8px; margin-bottom: 20px; }
+    .funnel-modal-escolha {
+        display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px;
+        border: 1px solid rgba(26,35,64,0.14); border-radius: 14px; cursor: pointer;
+    }
+    body.theme-dark .funnel-modal-escolha { border-color: rgba(149,185,255,0.18); }
+    .funnel-modal-escolha:hover { border-color: rgba(77,140,255,0.5); }
+    .funnel-modal-escolha input { margin-top: 3px; accent-color: #1a2340; }
+    .funnel-modal-escolha strong { display: block; font-size: 13.5px; font-weight: 600; }
+    .funnel-modal-escolha span { font-size: 12.5px; }
+    .funnel-modal-aviso {
+        display: flex; gap: 10px; padding: 12px 14px; margin-bottom: 18px;
+        font-size: 12.5px; line-height: 1.5;
+        background: rgba(77,140,255,0.10); border-radius: 12px;
+    }
+    .funnel-modal-aviso--perigo { background: rgba(176,46,58,0.10); }
+    .funnel-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .funnel-modal-erro { margin: 0 0 14px; font-size: 13px; color: #b02e3a; font-weight: 600; }
+    .funnel-modal-erro[hidden] { display: none; }
+    .funnel-modal-perigo {
+        min-height: 42px; padding: 0 18px; border: 0; border-radius: 12px;
+        font-family: inherit; font-size: 14px; font-weight: 600; color: #fff;
+        background: #b02e3a; cursor: pointer;
+    }
+    .funnel-modal-perigo:hover { background: #992833; }
+
     .jobs-kanban-col-name input {
         border: none; background: transparent;
         font: inherit; color: inherit;
@@ -444,6 +496,49 @@
     {% endif %}
 </section>
 
+{# Janela de funil: criar, renomear e excluir #}
+<div class="jobs-kpi-backdrop" data-funnel-modal hidden>
+    <div class="jobs-kpi-modal funnel-modal" role="dialog" aria-modal="true" aria-labelledby="funnel-modal-title">
+        <button type="button" class="jobs-kpi-modal-close" data-funnel-modal-close aria-label="Fechar">&times;</button>
+        <span class="meeting-popup-badge">Funil</span>
+        <h3 id="funnel-modal-title" data-funnel-modal-title>Novo funil</h3>
+        <p class="muted funnel-modal-sub" data-funnel-modal-sub></p>
+
+        <form data-funnel-modal-form>
+            <p class="funnel-modal-erro" data-funnel-modal-erro hidden></p>
+            <div data-funnel-modal-campos>
+                <div class="funnel-modal-field">
+                    <label for="funnel-modal-nome">Nome do funil</label>
+                    <input type="text" id="funnel-modal-nome" name="name" maxlength="80" autocomplete="off"
+                           placeholder="Ex.: Publicidade">
+                </div>
+                <div class="funnel-modal-field" data-funnel-modal-desc-field>
+                    <label for="funnel-modal-desc">Descrição (opcional)</label>
+                    <input type="text" id="funnel-modal-desc" name="description" maxlength="200" autocomplete="off"
+                           placeholder="Para que serve esse quadro">
+                </div>
+                <div class="funnel-modal-escolhas" data-funnel-modal-colunas>
+                    <label class="funnel-modal-escolha">
+                        <input type="radio" name="columns" value="padrao" checked>
+                        <span><strong>Começar com as etapas padrão</strong>
+                        <span class="muted">Briefing, Em produção, Aguardando aprovação, Concluído e Cancelado</span></span>
+                    </label>
+                    <label class="funnel-modal-escolha">
+                        <input type="radio" name="columns" value="zero">
+                        <span><strong>Começar do zero</strong>
+                        <span class="muted">Cria só uma coluna, você monta as suas</span></span>
+                    </label>
+                </div>
+            </div>
+            <div class="funnel-modal-aviso" data-funnel-modal-aviso hidden></div>
+            <div class="funnel-modal-acoes">
+                <button type="button" class="ghost-button" data-funnel-modal-close>Cancelar</button>
+                <button type="submit" class="primary-button" data-funnel-modal-ok>Criar funil</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {# ============ KANBAN VIEW (hidden por padrão) ============ #}
 <section class="jobs-kanban-wrap" data-jobs-view="kanban" hidden>
     {# Tabs de funis #}
@@ -454,7 +549,7 @@
                         class="jobs-funnel-tab{% if forloop.first %} is-active{% endif %}"
                         data-funnel-tab="{{ funnel.id }}">{{ funnel.name }}</button>
                 <button type="button" class="jobs-funnel-act"
-                        data-funnel-rename="{{ funnel.id }}" data-name="{{ funnel.name }}"
+                        data-funnel-rename="{{ funnel.id }}" data-name="{{ funnel.name }}" data-description="{{ funnel.description }}"
                         title="Renomear funil" aria-label="Renomear o funil {{ funnel.name }}">&#9998;</button>
                 <button type="button" class="jobs-funnel-act jobs-funnel-act-delete"
                         data-funnel-delete="{{ funnel.id }}" data-name="{{ funnel.name }}"
@@ -732,15 +827,78 @@
             tab.addEventListener("click", () => showFunnel(tab.dataset.funnelTab));
         });
 
-        // Criar novo funil ------------------------------------------------
-        const funnelCreateBtn = document.querySelector("[data-funnel-create]");
-        if (funnelCreateBtn) {
-            funnelCreateBtn.addEventListener("click", () => {
-                const name = window.prompt("Nome do novo funil:");
-                if (!name || !name.trim()) return;
+        // Janela de funil: criar, renomear e excluir ------------------------
+        const funnelModal = document.querySelector("[data-funnel-modal]");
+        if (funnelModal) {
+            const mForm = funnelModal.querySelector("[data-funnel-modal-form]");
+            const mTitulo = funnelModal.querySelector("[data-funnel-modal-title]");
+            const mSub = funnelModal.querySelector("[data-funnel-modal-sub]");
+            const mCampos = funnelModal.querySelector("[data-funnel-modal-campos]");
+            const mColunas = funnelModal.querySelector("[data-funnel-modal-colunas]");
+            const mAviso = funnelModal.querySelector("[data-funnel-modal-aviso]");
+            const mErro = funnelModal.querySelector("[data-funnel-modal-erro]");
+            const mOk = funnelModal.querySelector("[data-funnel-modal-ok]");
+            const mNome = funnelModal.querySelector("#funnel-modal-nome");
+            const mDesc = funnelModal.querySelector("#funnel-modal-desc");
+            const mDescField = funnelModal.querySelector("[data-funnel-modal-desc-field]");
+            let acao = null;
+
+            const fecharModal = () => {
+                funnelModal.hidden = true;
+                document.body.style.overflow = "";
+                acao = null;
+            };
+            const mostrarErro = (texto) => {
+                mErro.textContent = texto;
+                mErro.hidden = !texto;
+            };
+            const abrirModal = (config) => {
+                acao = config;
+                mTitulo.textContent = config.titulo;
+                mSub.textContent = config.sub;
+                mCampos.hidden = !config.comCampos;
+                mColunas.hidden = !config.comColunas;
+                mDescField.hidden = config.comCampos && config.semDescricao;
+                mNome.previousElementSibling.textContent = config.rotuloNome || "Nome do funil";
+                mNome.placeholder = config.exemplo || "Ex.: Publicidade";
+                mNome.value = config.nome || "";
+                mDesc.value = config.descricao || "";
+                mAviso.hidden = !config.aviso;
+                mAviso.textContent = config.aviso || "";
+                mAviso.classList.toggle("funnel-modal-aviso--perigo", !!config.perigo);
+                mOk.textContent = config.botao;
+                mOk.classList.toggle("primary-button", !config.perigo);
+                mOk.classList.toggle("funnel-modal-perigo", !!config.perigo);
+                mostrarErro("");
+                funnelModal.hidden = false;
+                document.body.style.overflow = "hidden";
+                setTimeout(() => (config.comCampos ? mNome.focus() : mOk.focus()), 40);
+            };
+
+            funnelModal.querySelectorAll("[data-funnel-modal-close]").forEach((btn) => {
+                btn.addEventListener("click", fecharModal);
+            });
+            funnelModal.addEventListener("click", (e) => { if (e.target === funnelModal) fecharModal(); });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && !funnelModal.hidden) fecharModal();
+            });
+
+            mForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                if (!acao) return;
                 const fd = new FormData();
-                fd.append("name", name.trim());
-                fetch("/trabalhos/funis/novo/", {
+                if (acao.comCampos) {
+                    const nome = mNome.value.trim();
+                    if (!nome) { mostrarErro("Dê um nome pro funil."); mNome.focus(); return; }
+                    fd.append("name", nome);
+                    if (!acao.semDescricao) fd.append("description", mDesc.value.trim());
+                    if (acao.comColunas) {
+                        const escolhida = funnelModal.querySelector("input[name=columns]:checked");
+                        fd.append("columns", escolhida ? escolhida.value : "padrao");
+                    }
+                }
+                mOk.disabled = true;
+                fetch(acao.url, {
                     method: "POST",
                     headers: { "X-CSRFToken": csrfToken },
                     body: fd,
@@ -748,59 +906,50 @@
                 })
                     .then((r) => r.json())
                     .then((data) => {
-                        if (!data.ok) { alert(data.error || "Erro ao criar funil."); return; }
+                        if (!data.ok) { mostrarErro(data.error || "Não deu para salvar."); mOk.disabled = false; return; }
+                        if (acao.limpaMemoria) { try { window.localStorage.removeItem(FUNNEL_KEY); } catch (err) {} }
                         window.location.reload();
                     })
-                    .catch(() => alert("Falha de rede."));
+                    .catch(() => { mostrarErro("Falha de rede. Tente de novo."); mOk.disabled = false; });
+            });
+
+            const funnelCreateBtn = document.querySelector("[data-funnel-create]");
+            if (funnelCreateBtn) {
+                funnelCreateBtn.addEventListener("click", () => abrirModal({
+                    titulo: "Novo funil",
+                    sub: "Um funil é um quadro inteiro de trabalho, com as colunas dentro dele. Para criar só uma etapa nova, use \u002B Adicionar coluna no funil que já existe.",
+                    comCampos: true, comColunas: true, botao: "Criar funil",
+                    url: "/trabalhos/funis/novo/",
+                }));
+            }
+            document.querySelectorAll("[data-funnel-rename]").forEach((btn) => {
+                btn.addEventListener("click", () => abrirModal({
+                    titulo: "Renomear funil",
+                    sub: "O nome aparece na aba do Kanban.",
+                    comCampos: true, comColunas: false, botao: "Salvar",
+                    nome: btn.dataset.name || "",
+                    descricao: btn.dataset.description || "",
+                    url: `/trabalhos/funis/${btn.dataset.funnelRename}/`,
+                }));
+            });
+            window.__abrirJanelaFunil = abrirModal;
+            document.querySelectorAll("[data-funnel-delete]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const board = document.querySelector(`[data-funnel-board="${btn.dataset.funnelDelete}"]`);
+                    const cards = board ? board.querySelectorAll("[data-kanban-card]").length : 0;
+                    abrirModal({
+                        titulo: `Excluir "${btn.dataset.name || "funil"}"?`,
+                        sub: "O quadro e as colunas dele somem. Isso não dá para desfazer.",
+                        comCampos: false, comColunas: false, perigo: true, botao: "Excluir funil",
+                        aviso: cards
+                            ? `${cards === 1 ? "O trabalho" : `Os ${cards} trabalhos`} desse funil ${cards === 1 ? "vai" : "vão"} para o primeiro funil da lista. Nada é apagado.`
+                            : "Esse funil está vazio, nenhum trabalho vai ser mexido.",
+                        url: `/trabalhos/funis/${btn.dataset.funnelDelete}/excluir/`,
+                        limpaMemoria: true,
+                    });
+                });
             });
         }
-
-        // Renomear e excluir funil -----------------------------------------
-        document.querySelectorAll("[data-funnel-rename]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const atual = btn.dataset.name || "";
-                const novo = window.prompt("Novo nome do funil:", atual);
-                if (novo === null) return;
-                if (!novo.trim() || novo.trim() === atual) return;
-                const fd = new FormData();
-                fd.append("name", novo.trim());
-                fetch(`/trabalhos/funis/${btn.dataset.funnelRename}/`, {
-                    method: "POST",
-                    headers: { "X-CSRFToken": csrfToken },
-                    body: fd,
-                    credentials: "same-origin",
-                })
-                    .then((r) => r.json())
-                    .then((data) => {
-                        if (!data.ok) { alert(data.error || "Erro ao renomear o funil."); return; }
-                        window.location.reload();
-                    })
-                    .catch(() => alert("Falha de rede."));
-            });
-        });
-        document.querySelectorAll("[data-funnel-delete]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const nome = btn.dataset.name || "esse funil";
-                const board = document.querySelector(`[data-funnel-board="${btn.dataset.funnelDelete}"]`);
-                const cards = board ? board.querySelectorAll("[data-kanban-card]").length : 0;
-                const aviso = cards
-                    ? `Excluir o funil "${nome}"? Os ${cards} trabalho(s) dele vão para o primeiro funil da lista.`
-                    : `Excluir o funil "${nome}"?`;
-                if (!window.confirm(aviso)) return;
-                fetch(`/trabalhos/funis/${btn.dataset.funnelDelete}/excluir/`, {
-                    method: "POST",
-                    headers: { "X-CSRFToken": csrfToken },
-                    credentials: "same-origin",
-                })
-                    .then((r) => r.json())
-                    .then((data) => {
-                        if (!data.ok) { alert(data.error || "Erro ao excluir o funil."); return; }
-                        try { window.localStorage.removeItem(FUNNEL_KEY); } catch (e) {}
-                        window.location.reload();
-                    })
-                    .catch(() => alert("Falha de rede."));
-            });
-        });
 
         // Renomear coluna (inline) ----------------------------------------
         document.querySelectorAll("[data-column-rename]").forEach((input) => {
@@ -877,23 +1026,14 @@
         // Adicionar coluna ------------------------------------------------
         document.querySelectorAll("[data-column-create]").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const name = window.prompt("Nome da nova coluna:");
-                if (!name || !name.trim()) return;
-                const funnelId = btn.dataset.columnCreate;
-                const fd = new FormData();
-                fd.append("name", name.trim());
-                fetch(`/trabalhos/funis/${funnelId}/colunas/novo/`, {
-                    method: "POST",
-                    headers: { "X-CSRFToken": csrfToken },
-                    body: fd,
-                    credentials: "same-origin",
-                })
-                    .then((r) => r.json())
-                    .then((data) => {
-                        if (!data.ok) { alert(data.error || "Erro."); return; }
-                        window.location.reload();
-                    })
-                    .catch(() => alert("Falha de rede."));
+                if (!window.__abrirJanelaFunil) return;
+                window.__abrirJanelaFunil({
+                    titulo: "Nova coluna",
+                    sub: "A coluna é uma etapa dentro deste funil. Ela vira o status dos trabalhos que caírem nela.",
+                    comCampos: true, semDescricao: true, botao: "Criar coluna",
+                    rotuloNome: "Nome da coluna", exemplo: "Ex.: Aguardando produto",
+                    url: `/trabalhos/funis/${btn.dataset.columnCreate}/colunas/novo/`,
+                });
             });
         });
 
@@ -961,21 +1101,19 @@
         // Remover coluna --------------------------------------------------
         document.querySelectorAll("[data-column-delete]").forEach((btn) => {
             btn.addEventListener("click", () => {
+                if (!window.__abrirJanelaFunil) return;
                 const col = btn.closest("[data-kanban-col]");
-                const name = col ? col.querySelector("[data-column-rename]").value : "essa coluna";
-                if (!window.confirm(`Remover a coluna "${name}"? Os trabalhos nela vão para a primeira coluna do funil.`)) return;
-                const columnId = btn.dataset.columnDelete;
-                fetch(`/trabalhos/funis/colunas/${columnId}/excluir/`, {
-                    method: "POST",
-                    headers: { "X-CSRFToken": csrfToken },
-                    credentials: "same-origin",
-                })
-                    .then((r) => r.json())
-                    .then((data) => {
-                        if (!data.ok) { alert(data.error || "Erro."); return; }
-                        window.location.reload();
-                    })
-                    .catch(() => alert("Falha de rede."));
+                const nome = col ? col.querySelector("[data-column-rename]").value : "essa coluna";
+                const cards = col ? col.querySelectorAll("[data-kanban-card]").length : 0;
+                window.__abrirJanelaFunil({
+                    titulo: `Remover a coluna "${nome}"?`,
+                    sub: "A coluna sai deste funil.",
+                    comCampos: false, perigo: true, botao: "Remover coluna",
+                    aviso: cards
+                        ? `${cards === 1 ? "O trabalho" : `Os ${cards} trabalhos`} desta coluna ${cards === 1 ? "vai" : "vão"} para a primeira coluna do funil. Nada é apagado.`
+                        : "Esta coluna está vazia, nenhum trabalho vai ser mexido.",
+                    url: `/trabalhos/funis/colunas/${btn.dataset.columnDelete}/excluir/`,
+                });
             });
         });
     })();
