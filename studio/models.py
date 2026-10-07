@@ -898,7 +898,9 @@ class Coupon(TimestampedModel):
 class WorkspaceSetting(TimestampedModel):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="settings")
     key = models.CharField(max_length=120)
-    value = models.CharField(max_length=255)
+    # TextField porque algumas chaves guardam listas em JSON (ex.: empresas
+    # ignoradas no follow-up), que passavam de 255 e derrubavam o Postgres.
+    value = models.TextField(blank=True, default="")
 
     class Meta:
         unique_together = [("workspace", "key")]
