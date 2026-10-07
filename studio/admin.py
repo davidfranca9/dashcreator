@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessCode, ActiveUserSession, Coupon, EventScheduleItem, EventSupplier, EventTask, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory, Workspace, WorkspaceSetting
+from .models import AccessCode, ActiveUserSession, Coupon, EventGuest, EventScheduleItem, EventSupplier, EventTask, InfoProduct, Membership, Niche, Project, Prospect, Purchase, ServiceCategory, Workspace, WorkspaceSetting
 
 
 @admin.register(Workspace)
@@ -107,6 +107,15 @@ class EventTaskAdmin(admin.ModelAdmin):
     list_display = ("title", "area", "owner", "due_date", "done", "event_key")
     list_filter = ("event_key", "area", "done")
     search_fields = ("title", "owner")
+
+
+@admin.register(EventGuest)
+class EventGuestAdmin(admin.ModelAdmin):
+    """Lista de presença do evento: convidadas, equipe e marcas (os ingressos pagos vêm das Compras)."""
+
+    list_display = ("name", "kind", "status", "invited_by", "whatsapp", "event_key")
+    list_filter = ("event_key", "kind", "status")
+    search_fields = ("name", "instagram", "invited_by")
 
 
 @admin.register(EventScheduleItem)

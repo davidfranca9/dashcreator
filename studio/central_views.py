@@ -17,9 +17,9 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
 from .central import APP, central_snapshot
-from .evento import EVENTO, FornecedorForm, RoteiroForm, TarefaForm, criar_sugestao
+from .evento import EVENTO, ConvidadaForm, FornecedorForm, RoteiroForm, TarefaForm, criar_sugestao
 from .forms import EmailOrUsernameAuthenticationForm
-from .models import EventScheduleItem, EventSupplier, EventTask
+from .models import EventGuest, EventScheduleItem, EventSupplier, EventTask
 from .services import is_internal_account
 
 CENTRAL_PUBLICA = "https://thecreatorsclub.com.br/central/"
@@ -96,6 +96,7 @@ EDITAVEIS = {
     "fornecedor": (EventSupplier, FornecedorForm, "fornecedores", "Fornecedor salvo.", "Fornecedor excluído."),
     "tarefa": (EventTask, TarefaForm, "tarefas", "Tarefa salva.", "Tarefa excluída."),
     "roteiro": (EventScheduleItem, RoteiroForm, "roteiro", "Horário salvo.", "Horário excluído."),
+    "convidada": (EventGuest, ConvidadaForm, "presencas", "Pessoa salva na lista.", "Pessoa tirada da lista."),
 }
 
 

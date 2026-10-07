@@ -335,6 +335,8 @@
   /* ================= números ================= */
   .mini-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; overflow: hidden; background: var(--linha); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra-1); }
   .mini-stats--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mini-stats--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .mini-stats--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .cartao .mini-stats { border: 0; border-top: 1px solid var(--linha); border-radius: 0; box-shadow: none; }
   .mini-stat { padding: 16px 18px; background: var(--superficie); }
   .mini-stat b { display: block; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; color: var(--tinta); }
@@ -735,12 +737,13 @@
       <section class="secao" id="evento" data-secao="evento">
         <header class="secao-cabeca">
           <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-evento"/></svg></span>
-          <div><h2>Creator Day Experience</h2><p>{{ e.info.data|date:"j \d\e F"|lower }} · {{ e.info.hora }} · {{ e.info.local }} · {{ e.info.tema }}. Fornecedores, orçamento, tarefas e roteiro do dia, tudo num lugar.</p></div>
+          <div><h2>Creator Day Experience</h2><p>{{ e.info.data|date:"j \d\e F"|lower }} · {{ e.info.hora }} · {{ e.info.local }} · {{ e.info.tema }}. Fornecedores, orçamento, lista de presença, tarefas e roteiro do dia, tudo num lugar.</p></div>
         </header>
 
         <div class="subabas" role="tablist" aria-label="Partes do evento">
           <button type="button" role="tab" id="aba-evento-resumo" aria-controls="evento-resumo" data-subaba="resumo" aria-selected="true">Resumo</button>
           <button type="button" role="tab" id="aba-evento-fornecedores" aria-controls="evento-fornecedores" data-subaba="fornecedores" aria-selected="false">Fornecedores e parceiros <span>{{ e.fornecedores_total }}</span></button>
+          <button type="button" role="tab" id="aba-evento-presencas" aria-controls="evento-presencas" data-subaba="presencas" aria-selected="false">Lista de presença <span>{{ e.presenca.total }}</span></button>
           <button type="button" role="tab" id="aba-evento-tarefas" aria-controls="evento-tarefas" data-subaba="tarefas" aria-selected="false">Tarefas <span data-contador-tarefas>{{ e.tarefas_feitas }}/{{ e.tarefas_total }}</span></button>
           <button type="button" role="tab" id="aba-evento-roteiro" aria-controls="evento-roteiro" data-subaba="roteiro" aria-selected="false">Roteiro do dia <span>{{ e.roteiro|length }}</span></button>
         </div>
@@ -751,7 +754,7 @@
             <div class="mini-stat"><b>{% if e.dias > 0 %}{{ e.dias }}{% elif e.dias == 0 %}Hoje{% else %}Feito{% endif %}</b><span>{% if e.dias > 0 %}dias para o evento{% elif e.dias == 0 %}é dia de evento{% else %}evento realizado{% endif %}</span></div>
             <div class="mini-stat"><b>{{ e.ingressos.pagas }}</b><span>ingressos pagos</span></div>
             <div class="mini-stat"><b>{{ cd_em_aberto }}</b><span>compras em aberto</span></div>
-            <div class="mini-stat"><b>{{ e.lista_espera }}</b><span>na lista de espera</span></div>
+            <div class="mini-stat"><b>{{ e.presenca.total }}</b><span>pessoas na lista de presença</span></div>
             <div class="mini-stat"><b class="dinheiro">{{ e.orcamento.receita_ingressos }}</b><span>recebido em ingressos</span></div>
           </div>
 
@@ -878,6 +881,77 @@
             {% endif %}
           </div>
           {% endif %}{% endfor %}
+        </div>
+
+        {# ---------- lista de presença ---------- #}
+        <div class="subpainel" id="evento-presencas" role="tabpanel" aria-labelledby="aba-evento-presencas" data-subpainel="presencas" hidden>
+          <div class="mini-stats mini-stats--4" data-busca>
+            <div class="mini-stat"><b>{{ e.presenca.total }}</b><span>pessoas confirmadas no total</span></div>
+            <div class="mini-stat"><b>{{ e.presenca.pagos_total }}</b><span>com ingresso pago</span></div>
+            <div class="mini-stat"><b>{{ e.presenca.convidadas_total }}</b><span>convidadas e equipe</span></div>
+            <div class="mini-stat"><b>{{ e.presenca.pendentes }}</b><span>ainda não confirmaram</span></div>
+          </div>
+
+          <div class="ferramentas" style="margin-top:16px">
+            <div class="pills">
+              {% for rotulo, n in e.presenca.por_tipo %}<span class="pill pill--sem-ponto">{{ rotulo }}: {{ n }}</span>{% endfor %}
+              {% if e.presenca.nao_vao %}<span class="pill pill--erro">Não vão: {{ e.presenca.nao_vao }}</span>{% endif %}
+            </div>
+            <button type="button" class="botao" data-abrir="convidada"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Adicionar à lista</button>
+          </div>
+
+          <div data-busca-grupo>
+            <div class="subtitulo"><h3>Convidadas, equipe e marcas</h3><span>{{ e.presenca.convidadas|length }} cadastrada{{ e.presenca.convidadas|length|pluralize }}</span></div>
+            {% if e.presenca.convidadas %}
+            <div class="cartao lista-itens">
+              {% for p in e.presenca.convidadas %}
+              <article class="fornecedor{% if p.obj.status == 'nao_vai' %} cancelado{% endif %}" data-busca>
+                <div class="fornecedor-principal">
+                  <strong>{{ p.nome }}</strong>
+                  <div class="contatos">
+                    <span><svg class="ico" aria-hidden="true"><use href="#i-pessoas"/></svg>{{ p.tipo }}</span>
+                    {% if p.whatsapp_link %}<a href="{{ p.whatsapp_link }}" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-mensagem"/></svg>{{ p.whatsapp }}</a>{% elif p.whatsapp %}<span><svg class="ico" aria-hidden="true"><use href="#i-mensagem"/></svg>{{ p.whatsapp }}</span>{% endif %}
+                    {% if p.instagram %}<a href="https://instagram.com/{{ p.instagram }}" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-instagram"/></svg>@{{ p.instagram }}</a>{% endif %}
+                    {% if p.detalhe %}<span>{{ p.detalhe }}</span>{% endif %}
+                  </div>
+                  {% if p.obj.notes %}<p class="fornecedor-nota">{{ p.obj.notes }}</p>{% endif %}
+                </div>
+                <div class="fornecedor-lado">
+                  <div class="pills"><span class="pill pill--{{ p.tom }}">{{ p.situacao }}</span></div>
+                  <button type="button" class="botao-editar" data-editar="convidada" data-id="{{ p.obj.pk }}"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg>Editar</button>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+            {% else %}
+            <button type="button" class="vazio-slot" data-abrir="convidada"><svg class="ico" aria-hidden="true"><use href="#i-mais"/></svg>Adicionar a primeira convidada</button>
+            {% endif %}
+          </div>
+
+          <div data-busca-grupo>
+            <div class="subtitulo"><h3>Ingressos pagos</h3><span>vêm do checkout, não precisa cadastrar</span></div>
+            {% if e.presenca.pagos %}
+            <div class="cartao lista-itens">
+              {% for p in e.presenca.pagos %}
+              <article class="fornecedor" data-busca>
+                <div class="fornecedor-principal">
+                  <strong>{{ p.nome }}</strong>
+                  <div class="contatos">
+                    <span><svg class="ico" aria-hidden="true"><use href="#i-ingresso"/></svg>{{ p.detalhe }}</span>
+                    {% if p.whatsapp_link %}<a href="{{ p.whatsapp_link }}" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-mensagem"/></svg>{{ p.whatsapp }}</a>{% elif p.whatsapp %}<span><svg class="ico" aria-hidden="true"><use href="#i-mensagem"/></svg>{{ p.whatsapp }}</span>{% endif %}
+                  </div>
+                </div>
+                <div class="fornecedor-lado">
+                  <div class="pills"><span class="pill pill--ok">{{ p.situacao }}</span></div>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="mudo pequeno">Ninguém comprou ingresso ainda.</p>
+            {% endif %}
+            <p class="nota-rodape" style="margin-top:12px"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span>Quem compra pelo site entra aqui sozinha. Para ver o pagamento de cada uma, abra <a class="link-seta" href="{{ app }}/creator-day/?tab=ingressos" target="_blank" rel="noopener">Creator Day no app <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a></span></p>
+          </div>
         </div>
 
         {# ---------- tarefas ---------- #}
@@ -1342,6 +1416,31 @@
     </div>
     <div class="modal-pe">
       <button type="submit" class="botao-perigo" data-excluir formnovalidate hidden>Excluir</button>
+      <span class="espaco"></span>
+      <button type="button" class="botao botao--claro" data-fechar>Cancelar</button>
+      <button type="submit" class="botao">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" data-modal="convidada" aria-labelledby="modal-convidada-titulo">
+  <form method="post" data-form-modal>
+    {% csrf_token %}
+    <div class="modal-cabeca">
+      <h3 id="modal-convidada-titulo" data-titulo-novo="Adicionar à lista de presença" data-titulo-editar="Editar quem vai">Adicionar à lista de presença</h3>
+      <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
+    </div>
+    <div class="modal-corpo">
+      <div class="campo inteiro"><label for="c-name">Nome</label><input id="c-name" name="name" required maxlength="160" autocomplete="off"></div>
+      <div class="campo"><label for="c-kind">Tipo</label><select id="c-kind" name="kind">{% for valor, rotulo in evento.presenca.tipos %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+      <div class="campo"><label for="c-status">Situação</label><select id="c-status" name="status">{% for valor, rotulo in evento.presenca.situacoes %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+      <div class="campo"><label for="c-whatsapp">WhatsApp</label><input id="c-whatsapp" name="whatsapp" type="tel" inputmode="tel" maxlength="40" placeholder="(71) 9 0000-0000" autocomplete="off"></div>
+      <div class="campo"><label for="c-instagram">Instagram</label><input id="c-instagram" name="instagram" maxlength="80" placeholder="@perfil" autocomplete="off"></div>
+      <div class="campo inteiro"><label for="c-invited_by">Convidada por</label><input id="c-invited_by" name="invited_by" maxlength="80" placeholder="Quem chamou" autocomplete="off"></div>
+      <div class="campo inteiro"><label for="c-notes">Observações</label><textarea id="c-notes" name="notes" rows="2" placeholder="Restrição alimentar, horário de chegada, o que combinaram"></textarea></div>
+    </div>
+    <div class="modal-pe">
+      <button type="submit" class="botao-perigo" data-excluir formnovalidate hidden>Tirar da lista</button>
       <span class="espaco"></span>
       <button type="button" class="botao botao--claro" data-fechar>Cancelar</button>
       <button type="submit" class="botao">Salvar</button>

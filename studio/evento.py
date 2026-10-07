@@ -1,8 +1,9 @@
 """Gestão do Creator Day Experience na Central (aba Creator Day).
 
-Fornecedores e parceiros, orçamento, checklist de tarefas e roteiro do dia,
-tudo cadastrado pelo time na própria Central. Os ingressos vêm do checkout
-(studio/creator_day.py) e entram no orçamento sozinhos.
+Fornecedores e parceiros, orçamento, checklist de tarefas, roteiro do dia e a
+lista de presença, tudo cadastrado pelo time na própria Central. Os ingressos
+vêm do checkout (studio/creator_day.py) e entram no orçamento e na lista de
+presença sozinhos; as convidadas, equipe e marcas são cadastradas aqui.
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ from django import forms
 from django.utils import timezone
 
 from .creator_day import CREATOR_DAY_EVENT, brl, whatsapp_link
-from .models import EventScheduleItem, EventSupplier, EventTask
+from .models import EventGuest, EventScheduleItem, EventSupplier, EventTask, Purchase
 
 EVENTO = {
     "chave": CREATOR_DAY_EVENT,
@@ -30,6 +31,7 @@ EVENTO = {
 FECHADOS = {"fechado", "pago"}
 EM_COTACAO = {"cotar", "orcamento", "negociando"}
 TOM_SITUACAO = {"cotar": "neutro", "orcamento": "info", "negociando": "espera", "fechado": "ok", "pago": "ok", "cancelado": "erro"}
+TOM_PRESENCA = {"confirmada": "ok", "pendente": "espera", "nao_vai": "erro"}
 
 CHECKLIST_SUGERIDO = [
     ("local", "Fechar o espaço em Piatã e confirmar o endereço exato", -45),
@@ -92,6 +94,15 @@ class FornecedorForm(forms.ModelForm):
         return (self.cleaned_data.get("instagram") or "").strip().lstrip("@")
 
 
+class ConvidadaForm(forms.ModelForm):
+    class Meta:
+        model = EventGuest
+        fields = ["name", "kind", "status", "whatsapp", "instagram", "invited_by", "notes"]
+
+    def clean_instagram(self):
+        return (self.cleaned_data.get("instagram") or "").strip().lstrip("@")
+
+
 class TarefaForm(forms.ModelForm):
     class Meta:
         model = EventTask
@@ -143,6 +154,60 @@ def criar_sugestao(tipo: str) -> int:
     return 0
 
 
+def lista_de_presenca(chave: str, hoje) -> dict:
+    """Quem vai ao evento: ingressos pagos (checkout) e convidadas (cadastradas aqui)."""
+    pagos = [
+        {
+            "nome": compra.customer_name,
+            "tipo": "Ingresso pago",
+            "origem": "checkout",
+            "situacao": "Confirmada",
+            "tom": "ok",
+            "whatsapp": compra.customer_phone,
+            "whatsapp_link": whatsapp_link(compra.customer_phone),
+            "instagram": "",
+            "detalhe": f"Pedido {compra.pk}",
+            "conta": True,
+        }
+        for compra in Purchase.objects.filter(product_key=chave, status=Purchase.STATUS_APPROVED).order_by("customer_name")
+    ]
+    convidadas = []
+    for pessoa in EventGuest.objects.filter(event_key=chave):
+        convidadas.append({
+            "obj": pessoa,
+            "nome": pessoa.name,
+            "tipo": pessoa.get_kind_display(),
+            "origem": "convidada",
+            "situacao": pessoa.get_status_display(),
+            "tom": TOM_PRESENCA.get(pessoa.status, "neutro"),
+            "whatsapp": pessoa.whatsapp,
+            "whatsapp_link": whatsapp_link(pessoa.whatsapp),
+            "instagram": pessoa.instagram,
+            "detalhe": f"Convidada por {pessoa.invited_by}" if pessoa.invited_by else "",
+            "conta": pessoa.status == "confirmada",
+        })
+
+    por_tipo = [
+        (rotulo, sum(1 for c in convidadas if c["obj"].kind == valor and c["obj"].status != "nao_vai"))
+        for valor, rotulo in EventGuest.KIND_CHOICES
+    ]
+    confirmadas = sum(1 for c in convidadas if c["conta"])
+    pendentes = sum(1 for c in convidadas if c["obj"].status == "pendente")
+    nao_vao = sum(1 for c in convidadas if c["obj"].status == "nao_vai")
+    return {
+        "pagos": pagos,
+        "convidadas": convidadas,
+        "total": len(pagos) + confirmadas,
+        "pagos_total": len(pagos),
+        "convidadas_total": confirmadas,
+        "pendentes": pendentes,
+        "nao_vao": nao_vao,
+        "por_tipo": [(rotulo, n) for rotulo, n in por_tipo if n],
+        "tipos": EventGuest.KIND_CHOICES,
+        "situacoes": EventGuest.STATUS_CHOICES,
+    }
+
+
 def evento_snapshot(ingressos: dict, lista_espera: int) -> dict:
     """Tudo da aba Creator Day. `ingressos` é o resumo do checkout do produto creatorday."""
     chave = EVENTO["chave"]
@@ -150,6 +215,7 @@ def evento_snapshot(ingressos: dict, lista_espera: int) -> dict:
     fornecedores = list(EventSupplier.objects.filter(event_key=chave))
     tarefas = list(EventTask.objects.filter(event_key=chave))
     roteiro = list(EventScheduleItem.objects.filter(event_key=chave))
+    presenca = lista_de_presenca(chave, hoje)
     rotulo_categoria = dict(EventSupplier.CATEGORY_CHOICES)
 
     # ---------- orçamento
@@ -227,6 +293,14 @@ def evento_snapshot(ingressos: dict, lista_espera: int) -> dict:
                         "title": r.title, "owner": r.owner, "details": r.details}
             for r in roteiro
         },
+        "convidada": {
+            str(c["obj"].pk): {
+                "name": c["obj"].name, "kind": c["obj"].kind, "status": c["obj"].status,
+                "whatsapp": c["obj"].whatsapp, "instagram": c["obj"].instagram,
+                "invited_by": c["obj"].invited_by, "notes": c["obj"].notes,
+            }
+            for c in presenca["convidadas"]
+        },
     }
 
     return {
@@ -262,6 +336,7 @@ def evento_snapshot(ingressos: dict, lista_espera: int) -> dict:
         "por_area": por_area,
         "proximas": proximas,
         "roteiro": roteiro,
+        "presenca": presenca,
         "checklist_sugerido_total": len(CHECKLIST_SUGERIDO),
         "dados_edicao": dados_edicao,
         "categorias": EventSupplier.CATEGORY_CHOICES,

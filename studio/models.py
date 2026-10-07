@@ -1067,3 +1067,38 @@ class EventScheduleItem(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.event_key} - {self.start:%H:%M} {self.title}"
+
+
+class EventGuest(TimestampedModel):
+    """Quem vai ao evento sem passar pelo checkout: convidadas, equipe e marcas.
+    Junto com os ingressos pagos forma a lista de presença (aba Creator Day)."""
+
+    KIND_CHOICES = [
+        ("convidada", "Convidada"),
+        ("equipe", "Equipe"),
+        ("marca", "Marca parceira"),
+        ("cortesia", "Cortesia"),
+        ("outro", "Outro"),
+    ]
+    STATUS_CHOICES = [
+        ("confirmada", "Confirmada"),
+        ("pendente", "Aguardando confirmar"),
+        ("nao_vai", "Não vai"),
+    ]
+
+    event_key = models.CharField(max_length=40, db_index=True)
+    name = models.CharField("nome", max_length=160)
+    kind = models.CharField("tipo", max_length=20, choices=KIND_CHOICES, default="convidada")
+    status = models.CharField("situação", max_length=20, choices=STATUS_CHOICES, default="confirmada")
+    whatsapp = models.CharField(max_length=40, blank=True, default="")
+    instagram = models.CharField(max_length=80, blank=True, default="")
+    invited_by = models.CharField("convidada por", max_length=80, blank=True, default="")
+    notes = models.TextField("observações", blank=True)
+
+    class Meta:
+        ordering = ["kind", "name", "pk"]
+        verbose_name = "convidada do evento"
+        verbose_name_plural = "convidadas do evento"
+
+    def __str__(self) -> str:
+        return f"{self.event_key} - {self.name}"
