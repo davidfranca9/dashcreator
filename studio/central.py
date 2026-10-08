@@ -442,20 +442,39 @@ def _checkout(chave: str) -> dict:
 
 
 def _financeiro_central() -> dict:
-    """Resumo exclusivamente dos lançamentos feitos na Central."""
-    movimentos = list(CentralFinanceEntry.objects.all())
-    entradas = sum((m.amount for m in movimentos if m.kind == m.KIND_INCOME), Decimal("0"))
-    saidas = sum((m.amount for m in movimentos if m.kind == m.KIND_EXPENSE), Decimal("0"))
-    fixos = sum((m.amount for m in movimentos if m.kind == m.KIND_FIXED), Decimal("0"))
+    """Caixa do TCC: checkout aprovado ao vivo + lançamentos manuais."""
+    manuais = list(CentralFinanceEntry.objects.all())
+    compras = list(Purchase.objects.filter(status=Purchase.STATUS_APPROVED).order_by("-paid_at", "-created_at"))
+    movimentos = []
+    for compra in compras:
+        movimentos.append({
+            "pk": compra.pk, "kind": CentralFinanceEntry.KIND_INCOME, "kind_label": "Entrada",
+            "product": compra.product_name, "description": f"Venda pelo checkout · {compra.customer_name}",
+            "amount": compra.amount, "amount_txt": brl(compra.amount),
+            "occurred_on": timezone.localtime(compra.paid_at).date() if compra.paid_at else compra.created_at.date(),
+            "automatico": True,
+        })
+    for movimento in manuais:
+        movimentos.append({
+            "pk": movimento.pk, "kind": movimento.kind, "kind_label": movimento.get_kind_display(),
+            "product": movimento.product, "description": movimento.description,
+            "amount": movimento.amount, "amount_txt": brl(movimento.amount),
+            "occurred_on": movimento.occurred_on, "automatico": False,
+        })
+    movimentos.sort(key=lambda item: (item["occurred_on"], item["pk"]), reverse=True)
+    entradas = sum((m["amount"] for m in movimentos if m["kind"] == CentralFinanceEntry.KIND_INCOME), Decimal("0"))
+    saidas = sum((m["amount"] for m in movimentos if m["kind"] == CentralFinanceEntry.KIND_EXPENSE), Decimal("0"))
+    fixos = sum((m["amount"] for m in movimentos if m["kind"] == CentralFinanceEntry.KIND_FIXED), Decimal("0"))
     produtos = {}
     for movimento in movimentos:
-        linha = produtos.setdefault(movimento.product, {"nome": movimento.product, "entradas": Decimal("0"), "saidas": Decimal("0"), "fixos": Decimal("0")})
-        if movimento.kind == movimento.KIND_INCOME:
-            linha["entradas"] += movimento.amount
-        elif movimento.kind == movimento.KIND_FIXED:
-            linha["fixos"] += movimento.amount
+        linha = produtos.setdefault(movimento["product"], {"nome": movimento["product"], "entradas": Decimal("0"), "saidas": Decimal("0"), "fixos": Decimal("0"), "vendas_checkout": 0})
+        if movimento["kind"] == CentralFinanceEntry.KIND_INCOME:
+            linha["entradas"] += movimento["amount"]
+            linha["vendas_checkout"] += int(movimento["automatico"])
+        elif movimento["kind"] == CentralFinanceEntry.KIND_FIXED:
+            linha["fixos"] += movimento["amount"]
         else:
-            linha["saidas"] += movimento.amount
+            linha["saidas"] += movimento["amount"]
     por_produto = []
     for linha in produtos.values():
         linha["saldo"] = linha["entradas"] - linha["saidas"] - linha["fixos"]
@@ -464,12 +483,12 @@ def _financeiro_central() -> dict:
         por_produto.append(linha)
     por_produto.sort(key=lambda item: (-item["entradas"], item["nome"].lower()))
     return {
-        "total": len(movimentos),
+        "total": len(movimentos), "automaticos": len(compras), "manuais": len(manuais),
         "entradas": brl(entradas), "saidas": brl(saidas), "fixos": brl(fixos),
         "saldo": brl(entradas - saidas - fixos),
         "por_produto": por_produto, "movimentos": movimentos,
         "tipos": CentralFinanceEntry.KIND_CHOICES,
-        "produtos": [p["nome"] for p in por_produto] or [p["nome"] for p in PRODUTOS],
+        "produtos": list(dict.fromkeys([p["nome"] for p in PRODUTOS] + [p["nome"] for p in por_produto])),
     }
 
 

@@ -266,13 +266,24 @@
   .fin-kpi b { display:block; margin-top:8px; font-size:25px; line-height:1.15; letter-spacing:-.025em; }
   .fin-kpi--saldo { color:#fff; background:linear-gradient(145deg,var(--navy),var(--navy-2)); border-color:transparent; }
   .fin-kpi--saldo span { color:rgba(255,255,255,.7); }
+  .fin-hero { position:relative; overflow:hidden; display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:14px; padding:20px 22px; color:#fff; background:linear-gradient(125deg,var(--navy-3),var(--navy) 68%,#2456b8); border-radius:var(--raio); box-shadow:var(--sombra-2); }
+  .fin-hero::after { content:""; position:absolute; right:-45px; top:-70px; width:190px; height:190px; border:38px solid rgba(255,255,255,.06); border-radius:50%; }
+  .fin-hero-copy { position:relative; z-index:1; }
+  .fin-hero-copy small { display:block; margin-bottom:4px; color:var(--ouro); font-size:10.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+  .fin-hero-copy h3 { margin:0; font-family:var(--display); font-size:24px; font-weight:600; }
+  .fin-hero-copy p { max-width:680px; margin:5px 0 0; color:rgba(255,255,255,.72); font-size:13px; }
+  .fin-hero-status { position:relative; z-index:1; display:flex; flex:none; align-items:center; gap:9px; padding:10px 13px; font-size:12px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.13); border-radius:999px; }
+  .fin-hero-status i { width:8px; height:8px; background:#7ee2b0; border-radius:50%; box-shadow:0 0 0 4px rgba(126,226,176,.13); }
   .fin-lancamento { display:grid; grid-template-columns:1.1fr 1.4fr 1.6fr 1fr 1fr auto; gap:10px; align-items:end; }
   .fin-lancamento .campo { display:block; }
   .fin-lancamento .campo label { display:block; margin-bottom:6px; font-size:12px; font-weight:600; color:var(--mudo); }
   .fin-lancamento input,.fin-lancamento select { width:100%; height:42px; padding:0 11px; background:var(--superficie); border:1px solid var(--linha-2); border-radius:9px; }
   .fin-produtos { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
   .fin-produto { padding:18px; }
-  .fin-produto h3 { margin:0 0 14px; font-size:17px; }
+  .fin-produto-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .fin-produto h3 { margin:0; font-size:17px; }
+  .fin-produto small { display:block; margin-top:3px; font-size:11.5px; color:var(--mudo); }
+  .fin-produto-saldo { padding:5px 9px; font-size:11.5px; font-weight:700; color:var(--ok); background:var(--ok-fundo); border-radius:999px; }
   .fin-produto dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0; }
   .fin-produto dl div { padding:10px; background:var(--superficie-2); border-radius:9px; }
   .fin-produto dt { font-size:11px; color:var(--mudo); }
@@ -284,8 +295,11 @@
   .fin-tipo { display:inline-flex; padding:4px 9px; font-size:11.5px; font-weight:600; border-radius:999px; background:var(--info-fundo); color:var(--info); }
   .fin-tipo--expense { background:var(--erro-fundo); color:var(--erro); }
   .fin-tipo--fixed { background:var(--espera-fundo); color:var(--espera); }
+  .fin-fonte { display:inline-flex; align-items:center; gap:5px; margin-top:4px; font-size:10.5px; color:var(--mudo); }
+  .fin-fonte::before { content:""; width:6px; height:6px; background:var(--azul); border-radius:50%; }
+  .fin-fonte--manual::before { background:var(--ouro); }
   .fin-excluir { padding:6px 9px; color:var(--erro); background:none; border:1px solid var(--linha); border-radius:8px; }
-  @media(max-width:900px){.fin-kpis{grid-template-columns:repeat(2,1fr)}.fin-lancamento{grid-template-columns:1fr 1fr}.fin-produtos{grid-template-columns:1fr}.fin-extrato-wrap{overflow-x:auto}.fin-extrato{min-width:700px}}
+  @media(max-width:900px){.fin-kpis{grid-template-columns:repeat(2,1fr)}.fin-lancamento{grid-template-columns:1fr 1fr}.fin-produtos{grid-template-columns:1fr}.fin-extrato-wrap{overflow-x:auto}.fin-extrato{min-width:760px}.fin-hero{align-items:flex-start;flex-direction:column}.fin-hero-status{flex:none}}
   @media(max-width:520px){.fin-lancamento{grid-template-columns:1fr}.fin-produto dl{grid-template-columns:1fr 1fr}}
 
   /* ================= produtos ================= */
@@ -1082,6 +1096,11 @@
           <div><h2>Financeiro</h2><p>O caixa do The Creators Club, separado por produto. Esta aba começa zerada e considera somente os lançamentos feitos aqui.</p></div>
         </header>
 
+        <div class="fin-hero" data-busca>
+          <div class="fin-hero-copy"><small>Caixa integrado</small><h3>Visão financeira do clube</h3><p>As vendas aprovadas no checkout entram sozinhas. Use o lançamento manual apenas para vendas externas, saídas e custos fixos.</p></div>
+          <div class="fin-hero-status"><i></i>{{ financeiro.automaticos }} entrada{{ financeiro.automaticos|pluralize }} automática{{ financeiro.automaticos|pluralize }}</div>
+        </div>
+
         <div class="fin-kpis" data-busca>
           <div class="fin-kpi"><span>Entradas</span><b class="dinheiro">{{ financeiro.entradas }}</b></div>
           <div class="fin-kpi"><span>Saídas</span><b class="dinheiro">{{ financeiro.saidas }}</b></div>
@@ -1105,7 +1124,7 @@
         <div class="subtitulo"><h3>Por produto</h3><span>entradas menos saídas e custos fixos</span></div>
         <div class="fin-produtos">
           {% for p in financeiro.por_produto %}
-          <article class="cartao fin-produto" data-busca><h3>{{ p.nome }}</h3><dl>
+          <article class="cartao fin-produto" data-busca><div class="fin-produto-topo"><div><h3>{{ p.nome }}</h3><small>{% if p.vendas_checkout %}{{ p.vendas_checkout }} venda{{ p.vendas_checkout|pluralize }} pelo checkout{% else %}Somente lançamentos manuais{% endif %}</small></div><span class="fin-produto-saldo">{{ p.saldo_txt }}</span></div><dl>
             <div><dt>Entradas</dt><dd class="dinheiro">{{ p.entradas_txt }}</dd></div><div><dt>Saídas</dt><dd class="dinheiro">{{ p.saidas_txt }}</dd></div>
             <div><dt>Custo fixo</dt><dd class="dinheiro">{{ p.fixos_txt }}</dd></div><div><dt>Saldo</dt><dd class="dinheiro">{{ p.saldo_txt }}</dd></div>
           </dl></article>
@@ -1115,7 +1134,7 @@
         <div class="subtitulo"><h3>Fluxo de caixa</h3><span>{{ financeiro.total }} lançamento{{ financeiro.total|pluralize }}</span></div>
         <div class="cartao bloco fin-extrato-wrap" data-busca>
           <table class="fin-extrato"><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody>
-          {% for m in financeiro.movimentos %}<tr><td>{{ m.occurred_on|date:"d/m/Y" }}</td><td><span class="fin-tipo fin-tipo--{{ m.kind }}">{{ m.get_kind_display }}</span></td><td><b>{{ m.product }}</b></td><td>{{ m.description|default:"—" }}</td><td class="dinheiro"><b>{% if m.kind != 'income' %}− {% endif %}R$ {{ m.amount|floatformat:2 }}</b></td><td><form method="post" action="/central/financeiro/{{ m.pk }}/excluir/" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="fin-excluir" type="submit">Excluir</button></form></td></tr>
+          {% for m in financeiro.movimentos %}<tr><td>{{ m.occurred_on|date:"d/m/Y" }}</td><td><span class="fin-tipo fin-tipo--{{ m.kind }}">{{ m.kind_label }}</span></td><td><b>{{ m.product }}</b><span class="fin-fonte{% if not m.automatico %} fin-fonte--manual{% endif %}">{% if m.automatico %}Checkout automático{% else %}Lançamento manual{% endif %}</span></td><td>{{ m.description|default:"—" }}</td><td class="dinheiro"><b>{% if m.kind != 'income' %}− {% endif %}{{ m.amount_txt }}</b></td><td>{% if not m.automatico %}<form method="post" action="/central/financeiro/{{ m.pk }}/excluir/" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="fin-excluir" type="submit">Excluir</button></form>{% else %}<span class="mudo" title="Gerenciado pelo checkout">—</span>{% endif %}</td></tr>
           {% empty %}<tr><td colspan="6" class="mudo" style="text-align:center;padding:30px">Nenhuma movimentação ainda. O fluxo de caixa está zerado.</td></tr>{% endfor %}
           </tbody></table>
         </div>

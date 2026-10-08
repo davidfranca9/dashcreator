@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
-from studio.models import CentralFinanceEntry
+from studio.models import CentralFinanceEntry, Purchase
 from studio.services import get_or_create_workspace_for_user
 
 
@@ -52,3 +52,21 @@ class CentralFinanceiroTests(TestCase):
         self.client.post(f"/central/financeiro/{movimento.pk}/excluir/")
         self.assertFalse(CentralFinanceEntry.objects.exists())
 
+    def test_checkout_aprovado_entra_automaticamente_sem_duplicar(self):
+        base = {
+            "product_key": "creatorday", "product_name": "Creator Day Experience",
+            "customer_name": "Ana", "customer_email": "ana@example.com", "amount": Decimal("120"),
+        }
+        Purchase.objects.create(**base, status=Purchase.STATUS_APPROVED)
+        Purchase.objects.create(**{**base, "customer_email": "bia@example.com"}, status=Purchase.STATUS_PENDING)
+
+        dados = self.client.get("/central/").context["financeiro"]
+        self.assertEqual(dados["entradas"], "R$ 120,00")
+        self.assertEqual(dados["automaticos"], 1)
+        self.assertEqual(dados["manuais"], 0)
+        self.assertEqual(dados["total"], 1)
+        self.assertTrue(dados["movimentos"][0]["automatico"])
+
+        # Reabrir a Central só relê a compra: não cria lançamento paralelo.
+        self.client.get("/central/")
+        self.assertFalse(CentralFinanceEntry.objects.exists())
