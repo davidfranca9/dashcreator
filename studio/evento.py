@@ -19,7 +19,7 @@ from .models import EventGuest, EventScheduleItem, EventSupplier, EventTask, Pur
 EVENTO = {
     "chave": CREATOR_DAY_EVENT,
     "nome": "Creator Day Experience",
-    "data": date(2026, 10, 17),
+    "data": date(2026, 10, 18),
     "hora": "14h",
     "local": "Piatã, Salvador/BA",
     "tema": "Skincare e cuidados com a pele",

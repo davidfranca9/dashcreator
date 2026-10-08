@@ -678,6 +678,35 @@ class FinanceEntry(WorkspaceOwnedModel):
         return f"{self.get_kind_display()} - {self.amount}"
 
 
+class CentralFinanceEntry(TimestampedModel):
+    """Movimentação financeira do negócio TCC exibida na Central.
+
+    É deliberadamente separada do FinanceEntry das creators: a Central começa
+    vazia e só soma o que o time lançar nela.
+    """
+
+    KIND_INCOME = "income"
+    KIND_EXPENSE = "expense"
+    KIND_FIXED = "fixed"
+    KIND_CHOICES = [
+        (KIND_INCOME, "Entrada"),
+        (KIND_EXPENSE, "Saída"),
+        (KIND_FIXED, "Custo fixo"),
+    ]
+
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    product = models.CharField(max_length=120)
+    description = models.CharField(max_length=180, blank=True, default="")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    occurred_on = models.DateField()
+
+    class Meta:
+        ordering = ["-occurred_on", "-pk"]
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} · {self.product} · {self.amount}"
+
+
 class FixedCost(WorkspaceOwnedModel):
     KIND_TOOL = "tool"
     KIND_COLLABORATOR = "collaborator"

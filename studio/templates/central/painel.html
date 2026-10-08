@@ -259,6 +259,35 @@
     .tabela tbody tr:hover td { background: none; }
   }
 
+  /* ================= financeiro ================= */
+  .fin-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+  .fin-kpi { padding:18px; background:var(--superficie); border:1px solid var(--linha); border-radius:var(--raio); box-shadow:var(--sombra-1); }
+  .fin-kpi span { display:block; font-size:12.5px; color:var(--mudo); }
+  .fin-kpi b { display:block; margin-top:8px; font-size:25px; line-height:1.15; letter-spacing:-.025em; }
+  .fin-kpi--saldo { color:#fff; background:linear-gradient(145deg,var(--navy),var(--navy-2)); border-color:transparent; }
+  .fin-kpi--saldo span { color:rgba(255,255,255,.7); }
+  .fin-lancamento { display:grid; grid-template-columns:1.1fr 1.4fr 1.6fr 1fr 1fr auto; gap:10px; align-items:end; }
+  .fin-lancamento .campo { display:block; }
+  .fin-lancamento .campo label { display:block; margin-bottom:6px; font-size:12px; font-weight:600; color:var(--mudo); }
+  .fin-lancamento input,.fin-lancamento select { width:100%; height:42px; padding:0 11px; background:var(--superficie); border:1px solid var(--linha-2); border-radius:9px; }
+  .fin-produtos { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .fin-produto { padding:18px; }
+  .fin-produto h3 { margin:0 0 14px; font-size:17px; }
+  .fin-produto dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0; }
+  .fin-produto dl div { padding:10px; background:var(--superficie-2); border-radius:9px; }
+  .fin-produto dt { font-size:11px; color:var(--mudo); }
+  .fin-produto dd { margin:4px 0 0; font-size:13px; font-weight:700; }
+  .fin-extrato { width:100%; border-collapse:collapse; }
+  .fin-extrato th,.fin-extrato td { padding:13px 10px; text-align:left; border-bottom:1px solid var(--linha); }
+  .fin-extrato th { font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--mudo); }
+  .fin-extrato td { font-size:13.5px; }
+  .fin-tipo { display:inline-flex; padding:4px 9px; font-size:11.5px; font-weight:600; border-radius:999px; background:var(--info-fundo); color:var(--info); }
+  .fin-tipo--expense { background:var(--erro-fundo); color:var(--erro); }
+  .fin-tipo--fixed { background:var(--espera-fundo); color:var(--espera); }
+  .fin-excluir { padding:6px 9px; color:var(--erro); background:none; border:1px solid var(--linha); border-radius:8px; }
+  @media(max-width:900px){.fin-kpis{grid-template-columns:repeat(2,1fr)}.fin-lancamento{grid-template-columns:1fr 1fr}.fin-produtos{grid-template-columns:1fr}.fin-extrato-wrap{overflow-x:auto}.fin-extrato{min-width:700px}}
+  @media(max-width:520px){.fin-lancamento{grid-template-columns:1fr}.fin-produto dl{grid-template-columns:1fr 1fr}}
+
   /* ================= produtos ================= */
   .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .buscando .filtros { display: none; }
@@ -618,7 +647,7 @@
           <a class="destaque" href="#evento" data-ir="evento" data-busca>
             <div class="destaque-topo">
               <span class="destaque-kicker"><svg class="ico" aria-hidden="true"><use href="#i-ingresso"/></svg>Creator Day Experience</span>
-              <span class="destaque-data">17/10 · Piatã, Salvador</span>
+              <span class="destaque-data">18/10 · Piatã, Salvador</span>
             </div>
             <div class="contagem">
               {% if creator_day_dias > 1 %}<strong>{{ creator_day_dias }}</strong><span>dias para<br>o evento</span>
@@ -726,7 +755,7 @@
               <li class="etapa" data-busca><span class="etapa-num">1</span><div><h4>Conhece <span>· onde a creator chega</span></h4><p>Instagram @thecreatorssclubb e @layfeamorim, home do clube, layfeamorim.com (Sou Creator) e Desafio Postaria Mais.</p></div></li>
               <li class="etapa" data-busca><span class="etapa-num">2</span><div><h4>Entra <span>· portas de entrada</span></h4><p>Planner Creator, Dash Creator e Desafio da Semana.</p></div></li>
               <li class="etapa" data-busca><span class="etapa-num">3</span><div><h4>Se transforma <span>· acompanhamento</span></h4><p>Mentoria HPC e Renovação, Acompanhamento 1:1 e Portal do TCC.</p></div></li>
-              <li class="etapa" data-busca><span class="etapa-num">4</span><div><h4>Vive <span>· experiências</span></h4><p>Creator Day Experience (17/10) e encontros da turma.</p></div></li>
+              <li class="etapa" data-busca><span class="etapa-num">4</span><div><h4>Vive <span>· experiências</span></h4><p>Creator Day Experience (18/10) e encontros da turma.</p></div></li>
             </ol>
           </div>
         </div>
@@ -1044,6 +1073,52 @@
           {% endfor %}
         </div>
         <div class="aviso" data-busca><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span><b>Vendas da Hubla e do link Nubank</b> (Mentoria HPC, Renovação, Acompanhamento, Planner) não entram sozinhas: lance em Infoprodutos no Dash para aparecerem no faturamento.</span></div>
+      </section>
+
+      {# ================= FINANCEIRO ================= #}
+      <section class="secao" id="financeiro" data-secao="financeiro">
+        <header class="secao-cabeca">
+          <span class="secao-icone"><svg class="ico" aria-hidden="true"><use href="#i-financeiro"/></svg></span>
+          <div><h2>Financeiro</h2><p>O caixa do The Creators Club, separado por produto. Esta aba começa zerada e considera somente os lançamentos feitos aqui.</p></div>
+        </header>
+
+        <div class="fin-kpis" data-busca>
+          <div class="fin-kpi"><span>Entradas</span><b class="dinheiro">{{ financeiro.entradas }}</b></div>
+          <div class="fin-kpi"><span>Saídas</span><b class="dinheiro">{{ financeiro.saidas }}</b></div>
+          <div class="fin-kpi"><span>Custos fixos</span><b class="dinheiro">{{ financeiro.fixos }}</b></div>
+          <div class="fin-kpi fin-kpi--saldo"><span>Saldo do caixa</span><b class="dinheiro">{{ financeiro.saldo }}</b></div>
+        </div>
+
+        <div class="cartao bloco" data-busca>
+          <div class="bloco-cabeca"><div><h3>Novo lançamento</h3><p class="mudo" style="margin:3px 0 0;font-size:13px">Registre entrada, saída ou custo fixo e diga a qual produto pertence.</p></div></div>
+          <form method="post" action="/central/financeiro/salvar/" class="fin-lancamento">{% csrf_token %}
+            <div class="campo"><label for="fin-kind">Tipo</label><select id="fin-kind" name="kind" required>{% for valor,rotulo in financeiro.tipos %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}</select></div>
+            <div class="campo"><label for="fin-product">Produto</label><input id="fin-product" name="product" list="fin-produtos" placeholder="Ex.: Creator Day" required maxlength="120"></div>
+            <div class="campo"><label for="fin-description">Descrição</label><input id="fin-description" name="description" placeholder="Ex.: venda de ingresso" maxlength="180"></div>
+            <div class="campo"><label for="fin-amount">Valor</label><input id="fin-amount" name="amount" inputmode="decimal" placeholder="0,00" required></div>
+            <div class="campo"><label for="fin-date">Data</label><input id="fin-date" name="occurred_on" type="date" value="{{ agora|date:'Y-m-d' }}" required></div>
+            <button type="submit" class="botao">Lançar</button>
+          </form>
+          <datalist id="fin-produtos">{% for nome in financeiro.produtos %}<option value="{{ nome }}">{% endfor %}</datalist>
+        </div>
+
+        <div class="subtitulo"><h3>Por produto</h3><span>entradas menos saídas e custos fixos</span></div>
+        <div class="fin-produtos">
+          {% for p in financeiro.por_produto %}
+          <article class="cartao fin-produto" data-busca><h3>{{ p.nome }}</h3><dl>
+            <div><dt>Entradas</dt><dd class="dinheiro">{{ p.entradas_txt }}</dd></div><div><dt>Saídas</dt><dd class="dinheiro">{{ p.saidas_txt }}</dd></div>
+            <div><dt>Custo fixo</dt><dd class="dinheiro">{{ p.fixos_txt }}</dd></div><div><dt>Saldo</dt><dd class="dinheiro">{{ p.saldo_txt }}</dd></div>
+          </dl></article>
+          {% empty %}<div class="cartao bloco" data-busca><h3>Caixa zerado</h3><p class="mudo">Quando você fizer o primeiro lançamento, o resultado do produto aparecerá aqui.</p></div>{% endfor %}
+        </div>
+
+        <div class="subtitulo"><h3>Fluxo de caixa</h3><span>{{ financeiro.total }} lançamento{{ financeiro.total|pluralize }}</span></div>
+        <div class="cartao bloco fin-extrato-wrap" data-busca>
+          <table class="fin-extrato"><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody>
+          {% for m in financeiro.movimentos %}<tr><td>{{ m.occurred_on|date:"d/m/Y" }}</td><td><span class="fin-tipo fin-tipo--{{ m.kind }}">{{ m.get_kind_display }}</span></td><td><b>{{ m.product }}</b></td><td>{{ m.description|default:"—" }}</td><td class="dinheiro"><b>{% if m.kind != 'income' %}− {% endif %}R$ {{ m.amount|floatformat:2 }}</b></td><td><form method="post" action="/central/financeiro/{{ m.pk }}/excluir/" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="fin-excluir" type="submit">Excluir</button></form></td></tr>
+          {% empty %}<tr><td colspan="6" class="mudo" style="text-align:center;padding:30px">Nenhuma movimentação ainda. O fluxo de caixa está zerado.</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
       </section>
 
       {# ================= NÚMEROS ================= #}

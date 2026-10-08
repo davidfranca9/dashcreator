@@ -20,6 +20,7 @@ from .creator_day import CREATOR_DAY_EVENT, brl
 from .evento import evento_snapshot
 from .models import (
     AccessCode,
+    CentralFinanceEntry,
     EventWaitlistEntry,
     InfoLead,
     InfoProduct,
@@ -40,6 +41,7 @@ SECOES = [
     {"id": "inicio", "titulo": "Visão geral", "grupo": "Dia a dia"},
     {"id": "evento", "titulo": "Creator Day", "grupo": "Dia a dia"},
     {"id": "vendas", "titulo": "Vendas e inscrições", "grupo": "Dia a dia"},
+    {"id": "financeiro", "titulo": "Financeiro", "grupo": "Dia a dia"},
     {"id": "numeros", "titulo": "Números", "grupo": "Dia a dia"},
     {"id": "pendencias", "titulo": "Pendências", "grupo": "Dia a dia"},
     {"id": "produtos", "titulo": "Produtos e preços", "grupo": "Consulta"},
@@ -60,7 +62,7 @@ PRODUTOS = [
     },
     {
         "nome": "Creator Day Experience", "checkout": "creatorday",
-        "frase": "Evento presencial de skincare, networking e criação. 17 de outubro de 2026, 14h, Piatã, Salvador/BA.",
+        "frase": "Evento presencial de skincare, networking e criação. 18 de outubro de 2026, 14h, Piatã, Salvador/BA.",
         "detalhe": "ingresso · a página cita até 12x de R$ 12,21",
         "pagamento": "Checkout próprio (Mercado Pago)", "link": SITE + "/creator-experience/", "link_rotulo": "Página do evento",
         "situacao": "À venda", "tom": "ok", "confirmar": False,
@@ -134,7 +136,7 @@ LINKS = [
             ("Checkout do Dash", SITE + "/checkout/dashcreator/", "Pagamento Mercado Pago e código por e-mail", "Compradoras"),
             ("Página da HPC", SITE + "/hpc/", "Vendas da mentoria High Performance Creator (R$ 597)", "Público"),
             ("Checkout da HPC", SITE + "/checkout/hpc/", "Pagamento Mercado Pago e confirmação da vaga por e-mail", "Compradoras"),
-            ("Página do Creator Day", SITE + "/creator-experience/", "Evento de 17/10/2026", "Público"),
+            ("Página do Creator Day", SITE + "/creator-experience/", "Evento de 18/10/2026", "Público"),
             ("Checkout do ingresso", SITE + "/checkout/creator-day/", "Pagamento do ingresso e e-mail de confirmação", "Compradoras"),
             ("Prévias do Creator Day", SITE + "/creator-experience/conceitos/", "Imersivo e Editorial, com lista de espera", "Link direto"),
             ("Inscrição no Desafio", SITE + "/desafio/login.html", "Link de divulgação do Desafio Postaria Mais", "Público"),
@@ -407,7 +409,7 @@ PONTAS = [
     "Para que serve a Evolution API?",
 ]
 
-CREATOR_DAY_DATA = date(2026, 10, 17)
+CREATOR_DAY_DATA = date(2026, 10, 18)
 NIVEIS_RISCO = (("alta", "alta"), ("media", "média"), ("baixa", "baixa"))
 
 SITES_METRICAS = {"tcc": "Home do clube", "dash": "Página do Dash", "layfe": "layfeamorim.com", "portfolio": "Portfólio"}
@@ -436,6 +438,38 @@ def _checkout(chave: str) -> dict:
         "aguardando": pendentes.exclude(mp_payment_id="").count(),
         "nao_finalizou": pendentes.filter(mp_payment_id="").count(),
         "recusadas": qs.filter(status__in=[Purchase.STATUS_REJECTED, Purchase.STATUS_CANCELLED]).count(),
+    }
+
+
+def _financeiro_central() -> dict:
+    """Resumo exclusivamente dos lançamentos feitos na Central."""
+    movimentos = list(CentralFinanceEntry.objects.all())
+    entradas = sum((m.amount for m in movimentos if m.kind == m.KIND_INCOME), Decimal("0"))
+    saidas = sum((m.amount for m in movimentos if m.kind == m.KIND_EXPENSE), Decimal("0"))
+    fixos = sum((m.amount for m in movimentos if m.kind == m.KIND_FIXED), Decimal("0"))
+    produtos = {}
+    for movimento in movimentos:
+        linha = produtos.setdefault(movimento.product, {"nome": movimento.product, "entradas": Decimal("0"), "saidas": Decimal("0"), "fixos": Decimal("0")})
+        if movimento.kind == movimento.KIND_INCOME:
+            linha["entradas"] += movimento.amount
+        elif movimento.kind == movimento.KIND_FIXED:
+            linha["fixos"] += movimento.amount
+        else:
+            linha["saidas"] += movimento.amount
+    por_produto = []
+    for linha in produtos.values():
+        linha["saldo"] = linha["entradas"] - linha["saidas"] - linha["fixos"]
+        for campo in ("entradas", "saidas", "fixos", "saldo"):
+            linha[campo + "_txt"] = brl(linha[campo])
+        por_produto.append(linha)
+    por_produto.sort(key=lambda item: (-item["entradas"], item["nome"].lower()))
+    return {
+        "total": len(movimentos),
+        "entradas": brl(entradas), "saidas": brl(saidas), "fixos": brl(fixos),
+        "saldo": brl(entradas - saidas - fixos),
+        "por_produto": por_produto, "movimentos": movimentos,
+        "tipos": CentralFinanceEntry.KIND_CHOICES,
+        "produtos": [p["nome"] for p in por_produto] or [p["nome"] for p in PRODUTOS],
     }
 
 
@@ -619,6 +653,7 @@ def central_snapshot() -> dict:
         "niveis": [(nivel, rotulo, sum(1 for r in RISCOS if r[0] == nivel)) for nivel, rotulo in NIVEIS_RISCO],
         "creator_day_dias": (CREATOR_DAY_DATA - hoje).days,
         "evento": evento,
+        "financeiro": _financeiro_central(),
         "riscos_altos": riscos_altos,
         "cd_em_aberto": cd["nao_finalizou"] + cd["aguardando"],
         "dash": dash,

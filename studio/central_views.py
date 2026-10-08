@@ -8,6 +8,7 @@ aqui não derruba a sessão do Dash (ver signals.enforce_single_active_session).
 from __future__ import annotations
 
 from django.conf import settings
+from django import forms
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse
@@ -19,7 +20,7 @@ from django.views.decorators.cache import never_cache
 from .central import APP, central_snapshot
 from .evento import EVENTO, ConvidadaForm, FornecedorForm, RoteiroForm, TarefaForm, criar_sugestao
 from .forms import EmailOrUsernameAuthenticationForm
-from .models import EventGuest, EventScheduleItem, EventSupplier, EventTask
+from .models import CentralFinanceEntry, EventGuest, EventScheduleItem, EventSupplier, EventTask
 from .services import is_internal_account
 
 CENTRAL_PUBLICA = "https://thecreatorsclub.com.br/central/"
@@ -120,6 +121,54 @@ def _editavel(tipo: str):
 
 def _volta(aba: str) -> HttpResponse:
     return redirect(f"/central/#evento/{aba}")
+
+
+class CentralFinanceEntryForm(forms.ModelForm):
+    class Meta:
+        model = CentralFinanceEntry
+        fields = ["kind", "product", "description", "amount", "occurred_on"]
+
+    def clean_product(self):
+        produto = (self.cleaned_data.get("product") or "").strip()
+        if not produto:
+            raise forms.ValidationError("Informe o produto.")
+        return produto
+
+    def clean_amount(self):
+        valor = self.cleaned_data.get("amount")
+        if not valor or valor <= 0:
+            raise forms.ValidationError("O valor precisa ser maior que zero.")
+        return valor
+
+
+@never_cache
+def central_financeiro_salvar(request: HttpRequest) -> HttpResponse:
+    barreira = _acao_do_time(request)
+    if barreira:
+        return barreira
+    dados = request.POST.copy()
+    valor = (dados.get("amount") or "").replace("R$", "").replace(" ", "")
+    if "," in valor:
+        valor = valor.replace(".", "").replace(",", ".")
+    dados["amount"] = valor
+    form = CentralFinanceEntryForm(dados)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Lançamento financeiro salvo.")
+    else:
+        erros = "; ".join(" ".join(lista) for lista in form.errors.values())
+        messages.error(request, f"Não salvou. {erros}")
+    return redirect("/central/#financeiro")
+
+
+@never_cache
+def central_financeiro_excluir(request: HttpRequest, pk: int) -> HttpResponse:
+    barreira = _acao_do_time(request)
+    if barreira:
+        return barreira
+    get_object_or_404(CentralFinanceEntry, pk=pk).delete()
+    messages.success(request, "Lançamento excluído.")
+    return redirect("/central/#financeiro")
 
 
 @never_cache

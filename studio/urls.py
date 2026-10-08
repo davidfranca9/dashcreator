@@ -84,6 +84,8 @@ from .central_views import (
     central_evento_salvar,
     central_evento_sugestao,
     central_evento_tarefa_feita,
+    central_financeiro_excluir,
+    central_financeiro_salvar,
     central_painel,
     central_sair,
 )
@@ -127,6 +129,8 @@ urlpatterns = [
     path("central/evento/<str:tipo>/salvar/", central_evento_salvar, name="central_evento_novo"),
     path("central/evento/<str:tipo>/<int:pk>/salvar/", central_evento_salvar, name="central_evento_salvar"),
     path("central/evento/<str:tipo>/<int:pk>/excluir/", central_evento_excluir, name="central_evento_excluir"),
+    path("central/financeiro/salvar/", central_financeiro_salvar, name="central_financeiro_salvar"),
+    path("central/financeiro/<int:pk>/excluir/", central_financeiro_excluir, name="central_financeiro_excluir"),
     path("crm/novo/", crm_create, name="crm_create"),
     path("crm/<int:pk>/mover/", crm_move, name="crm_move"),
     path("crm/<int:pk>/", crm_lead, name="crm_lead"),
