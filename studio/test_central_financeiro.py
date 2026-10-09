@@ -70,3 +70,66 @@ class CentralFinanceiroTests(TestCase):
         # Reabrir a Central só relê a compra: não cria lançamento paralelo.
         self.client.get("/central/")
         self.assertFalse(CentralFinanceEntry.objects.exists())
+
+
+@override_settings(CENTRAL_ACESSO_DIRETO=True)
+class CentralReembolsoTests(TestCase):
+    def setUp(self):
+        self.layfe = get_user_model().objects.create_user(
+            "layfeamorim", email="layfe@example.com", password=SENHA
+        )
+        get_or_create_workspace_for_user(self.layfe)
+        self.client.post("/central/entrar/", {"username": "layfe@example.com", "password": SENHA})
+        self.compra = Purchase.objects.create(
+            product_key="creatorday", product_name="Creator Day Experience",
+            customer_name="Ana", customer_email="ana@example.com",
+            amount=Decimal("120"), status=Purchase.STATUS_APPROVED,
+        )
+
+    def test_reembolso_sai_das_entradas_e_volta_ao_desfazer(self):
+        resposta = self.client.post(f"/central/financeiro/compra/{self.compra.pk}/reembolsar/")
+        self.assertRedirects(resposta, "/central/#financeiro", fetch_redirect_response=False)
+        self.compra.refresh_from_db()
+        self.assertEqual(self.compra.status, Purchase.STATUS_REFUNDED)
+        self.assertIsNotNone(self.compra.refunded_at)
+
+        dados = self.client.get("/central/").context["financeiro"]
+        self.assertEqual(dados["entradas"], "R$ 0,00")
+        self.assertEqual(dados["saidas"], "R$ 0,00")
+        self.assertEqual(dados["saldo"], "R$ 0,00")
+        self.assertEqual(dados["reembolsado"], "R$ 120,00")
+        self.assertEqual(dados["reembolsadas"], 1)
+        self.assertEqual(dados["automaticos"], 0)
+        self.assertTrue(dados["movimentos"][0]["reembolsada"])
+        self.assertEqual(dados["por_produto"][0]["entradas_txt"], "R$ 0,00")
+
+        # o mesmo botão desfaz
+        self.client.post(f"/central/financeiro/compra/{self.compra.pk}/reembolsar/")
+        self.compra.refresh_from_db()
+        self.assertEqual(self.compra.status, Purchase.STATUS_APPROVED)
+        self.assertIsNone(self.compra.refunded_at)
+        self.assertEqual(self.client.get("/central/").context["financeiro"]["entradas"], "R$ 120,00")
+
+    def test_reembolso_tira_do_creator_day_e_da_lista_de_presenca(self):
+        self.client.post(f"/central/financeiro/compra/{self.compra.pk}/reembolsar/")
+        contexto = self.client.get("/central/").context
+        self.assertEqual(contexto["checkout"]["creatorday"]["pagas"], 0)
+        self.assertEqual(contexto["checkout"]["creatorday"]["reembolsadas"], 1)
+        self.assertEqual(contexto["evento"]["presenca"]["pagos_total"], 0)
+
+    def test_so_o_time_reembolsa(self):
+        self.client.post("/central/sair/")
+        resposta = self.client.post(f"/central/financeiro/compra/{self.compra.pk}/reembolsar/")
+        self.assertNotEqual(resposta.status_code, 200)
+        self.compra.refresh_from_db()
+        self.assertEqual(self.compra.status, Purchase.STATUS_APPROVED)
+
+    def test_pendente_nao_pode_ser_reembolsada(self):
+        pendente = Purchase.objects.create(
+            product_key="creatorday", product_name="Creator Day Experience",
+            customer_name="Bia", customer_email="bia@example.com",
+            amount=Decimal("120"), status=Purchase.STATUS_PENDING,
+        )
+        self.client.post(f"/central/financeiro/compra/{pendente.pk}/reembolsar/")
+        pendente.refresh_from_db()
+        self.assertEqual(pendente.status, Purchase.STATUS_PENDING)

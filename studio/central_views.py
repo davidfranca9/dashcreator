@@ -20,7 +20,7 @@ from django.views.decorators.cache import never_cache
 from .central import APP, central_snapshot
 from .evento import EVENTO, ConvidadaForm, FornecedorForm, RoteiroForm, TarefaForm, criar_sugestao
 from .forms import EmailOrUsernameAuthenticationForm
-from .models import CentralFinanceEntry, EventGuest, EventScheduleItem, EventSupplier, EventTask
+from .models import CentralFinanceEntry, EventGuest, EventScheduleItem, EventSupplier, EventTask, Purchase
 from .services import is_internal_account
 
 CENTRAL_PUBLICA = "https://thecreatorsclub.com.br/central/"
@@ -168,6 +168,29 @@ def central_financeiro_excluir(request: HttpRequest, pk: int) -> HttpResponse:
         return barreira
     get_object_or_404(CentralFinanceEntry, pk=pk).delete()
     messages.success(request, "Lançamento excluído.")
+    return redirect("/central/#financeiro")
+
+
+@never_cache
+def central_compra_reembolsar(request: HttpRequest, pk: int) -> HttpResponse:
+    """Venda do checkout devolvida: sai das entradas sem apagar a compra.
+    O mesmo botão desfaz, caso tenha sido marcada sem querer."""
+    barreira = _acao_do_time(request)
+    if barreira:
+        return barreira
+    compra = get_object_or_404(Purchase, pk=pk)
+    if compra.status == Purchase.STATUS_REFUNDED:
+        compra.status = Purchase.STATUS_APPROVED
+        compra.refunded_at = None
+        compra.save(update_fields=["status", "refunded_at", "updated_at"])
+        messages.success(request, f"Reembolso desfeito: a venda de {compra.customer_name} voltou para as entradas.")
+    elif compra.status == Purchase.STATUS_APPROVED:
+        compra.status = Purchase.STATUS_REFUNDED
+        compra.refunded_at = timezone.now()
+        compra.save(update_fields=["status", "refunded_at", "updated_at"])
+        messages.success(request, f"Venda de {compra.customer_name} marcada como reembolsada. Devolva o valor no Mercado Pago.")
+    else:
+        messages.error(request, "Só dá para reembolsar uma venda paga.")
     return redirect("/central/#financeiro")
 
 

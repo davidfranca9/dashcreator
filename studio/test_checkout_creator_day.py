@@ -248,3 +248,12 @@ class CompraNoAdminTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Compradora do Evento")
         self.assertNotContains(response, "Cliente do Dash")
+
+
+class IngressoReembolsadoTests(TestCase):
+    def test_webhook_nao_reaprova_compra_reembolsada(self):
+        compra = _compra(status=Purchase.STATUS_REFUNDED, mp_payment_id="pay_1")
+        _approve_purchase(compra, {"id": "pay_1", "status": "approved", "payment_method_id": "pix"})
+        compra.refresh_from_db()
+        self.assertEqual(compra.status, Purchase.STATUS_REFUNDED)
+        self.assertEqual(len(mail.outbox), 0)

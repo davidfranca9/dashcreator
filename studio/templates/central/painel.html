@@ -295,10 +295,13 @@
   .fin-tipo { display:inline-flex; padding:4px 9px; font-size:11.5px; font-weight:600; border-radius:999px; background:var(--info-fundo); color:var(--info); }
   .fin-tipo--expense { background:var(--erro-fundo); color:var(--erro); }
   .fin-tipo--fixed { background:var(--espera-fundo); color:var(--espera); }
+  .fin-tipo--refunded { background:var(--linha); color:var(--mudo); }
+  tr.fin-devolvida .dinheiro b { text-decoration:line-through; color:var(--mudo); font-weight:500; }
   .fin-fonte { display:inline-flex; align-items:center; gap:5px; margin-top:4px; font-size:10.5px; color:var(--mudo); }
   .fin-fonte::before { content:""; width:6px; height:6px; background:var(--azul); border-radius:50%; }
   .fin-fonte--manual::before { background:var(--ouro); }
   .fin-excluir { padding:6px 9px; color:var(--erro); background:none; border:1px solid var(--linha); border-radius:8px; }
+  .fin-reembolsar { padding:6px 9px; font-size:12px; color:var(--texto); background:none; border:1px solid var(--linha); border-radius:8px; white-space:nowrap; }
   @media(max-width:900px){.fin-kpis{grid-template-columns:repeat(2,1fr)}.fin-lancamento{grid-template-columns:1fr 1fr}.fin-produtos{grid-template-columns:1fr}.fin-extrato-wrap{overflow-x:auto}.fin-extrato{min-width:760px}.fin-hero{align-items:flex-start;flex-direction:column}.fin-hero-status{flex:none}}
   @media(max-width:520px){.fin-lancamento{grid-template-columns:1fr}.fin-produto dl{grid-template-columns:1fr 1fr}}
 
@@ -1098,13 +1101,14 @@
 
         <div class="fin-hero" data-busca>
           <div class="fin-hero-copy"><small>Caixa integrado</small><h3>Visão financeira do clube</h3><p>As vendas aprovadas no checkout entram sozinhas. Use o lançamento manual apenas para vendas externas, saídas e custos fixos.</p></div>
-          <div class="fin-hero-status"><i></i>{{ financeiro.automaticos }} entrada{{ financeiro.automaticos|pluralize }} automática{{ financeiro.automaticos|pluralize }}</div>
+          <div class="fin-hero-status"><i></i>{{ financeiro.automaticos }} entrada{{ financeiro.automaticos|pluralize }} automática{{ financeiro.automaticos|pluralize }}{% if financeiro.reembolsadas %} · {{ financeiro.reembolsadas }} reembolsada{{ financeiro.reembolsadas|pluralize }}{% endif %}</div>
         </div>
 
         <div class="fin-kpis" data-busca>
           <div class="fin-kpi"><span>Entradas</span><b class="dinheiro">{{ financeiro.entradas }}</b></div>
           <div class="fin-kpi"><span>Saídas</span><b class="dinheiro">{{ financeiro.saidas }}</b></div>
           <div class="fin-kpi"><span>Custos fixos</span><b class="dinheiro">{{ financeiro.fixos }}</b></div>
+          <div class="fin-kpi"><span>Reembolsado</span><b class="dinheiro">{{ financeiro.reembolsado }}</b></div>
           <div class="fin-kpi fin-kpi--saldo"><span>Saldo do caixa</span><b class="dinheiro">{{ financeiro.saldo }}</b></div>
         </div>
 
@@ -1134,7 +1138,7 @@
         <div class="subtitulo"><h3>Fluxo de caixa</h3><span>{{ financeiro.total }} lançamento{{ financeiro.total|pluralize }}</span></div>
         <div class="cartao bloco fin-extrato-wrap" data-busca>
           <table class="fin-extrato"><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Descrição</th><th>Valor</th><th></th></tr></thead><tbody>
-          {% for m in financeiro.movimentos %}<tr><td>{{ m.occurred_on|date:"d/m/Y" }}</td><td><span class="fin-tipo fin-tipo--{{ m.kind }}">{{ m.kind_label }}</span></td><td><b>{{ m.product }}</b><span class="fin-fonte{% if not m.automatico %} fin-fonte--manual{% endif %}">{% if m.automatico %}Checkout automático{% else %}Lançamento manual{% endif %}</span></td><td>{{ m.description|default:"—" }}</td><td class="dinheiro"><b>{% if m.kind != 'income' %}− {% endif %}{{ m.amount_txt }}</b></td><td>{% if not m.automatico %}<form method="post" action="/central/financeiro/{{ m.pk }}/excluir/" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="fin-excluir" type="submit">Excluir</button></form>{% else %}<span class="mudo" title="Gerenciado pelo checkout">—</span>{% endif %}</td></tr>
+          {% for m in financeiro.movimentos %}<tr{% if m.reembolsada %} class="fin-devolvida"{% endif %}><td>{{ m.occurred_on|date:"d/m/Y" }}</td><td><span class="fin-tipo fin-tipo--{{ m.kind }}">{{ m.kind_label }}</span></td><td><b>{{ m.product }}</b><span class="fin-fonte{% if not m.automatico %} fin-fonte--manual{% endif %}">{% if m.automatico %}Checkout automático{% else %}Lançamento manual{% endif %}</span></td><td>{{ m.description|default:"—" }}</td><td class="dinheiro"><b>{% if m.kind == 'expense' or m.kind == 'fixed' %}− {% endif %}{{ m.amount_txt }}</b></td><td>{% if not m.automatico %}<form method="post" action="/central/financeiro/{{ m.pk }}/excluir/" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="fin-excluir" type="submit">Excluir</button></form>{% elif m.reembolsada %}<form method="post" action="/central/financeiro/compra/{{ m.pk }}/reembolsar/" onsubmit="return confirm('Desfazer o reembolso? A venda volta a contar como entrada.');">{% csrf_token %}<button class="fin-reembolsar" type="submit">Desfazer reembolso</button></form>{% else %}<form method="post" action="/central/financeiro/compra/{{ m.pk }}/reembolsar/" onsubmit="return confirm('Marcar esta venda como reembolsada? Ela sai das entradas. A devolução do dinheiro é feita no Mercado Pago.');">{% csrf_token %}<button class="fin-reembolsar" type="submit">Reembolsar</button></form>{% endif %}</td></tr>
           {% empty %}<tr><td colspan="6" class="mudo" style="text-align:center;padding:30px">Nenhuma movimentação ainda. O fluxo de caixa está zerado.</td></tr>{% endfor %}
           </tbody></table>
         </div>

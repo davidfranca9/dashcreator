@@ -868,11 +868,13 @@ class Purchase(TimestampedModel):
     STATUS_APPROVED = "approved"
     STATUS_REJECTED = "rejected"
     STATUS_CANCELLED = "cancelled"
+    STATUS_REFUNDED = "refunded"
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pendente"),
         (STATUS_APPROVED, "Aprovado"),
         (STATUS_REJECTED, "Recusado"),
         (STATUS_CANCELLED, "Cancelado"),
+        (STATUS_REFUNDED, "Reembolsado"),
     ]
 
     product_key = models.CharField(max_length=40)
@@ -887,6 +889,7 @@ class Purchase(TimestampedModel):
     payment_method = models.CharField(max_length=40, blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     paid_at = models.DateTimeField(null=True, blank=True)
+    refunded_at = models.DateTimeField(null=True, blank=True)
     access_code = models.OneToOneField(
         "AccessCode",
         on_delete=models.SET_NULL,

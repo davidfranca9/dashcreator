@@ -48,6 +48,8 @@ def ticket_status(purchase: Purchase) -> tuple[str, str]:
         return "Recusado", "erro"
     if purchase.status == Purchase.STATUS_CANCELLED:
         return "Cancelado", "erro"
+    if purchase.status == Purchase.STATUS_REFUNDED:
+        return "Reembolsado", "neutro"
     if purchase.mp_payment_id:
         # Pix ou boleto gerado, esperando cair
         return "Aguardando pagamento", "espera"

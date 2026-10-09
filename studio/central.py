@@ -438,21 +438,33 @@ def _checkout(chave: str) -> dict:
         "aguardando": pendentes.exclude(mp_payment_id="").count(),
         "nao_finalizou": pendentes.filter(mp_payment_id="").count(),
         "recusadas": qs.filter(status__in=[Purchase.STATUS_REJECTED, Purchase.STATUS_CANCELLED]).count(),
+        "reembolsadas": qs.filter(status=Purchase.STATUS_REFUNDED).count(),
     }
 
 
 def _financeiro_central() -> dict:
     """Caixa do TCC: checkout aprovado ao vivo + lançamentos manuais."""
     manuais = list(CentralFinanceEntry.objects.all())
-    compras = list(Purchase.objects.filter(status=Purchase.STATUS_APPROVED).order_by("-paid_at", "-created_at"))
+    compras = list(
+        Purchase.objects.filter(status__in=[Purchase.STATUS_APPROVED, Purchase.STATUS_REFUNDED])
+        .order_by("-paid_at", "-created_at")
+    )
     movimentos = []
+    reembolsadas = 0
+    reembolsado = Decimal("0")
     for compra in compras:
+        devolvida = compra.status == Purchase.STATUS_REFUNDED
+        if devolvida:
+            reembolsadas += 1
+            reembolsado += compra.amount
         movimentos.append({
-            "pk": compra.pk, "kind": CentralFinanceEntry.KIND_INCOME, "kind_label": "Entrada",
+            "pk": compra.pk,
+            "kind": "refunded" if devolvida else CentralFinanceEntry.KIND_INCOME,
+            "kind_label": "Reembolsado" if devolvida else "Entrada",
             "product": compra.product_name, "description": f"Venda pelo checkout · {compra.customer_name}",
             "amount": compra.amount, "amount_txt": brl(compra.amount),
             "occurred_on": timezone.localtime(compra.paid_at).date() if compra.paid_at else compra.created_at.date(),
-            "automatico": True,
+            "automatico": True, "reembolsada": devolvida,
         })
     for movimento in manuais:
         movimentos.append({
@@ -468,6 +480,8 @@ def _financeiro_central() -> dict:
     produtos = {}
     for movimento in movimentos:
         linha = produtos.setdefault(movimento["product"], {"nome": movimento["product"], "entradas": Decimal("0"), "saidas": Decimal("0"), "fixos": Decimal("0"), "vendas_checkout": 0})
+        if movimento.get("reembolsada"):
+            continue  # dinheiro devolvido: não é entrada nem gasto
         if movimento["kind"] == CentralFinanceEntry.KIND_INCOME:
             linha["entradas"] += movimento["amount"]
             linha["vendas_checkout"] += int(movimento["automatico"])
@@ -483,7 +497,8 @@ def _financeiro_central() -> dict:
         por_produto.append(linha)
     por_produto.sort(key=lambda item: (-item["entradas"], item["nome"].lower()))
     return {
-        "total": len(movimentos), "automaticos": len(compras), "manuais": len(manuais),
+        "total": len(movimentos), "automaticos": len(compras) - reembolsadas, "manuais": len(manuais),
+        "reembolsadas": reembolsadas, "reembolsado": brl(reembolsado),
         "entradas": brl(entradas), "saidas": brl(saidas), "fixos": brl(fixos),
         "saldo": brl(entradas - saidas - fixos),
         "por_produto": por_produto, "movimentos": movimentos,

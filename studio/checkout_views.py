@@ -392,7 +392,8 @@ def checkout_status(request: HttpRequest) -> JsonResponse:
     if purchase is None:
         return _json(request, {"error": "purchase_not_found"}, status=404)
 
-    if purchase.status != Purchase.STATUS_APPROVED and purchase.mp_payment_id and settings.MERCADO_PAGO_ACCESS_TOKEN:
+    consultar_mp = purchase.status not in (Purchase.STATUS_APPROVED, Purchase.STATUS_REFUNDED)
+    if consultar_mp and purchase.mp_payment_id and settings.MERCADO_PAGO_ACCESS_TOKEN:
         try:
             mp_payment = _mp_sdk().payment().get(purchase.mp_payment_id)
         except Exception:  # pragma: no cover - rede / SDK
@@ -494,7 +495,10 @@ def checkout_webhook(request: HttpRequest) -> HttpResponse:
 
 def _approve_purchase(purchase: Purchase, payment_data: dict) -> None:
     """Idempotente: se já temos AccessCode gerado pra essa compra, não
-    cria outro e não reenviamos email (o MP pode notificar repetido)."""
+    cria outro e não reenviamos email (o MP pode notificar repetido).
+    Compra reembolsada pelo time fica como está: nada de reaprovar."""
+    if purchase.status == Purchase.STATUS_REFUNDED:
+        return
     if _is_ticket_purchase(purchase):
         _approve_ticket_purchase(purchase, payment_data)
         return
@@ -534,10 +538,12 @@ def _approve_ticket_purchase(purchase: Purchase, payment_data: dict) -> None:
     """Ingresso de evento: marca a compra como aprovada e manda o email de
     confirmação uma vez só. O update condicional garante isso mesmo quando o
     webhook e a resposta do pagamento chegam ao mesmo tempo."""
+    if purchase.status == Purchase.STATUS_REFUNDED:
+        return
     paid_at = _parse_mp_datetime(payment_data.get("date_approved")) or timezone.now()
     updated = (
         Purchase.objects.filter(pk=purchase.pk)
-        .exclude(status=Purchase.STATUS_APPROVED)
+        .exclude(status__in=[Purchase.STATUS_APPROVED, Purchase.STATUS_REFUNDED])
         .update(
             status=Purchase.STATUS_APPROVED,
             mp_payment_id=str(payment_data.get("id") or purchase.mp_payment_id or ""),
