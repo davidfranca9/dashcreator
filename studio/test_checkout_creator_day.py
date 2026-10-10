@@ -119,7 +119,7 @@ class CheckoutCreatorDayTest(TestCase):
         self.assertEqual(email.to, ["maria@example.com"])
         self.assertEqual(email.subject, "Seu ingresso do Creator Day Experience está confirmado")
         self.assertIn("Data: 18 de outubro de 2026, às 14h", email.body)
-        self.assertIn("Local: Piatã, Salvador/BA", email.body)
+        self.assertIn("Local: Rua Pasquale Gatto, 494, Reserva Piatã, Salvador/BA", email.body)
         self.assertIn(f"Número do pedido: {compra.pk}", email.body)
         self.assertNotIn("código de acesso", email.body)
         self.assertNotIn(reverse("signup"), email.body)

@@ -1,0 +1,10 @@
+Querida creator,
+
+Layfe Amorim tem um presente para você: o convite do Piquenique de
+Encerramento da Turma 01 do The Creators Club.
+
+Abra sua carta aqui: {{ link }}
+
+Com carinho,
+The Creators Club · @thecreatorssclubb
+Salvador, Bahia · 2026

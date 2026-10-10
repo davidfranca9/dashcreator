@@ -62,7 +62,7 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
     "creatorday": CheckoutProduct(
         key="creatorday",
         name="Creator Day Experience",
-        short_description="Ingresso: 18/10/2026, 14h, Piatã, Salvador/BA",
+        short_description="Ingresso: 18/10/2026, 14h, Reserva Piatã, Salvador/BA",
         long_description=(
             "Uma tarde de skincare, networking e criação para creators. "
             "Seu ingresso garante acesso ao Creator Day Experience."
@@ -80,7 +80,7 @@ CHECKOUT_PRODUCTS: dict[str, CheckoutProduct] = {
         failure_path="/checkout/creator-day/erro/",
         details=(
             ("Data", "18 de outubro de 2026, às 14h"),
-            ("Local", "Piatã, Salvador/BA"),
+            ("Local", "Rua Pasquale Gatto, 494, Reserva Piatã, Salvador/BA"),
         ),
         personalized_ticket=True,
     ),

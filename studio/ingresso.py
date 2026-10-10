@@ -29,7 +29,7 @@ TINTA_SUAVE = (86, 114, 158)
 LINHA = (198, 216, 240)
 CLARO = (226, 236, 250)
 
-EVENTO_DATA = date(2026, 10, 17)
+EVENTO_DATA = date(2026, 10, 18)
 DIAS = ("SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO", "DOMINGO")
 MESES = ("JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ")
 DATA_CURTA = f"{EVENTO_DATA.day} {MESES[EVENTO_DATA.month - 1]} {EVENTO_DATA.year}"
@@ -251,7 +251,7 @@ def _frente(nome: str, codigo: str) -> Image.Image:
     y += fonte_nome.size + 80
     colunas = (
         (_icone_calendario, (f"{DATA_CURTA}", DIA_SEMANA)),
-        (_icone_local, ("SALVADOR, BA", "LOCAL EM BREVE")),
+        (_icone_local, ("RESERVA PIATÃ", "R. PASQUALE", "GATTO, Nº 494")),
         (_icone_folha, ("SKINCARE", "CONTEÚDO", "CONEXÕES", "EXPERIÊNCIAS")),
     )
     largura_col = (T_LARG - 100) / 3

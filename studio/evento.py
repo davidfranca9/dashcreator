@@ -21,7 +21,7 @@ EVENTO = {
     "nome": "Creator Day Experience",
     "data": date(2026, 10, 18),
     "hora": "14h",
-    "local": "Piatã, Salvador/BA",
+    "local": "Rua Pasquale Gatto, 494, Reserva Piatã, Salvador/BA",
     "tema": "Skincare e cuidados com a pele",
     "ingresso": "R$ 120,00",
     "whatsapp": "(71) 9 9723-8419",
