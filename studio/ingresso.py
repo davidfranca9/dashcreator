@@ -218,7 +218,7 @@ def _frente(nome: str, codigo: str) -> Image.Image:
 
     # etiquetas sobre a foto
     y = 74
-    for palavra in ("SKINCARE", "CONEXÕES", "CONTEÚDO", "EXPERIÊNCIAS"):
+    for palavra in ("SKINCARE", "CONEXÕES", "EXPERIÊNCIAS"):
         _texto_espacado(d, (52, y), palavra, semi(15), NAVY, 3.4)
         y += 27
     for i, texto in enumerate(("SALVADOR, BA", DATA_CURTA)):
@@ -252,7 +252,7 @@ def _frente(nome: str, codigo: str) -> Image.Image:
     colunas = (
         (_icone_calendario, (f"{DATA_CURTA}", DIA_SEMANA)),
         (_icone_local, ("RESERVA PIATÃ", "R. PASQUALE", "GATTO, Nº 494")),
-        (_icone_folha, ("SKINCARE", "CONTEÚDO", "CONEXÕES", "EXPERIÊNCIAS")),
+        (_icone_folha, ("SKINCARE", "CONEXÕES", "EXPERIÊNCIAS")),
     )
     largura_col = (T_LARG - 100) / 3
     for i, (icone, linhas) in enumerate(colunas):
@@ -304,7 +304,6 @@ def _verso() -> Image.Image:
     itens = (
         (_icone_brilho, ("VIVA NOVAS", "EXPERIÊNCIAS")),
         (_icone_pessoas, ("CONECTE-SE", "COM OUTROS CREATORS")),
-        (_icone_camera, ("CRIE CONTEÚDO", "DE FORMA REAL")),
         (_icone_coracao, ("FAÇA PARTE DE UMA", "COMUNIDADE QUE ACREDITA", "NO DESACELERAR")),
     )
     for icone, linhas in itens:
