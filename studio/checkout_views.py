@@ -408,6 +408,7 @@ def checkout_status(request: HttpRequest) -> JsonResponse:
     return _json(request, {
         "purchase_id": purchase.pk,
         "status": purchase.status,
+        "amount": str(purchase.amount),
         "payment_id": purchase.mp_payment_id,
         "payment_method": purchase.payment_method,
         "access_ready": _purchase_ready(purchase),
