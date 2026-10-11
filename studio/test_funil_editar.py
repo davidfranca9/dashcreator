@@ -100,3 +100,30 @@ class DashboardDeslogadoTests(TestCase):
         r = self.client.get(reverse("dashboard"))
         self.assertEqual(r.status_code, 302)
         self.assertIn("/login/", r["Location"])
+
+
+class EmojiDaColunaTests(TestCase):
+    """O emoji escolhido no kanban tem que continuar lá depois do F5."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("layfe", email="l@example.com", password=SENHA)
+        self.workspace = get_or_create_workspace_for_user(self.user)
+        self.funnel = Funnel.objects.create(workspace=self.workspace, name="Trabalhos")
+        self.coluna = FunnelColumn.objects.create(funnel=self.funnel, name="Em produção", emoji="🎬", position=0)
+        self.client.force_login(self.user)
+
+    def test_emoji_salvo_aparece_no_quadro(self):
+        resposta = self.client.post(f"/trabalhos/funis/colunas/{self.coluna.pk}/", {"emoji": "🥺"})
+        self.assertEqual(resposta.json()["emoji"], "🥺")
+        self.coluna.refresh_from_db()
+        self.assertEqual(self.coluna.emoji, "🥺")
+
+        quadro = self.client.get("/trabalhos/")
+        colunas = [c for f in quadro.context["funnels"] for c in f["columns"] if c["id"] == self.coluna.pk]
+        self.assertEqual(colunas[0]["emoji"], "🥺")
+
+    def test_da_para_tirar_o_emoji(self):
+        self.client.post(f"/trabalhos/funis/colunas/{self.coluna.pk}/", {"emoji": ""})
+        quadro = self.client.get("/trabalhos/")
+        colunas = [c for f in quadro.context["funnels"] for c in f["columns"] if c["id"] == self.coluna.pk]
+        self.assertEqual(colunas[0]["emoji"], "")

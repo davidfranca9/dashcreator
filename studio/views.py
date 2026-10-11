@@ -1608,8 +1608,6 @@ def follow_up_start_prospection(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def jobs(request: HttpRequest) -> HttpResponse:
-    from .constants import PROJECT_STATUS_EMOJIS
-
     workspace = _workspace(request)
     month_filter = request.GET.get("month")
     context = shell_context(
@@ -1654,7 +1652,7 @@ def jobs(request: HttpRequest) -> HttpResponse:
                 {
                     "id": column.pk,
                     "name": column.name,
-                    "emoji": PROJECT_STATUS_EMOJIS.get(column.name, ""),
+                    "emoji": column.emoji,
                     "items": [
                         card
                         for card in active_cards
@@ -2905,9 +2903,12 @@ def funnel_create(request: HttpRequest) -> JsonResponse:
         nomes = [rotulo for _, rotulo in PROJECT_STATUS_CHOICES]
     else:
         nomes = ["Nova coluna"]
-    FunnelColumn.objects.bulk_create(
-        [FunnelColumn(funnel=funnel, name=nome, position=i) for i, nome in enumerate(nomes)]
-    )
+    from .constants import PROJECT_STATUS_EMOJIS
+
+    FunnelColumn.objects.bulk_create([
+        FunnelColumn(funnel=funnel, name=nome, position=i, emoji=PROJECT_STATUS_EMOJIS.get(nome, ""))
+        for i, nome in enumerate(nomes)
+    ])
     return JsonResponse({"ok": True, "funnel_id": funnel.pk, "name": funnel.name})
 
 
