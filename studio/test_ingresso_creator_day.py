@@ -116,5 +116,6 @@ class DressCodeNoEmailTests(TestCase):
         email = mail.outbox[-1]
         self.assertIn("Dress code: branco ou azul claro", email.body)
         self.assertIn("18 de outubro de 2026, às 14:00", email.body)
+        self.assertIn("Obs: o local não tem estacionamento.", email.body)
         html = email.alternatives[0][0]
         self.assertIn("Branco ou azul claro", html)
