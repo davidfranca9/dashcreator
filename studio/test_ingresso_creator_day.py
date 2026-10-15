@@ -104,3 +104,16 @@ class EmailSemIngressoTest(TestCase):
         email = mail.outbox[0]
         self.assertEqual(email.subject, "Seu ingresso do Creator Day Experience está confirmado")
         self.assertEqual(email.attachments, [])
+
+
+class DressCodeNoEmailTests(TestCase):
+    def test_email_pede_branco_ou_azul_claro(self):
+        from django.core import mail
+        from django.core.management import call_command
+        from io import StringIO
+
+        call_command("testar_ingresso_creator_day", "ana@example.com", stdout=StringIO())
+        email = mail.outbox[-1]
+        self.assertIn("Dress code: branco ou azul claro", email.body)
+        html = email.alternatives[0][0]
+        self.assertIn("Branco ou azul claro", html)
