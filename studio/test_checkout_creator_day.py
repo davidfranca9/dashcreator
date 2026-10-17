@@ -37,7 +37,8 @@ def _sdk_de_pagamento(resposta):
     return FakeSdk()
 
 
-@override_settings(MERCADO_PAGO_PUBLIC_KEY="TEST-public-key", MERCADO_PAGO_ACCESS_TOKEN="TEST-access-token")
+@override_settings(MERCADO_PAGO_PUBLIC_KEY="TEST-public-key", MERCADO_PAGO_ACCESS_TOKEN="TEST-access-token",
+                   CREATOR_DAY_VENDAS_ENCERRADAS=False)
 class CheckoutCreatorDayTest(TestCase):
     def test_produto_e_ingresso_de_120_reais(self):
         produto = get_product("creatorday")
@@ -257,3 +258,47 @@ class IngressoReembolsadoTests(TestCase):
         compra.refresh_from_db()
         self.assertEqual(compra.status, Purchase.STATUS_REFUNDED)
         self.assertEqual(len(mail.outbox), 0)
+
+
+@override_settings(MERCADO_PAGO_PUBLIC_KEY="TEST-public-key", MERCADO_PAGO_ACCESS_TOKEN="TEST-access-token")
+class IngressosEsgotadosTests(TestCase):
+    """Com os ingressos esgotados o checkout não cria compra nem cobra."""
+
+    def _preferencia(self, produto="creatorday"):
+        return self.client.post(
+            reverse("checkout_preference"),
+            data=json.dumps({"product_key": produto, "customer_name": "Ana", "customer_email": "ana@example.com",
+                             "customer_cpf": "529.982.247-25", "customer_phone": "(71) 90000-0000"}),
+            content_type="application/json",
+        )
+
+    def test_nao_cria_compra_do_creator_day(self):
+        resposta = self._preferencia()
+        self.assertEqual(resposta.status_code, 410)
+        self.assertEqual(resposta.json()["error"], "sold_out")
+        self.assertFalse(Purchase.objects.filter(product_key="creatorday").exists())
+
+    def test_nao_cobra_compra_pendente_antiga(self):
+        compra = _compra(status=Purchase.STATUS_PENDING)
+        resposta = self.client.post(
+            reverse("checkout_payment"),
+            data=json.dumps({"purchase_id": compra.pk, "form_data": {"transaction_amount": 120, "payment_method_id": "pix"}}),
+            content_type="application/json",
+        )
+        self.assertEqual(resposta.status_code, 410)
+
+    def test_compra_ja_paga_continua_valendo(self):
+        compra = _compra(status=Purchase.STATUS_APPROVED, mp_payment_id="pay_ok")
+        resposta = self.client.post(
+            reverse("checkout_payment"),
+            data=json.dumps({"purchase_id": compra.pk, "form_data": {}}),
+            content_type="application/json",
+        )
+        self.assertEqual(resposta.status_code, 200)
+
+    @override_settings(CREATOR_DAY_VENDAS_ENCERRADAS=False)
+    def test_reabrir_a_venda_volta_a_funcionar(self):
+        with patch("studio.checkout_views._mp_sdk") as sdk:
+            sdk.return_value.preference.return_value.create.return_value = {"status": 201, "response": {"id": "pref_1"}}
+            resposta = self._preferencia()
+        self.assertEqual(resposta.status_code, 200)

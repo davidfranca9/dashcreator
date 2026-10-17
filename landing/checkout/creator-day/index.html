@@ -88,11 +88,13 @@ body { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; background:
 </header>
 <div class="shell">
     <main class="main">
-        <span class="label">Finalize sua inscrição</span>
+        <span class="label">Vendas encerradas</span>
         <h1 class="title">Seu ingresso para o Creator Day Experience</h1>
-        <p class="subtitle">Preencha seus dados para garantir sua vaga. O pagamento é feito com segurança pelo Mercado Pago: cartão em até 12x, Pix ou boleto.</p>
+        <p class="subtitle">As vendas estão encerradas.</p>
 
-        <form id="customerForm" autocomplete="on" novalidate>
+        <div class="banner info" role="status"><strong>Ingressos esgotados.</strong> Os ingressos do Creator Day Experience acabaram. Obrigada por querer fazer parte! Fique de olho no <a href="https://www.instagram.com/thecreatorssclubb/" style="color:inherit;text-decoration:underline">@thecreatorssclubb</a> para as próximas edições.</div>
+
+        <form id="customerForm" autocomplete="on" novalidate hidden>
             <div class="row">
                 <div class="field"><label for="customer_name">Nome completo</label><input id="customer_name" name="customer_name" type="text" autocomplete="name" required></div>
                 <div class="field"><label for="customer_email">Email</label><input id="customer_email" name="customer_email" type="email" autocomplete="email" required></div>

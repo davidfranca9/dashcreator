@@ -97,6 +97,13 @@ def _is_ticket_purchase(purchase: Purchase) -> bool:
     return bool(product and product.is_ticket)
 
 
+SOLD_OUT_MESSAGE = "Os ingressos do Creator Day Experience esgotaram. Obrigada por querer fazer parte!"
+
+
+def _vendas_encerradas(product_key: str) -> bool:
+    return product_key == "creatorday" and settings.CREATOR_DAY_VENDAS_ENCERRADAS
+
+
 def _purchase_ready(purchase: Purchase) -> bool:
     """Compra aprovada e já entregue: código de acesso gerado (Dash Creator)
     ou ingresso confirmado (evento, que não gera código)."""
@@ -168,6 +175,8 @@ def checkout_preference(request: HttpRequest) -> JsonResponse:
     product = get_product(product_key)
     if product is None:
         return _json(request, {"error": "unknown_product"}, status=404)
+    if _vendas_encerradas(product.key):
+        return _json(request, {"error": "sold_out", "message": SOLD_OUT_MESSAGE}, status=410)
 
     customer_name = (payload.get("customer_name") or "").strip()
     customer_email = (payload.get("customer_email") or "").strip().lower()
@@ -284,6 +293,8 @@ def checkout_payment(request: HttpRequest) -> JsonResponse:
             "status": purchase.status,
             "payment_id": purchase.mp_payment_id,
         })
+    if _vendas_encerradas(purchase.product_key):
+        return _json(request, {"error": "sold_out", "message": SOLD_OUT_MESSAGE}, status=410)
 
     form_data = payload.get("form_data") or {}
     if not isinstance(form_data, dict):

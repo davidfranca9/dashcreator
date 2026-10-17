@@ -26,6 +26,9 @@ DEBUG = env_flag("DJANGO_DEBUG", True)
 # E-mail novo do Creator Day (texto da Layfe + ingresso personalizado anexado).
 # Fica desligado até o time aprovar o teste; ligar com CREATOR_DAY_EMAIL_INGRESSO=1.
 CREATOR_DAY_EMAIL_INGRESSO = env_flag("CREATOR_DAY_EMAIL_INGRESSO", False)
+# Ingressos esgotados: o checkout do Creator Day recusa novas compras. Para reabrir,
+# CREATOR_DAY_VENDAS_ENCERRADAS=0 (e voltar as páginas estáticas de landing/).
+CREATOR_DAY_VENDAS_ENCERRADAS = env_flag("CREATOR_DAY_VENDAS_ENCERRADAS", True)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 # A Central TCC mora em thecreatorsclub.com.br/central/ (o nginx do site repassa
